@@ -1971,7 +1971,7 @@ dependencies = [
 [[package]]
 name = "es-fluent"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "es-fluent-derive",
  "fluent-bundle",
@@ -1980,7 +1980,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-build"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "cargo_metadata",
  "es-fluent-generate",
@@ -1994,7 +1994,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-core"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "bon",
  "darling",
@@ -2013,7 +2013,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-derive"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "darling",
  "es-fluent-core",
@@ -2029,7 +2029,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-generate"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "clap",
  "es-fluent-core",
@@ -2042,7 +2042,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-sc-parser"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/es-fluent.git#35f349a699252549b2f56bf81ec4a4e4e4aea194"
+source = "git+https://github.com/stayhydated/es-fluent.git#a089aaf81230fba1f0d0fa5b81c400ca924217c3"
 dependencies = [
  "bon",
  "darling",
@@ -7502,7 +7502,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
