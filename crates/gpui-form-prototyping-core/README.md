@@ -1,0 +1,1 @@
+opinionated core for prototyping. since this core uses [es-fluent](https://github.com/stayhydated/es-fluent) for defining the labels and descriptions for each form component. Though, you should give it a try, it's also a great way to prototype i18n.
