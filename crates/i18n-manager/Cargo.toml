@@ -1,0 +1,17 @@
+[package]
+name = "i18n-manager"
+description = """
+inventory::collect! based i18n manager for i18n_embed
+"""
+edition.workspace = true
+license.workspace = true
+publish = false
+version = "0.1.0"
+
+[dependencies]
+anyhow = { workspace = true }
+i18n-embed = { features = [ "fluent-system", "desktop-requester" ], workspace = true }
+inventory = { workspace = true }
+
+[lints]
+workspace = true

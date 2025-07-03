@@ -1,0 +1,18 @@
+[package]
+name = "num-regex"
+version = "0.1.0"
+keywords = [ "regex", "number" ]
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+regex = { workspace = true }
+rust_decimal = { optional = true, workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+default = [  ]
+rust_decimal = [ "dep:rust_decimal" ]

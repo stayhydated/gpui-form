@@ -1,0 +1,106 @@
+[workspace]
+default-members = [ "examples/some-lib-forms" ]
+members = [
+  "crates/i18n-manager",
+  "crates/gpui-form",
+  "crates/gpui-form-core",
+  "crates/gpui-form-derive",
+  "crates/gpui-form-internal-macros",
+  "crates/gpui-form-prototyping-core",
+  "crates/story-container",
+  "crates/story-container-macros",
+  "crates/num-regex",
+  "examples/some-lib",
+  "examples/some-lib-forms",
+  "examples/prototyping",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = true
+readme = "README.md"
+repository = "https://github.com/stayhydated/gpui-form"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = "1.0.96"
+automod = "1.0.15"
+bon = "3.3.2"
+chrono = "0.4.40"
+crabtime = "1.1.3"
+crate-paths = "0.1.0"
+darling = "0.20.10"
+derive_more = "2.0.1"
+dotenv = "0.15.0"
+# temp until : https://github.com/stayhydated/es-fluent/actions/runs/16057252671/job/45314606295
+es-fluent = { git = "https://github.com/stayhydated/es-fluent.git" }
+# temp until : https://github.com/stayhydated/es-fluent/actions/runs/16057252671/job/45314606295
+es-fluent-build = { git = "https://github.com/stayhydated/es-fluent.git" }
+fluent-bundle = "0.15.3"
+futures = "0.3.31"
+garde = "0.22.0"
+getset = "0.1.5"
+gpui = { git = "https://github.com/zed-industries/zed.git" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component.git" }
+gpui-form = { path = "crates/gpui-form", version = "0.1.0" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.1.0" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.1.0" }
+gpui-form-internal-macros = { path = "crates/gpui-form-internal-macros", version = "0.1.0" }
+gpui-form-internal-paths = { path = "crates/gpui-form-internal-paths", version = "0.1.0" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.1.0" }
+heck = "0.5.0"
+i18n-embed = "0.15.3"
+i18n-embed-fl = "0.9.3"
+i18n-manager = { path = "crates/i18n-manager", version = "0.1.0" }
+inventory = "0.3.20"
+itertools = "0.14.0"
+log = "0.4.26"
+num-regex = { path = "crates/num-regex" }
+once_cell = "1.21.3"
+paste = "1.0.15"
+prettyplease = "0.2.34"
+proc-macro-error2 = "2.0"
+proc-macro2 = "1.0.93"
+quote = "1.0.38"
+rayon = "1.10.0"
+regex = "1.11.1"
+rust-embed = "8.6.0"
+rust_decimal = "1.36.0"
+serde = "1.0.219"
+serde_json = "1.0.140"
+story-container = { path = "crates/story-container" }
+story-container-macros = { path = "crates/story-container-macros" }
+strum = "0.27.1"
+syn = "2.0.98"
+thiserror = "2.0.11"
+tokio = "1.43.0"
+tracing-subscriber = "0.3.19"
+unicode-segmentation = "1.12.0"
+unwrapped = { default-features = false, version = "0.1.1" }
+unwrapped-core = { version = "0.1.1" }
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "deny" }
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+type_complexity = "allow"
+uninlined_format_args = "allow"
+unused_trait_names = "warn"
+
+[profile.dev]
+codegen-units = 16
+debug = "limited"
+opt-level = 1
+split-debuginfo = "unpacked"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3

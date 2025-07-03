@@ -1,0 +1,26 @@
+[package]
+name = "gpui-form-core"
+description = """
+Core crate for multiple gpui-form-* crates
+"""
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+crate-paths = { workspace = true }
+darling = { workspace = true }
+derive_more = { features = [ "full" ], workspace = true }
+gpui-form-internal-macros = { workspace = true }
+inventory = { workspace = true }
+paste = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+strum = { features = [ "derive" ], workspace = true }
+syn = { features = [ "full" ], workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

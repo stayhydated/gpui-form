@@ -1,0 +1,36 @@
+[package]
+name = "gpui-form-derive"
+description = """
+Derive crate for gpui-form
+"""
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+anyhow = { workspace = true }
+darling = { workspace = true }
+derive_more = { features = [ "full" ], workspace = true }
+getset = { workspace = true }
+gpui-form-core = { workspace = true }
+itertools = { workspace = true }
+proc-macro-error2 = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+rust_decimal = { workspace = true }
+strum = { features = [ "derive" ], workspace = true }
+syn = { features = [ "full" ], workspace = true }
+thiserror = { workspace = true }
+unwrapped-core = { workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+default = [  ]
+inventory = [  ]

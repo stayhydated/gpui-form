@@ -1,0 +1,28 @@
+[package]
+name = "gpui-form-prototyping-core"
+description = """
+Consumer-facing prototyping utilities for gpui-form.
+"""
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+keywords = [ "gpui", "gpui-component", "form", "prototyping" ]
+
+[dependencies]
+gpui-form-core = { workspace = true }
+heck = { workspace = true }
+inventory = { workspace = true }
+prettyplease = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { features = [ "full", "parsing" ], workspace = true }
+
+[lints]
+workspace = true
+
+[features]
+chrono = [  ]
+default = [ "chrono" ]
+jiff = [  ]

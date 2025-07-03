@@ -1,0 +1,21 @@
+[package]
+name = "gpui-form-internal-macros"
+description = """
+Internal macros for gpui-form-core
+"""
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { features = [ "full" ], workspace = true }
+
+[lints]
+workspace = true
