@@ -34,10 +34,8 @@ crate-paths = "0.1.0"
 darling = "0.20.10"
 derive_more = "2.0.1"
 dotenv = "0.15.0"
-# temp until : https://github.com/stayhydated/es-fluent/actions/runs/16057252671/job/45314606295
-es-fluent = { git = "https://github.com/stayhydated/es-fluent.git" }
-# temp until : https://github.com/stayhydated/es-fluent/actions/runs/16057252671/job/45314606295
-es-fluent-build = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent = { version = "0.1.0" }
+es-fluent-build = { version = "0.1.0" }
 fluent-bundle = "0.15.3"
 futures = "0.3.31"
 garde = "0.22.0"
