@@ -53,7 +53,14 @@ impl Gallery {
                     let filtered_stories_on_change: Vec<_> = this
                         .stories
                         .iter()
-                        .filter(|story| story.read(cx_window).name.to_lowercase().contains(&query))
+                        .filter(|story| {
+                            let title = if let Some(title_fn) = &story.read(cx_window).title_fn {
+                                title_fn()
+                            } else {
+                                story.read(cx_window).name.to_string()
+                            };
+                            title.to_lowercase().contains(&query)
+                        })
                         .cloned()
                         .collect();
 
@@ -94,12 +101,13 @@ impl Gallery {
     fn set_active_story(&mut self, name: &str, app_cx: &App) {
         let lowercase_name = name.to_lowercase().replace("story", "");
         let story_index = self.stories.iter().position(|story_entity| {
-            story_entity
-                .read(app_cx)
-                .name
-                .to_lowercase()
-                .replace("story", "")
-                == lowercase_name
+            let story_data = story_entity.read(app_cx);
+            let title = if let Some(title_fn) = &story_data.title_fn {
+                title_fn()
+            } else {
+                story_data.name.to_string()
+            };
+            title.to_lowercase().replace("story", "") == lowercase_name
         });
 
         if let Some(index) = story_index {
@@ -124,7 +132,14 @@ impl Render for Gallery {
         let filtered_stories: Vec<Entity<StoryContainer>> = self
             .stories
             .iter()
-            .filter(|story| story.read(cx).name.to_lowercase().contains(&query))
+            .filter(|story| {
+                let title = if let Some(title_fn) = &story.read(cx).title_fn {
+                    title_fn()
+                } else {
+                    story.read(cx).name.to_string()
+                };
+                title.to_lowercase().contains(&query)
+            })
             .cloned()
             .collect();
 
@@ -144,9 +159,19 @@ impl Render for Gallery {
         let (story_name, description) =
             if let Some(story_to_render_cloned) = active_story_to_render.as_ref() {
                 let story_data = story_to_render_cloned.read(cx);
-                (story_data.name.clone(), story_data.description.clone())
+                let title = if let Some(title_fn) = &story_data.title_fn {
+                    title_fn()
+                } else {
+                    story_data.name.to_string()
+                };
+                let desc = if let Some(desc_fn) = &story_data.description_fn {
+                    desc_fn()
+                } else {
+                    story_data.description.to_string()
+                };
+                (title, desc)
             } else {
-                ("".into(), "".into())
+                ("".to_owned(), "".to_owned())
             };
 
         h_resizable("gallery-container", self.sidebar_state.clone())
@@ -229,7 +254,12 @@ impl Render for Gallery {
                             .child(SidebarMenu::new().children(
                                 filtered_stories.iter().enumerate().map(
                                     |(idx_in_filtered, story_entity_in_filtered)| {
-                                        let name = story_entity_in_filtered.read(cx).name.clone();
+                                        let story_data = story_entity_in_filtered.read(cx);
+                                        let name = if let Some(title_fn) = &story_data.title_fn {
+                                            title_fn().into()
+                                        } else {
+                                            story_data.name.clone()
+                                        };
                                         let is_active = ui_active_index_in_filtered_list
                                             == Some(idx_in_filtered);
 

@@ -105,6 +105,8 @@ pub struct StoryContainer {
     closable: bool,
     zoomable: Option<PanelControl>,
     on_active: Option<fn(AnyView, bool, &mut Window, &mut App)>,
+    pub title_fn: Option<Box<dyn Fn() -> String>>,
+    pub description_fn: Option<Box<dyn Fn() -> String>>,
 }
 
 #[derive(Debug)]
@@ -167,6 +169,8 @@ impl StoryContainer {
             closable: true,
             zoomable: Some(PanelControl::default()),
             on_active: None,
+            title_fn: None,
+            description_fn: None,
         }
     }
 
@@ -187,6 +191,8 @@ impl StoryContainer {
             story.name = name.into();
             story.description = description.into();
             story.title_bg = S::title_bg();
+            story.title_fn = Some(Box::new(S::title));
+            story.description_fn = Some(Box::new(S::description));
             story
         })
     }
@@ -237,7 +243,11 @@ impl Panel for StoryContainer {
     }
 
     fn title(&self, _window: &Window, _cx: &App) -> AnyElement {
-        self.name.clone().into_any_element()
+        if let Some(title_fn) = &self.title_fn {
+            title_fn().into_any_element()
+        } else {
+            self.name.clone().into_any_element()
+        }
     }
 
     fn title_style(&self, cx: &App) -> Option<TitleStyle> {
