@@ -41,7 +41,7 @@ impl AppTitleBar {
         }
 
         let theme_color =
-            cx.new(|cx| ColorPickerState::new(window, cx).default_value(cx.theme().primary));
+            cx.new(|cx| ColorPickerState::new(window, cx).default_value(cx.theme().secondary));
 
         let _subscriptions = vec![cx.subscribe_in(
             &theme_color,
@@ -78,14 +78,14 @@ impl AppTitleBar {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if let Some(color) = color {
-            let theme = cx.global_mut::<Theme>();
-            theme.apply_color(color);
-            self.theme_color.update(cx, |state, cx| {
-                state.set_value(color, window, cx);
-            });
-            window.refresh();
-        }
+        // if let Some(color) = color {
+        //     let theme = cx.global_mut::<Theme>();
+        //     theme.apply_color(color);
+        //     self.theme_color.update(cx, |state, cx| {
+        //         state.set_value(color, window, cx);
+        //     });
+        //     window.refresh();
+        // }
     }
 
     fn change_color_mode(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
