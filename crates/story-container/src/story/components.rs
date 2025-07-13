@@ -117,9 +117,9 @@ pub trait Story: Focusable + Render + Sized {
         std::any::type_name::<Self>().split("::").last().unwrap()
     }
 
-    fn title() -> &'static str;
-    fn description() -> &'static str {
-        ""
+    fn title() -> String;
+    fn description() -> String {
+        "".to_owned()
     }
     fn closable() -> bool {
         true

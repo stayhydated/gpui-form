@@ -55,8 +55,8 @@ impl FocusableCycle for UserForm {
     }
 }
 impl Story for UserForm {
-    fn title() -> &'static str {
-        "User"
+    fn title() -> String {
+        User::this_ftl()
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         Self::view(window, cx, User::default())

@@ -36,7 +36,7 @@ impl DropdownItem for Country {
 
 #[derive(Clone, Debug, Default, EsFluent, GpuiForm)]
 #[fluent(display = "std")]
-#[fluent(keys = ["Description", "Label"])]
+#[fluent(this, keys = ["Description", "Label"])]
 pub struct Address {
     #[gpui_form(component(input))]
     pub street: Option<String>,

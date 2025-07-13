@@ -1971,8 +1971,7 @@ dependencies = [
 [[package]]
 name = "es-fluent"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b208bfa1f689419ad02d4f168ac816cf8514240cbc81ad614d52acb17f1d6914"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "es-fluent-derive",
  "fluent-bundle",
@@ -1981,8 +1980,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-build"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82065c45d5e8f51055212a1c5bd9fadbbc66a0af6bca9ea564b7e3156f9a6886"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "cargo_metadata",
  "es-fluent-generate",
@@ -1996,8 +1994,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-core"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bb6bc7c43c2e00e24ce01cf274de91fd0c2adb9f0b2b1b6e9b1bd853e64f772"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "bon",
  "darling",
@@ -2016,8 +2013,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0853ba7711273198008b9d35bdeeb7f1d86553be5481658cba5fbf39a25002cc"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "darling",
  "es-fluent-core",
@@ -2033,8 +2029,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-generate"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5550c3b4eaa56c5a084bdfcffc3427538b12a1194b864b4ddee7e1eafd9c9634"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "clap",
  "es-fluent-core",
@@ -2047,8 +2042,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-sc-parser"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f52f5ee6791aed29745ebf768cc381da6ad3ac0b9930405a6419411a180bf89d"
+source = "git+https://github.com/stayhydated/es-fluent.git?branch=define-self#bd6a6cb977255a9fb6396c0ce2311a4a495e5a5a"
 dependencies = [
  "bon",
  "darling",

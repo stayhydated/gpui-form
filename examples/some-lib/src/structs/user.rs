@@ -24,7 +24,7 @@ pub enum EnumCountry {
 
 #[derive(Clone, Debug, Default, EsFluent, GpuiForm, Validate)]
 #[fluent(display = "std")]
-#[fluent(keys = ["Description", "Label"])]
+#[fluent(this, keys = ["Description", "Label"])]
 pub struct User {
     #[gpui_form(component(input))]
     #[garde(length(min = 3, max = 50))]
