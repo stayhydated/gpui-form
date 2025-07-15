@@ -151,8 +151,8 @@ fn layout(data: &GpuiFormShape) -> syn::File {
       #focusable_cycle_tokens
 
       impl Story for #struct_name_form_ident {
-          fn title() -> &'static str {
-              #struct_name_str
+          fn title() -> String {
+              #struct_name_ident::this_ftl()
           }
 
           fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {

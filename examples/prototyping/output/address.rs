@@ -50,8 +50,8 @@ impl FocusableCycle for AddressForm {
     }
 }
 impl Story for AddressForm {
-    fn title() -> &'static str {
-        "Address"
+    fn title() -> String {
+        Address::this_ftl()
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         Self::view(window, cx, Address::default())

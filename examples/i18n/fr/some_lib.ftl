@@ -1,3 +1,7 @@
+## Address
+
+address = Adresse
+
 ## AddressDescriptionFtl
 
 address_description_ftl-dynamic_country = Pays dynamique (Déterminé lors de l'exécution)
@@ -21,6 +25,10 @@ enum_country-UnitedStates = États-Unis
 prefered_language-Chinese = Chinois
 prefered_language-English = Anglais
 prefered_language-French = Français
+
+## User
+
+user = Utilisateur
 
 ## UserDescriptionFtl
 

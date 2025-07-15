@@ -1,11 +1,17 @@
+## Address
+
+address = Address
+
 ## AddressDescriptionFtl
 
+address_description_ftl = Address Description Ftl
 address_description_ftl-dynamic_country = Dynamic Country (Determined at runtime)
 address_description_ftl-skip_me = Skip Me (For internal use only)
 address_description_ftl-street = Street (Street address of the user)
 
 ## AddressLabelFtl
 
+address_label_ftl = Address Label Ftl
 address_label_ftl-dynamic_country = Dynamic Country
 address_label_ftl-skip_me = Skip Me
 address_label_ftl-street = Street
@@ -22,8 +28,13 @@ prefered_language-Chinese = Chinese
 prefered_language-English = English
 prefered_language-French = French
 
+## User
+
+user = User
+
 ## UserDescriptionFtl
 
+user_description_ftl = User Description Ftl
 user_description_ftl-age = Age (User's age in years)
 user_description_ftl-balance = Balance (User's account balance)
 user_description_ftl-birth_date = Birth Date (User's date of birth)
@@ -37,6 +48,7 @@ user_description_ftl-username = Username (User's unique username)
 
 ## UserLabelFtl
 
+user_label_ftl = User Label Ftl
 user_label_ftl-age = Age
 user_label_ftl-balance = Balance
 user_label_ftl-birth_date = Birth Date

@@ -1,3 +1,7 @@
+## Address
+
+address = 地址
+
 ## AddressDescriptionFtl
 
 address_description_ftl-dynamic_country = 动态国家/地区 (运行时确定)
@@ -21,6 +25,10 @@ enum_country-UnitedStates = 美国
 prefered_language-Chinese = 中文
 prefered_language-English = 英语
 prefered_language-French = 法语
+
+## User
+
+user = 用户
 
 ## UserDescriptionFtl
 
