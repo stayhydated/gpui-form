@@ -22,12 +22,14 @@ use std::str::FromStr;
 use story_container::story::Story;
 actions!(user_story, [Tab, TabPrev]);
 const CONTEXT: &str = "UserForm";
+#[story_container::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
+#[story_container::story]
 pub struct UserForm {
     original_data: Arc<User>,
     current_data: UserFormValueHolder,
@@ -54,7 +56,7 @@ impl FocusableCycle for UserForm {
             .to_vec()
     }
 }
-impl Story for UserForm {
+impl story_container::Story for UserForm {
     fn title() -> String {
         User::this_ftl()
     }

@@ -18,18 +18,16 @@ use gpui_component::{
 use rust_decimal::Decimal;
 use some_lib::structs::address::*;
 use std::sync::{Arc, Mutex};
-use story_container::Story;
-use story_container::{story, story_init};
 actions!(yes_story, [Tab, TabPrev]);
 const CONTEXT: &str = "YesForm";
-#[story_init]
+#[story_container::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
-#[story]
+#[story_container::story]
 pub struct AddressForm {
     original_data: Arc<Address>,
     current_data: AddressFormValueHolder,
@@ -51,7 +49,7 @@ impl FocusableCycle for AddressForm {
         .to_vec()
     }
 }
-impl Story for AddressForm {
+impl story_container::Story for AddressForm {
     fn title() -> String {
         Address::this_ftl()
     }
