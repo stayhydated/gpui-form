@@ -13,10 +13,10 @@ pub fn story(_args: TokenStream, input: TokenStream) -> TokenStream {
         #input_struct
 
         inventory::submit! {
-            ::story_container_core::registry::StoryEntry {
+            ::story_container::__registry::StoryEntry {
                 name: #struct_name_str,
                 create_fn: |window, cx| {
-                    ::story_container_core::story::StoryContainer::panel::<#struct_name>(window, cx)
+                    ::story_container::StoryContainer::panel::<#struct_name>(window, cx)
                 },
             }
         }
@@ -35,7 +35,7 @@ pub fn story_init(_args: TokenStream, input: TokenStream) -> TokenStream {
         #input_fn
 
         inventory::submit! {
-            ::story_container_core::registry::::InitEntry {
+            ::story_container::__registry::InitEntry {
                 init_fn: #fn_name,
             }
         }
@@ -46,15 +46,20 @@ pub fn story_init(_args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro]
 pub fn story_registry(_input: TokenStream) -> TokenStream {
-    inventory::collect!(story_container_core::registry::StoryEntry);
-    inventory::collect!(story_container_core::registry::InitEntry);
-
-    let init_fn = story_container_core::registry::generate_init();
-    let stories_fn = story_container_core::registry::generate_stories();
-
     let expanded = quote! {
-        #init_fn
-        #stories_fn
+        pub fn init(cx: &mut ::gpui::App) {
+            for entry in inventory::iter::<::story_container::__registry::InitEntry> {
+                (entry.init_fn)(cx);
+            }
+        }
+
+        pub fn generate_stories(window: &mut ::gpui::Window, cx: &mut ::gpui::App) -> Vec<::gpui::Entity<::story_container::StoryContainer>> {
+            let mut stories = Vec::new();
+            for entry in inventory::iter::<::story_container::__registry::StoryEntry> {
+                stories.push((entry.create_fn)(window, cx));
+            }
+            stories
+        }
     };
 
     expanded.into()

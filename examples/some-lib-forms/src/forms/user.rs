@@ -19,8 +19,8 @@ use rust_decimal::Decimal;
 use some_lib::structs::user::*;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use story_container::story::Story;
-use story_container_macros::{story, story_init};
+use story_container::Story;
+use story_container::{story, story_init};
 actions!(user_story, [Tab, TabPrev]);
 const CONTEXT: &str = "UserForm";
 #[story_init]

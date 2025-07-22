@@ -18,8 +18,8 @@ use gpui_component::{
 use rust_decimal::Decimal;
 use some_lib::structs::address::*;
 use std::sync::{Arc, Mutex};
-use story_container::story::Story;
-use story_container_macros::{story, story_init};
+use story_container::Story;
+use story_container::{story, story_init};
 actions!(yes_story, [Tab, TabPrev]);
 const CONTEXT: &str = "YesForm";
 #[story_init]

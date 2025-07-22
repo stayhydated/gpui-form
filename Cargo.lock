@@ -5953,6 +5953,7 @@ dependencies = [
  "i18n-embed",
  "i18n-embed-fl",
  "i18n-manager",
+ "inventory",
  "proc-macro2",
  "quote",
  "rust-embed",
