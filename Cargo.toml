@@ -8,6 +8,7 @@ members = [
   "crates/gpui-form-internal-macros",
   "crates/gpui-form-prototyping-core",
   "crates/story-container",
+  "crates/story-container-core",
   "crates/story-container-macros",
   "crates/num-regex",
   "examples/some-lib",

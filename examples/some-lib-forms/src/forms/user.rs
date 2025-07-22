@@ -19,15 +19,18 @@ use rust_decimal::Decimal;
 use some_lib::structs::user::*;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use story_container::story::Story;
+use story_container::Story;
+use story_container::{story, story_init};
 actions!(user_story, [Tab, TabPrev]);
 const CONTEXT: &str = "UserForm";
+#[story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
+#[story]
 pub struct UserForm {
     original_data: Arc<User>,
     current_data: UserFormValueHolder,

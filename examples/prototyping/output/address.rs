@@ -22,12 +22,14 @@ use std::str::FromStr;
 use story_container::story::Story;
 actions!(address_story, [Tab, TabPrev]);
 const CONTEXT: &str = "AddressForm";
+#[story_container::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
+#[story_container::story]
 pub struct AddressForm {
     original_data: Arc<Address>,
     current_data: AddressFormValueHolder,
@@ -49,7 +51,7 @@ impl FocusableCycle for AddressForm {
             .to_vec()
     }
 }
-impl Story for AddressForm {
+impl story_container::Story for AddressForm {
     fn title() -> String {
         Address::this_ftl()
     }

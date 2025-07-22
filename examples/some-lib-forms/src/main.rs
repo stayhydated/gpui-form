@@ -8,11 +8,11 @@ fn main() {
 
     app.run(move |app_cx| {
         gpui_component::init(app_cx);
-        story_container::story::init(app_cx);
+        story_container::init(app_cx);
         forms::init(app_cx);
         app_cx.activate(true);
 
-        story_container::story::create_new_window(
+        story_container::create_new_window(
             &format!("{} - Stories", env!("CARGO_PKG_NAME")),
             move |window, cx| {
                 let all_stories = forms::generate_stories(window, cx);

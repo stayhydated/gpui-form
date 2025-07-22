@@ -13,7 +13,7 @@ use std::{fs, path::Path};
 use some_lib::*;
 
 fn main() {
-    let output_dir = Path::new("output");
+    let output_dir = &Path::new(env!("CARGO_MANIFEST_DIR")).join("output");
     fs::create_dir_all(output_dir).expect("Failed to create output directory");
     println!("Generating forms in: {}", output_dir.display());
 
@@ -127,6 +127,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
       const CONTEXT: &str = #context_str;
 
+      #[story_container::story_init]
       pub fn init(cx: &mut App) {
           cx.bind_keys([
               KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
@@ -134,6 +135,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
           ])
       }
 
+      #[story_container::story]
       pub struct #struct_name_form_ident {
           original_data: Arc<#struct_name_ident>,
           current_data: #struct_name_uw_ident,
@@ -150,7 +152,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
       #focusable_cycle_tokens
 
-      impl Story for #struct_name_form_ident {
+      impl story_container::Story for #struct_name_form_ident {
           fn title() -> String {
               #struct_name_ident::this_ftl()
           }
