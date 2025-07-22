@@ -10,8 +10,10 @@ proc-macro = true
 
 [dependencies]
 heck = { workspace = true }
+inventory = { workspace = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
+story-container-core = { path = "../story-container-core" }
 syn = { features = [ "full" ], workspace = true }
 
 [lints]

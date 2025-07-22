@@ -14,6 +14,7 @@ garde = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { features = [ "derive" ], workspace = true }
+inventory = { workspace = true }
 paste = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }

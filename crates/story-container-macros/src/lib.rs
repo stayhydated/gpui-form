@@ -1,97 +1,60 @@
-use heck::ToPascalCase as _;
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote};
-use std::fs;
-use std::path::PathBuf;
-use syn::{File, Item};
+use quote::quote;
+use syn::{ItemFn, ItemStruct, parse_macro_input};
 
-#[proc_macro]
-pub fn storybook(input: TokenStream) -> TokenStream {
-    let suffix = if input.is_empty() {
-        panic!("suffix parameter is required, e.g., storybook!(\"Form\")")
-    } else {
-        let input_str = input.to_string();
-        let trimmed = input_str.trim_matches('"');
-        trimmed.to_string()
-    };
-
-    let span = proc_macro::Span::call_site();
-    let file_path = PathBuf::from(span.file());
-
-    let dir_path = match file_path.parent() {
-        Some(path) => path,
-        None => {
-            return syn::Error::new(
-                proc_macro2::Span::call_site(),
-                "Could not determine parent directory",
-            )
-            .to_compile_error()
-            .into();
-        },
-    };
-
-    let mod_rs_path = dir_path.join("mod.rs");
-    let mod_rs_content = match fs::read_to_string(&mod_rs_path) {
-        Ok(content) => content,
-        Err(e) => {
-            return syn::Error::new(
-                proc_macro2::Span::call_site(),
-                format!("Failed to read mod.rs at {:?}: {}", mod_rs_path, e),
-            )
-            .to_compile_error()
-            .into();
-        },
-    };
-
-    let ast: File = match syn::parse_file(&mod_rs_content) {
-        Ok(file) => file,
-        Err(e) => {
-            return syn::Error::new(
-                proc_macro2::Span::call_site(),
-                format!("Failed to parse mod.rs: {}", e),
-            )
-            .to_compile_error()
-            .into();
-        },
-    };
-
-    let mut module_names = Vec::new();
-    for item in ast.items {
-        if let Item::Mod(item_mod) = item {
-            module_names.push(item_mod.ident.to_string());
-        }
-    }
-
-    module_names.sort();
-
-    let init_calls: Vec<TokenStream2> = module_names
-        .iter()
-        .map(|name| {
-            let ident = format_ident!("{}", name);
-            quote! { #ident::init(cx) }
-        })
-        .collect();
-
-    let story_calls: Vec<TokenStream2> = module_names
-        .iter()
-        .map(|name| {
-            let ident = format_ident!("{}", name);
-            let form_ident = format_ident!("{}{}", ident.to_string().to_pascal_case(), suffix);
-            quote! { ::story_container::story::StoryContainer::panel::<#ident::#form_ident>(window, cx) }
-        })
-        .collect();
+/// Attribute macro to register a story struct
+#[proc_macro_attribute]
+pub fn story(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_struct = parse_macro_input!(input as ItemStruct);
+    let struct_name = &input_struct.ident;
+    let struct_name_str = struct_name.to_string();
 
     let expanded = quote! {
-        pub fn init(cx: &mut gpui::App) {
-          #(#init_calls;)*
-        }
+        #input_struct
 
-        pub fn generate_stories(window: &mut ::gpui::Window, cx: &mut ::gpui::App) -> Vec<gpui::Entity<story_container::story::StoryContainer>> {
-            vec![
-                #(#story_calls,)*
-            ]
+        inventory::submit! {
+            ::story_container_core::registry::StoryEntry {
+                name: #struct_name_str,
+                create_fn: |window, cx| {
+                    ::story_container_core::story::StoryContainer::panel::<#struct_name>(window, cx)
+                },
+            }
         }
+    };
+
+    expanded.into()
+}
+
+/// Attribute macro to register an init function
+#[proc_macro_attribute]
+pub fn story_init(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(input as ItemFn);
+    let fn_name = &input_fn.sig.ident;
+
+    let expanded = quote! {
+        #input_fn
+
+        inventory::submit! {
+            ::story_container_core::registry::::InitEntry {
+                init_fn: #fn_name,
+            }
+        }
+    };
+
+    expanded.into()
+}
+
+#[proc_macro]
+pub fn story_registry(_input: TokenStream) -> TokenStream {
+    inventory::collect!(story_container_core::registry::StoryEntry);
+    inventory::collect!(story_container_core::registry::InitEntry);
+
+    let init_fn = story_container_core::registry::generate_init();
+    let stories_fn = story_container_core::registry::generate_stories();
+
+    let expanded = quote! {
+        #init_fn
+        #stories_fn
     };
 
     expanded.into()

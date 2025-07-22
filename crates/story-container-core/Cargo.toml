@@ -1,13 +1,11 @@
 [package]
-name = "story-container"
-version = "0.1.0"
+name = "story-container-core"
 edition.workspace = true
-publish = false
-license-file = "LICENSE-APACHE"
-
-[features]
-default = [  ]
-macros = [ "dep:story-container-macros" ]
+license.workspace = true
+publish.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
@@ -16,11 +14,11 @@ gpui-component = { workspace = true }
 i18n-embed = { features = [ "fluent-system", "desktop-requester" ], workspace = true }
 i18n-embed-fl = { workspace = true }
 i18n-manager = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
 rust-embed = { workspace = true }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
-story-container-core = { path = "../story-container-core" }
-story-container-macros = { optional = true, path = "../story-container-macros" }
 tracing-subscriber = { features = [ "env-filter" ], workspace = true }
 
 [lints]

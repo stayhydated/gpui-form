@@ -12,7 +12,7 @@ members = [
   "crates/num-regex",
   "examples/some-lib",
   "examples/some-lib-forms",
-  "examples/prototyping",
+  "examples/prototyping", "crates/story-container-core",
 ]
 resolver = "3"
 

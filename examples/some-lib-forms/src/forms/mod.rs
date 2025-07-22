@@ -1,4 +1,4 @@
 pub mod address;
 pub mod user;
 
-story_container::storybook!("Form");
+story_container_macros::story_registry!();

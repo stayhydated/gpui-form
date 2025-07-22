@@ -19,14 +19,17 @@ use rust_decimal::Decimal;
 use some_lib::structs::address::*;
 use std::sync::{Arc, Mutex};
 use story_container::story::Story;
+use story_container_macros::{story, story_init};
 actions!(yes_story, [Tab, TabPrev]);
 const CONTEXT: &str = "YesForm";
+#[story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
+#[story]
 pub struct AddressForm {
     original_data: Arc<Address>,
     current_data: AddressFormValueHolder,

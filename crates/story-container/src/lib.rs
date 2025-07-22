@@ -1,7 +1,4 @@
-mod assets;
-pub mod i18n;
-pub mod story;
-pub mod title_bar;
+use story_container_core;
 
 #[cfg(feature = "macros")]
 pub use story_container_macros::*;

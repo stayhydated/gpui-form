@@ -5875,6 +5875,7 @@ dependencies = [
  "gpui",
  "gpui-component",
  "gpui-form",
+ "inventory",
  "paste",
  "rust_decimal",
  "some-lib",
@@ -5937,7 +5938,26 @@ dependencies = [
  "rust-embed",
  "serde",
  "serde_json",
+ "story-container-core",
  "story-container-macros",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "story-container-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "gpui-component",
+ "i18n-embed",
+ "i18n-embed-fl",
+ "i18n-manager",
+ "proc-macro2",
+ "quote",
+ "rust-embed",
+ "serde",
+ "serde_json",
  "tracing-subscriber",
 ]
 
@@ -5946,8 +5966,10 @@ name = "story-container-macros"
 version = "0.1.0"
 dependencies = [
  "heck 0.5.0",
+ "inventory",
  "proc-macro2",
  "quote",
+ "story-container-core",
  "syn 2.0.104",
 ]
 
