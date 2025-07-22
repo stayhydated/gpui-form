@@ -14,11 +14,11 @@ garde = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { features = [ "derive" ], workspace = true }
+gpui-storybook = { features = [ "macros" ], workspace = true }
 inventory = { workspace = true }
 paste = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
-story-container = { features = [ "macros" ], path = "../../crates/story-container" }
 unwrapped = { workspace = true }
 
 [lints]
