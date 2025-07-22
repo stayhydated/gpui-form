@@ -117,7 +117,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
       use rust_decimal::Decimal;
       use std::sync::{Arc, Mutex};
       use std::str::FromStr;
-      use story_container::story::Story;
+      use gpui_storybook::story::Story;
     };
 
     let layout_tokens = quote! {
@@ -127,7 +127,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
       const CONTEXT: &str = #context_str;
 
-      #[story_container::story_init]
+      #[gpui_storybook::story_init]
       pub fn init(cx: &mut App) {
           cx.bind_keys([
               KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
@@ -135,7 +135,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
           ])
       }
 
-      #[story_container::story]
+      #[gpui_storybook::story]
       pub struct #struct_name_form_ident {
           original_data: Arc<#struct_name_ident>,
           current_data: #struct_name_uw_ident,
@@ -152,7 +152,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
       #focusable_cycle_tokens
 
-      impl story_container::Story for #struct_name_form_ident {
+      impl gpui_storybook::Story for #struct_name_form_ident {
           fn title() -> String {
               #struct_name_ident::this_ftl()
           }

@@ -1,35 +1,35 @@
-use some_lib::structs::address::*;
 use gpui::{
-    App, AppContext, Context, Entity, FocusHandle, Focusable, InteractiveElement,
-    IntoElement, KeyBinding, ParentElement as _, Render, Styled, Subscription, Window,
-    actions,
+    App, AppContext, Context, Entity, FocusHandle, Focusable, InteractiveElement, IntoElement,
+    KeyBinding, ParentElement as _, Render, Styled, Subscription, Window, actions,
 };
 use gpui_component::{
-    AxisExt, FocusableCycle, Selectable, Sizable, Size, button::{Button, ButtonGroup},
-    checkbox::Checkbox, date_picker::{DatePicker, DatePickerEvent, DatePickerState},
+    AxisExt, FocusableCycle, Selectable, Sizable, Size,
+    button::{Button, ButtonGroup},
+    checkbox::Checkbox,
+    date_picker::{DatePicker, DatePickerEvent, DatePickerState},
     divider::Divider,
     dropdown::{Dropdown, DropdownEvent, DropdownItem, DropdownState, SearchableVec},
     form::{form_field, v_form},
     h_flex,
-    input::{
-        InputEvent, InputState, NumberInput, NumberInputEvent, StepAction, TextInput,
-    },
-    switch::Switch, v_flex,
+    input::{InputEvent, InputState, NumberInput, NumberInputEvent, StepAction, TextInput},
+    switch::Switch,
+    v_flex,
 };
+use gpui_storybook::story::Story;
 use rust_decimal::Decimal;
-use std::sync::{Arc, Mutex};
+use some_lib::structs::address::*;
 use std::str::FromStr;
-use story_container::story::Story;
+use std::sync::{Arc, Mutex};
 actions!(address_story, [Tab, TabPrev]);
 const CONTEXT: &str = "AddressForm";
-#[story_container::story_init]
+#[gpui_storybook::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
-#[story_container::story]
+#[gpui_storybook::story]
 pub struct AddressForm {
     original_data: Arc<Address>,
     current_data: AddressFormValueHolder,
@@ -48,10 +48,10 @@ impl FocusableCycle for AddressForm {
             self.fields.street_input.focus_handle(cx),
             self.fields.dynamic_country_dropdown.focus_handle(cx),
         ]
-            .to_vec()
+        .to_vec()
     }
 }
-impl story_container::Story for AddressForm {
+impl gpui_storybook::Story for AddressForm {
     fn title() -> String {
         Address::this_ftl()
     }
@@ -60,11 +60,7 @@ impl story_container::Story for AddressForm {
     }
 }
 impl AddressForm {
-    pub fn view(
-        window: &mut Window,
-        cx: &mut App,
-        original_data: Address,
-    ) -> Entity<Self> {
+    pub fn view(window: &mut Window, cx: &mut App, original_data: Address) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx, original_data))
     }
     fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
@@ -83,8 +79,8 @@ impl AddressForm {
         match event {
             InputEvent::Change(text) => {
                 self.current_data.street = text.to_owned().into();
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
     fn on_dynamic_country_dropdown_event(
@@ -99,15 +95,18 @@ impl AddressForm {
                 if let Some(value) = value {
                     self.current_data.dynamic_country = value.clone().into();
                 }
-            }
+            },
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>, original_data: Address) -> Self {
         let street_input = cx.new(|cx| AddressFormComponents::street_input(window, cx));
         let _subscriptions = vec![
-            cx.subscribe_in(& street_input, window, Self::on_street_input_event), cx
-            .subscribe_in(& dynamic_country_dropdown, window,
-            Self::on_dynamic_country_dropdown_event)
+            cx.subscribe_in(&street_input, window, Self::on_street_input_event),
+            cx.subscribe_in(
+                &dynamic_country_dropdown,
+                window,
+                Self::on_dynamic_country_dropdown_event,
+            ),
         ];
         Self {
             original_data: Arc::new(original_data.clone()),
@@ -144,9 +143,7 @@ impl Render for AddressForm {
                     .child(
                         form_field()
                             .label(AddressLabelFtl::DynamicCountry.to_string())
-                            .description(
-                                AddressDescriptionFtl::DynamicCountry.to_string(),
-                            )
+                            .description(AddressDescriptionFtl::DynamicCountry.to_string())
                             .child(Dropdown::new(&self.fields.dynamic_country_dropdown)),
                     ),
             )

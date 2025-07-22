@@ -2931,6 +2931,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpui-storybook"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#2dc32e3f39d4cf44a6f12aae3f9c8b302db43640"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "gpui-component",
+ "gpui-storybook-core",
+ "gpui-storybook-macros",
+ "i18n-embed",
+ "i18n-embed-fl",
+ "i18n-manager",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "gpui-storybook-core"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#2dc32e3f39d4cf44a6f12aae3f9c8b302db43640"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "gpui-component",
+ "i18n-embed",
+ "i18n-embed-fl",
+ "i18n-manager",
+ "inventory",
+ "proc-macro2",
+ "quote",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "gpui-storybook-macros"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#2dc32e3f39d4cf44a6f12aae3f9c8b302db43640"
+dependencies = [
+ "gpui-storybook-core",
+ "heck 0.5.0",
+ "inventory",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "gpui_macros"
 version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed.git#1cadff931122fb882b166433b54681fdcba0a3db"
@@ -3170,6 +3222,7 @@ dependencies = [
 [[package]]
 name = "i18n-manager"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#2dc32e3f39d4cf44a6f12aae3f9c8b302db43640"
 dependencies = [
  "anyhow",
  "i18n-embed",
@@ -5853,13 +5906,13 @@ dependencies = [
  "gpui",
  "gpui-component",
  "gpui-form",
+ "gpui-storybook",
  "i18n-embed",
  "i18n-embed-fl",
  "i18n-manager",
  "inventory",
  "rust-embed",
  "rust_decimal",
- "story-container",
  "strum 0.27.1",
  "unwrapped",
 ]
@@ -5875,11 +5928,11 @@ dependencies = [
  "gpui",
  "gpui-component",
  "gpui-form",
+ "gpui-storybook",
  "inventory",
  "paste",
  "rust_decimal",
  "some-lib",
- "story-container",
  "unwrapped",
 ]
 
@@ -5924,55 +5977,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "story-container"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "gpui",
- "gpui-component",
- "i18n-embed",
- "i18n-embed-fl",
- "i18n-manager",
- "rust-embed",
- "serde",
- "serde_json",
- "story-container-core",
- "story-container-macros",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "story-container-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "gpui",
- "gpui-component",
- "i18n-embed",
- "i18n-embed-fl",
- "i18n-manager",
- "inventory",
- "proc-macro2",
- "quote",
- "rust-embed",
- "serde",
- "serde_json",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "story-container-macros"
-version = "0.1.0"
-dependencies = [
- "heck 0.5.0",
- "inventory",
- "proc-macro2",
- "quote",
- "story-container-core",
- "syn 2.0.104",
-]
 
 [[package]]
 name = "streaming-iterator"

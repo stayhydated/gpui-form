@@ -15,12 +15,12 @@ use gpui_component::{
     switch::Switch,
     v_flex,
 };
+use gpui_storybook::Story;
+use gpui_storybook::{story, story_init};
 use rust_decimal::Decimal;
 use some_lib::structs::user::*;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use story_container::Story;
-use story_container::{story, story_init};
 actions!(user_story, [Tab, TabPrev]);
 const CONTEXT: &str = "UserForm";
 #[story_init]

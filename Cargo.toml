@@ -1,15 +1,11 @@
 [workspace]
 default-members = [ "examples/some-lib-forms" ]
 members = [
-  "crates/i18n-manager",
   "crates/gpui-form",
   "crates/gpui-form-core",
   "crates/gpui-form-derive",
   "crates/gpui-form-internal-macros",
   "crates/gpui-form-prototyping-core",
-  "crates/story-container",
-  "crates/story-container-core",
-  "crates/story-container-macros",
   "crates/num-regex",
   "examples/some-lib",
   "examples/some-lib-forms",
@@ -49,10 +45,11 @@ gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.1.0" }
 gpui-form-internal-macros = { path = "crates/gpui-form-internal-macros", version = "0.1.0" }
 gpui-form-internal-paths = { path = "crates/gpui-form-internal-paths", version = "0.1.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.1.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook.git" }
 heck = "0.5.0"
 i18n-embed = "0.15.3"
 i18n-embed-fl = "0.9.3"
-i18n-manager = { path = "crates/i18n-manager", version = "0.1.0" }
+i18n-manager = { git = "https://github.com/stayhydated/gpui-storybook.git" }
 inventory = "0.3.20"
 itertools = "0.14.0"
 log = "0.4.26"
@@ -69,8 +66,6 @@ rust-embed = "8.6.0"
 rust_decimal = "1.36.0"
 serde = "1.0.219"
 serde_json = "1.0.140"
-story-container = { path = "crates/story-container", version = "0.1.0" }
-story-container-macros = { path = "crates/story-container-macros", version = "0.1.0" }
 strum = "0.27.1"
 syn = "2.0.98"
 thiserror = "2.0.11"

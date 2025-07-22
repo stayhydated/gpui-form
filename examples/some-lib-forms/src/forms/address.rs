@@ -20,14 +20,14 @@ use some_lib::structs::address::*;
 use std::sync::{Arc, Mutex};
 actions!(yes_story, [Tab, TabPrev]);
 const CONTEXT: &str = "YesForm";
-#[story_container::story_init]
+#[gpui_storybook::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
-#[story_container::story]
+#[gpui_storybook::story]
 pub struct AddressForm {
     original_data: Arc<Address>,
     current_data: AddressFormValueHolder,
@@ -49,7 +49,7 @@ impl FocusableCycle for AddressForm {
         .to_vec()
     }
 }
-impl story_container::Story for AddressForm {
+impl gpui_storybook::Story for AddressForm {
     fn title() -> String {
         Address::this_ftl()
     }
