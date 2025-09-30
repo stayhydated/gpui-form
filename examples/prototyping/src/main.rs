@@ -102,7 +102,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
       use rust_decimal::Decimal;
       use std::sync::{Arc, Mutex};
       use std::str::FromStr;
-      use gpui_storybook::story::Story;
+      use gpui_storybook::Story;
     };
 
     let layout_tokens = quote! {
@@ -150,14 +150,6 @@ fn layout(data: &GpuiFormShape) -> syn::File {
               cx.new(|cx| Self::new(window, cx, original_data))
           }
 
-          fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
-              self.cycle_focus(true, window, cx);
-          }
-
-          fn tab_prev(&mut self, _: &TabPrev, window: &mut Window, cx: &mut Context<Self>) {
-              self.cycle_focus(false, window, cx);
-          }
-
           #event_handlers_tokens
 
           fn new(window: &mut Window, cx: &mut Context<Self>, original_data: #struct_name_ident) -> Self {
@@ -182,8 +174,6 @@ fn layout(data: &GpuiFormShape) -> syn::File {
               v_flex()
                   .key_context(CONTEXT)
                   .id(#form_id_literal)
-                  .on_action(cx.listener(Self::tab))
-                  .on_action(cx.listener(Self::tab_prev))
                   .size_full()
                   .p_4()
                   .justify_start()

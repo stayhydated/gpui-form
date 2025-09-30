@@ -3,7 +3,7 @@ use gpui::{
     KeyBinding, ParentElement as _, Render, Styled, Subscription, Window, actions,
 };
 use gpui_component::{
-    AxisExt, FocusableCycle, Selectable, Sizable, Size,
+    AxisExt, Selectable, Sizable, Size,
     button::{Button, ButtonGroup},
     checkbox::Checkbox,
     date_picker::{DatePicker, DatePickerEvent, DatePickerState},
@@ -16,21 +16,20 @@ use gpui_component::{
     v_flex,
 };
 use gpui_storybook::Story;
-use gpui_storybook::{story, story_init};
 use rust_decimal::Decimal;
 use some_lib::structs::user::*;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 actions!(user_story, [Tab, TabPrev]);
 const CONTEXT: &str = "UserForm";
-#[story_init]
+#[gpui_storybook::story_init]
 pub fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
         KeyBinding::new("tab", Tab, Some(CONTEXT)),
     ])
 }
-#[story]
+#[gpui_storybook::story]
 pub struct UserForm {
     original_data: Arc<User>,
     current_data: UserFormValueHolder,
@@ -43,21 +42,7 @@ impl Focusable for UserForm {
         self.focus_handle.clone()
     }
 }
-impl FocusableCycle for UserForm {
-    fn cycle_focus_handles(&self, _: &mut Window, cx: &mut App) -> Vec<FocusHandle> {
-        [
-            self.fields.username_input.focus_handle(cx),
-            self.fields.email_input.focus_handle(cx),
-            self.fields.age_number_input.focus_handle(cx),
-            self.fields.balance_number_input.focus_handle(cx),
-            self.fields.preferred_dropdown.focus_handle(cx),
-            self.fields.country_dropdown.focus_handle(cx),
-            self.fields.birth_date_date_picker.focus_handle(cx),
-        ]
-        .to_vec()
-    }
-}
-impl Story for UserForm {
+impl gpui_storybook::Story for UserForm {
     fn title() -> String {
         User::this_ftl()
     }
@@ -69,21 +54,16 @@ impl UserForm {
     pub fn view(window: &mut Window, cx: &mut App, original_data: User) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx, original_data))
     }
-    fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
-        self.cycle_focus(true, window, cx);
-    }
-    fn tab_prev(&mut self, _: &TabPrev, window: &mut Window, cx: &mut Context<Self>) {
-        self.cycle_focus(false, window, cx);
-    }
     fn on_username_input_event(
         &mut self,
-        _this: &Entity<InputState>,
+        state: &Entity<InputState>,
         event: &InputEvent,
-        _: &mut Window,
-        _: &mut Context<Self>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
         match event {
-            InputEvent::Change(text) => {
+            InputEvent::Change => {
+                let text = state.read(_cx).value();
                 self.current_data.username = text.to_owned().into();
             },
             _ => {},
@@ -91,13 +71,14 @@ impl UserForm {
     }
     fn on_email_input_event(
         &mut self,
-        _this: &Entity<InputState>,
+        state: &Entity<InputState>,
         event: &InputEvent,
-        _: &mut Window,
-        _: &mut Context<Self>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
         match event {
-            InputEvent::Change(text) => {
+            InputEvent::Change => {
+                let text = state.read(_cx).value();
                 self.current_data.email = text.to_owned().into();
             },
             _ => {},
@@ -105,13 +86,14 @@ impl UserForm {
     }
     fn on_age_input_event(
         &mut self,
-        _this: &Entity<InputState>,
+        state: &Entity<InputState>,
         event: &InputEvent,
-        _: &mut Window,
-        _: &mut Context<Self>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
         match event {
-            InputEvent::Change(text) => {
+            InputEvent::Change => {
+                let text = state.read(_cx).value();
                 if let Ok(value) = text.parse::<u32>() {
                     self.current_data.age = value.into();
                 }
@@ -147,13 +129,14 @@ impl UserForm {
     }
     fn on_balance_input_event(
         &mut self,
-        _this: &Entity<InputState>,
+        state: &Entity<InputState>,
         event: &InputEvent,
-        _: &mut Window,
-        _: &mut Context<Self>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
         match event {
-            InputEvent::Change(text) => {
+            InputEvent::Change => {
+                let text = state.read(_cx).value();
                 if let Ok(value) = text.parse::<Decimal>() {
                     self.current_data.balance = value.into();
                 }
@@ -287,8 +270,6 @@ impl Render for UserForm {
         v_flex()
             .key_context(CONTEXT)
             .id("user-form")
-            .on_action(cx.listener(Self::tab))
-            .on_action(cx.listener(Self::tab_prev))
             .size_full()
             .p_4()
             .justify_start()
