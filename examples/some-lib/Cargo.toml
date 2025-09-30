@@ -14,14 +14,14 @@ gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { features = [ "rust_decimal" ], workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
-i18n-embed = { features = [ "fluent-system", "desktop-requester" ], workspace = true }
-i18n-embed-fl = { workspace = true }
-i18n-manager = { workspace = true }
+es-fluent-manager-core = { workspace = true }
+es-fluent-manager-singleton = { workspace = true }
 inventory = { workspace = true }
 rust-embed = { workspace = true }
 rust_decimal = { workspace = true }
 strum = { workspace = true }
 unwrapped = { workspace = true }
+unic-langid = { workspace = true }
 
 [build-dependencies]
 es-fluent-build = { workspace = true }

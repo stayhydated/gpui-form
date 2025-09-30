@@ -572,15 +572,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "basic-toml"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba62675e8242a4c4e806d12f11d136e626e6c8361d6b829310732241652a178a"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "bindgen"
 version = "0.71.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1185,7 +1176,7 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "indexmap",
  "rustc-hash 2.1.1",
@@ -1436,7 +1427,7 @@ dependencies = [
  "rangemap",
  "rustc-hash 1.1.0",
  "rustybuzz 0.14.1",
- "self_cell 1.2.0",
+ "self_cell",
  "smol_str",
  "swash",
  "sys-locale",
@@ -1664,7 +1655,7 @@ dependencies = [
 [[package]]
 name = "derive_refineable"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1931,13 +1922,13 @@ dependencies = [
 [[package]]
 name = "es-fluent"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "anyhow",
  "es-fluent-derive",
  "es-fluent-manager-core",
- "fluent 0.17.0",
- "fluent-bundle 0.16.0",
+ "fluent",
+ "fluent-bundle",
  "inventory",
  "log",
  "thiserror 2.0.17",
@@ -1947,7 +1938,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-build"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "cargo_metadata",
  "es-fluent-generate",
@@ -1961,7 +1952,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-core"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "bon",
  "darling 0.20.11",
@@ -1980,7 +1971,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-derive"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "darling 0.20.11",
  "es-fluent-core",
@@ -1996,7 +1987,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-generate"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "clap",
  "es-fluent-core",
@@ -2009,10 +2000,10 @@ dependencies = [
 [[package]]
 name = "es-fluent-manager-core"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "anyhow",
- "fluent-bundle 0.16.0",
+ "fluent-bundle",
  "inventory",
  "log",
  "rust-embed",
@@ -2021,9 +2012,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "es-fluent-manager-macros"
+version = "0.1.3"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
+dependencies = [
+ "es-fluent-manager-core",
+ "es-fluent-toml",
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "es-fluent-manager-singleton"
+version = "0.1.3"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
+dependencies = [
+ "es-fluent",
+ "es-fluent-manager-core",
+ "es-fluent-manager-macros",
+ "inventory",
+ "log",
+ "rust-embed",
+ "unic-langid",
+]
+
+[[package]]
 name = "es-fluent-sc-parser"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "bon",
  "darling 0.20.11",
@@ -2039,7 +2057,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-toml"
 version = "0.1.3"
-source = "git+https://github.com/stayhydated/es-fluent.git?branch=move-away-from-i18n-embed#e620d126f28b2fd5561feb1b8499fe185117a720"
+source = "git+https://github.com/stayhydated/es-fluent.git#bc6d32c69dc39a80d9c4e143f81c202c9ad6c685"
 dependencies = [
  "serde",
  "thiserror 2.0.17",
@@ -2186,15 +2204,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "find-crate"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59a98bbaacea1c0eb6a0876280051b892eb73594fd90cf3b20e9c817029c57d2"
-dependencies = [
- "toml 0.5.11",
-]
-
-[[package]]
 name = "find-msvc-tools"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2230,37 +2239,11 @@ checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 
 [[package]]
 name = "fluent"
-version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb74634707bebd0ce645a981148e8fb8c7bccd4c33c652aeffd28bf2f96d555a"
-dependencies = [
- "fluent-bundle 0.15.3",
- "unic-langid",
-]
-
-[[package]]
-name = "fluent"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8137a6d5a2c50d6b0ebfcb9aaa91a28154e0a70605f112d30cb0cd4a78670477"
 dependencies = [
- "fluent-bundle 0.16.0",
- "unic-langid",
-]
-
-[[package]]
-name = "fluent-bundle"
-version = "0.15.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fe0a21ee80050c678013f82edf4b705fe2f26f1f9877593d13198612503f493"
-dependencies = [
- "fluent-langneg",
- "fluent-syntax 0.11.1",
- "intl-memoizer",
- "intl_pluralrules",
- "rustc-hash 1.1.0",
- "self_cell 0.10.3",
- "smallvec",
+ "fluent-bundle",
  "unic-langid",
 ]
 
@@ -2275,7 +2258,7 @@ dependencies = [
  "intl-memoizer",
  "intl_pluralrules",
  "rustc-hash 2.1.1",
- "self_cell 1.2.0",
+ "self_cell",
  "smallvec",
  "unic-langid",
 ]
@@ -2776,7 +2759,7 @@ dependencies = [
 [[package]]
 name = "gpui"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "anyhow",
  "as-raw-xcb-connection",
@@ -2987,16 +2970,13 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#f5aa684df95a71fa787e929ed5af9173de144047"
+source = "git+https://github.com/stayhydated/gpui-storybook.git?branch=use-new-i18n#6e6e45db3ff331154bad268e588ab22f42072a68"
 dependencies = [
  "anyhow",
  "gpui",
  "gpui-component",
  "gpui-storybook-core",
  "gpui-storybook-macros",
- "i18n-embed",
- "i18n-embed-fl",
- "i18n-manager",
  "rust-embed",
  "serde",
  "serde_json",
@@ -3006,27 +2986,29 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#f5aa684df95a71fa787e929ed5af9173de144047"
+source = "git+https://github.com/stayhydated/gpui-storybook.git?branch=use-new-i18n#6e6e45db3ff331154bad268e588ab22f42072a68"
 dependencies = [
  "anyhow",
+ "es-fluent-build",
+ "es-fluent-manager-core",
+ "es-fluent-manager-singleton",
  "gpui",
  "gpui-component",
- "i18n-embed",
- "i18n-embed-fl",
- "i18n-manager",
  "inventory",
+ "log",
  "proc-macro2",
  "quote",
  "rust-embed",
  "serde",
  "serde_json",
  "tracing-subscriber",
+ "unic-langid",
 ]
 
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#f5aa684df95a71fa787e929ed5af9173de144047"
+source = "git+https://github.com/stayhydated/gpui-storybook.git?branch=use-new-i18n#6e6e45db3ff331154bad268e588ab22f42072a68"
 dependencies = [
  "gpui-storybook-core",
  "heck 0.5.0",
@@ -3039,7 +3021,7 @@ dependencies = [
 [[package]]
 name = "gpui_macros"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3230,7 +3212,7 @@ dependencies = [
 [[package]]
 name = "http_client"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3311,83 +3293,6 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "i18n-config"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e06b90c8a0d252e203c94344b21e35a30f3a3a85dc7db5af8f8df9f3e0c63ef"
-dependencies = [
- "basic-toml",
- "log",
- "serde",
- "serde_derive",
- "thiserror 1.0.69",
- "unic-langid",
-]
-
-[[package]]
-name = "i18n-embed"
-version = "0.15.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "669ffc2c93f97e6ddf06ddbe999fcd6782e3342978bb85f7d3c087c7978404c4"
-dependencies = [
- "arc-swap",
- "fluent 0.16.1",
- "fluent-langneg",
- "fluent-syntax 0.11.1",
- "i18n-embed-impl",
- "intl-memoizer",
- "locale_config",
- "log",
- "parking_lot",
- "rust-embed",
- "thiserror 1.0.69",
- "unic-langid",
- "walkdir",
-]
-
-[[package]]
-name = "i18n-embed-fl"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04b2969d0b3fc6143776c535184c19722032b43e6a642d710fa3f88faec53c2d"
-dependencies = [
- "find-crate",
- "fluent 0.16.1",
- "fluent-syntax 0.11.1",
- "i18n-config",
- "i18n-embed",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "strsim",
- "syn 2.0.106",
- "unic-langid",
-]
-
-[[package]]
-name = "i18n-embed-impl"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f2cc0e0523d1fe6fc2c6f66e5038624ea8091b3e7748b5e8e0c84b1698db6c2"
-dependencies = [
- "find-crate",
- "i18n-config",
- "proc-macro2",
- "quote",
- "syn 2.0.106",
-]
-
-[[package]]
-name = "i18n-manager"
-version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#f5aa684df95a71fa787e929ed5af9173de144047"
-dependencies = [
- "anyhow",
- "i18n-embed",
- "inventory",
 ]
 
 [[package]]
@@ -3945,19 +3850,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 
 [[package]]
-name = "locale_config"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08d2c35b16f4483f6c26f0e4e9550717a2f6575bcd6f12a53ff0c490a94a6934"
-dependencies = [
- "lazy_static",
- "objc",
- "objc-foundation",
- "regex",
- "winapi",
-]
-
-[[package]]
 name = "lock_api"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4139,7 +4031,7 @@ dependencies = [
 [[package]]
 name = "media"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -4803,7 +4695,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "perf"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "collections",
  "serde",
@@ -5450,7 +5342,7 @@ dependencies = [
 [[package]]
 name = "refineable"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "derive_refineable",
  "workspace-hack",
@@ -6030,15 +5922,6 @@ dependencies = [
 
 [[package]]
 name = "self_cell"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14e4d63b804dc0c7ec4a1e52bcb63f02c7ac94476755aa579edac21e01f915d"
-dependencies = [
- "self_cell 1.2.0",
-]
-
-[[package]]
-name = "self_cell"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f7d95a54511e0c7be3f51e8867aa8cf35148d7b9445d44de2f943e2b206e749"
@@ -6046,7 +5929,7 @@ checksum = "0f7d95a54511e0c7be3f51e8867aa8cf35148d7b9445d44de2f943e2b206e749"
 [[package]]
 name = "semantic_version"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "anyhow",
  "serde",
@@ -6370,18 +6253,18 @@ dependencies = [
  "chrono",
  "es-fluent",
  "es-fluent-build",
+ "es-fluent-manager-core",
+ "es-fluent-manager-singleton",
  "garde",
  "gpui",
  "gpui-component",
  "gpui-form",
  "gpui-storybook",
- "i18n-embed",
- "i18n-embed-fl",
- "i18n-manager",
  "inventory",
  "rust-embed",
  "rust_decimal",
  "strum 0.27.2",
+ "unic-langid",
  "unwrapped",
 ]
 
@@ -6590,7 +6473,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sum_tree"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "arrayvec",
  "log",
@@ -7054,15 +6937,6 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "toml"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
@@ -7357,7 +7231,6 @@ version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dce1bf08044d4b7a94028c93786f8566047edc11110595914de93362559bc658"
 dependencies = [
- "serde",
  "tinystr",
 ]
 
@@ -7572,7 +7445,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "util"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "anyhow",
  "async-fs 2.2.0",
@@ -7607,7 +7480,7 @@ dependencies = [
 [[package]]
 name = "util_macros"
 version = "0.1.0"
-source = "git+https://github.com/zed-industries/zed.git#35749e99e5eff906bfb38182c1bb6b74d61e85db"
+source = "git+https://github.com/zed-industries/zed.git#df43a2d3b1aa6971ae25a584fee66cea4748f06d"
 dependencies = [
  "perf",
  "quote",

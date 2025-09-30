@@ -31,8 +31,10 @@ crate-paths = "0.1.0"
 darling = "0.20.10"
 derive_more = "2.0.1"
 dotenv = "0.15.0"
-es-fluent = { branch = "move-away-from-i18n-embed", git = "https://github.com/stayhydated/es-fluent.git" }
-es-fluent-build = { branch = "move-away-from-i18n-embed", git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent-manager-core = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent-manager-singleton = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent-build = { git = "https://github.com/stayhydated/es-fluent.git" }
 fluent-bundle = "0.15.3"
 futures = "0.3.31"
 garde = "0.22.0"
@@ -45,7 +47,7 @@ gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.1.0" }
 gpui-form-internal-macros = { path = "crates/gpui-form-internal-macros", version = "0.1.0" }
 gpui-form-internal-paths = { path = "crates/gpui-form-internal-paths", version = "0.1.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.1.0" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook.git" }
+gpui-storybook = { branch = "use-new-i18n", git = "https://github.com/stayhydated/gpui-storybook.git" }
 heck = "0.5.0"
 i18n-embed = "0.15.3"
 i18n-embed-fl = "0.9.3"
@@ -74,6 +76,7 @@ tracing-subscriber = "0.3.19"
 unicode-segmentation = "1.12.0"
 unwrapped = { default-features = false, version = "0.1.1" }
 unwrapped-core = { version = "0.1.1" }
+unic-langid = "0.9.6"
 
 [workspace.lints.rust]
 unexpected_cfgs = { level = "deny" }
