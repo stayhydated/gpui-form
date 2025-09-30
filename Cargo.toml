@@ -1,5 +1,5 @@
 [workspace]
-# default-members = [ "examples/some-lib-forms" ]
+default-members = [ "examples/some-lib-forms" ]
 members = [
   "crates/gpui-form",
   "crates/gpui-form-core",
@@ -7,9 +7,9 @@ members = [
   "crates/gpui-form-internal-macros",
   "crates/gpui-form-prototyping-core",
   "crates/num-regex",
-  # "examples/some-lib",
-  # "examples/some-lib-forms",
-  # "examples/prototyping",
+  "examples/some-lib",
+  "examples/some-lib-forms",
+  "examples/prototyping",
 ]
 resolver = "3"
 

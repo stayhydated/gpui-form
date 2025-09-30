@@ -18,6 +18,7 @@ impl super::ComponentLayout for DropdownComponent {
         let field_name_ident = crate::component_field_name!(name);
 
         use __crate_paths::gpui::{Context, Entity, Window};
+        use __crate_paths::gpui_component::IndexPath;
         use __crate_paths::gpui_component::dropdown::{DropdownState, SearchableVec};
 
         let vec_type = if options.behaviour.searchable {
@@ -38,17 +39,21 @@ impl super::ComponentLayout for DropdownComponent {
             let path = named_index.clone();
             quote! {
               Some(
-                #r#type::iter()
-                  .position(|x| x == #path)
-                  .unwrap()
+                #IndexPath::new(
+                  #r#type::iter()
+                    .position(|x| x == #path)
+                    .unwrap()
+                )
               )
             }
         } else if options.index_default() {
             quote! {
               Some(
-                #r#type::iter()
-                  .position(|x| x == #r#type::default())
-                  .unwrap()
+                #IndexPath::new(
+                  #r#type::iter()
+                    .position(|x| x == #r#type::default())
+                    .unwrap()
+                )
               )
             }
         } else {
