@@ -1,19 +1,3 @@
-## Address
-
-address = 地址
-
-## AddressDescriptionFtl
-
-address_description_ftl-dynamic_country = 动态国家/地区 (运行时确定)
-address_description_ftl-skip_me = 跳过我 (仅供内部使用)
-address_description_ftl-street = 街道 (用户的街道地址)
-
-## AddressLabelFtl
-
-address_label_ftl-dynamic_country = 动态国家/地区
-address_label_ftl-skip_me = 跳过我
-address_label_ftl-street = 街道
-
 ## EnumCountry
 
 enum_country-China = 中国

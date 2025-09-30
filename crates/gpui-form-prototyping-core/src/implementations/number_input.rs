@@ -115,13 +115,14 @@ impl FieldCodeGenerator for NumberInputCodeGenerator {
         let on_input_event_handler = quote! {
             fn #on_input_event_handler_fn_name_ident(
                 &mut self,
-                _this: &Entity<InputState>,
+                state: &Entity<InputState>,
                 event: &InputEvent,
-                _: &mut Window,
-                _: &mut Context<Self>,
+                _window: &mut Window,
+                _cx: &mut Context<Self>,
             ) {
                 match event {
-                    InputEvent::Change(text) => {
+                    InputEvent::Change => {
+                        let text = state.read(_cx).value();
                         if let Ok(value) = text.parse::<#field_type_path>() {
                             self.current_data.#field_name_ident = value.into();
                         }

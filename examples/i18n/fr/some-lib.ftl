@@ -1,19 +1,3 @@
-## Address
-
-address = Adresse
-
-## AddressDescriptionFtl
-
-address_description_ftl-dynamic_country = Pays dynamique (Déterminé lors de l'exécution)
-address_description_ftl-skip_me = Skip Me (Pour usage interne uniquement)
-address_description_ftl-street = Rue (Adresse de l'utilisateur)
-
-## AddressLabelFtl
-
-address_label_ftl-dynamic_country = Pays dynamique
-address_label_ftl-skip_me = Skip Me
-address_label_ftl-street = Rue
-
 ## EnumCountry
 
 enum_country-China = Chine
