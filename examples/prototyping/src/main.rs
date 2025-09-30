@@ -73,21 +73,6 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
     let event_handlers_tokens = adapter.event_handlers().unwrap_or_default();
 
-    let focusable_cycle_tokens = if let Some(focusable_cycle_tokens) = adapter.focusable_cycle() {
-        quote! {
-          impl FocusableCycle for #struct_name_form_ident {
-              fn cycle_focus_handles(&self, _: &mut Window, cx: &mut App) -> Vec<FocusHandle> {
-                  [
-                    #focusable_cycle_tokens
-                  ]
-                  .to_vec()
-              }
-          }
-        }
-    } else {
-        Default::default()
-    };
-
     let action_token = {
         let action_context_ident = format_ident!("{}_story", struct_name_path_qualifier);
         quote! {
@@ -102,7 +87,7 @@ fn layout(data: &GpuiFormShape) -> syn::File {
           KeyBinding, ParentElement as _, Render, Styled, Subscription, Window, actions,
       };
       use gpui_component::{
-          AxisExt, FocusableCycle, Selectable, Sizable, Size,
+          AxisExt, Selectable, Sizable, Size,
           button::{Button, ButtonGroup},
           checkbox::Checkbox,
           date_picker::{DatePicker, DatePickerEvent, DatePickerState},
@@ -149,8 +134,6 @@ fn layout(data: &GpuiFormShape) -> syn::File {
               self.focus_handle.clone()
           }
       }
-
-      #focusable_cycle_tokens
 
       impl gpui_storybook::Story for #struct_name_form_ident {
           fn title() -> String {
