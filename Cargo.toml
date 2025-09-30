@@ -1,5 +1,5 @@
 [workspace]
-default-members = [ "examples/some-lib-forms" ]
+# default-members = [ "examples/some-lib-forms" ]
 members = [
   "crates/gpui-form",
   "crates/gpui-form-core",
@@ -7,9 +7,9 @@ members = [
   "crates/gpui-form-internal-macros",
   "crates/gpui-form-prototyping-core",
   "crates/num-regex",
-  "examples/some-lib",
-  "examples/some-lib-forms",
-  "examples/prototyping",
+  # "examples/some-lib",
+  # "examples/some-lib-forms",
+  # "examples/prototyping",
 ]
 resolver = "3"
 
@@ -31,8 +31,8 @@ crate-paths = "0.1.0"
 darling = "0.20.10"
 derive_more = "2.0.1"
 dotenv = "0.15.0"
-es-fluent = { git = "https://github.com/stayhydated/es-fluent.git" }
-es-fluent-build = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent = { branch = "move-away-from-i18n-embed", git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent-build = { branch = "move-away-from-i18n-embed", git = "https://github.com/stayhydated/es-fluent.git" }
 fluent-bundle = "0.15.3"
 futures = "0.3.31"
 garde = "0.22.0"

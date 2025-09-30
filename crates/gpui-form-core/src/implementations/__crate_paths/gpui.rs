@@ -2,7 +2,7 @@
 /// pub enum `AbsoluteLength`
 pub const AbsoluteLength: crate_paths::Path = crate_paths::Path::new("gpui::AbsoluteLength");
 
-/// pub trait `Action`
+/// pub trait + proc derive `Action`
 pub const Action: crate_paths::Path = crate_paths::Path::new("gpui::Action");
 
 /// pub enum `ActionBuildError`
@@ -81,6 +81,12 @@ pub const Application: crate_paths::Path = crate_paths::Path::new("gpui::Applica
 /// pub enum `ArcCow`
 pub const ArcCow: crate_paths::Path = crate_paths::Path::new("gpui::ArcCow");
 
+/// pub struct `ArenaClearNeeded`
+pub const ArenaClearNeeded: crate_paths::Path = crate_paths::Path::new("gpui::ArenaClearNeeded");
+
+/// pub trait `AsKeystroke`
+pub const AsKeystroke: crate_paths::Path = crate_paths::Path::new("gpui::AsKeystroke");
+
 /// pub trait `Asset`
 pub const Asset: crate_paths::Path = crate_paths::Path::new("gpui::Asset");
 
@@ -110,6 +116,9 @@ pub const Background: crate_paths::Path = crate_paths::Path::new("gpui::Backgrou
 pub const BackgroundExecutor: crate_paths::Path =
     crate_paths::Path::new("gpui::BackgroundExecutor");
 
+/// pub struct `BindingIndex`
+pub const BindingIndex: crate_paths::Path = crate_paths::Path::new("gpui::BindingIndex");
+
 /// pub enum `BorderStyle`
 pub const BorderStyle: crate_paths::Path = crate_paths::Path::new("gpui::BorderStyle");
 
@@ -131,13 +140,16 @@ pub const BoxShadow: crate_paths::Path = crate_paths::Path::new("gpui::BoxShadow
 /// pub struct `Canvas`
 pub const Canvas: crate_paths::Path = crate_paths::Path::new("gpui::Canvas");
 
+/// pub struct `Capslock`
+pub const Capslock: crate_paths::Path = crate_paths::Path::new("gpui::Capslock");
+
 /// pub struct `Cascade`
 pub const Cascade: crate_paths::Path = crate_paths::Path::new("gpui::Cascade");
 
 /// pub struct `CascadeSlot`
 pub const CascadeSlot: crate_paths::Path = crate_paths::Path::new("gpui::CascadeSlot");
 
-/// pub struct `ClickEvent`
+/// pub enum `ClickEvent`
 pub const ClickEvent: crate_paths::Path = crate_paths::Path::new("gpui::ClickEvent");
 
 /// pub enum `ClipboardEntry`
@@ -185,6 +197,10 @@ pub const Decorations: crate_paths::Path = crate_paths::Path::new("gpui::Decorat
 /// pub struct `Deferred`
 pub const Deferred: crate_paths::Path = crate_paths::Path::new("gpui::Deferred");
 
+/// pub struct `DeferredScrollToItem`
+pub const DeferredScrollToItem: crate_paths::Path =
+    crate_paths::Path::new("gpui::DeferredScrollToItem");
+
 /// pub enum `DefiniteLength`
 pub const DefiniteLength: crate_paths::Path = crate_paths::Path::new("gpui::DefiniteLength");
 
@@ -217,6 +233,10 @@ pub const DragMoveEvent: crate_paths::Path = crate_paths::Path::new("gpui::DragM
 
 /// pub struct `Drawable`
 pub const Drawable: crate_paths::Path = crate_paths::Path::new("gpui::Drawable");
+
+/// pub struct `DummyKeyboardMapper`
+pub const DummyKeyboardMapper: crate_paths::Path =
+    crate_paths::Path::new("gpui::DummyKeyboardMapper");
 
 /// pub struct `Edges`
 pub const Edges: crate_paths::Path = crate_paths::Path::new("gpui::Edges");
@@ -297,12 +317,6 @@ pub const FocusOutEvent: crate_paths::Path = crate_paths::Path::new("gpui::Focus
 /// pub trait `Focusable`
 pub const Focusable: crate_paths::Path = crate_paths::Path::new("gpui::Focusable");
 
-/// pub trait `FocusableElement`
-pub const FocusableElement: crate_paths::Path = crate_paths::Path::new("gpui::FocusableElement");
-
-/// pub struct `FocusableWrapper`
-pub const FocusableWrapper: crate_paths::Path = crate_paths::Path::new("gpui::FocusableWrapper");
-
 /// pub struct `Font`
 pub const Font: crate_paths::Path = crate_paths::Path::new("gpui::Font");
 
@@ -334,6 +348,9 @@ pub const FontWeight: crate_paths::Path = crate_paths::Path::new("gpui::FontWeig
 pub const ForegroundExecutor: crate_paths::Path =
     crate_paths::Path::new("gpui::ForegroundExecutor");
 
+/// pub trait `FutureExt`
+pub const FutureExt: crate_paths::Path = crate_paths::Path::new("gpui::FutureExt");
+
 /// pub trait `Global`
 pub const Global: crate_paths::Path = crate_paths::Path::new("gpui::Global");
 
@@ -345,6 +362,15 @@ pub const GlyphId: crate_paths::Path = crate_paths::Path::new("gpui::GlyphId");
 
 /// pub struct `GpuSpecs`
 pub const GpuSpecs: crate_paths::Path = crate_paths::Path::new("gpui::GpuSpecs");
+
+/// pub struct `GpuiBorrow`
+pub const GpuiBorrow: crate_paths::Path = crate_paths::Path::new("gpui::GpuiBorrow");
+
+/// pub struct `GridLocation`
+pub const GridLocation: crate_paths::Path = crate_paths::Path::new("gpui::GridLocation");
+
+/// pub enum `GridPlacement`
+pub const GridPlacement: crate_paths::Path = crate_paths::Path::new("gpui::GridPlacement");
 
 /// pub struct `GroupStyle`
 pub const GroupStyle: crate_paths::Path = crate_paths::Path::new("gpui::GroupStyle");
@@ -486,6 +512,10 @@ pub const KeyBinding: crate_paths::Path = crate_paths::Path::new("gpui::KeyBindi
 pub const KeyBindingContextPredicate: crate_paths::Path =
     crate_paths::Path::new("gpui::KeyBindingContextPredicate");
 
+/// pub struct `KeyBindingMetaIndex`
+pub const KeyBindingMetaIndex: crate_paths::Path =
+    crate_paths::Path::new("gpui::KeyBindingMetaIndex");
+
 /// pub struct `KeyContext`
 pub const KeyContext: crate_paths::Path = crate_paths::Path::new("gpui::KeyContext");
 
@@ -497,6 +527,17 @@ pub const KeyEvent: crate_paths::Path = crate_paths::Path::new("gpui::KeyEvent")
 
 /// pub struct `KeyUpEvent`
 pub const KeyUpEvent: crate_paths::Path = crate_paths::Path::new("gpui::KeyUpEvent");
+
+/// pub struct `KeybindingKeystroke`
+pub const KeybindingKeystroke: crate_paths::Path =
+    crate_paths::Path::new("gpui::KeybindingKeystroke");
+
+/// pub enum `KeyboardButton`
+pub const KeyboardButton: crate_paths::Path = crate_paths::Path::new("gpui::KeyboardButton");
+
+/// pub struct `KeyboardClickEvent`
+pub const KeyboardClickEvent: crate_paths::Path =
+    crate_paths::Path::new("gpui::KeyboardClickEvent");
 
 /// pub struct `Keymap`
 pub const Keymap: crate_paths::Path = crate_paths::Path::new("gpui::Keymap");
@@ -579,6 +620,9 @@ pub const ModifiersChangedEvent: crate_paths::Path =
 /// pub enum `MouseButton`
 pub const MouseButton: crate_paths::Path = crate_paths::Path::new("gpui::MouseButton");
 
+/// pub struct `MouseClickEvent`
+pub const MouseClickEvent: crate_paths::Path = crate_paths::Path::new("gpui::MouseClickEvent");
+
 /// pub struct `MouseDownEvent`
 pub const MouseDownEvent: crate_paths::Path = crate_paths::Path::new("gpui::MouseDownEvent");
 
@@ -610,6 +654,9 @@ pub const ObjectFit: crate_paths::Path = crate_paths::Path::new("gpui::ObjectFit
 /// pub enum `OsAction`
 pub const OsAction: crate_paths::Path = crate_paths::Path::new("gpui::OsAction");
 
+/// pub struct `OsMenu`
+pub const OsMenu: crate_paths::Path = crate_paths::Path::new("gpui::OsMenu");
+
 /// pub enum `Overflow`
 pub const Overflow: crate_paths::Path = crate_paths::Path::new("gpui::Overflow");
 
@@ -618,6 +665,9 @@ pub const OwnedMenu: crate_paths::Path = crate_paths::Path::new("gpui::OwnedMenu
 
 /// pub enum `OwnedMenuItem`
 pub const OwnedMenuItem: crate_paths::Path = crate_paths::Path::new("gpui::OwnedMenuItem");
+
+/// pub struct `OwnedOsMenu`
+pub const OwnedOsMenu: crate_paths::Path = crate_paths::Path::new("gpui::OwnedOsMenu");
 
 /// pub struct `PaintQuad`
 pub const PaintQuad: crate_paths::Path = crate_paths::Path::new("gpui::PaintQuad");
@@ -652,6 +702,10 @@ pub const PlatformInput: crate_paths::Path = crate_paths::Path::new("gpui::Platf
 /// pub trait `PlatformKeyboardLayout`
 pub const PlatformKeyboardLayout: crate_paths::Path =
     crate_paths::Path::new("gpui::PlatformKeyboardLayout");
+
+/// pub trait `PlatformKeyboardMapper`
+pub const PlatformKeyboardMapper: crate_paths::Path =
+    crate_paths::Path::new("gpui::PlatformKeyboardMapper");
 
 /// pub struct `Point`
 pub const Point: crate_paths::Path = crate_paths::Path::new("gpui::Point");
@@ -785,6 +839,9 @@ pub const Size: crate_paths::Path = crate_paths::Path::new("gpui::Size");
 /// pub struct `SizeRefinement`
 pub const SizeRefinement: crate_paths::Path = crate_paths::Path::new("gpui::SizeRefinement");
 
+/// pub struct `SourceMetadata`
+pub const SourceMetadata: crate_paths::Path = crate_paths::Path::new("gpui::SourceMetadata");
+
 /// pub struct `Stateful`
 pub const Stateful: crate_paths::Path = crate_paths::Path::new("gpui::Stateful");
 
@@ -830,6 +887,13 @@ pub const SurfaceSource: crate_paths::Path = crate_paths::Path::new("gpui::Surfa
 /// pub struct `Svg`
 pub const Svg: crate_paths::Path = crate_paths::Path::new("gpui::Svg");
 
+/// pub enum `SystemMenuType`
+pub const SystemMenuType: crate_paths::Path = crate_paths::Path::new("gpui::SystemMenuType");
+
+/// pub struct `SystemWindowTabController`
+pub const SystemWindowTabController: crate_paths::Path =
+    crate_paths::Path::new("gpui::SystemWindowTabController");
+
 /// pub struct `Task`
 pub const Task: crate_paths::Path = crate_paths::Path::new("gpui::Task");
 
@@ -860,6 +924,9 @@ pub const TextSystem: crate_paths::Path = crate_paths::Path::new("gpui::TextSyst
 
 /// pub struct `Tiling`
 pub const Tiling: crate_paths::Path = crate_paths::Path::new("gpui::Tiling");
+
+/// pub struct `Timeout`
+pub const Timeout: crate_paths::Path = crate_paths::Path::new("gpui::Timeout");
 
 /// pub struct `Timer`
 pub const Timer: crate_paths::Path = crate_paths::Path::new("gpui::Timer");
@@ -943,6 +1010,9 @@ pub const WindowBackgroundAppearance: crate_paths::Path =
 /// pub enum `WindowBounds`
 pub const WindowBounds: crate_paths::Path = crate_paths::Path::new("gpui::WindowBounds");
 
+/// pub enum `WindowControlArea`
+pub const WindowControlArea: crate_paths::Path = crate_paths::Path::new("gpui::WindowControlArea");
+
 /// pub struct `WindowControls`
 pub const WindowControls: crate_paths::Path = crate_paths::Path::new("gpui::WindowControls");
 
@@ -972,13 +1042,6 @@ pub const WrappedLine: crate_paths::Path = crate_paths::Path::new("gpui::Wrapped
 
 /// pub struct `WrappedLineLayout`
 pub const WrappedLineLayout: crate_paths::Path = crate_paths::Path::new("gpui::WrappedLineLayout");
-
-/// pub macro `action_as`
-pub const action_as: crate_paths::Path = crate_paths::Path::new("gpui::action_as");
-
-/// pub macro `action_with_deprecated_aliases`
-pub const action_with_deprecated_aliases: crate_paths::Path =
-    crate_paths::Path::new("gpui::action_with_deprecated_aliases");
 
 /// pub macro `actions`
 pub const actions: crate_paths::Path = crate_paths::Path::new("gpui::actions");
@@ -1049,6 +1112,10 @@ pub const fill: crate_paths::Path = crate_paths::Path::new("gpui::fill");
 /// pub function `font`
 pub const font: crate_paths::Path = crate_paths::Path::new("gpui::font");
 
+/// pub function `generate_list_of_all_registered_actions`
+pub const generate_list_of_all_registered_actions: crate_paths::Path =
+    crate_paths::Path::new("gpui::generate_list_of_all_registered_actions");
+
 /// pub function `green`
 pub const green: crate_paths::Path = crate_paths::Path::new("gpui::green");
 
@@ -1066,20 +1133,6 @@ pub const image_cache: crate_paths::Path = crate_paths::Path::new("gpui::image_c
 
 /// pub function `img`
 pub const img: crate_paths::Path = crate_paths::Path::new("gpui::img");
-
-/// pub macro `impl_action_as`
-pub const impl_action_as: crate_paths::Path = crate_paths::Path::new("gpui::impl_action_as");
-
-/// pub macro `impl_action_with_deprecated_aliases`
-pub const impl_action_with_deprecated_aliases: crate_paths::Path =
-    crate_paths::Path::new("gpui::impl_action_with_deprecated_aliases");
-
-/// pub macro `impl_actions`
-pub const impl_actions: crate_paths::Path = crate_paths::Path::new("gpui::impl_actions");
-
-/// pub macro `impl_internal_actions`
-pub const impl_internal_actions: crate_paths::Path =
-    crate_paths::Path::new("gpui::impl_internal_actions");
 
 /// pub function `is_no_action`
 pub const is_no_action: crate_paths::Path = crate_paths::Path::new("gpui::is_no_action");
