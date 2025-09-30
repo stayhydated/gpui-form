@@ -1,34 +1,22 @@
 use some_lib::structs::user::*;
 use gpui::{
     App, AppContext, Context, Entity, FocusHandle, Focusable, InteractiveElement,
-    IntoElement, KeyBinding, ParentElement as _, Render, Styled, Subscription, Window,
-    actions,
+    IntoElement, ParentElement as _, Render, Styled, Subscription, Window,
 };
 use gpui_component::{
-    AxisExt, Selectable, Sizable, Size, button::{Button, ButtonGroup},
     checkbox::Checkbox, date_picker::{DatePicker, DatePickerEvent, DatePickerState},
-    divider::Divider,
-    dropdown::{Dropdown, DropdownEvent, DropdownItem, DropdownState, SearchableVec},
+    divider::Divider, dropdown::{Dropdown, DropdownEvent, DropdownState, SearchableVec},
     form::{form_field, v_form},
-    h_flex,
     input::{
         InputEvent, InputState, NumberInput, NumberInputEvent, StepAction, TextInput,
     },
     switch::Switch, v_flex,
 };
 use rust_decimal::Decimal;
-use std::sync::{Arc, Mutex};
-use std::str::FromStr;
-use gpui_storybook::story::Story;
-actions!(user_story, [Tab, TabPrev]);
+use std::sync::Arc;
 const CONTEXT: &str = "UserForm";
 #[gpui_storybook::story_init]
-pub fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
-        KeyBinding::new("tab", Tab, Some(CONTEXT)),
-    ])
-}
+pub fn init(cx: &mut App) {}
 #[gpui_storybook::story]
 pub struct UserForm {
     original_data: Arc<User>,

@@ -73,51 +73,32 @@ fn layout(data: &GpuiFormShape) -> syn::File {
 
     let event_handlers_tokens = adapter.event_handlers().unwrap_or_default();
 
-    let action_token = {
-        let action_context_ident = format_ident!("{}_story", struct_name_path_qualifier);
-        quote! {
-          actions!(#action_context_ident, [Tab, TabPrev]);
-        }
-    };
-
     let import_tokens = quote! {
       #target_types_import
       use gpui::{
-          App, AppContext, Context, Entity, FocusHandle, Focusable, InteractiveElement, IntoElement,
-          KeyBinding, ParentElement as _, Render, Styled, Subscription, Window, actions,
+          App, AppContext, Context, Entity, FocusHandle, Focusable, InteractiveElement,
+          IntoElement, ParentElement as _, Render, Styled, Subscription, Window,
       };
       use gpui_component::{
-          AxisExt, Selectable, Sizable, Size,
-          button::{Button, ButtonGroup},
-          checkbox::Checkbox,
-          date_picker::{DatePicker, DatePickerEvent, DatePickerState},
-          divider::Divider,
-          dropdown::{Dropdown, DropdownEvent, DropdownItem, DropdownState, SearchableVec},
+          checkbox::Checkbox, date_picker::{DatePicker, DatePickerEvent, DatePickerState},
+          divider::Divider, dropdown::{Dropdown, DropdownEvent, DropdownState, SearchableVec},
           form::{form_field, v_form},
-          h_flex,
-          input::{InputEvent, InputState, NumberInput, NumberInputEvent, StepAction, TextInput},
-          switch::Switch,
-          v_flex,
+          input::{
+              InputEvent, InputState, NumberInput, NumberInputEvent, StepAction, TextInput,
+          },
+          switch::Switch, v_flex,
       };
       use rust_decimal::Decimal;
-      use std::sync::{Arc, Mutex};
-      use std::str::FromStr;
-      use gpui_storybook::Story;
+      use std::sync::Arc;
     };
 
     let layout_tokens = quote! {
       #import_tokens
 
-      #action_token
-
       const CONTEXT: &str = #context_str;
 
       #[gpui_storybook::story_init]
       pub fn init(cx: &mut App) {
-          cx.bind_keys([
-              KeyBinding::new("shift-tab", TabPrev, Some(CONTEXT)),
-              KeyBinding::new("tab", Tab, Some(CONTEXT)),
-          ])
       }
 
       #[gpui_storybook::story]
