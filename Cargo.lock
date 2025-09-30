@@ -6275,6 +6275,8 @@ dependencies = [
  "automod",
  "chrono",
  "es-fluent",
+ "es-fluent-manager-core",
+ "es-fluent-manager-singleton",
  "garde",
  "gpui",
  "gpui-component",
@@ -6284,6 +6286,7 @@ dependencies = [
  "paste",
  "rust_decimal",
  "some-lib",
+ "unic-langid",
  "unwrapped",
 ]
 

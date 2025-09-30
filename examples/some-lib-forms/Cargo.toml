@@ -7,6 +7,8 @@ publish = false
 
 
 [dependencies]
+es-fluent-manager-core = { workspace = true }
+es-fluent-manager-singleton = { workspace = true }
 automod = { workspace = true }
 chrono = { workspace = true }
 es-fluent = { workspace = true }
@@ -20,6 +22,7 @@ paste = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
 unwrapped = { workspace = true }
+unic-langid = { workspace = true }
 
 [lints]
 workspace = true

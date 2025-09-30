@@ -1,7 +1,7 @@
 use gpui::Application;
 use gpui_storybook::{Assets, Gallery};
-use some_lib::i18n;
 use some_lib_forms::forms;
+use some_lib_forms::i18n;
 
 fn main() {
     let app = Application::new().with_assets(Assets);
