@@ -215,9 +215,11 @@ impl UserFormComponents {
         gpui_component::dropdown::DropdownState::new(
             PreferedLanguage::iter().collect::<Vec<PreferedLanguage>>().into(),
             Some(
-                PreferedLanguage::iter()
-                    .position(|x| x == PreferedLanguage::default())
-                    .unwrap(),
+                gpui_component::IndexPath::new(
+                    PreferedLanguage::iter()
+                        .position(|x| x == PreferedLanguage::default())
+                        .unwrap(),
+                ),
             ),
             window,
             cx,
@@ -238,9 +240,11 @@ impl UserFormComponents {
         gpui_component::dropdown::DropdownState::new(
             EnumCountry::iter().collect::<Vec<EnumCountry>>().into(),
             Some(
-                EnumCountry::iter()
-                    .position(|x| x == EnumCountry::France)
-                    .unwrap(),
+                gpui_component::IndexPath::new(
+                    EnumCountry::iter()
+                        .position(|x| x == EnumCountry::France)
+                        .unwrap(),
+                ),
             ),
             window,
             cx,
