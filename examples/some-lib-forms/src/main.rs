@@ -1,6 +1,9 @@
 use gpui::Application;
 use gpui_storybook::{Assets, Gallery};
-use some_lib_forms::forms;
+
+// bring the stories in scope for inventory
+#[allow(unused_imports)]
+use some_lib_forms;
 
 fn main() {
     let app = Application::new().with_assets(Assets);
@@ -10,13 +13,12 @@ fn main() {
         gpui_component::init(app_cx);
         gpui_storybook::init(app_cx);
         gpui_storybook::change_locale("en").unwrap();
-        forms::init(app_cx);
         app_cx.activate(true);
 
         gpui_storybook::create_new_window(
             &format!("{} - Stories", env!("CARGO_PKG_NAME")),
             move |window, cx| {
-                let all_stories = forms::generate_stories(window, cx);
+                let all_stories = gpui_storybook::generate_stories(window, cx);
 
                 Gallery::view(all_stories, name_arg.as_deref(), window, cx)
             },

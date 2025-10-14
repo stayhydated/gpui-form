@@ -31,15 +31,14 @@ crate-paths = "0.1.0"
 darling = "0.20.10"
 derive_more = "2.0.1"
 dotenv = "0.15.0"
-es-fluent = { git = "https://github.com/stayhydated/es-fluent.git" }
-es-fluent-manager-core = { git = "https://github.com/stayhydated/es-fluent.git" }
-es-fluent-manager-singleton = { git = "https://github.com/stayhydated/es-fluent.git" }
-es-fluent-build = { git = "https://github.com/stayhydated/es-fluent.git" }
+es-fluent = "0.2.2"
+es-fluent-manager-embedded = "0.2.2"
+es-fluent-build = "0.2.2"
 fluent-bundle = "0.15.3"
 futures = "0.3.31"
 garde = "0.22.0"
 getset = "0.1.5"
-gpui = { git = "https://github.com/zed-industries/zed.git" }
+gpui = "0.2.0"
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git" }
 gpui-form = { path = "crates/gpui-form", version = "0.1.0" }
 gpui-form-core = { path = "crates/gpui-form-core", version = "0.1.0" }
@@ -47,11 +46,8 @@ gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.1.0" }
 gpui-form-internal-macros = { path = "crates/gpui-form-internal-macros", version = "0.1.0" }
 gpui-form-internal-paths = { path = "crates/gpui-form-internal-paths", version = "0.1.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.1.0" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook.git" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook.git", branch = "update-to-latest-es-fluent" }
 heck = "0.5.0"
-i18n-embed = "0.15.3"
-i18n-embed-fl = "0.9.3"
-i18n-manager = { git = "https://github.com/stayhydated/gpui-storybook.git" }
 inventory = "0.3.20"
 itertools = "0.14.0"
 log = "0.4.26"
