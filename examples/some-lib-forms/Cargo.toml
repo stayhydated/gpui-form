@@ -7,8 +7,7 @@ publish = false
 
 
 [dependencies]
-es-fluent-manager-core = { workspace = true }
-es-fluent-manager-singleton = { workspace = true }
+es-fluent-manager-embedded = { workspace = true }
 automod = { workspace = true }
 chrono = { workspace = true }
 es-fluent = { workspace = true }
