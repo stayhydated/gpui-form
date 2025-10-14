@@ -10,10 +10,10 @@ A struct derive macro for deriving [gpui-component](https://github.com/longbridg
 
 ## Usage
 
-GPUI and GPUI Component, and gpui-form are still in development, so you'll need to add them via git.
+GPUI Component and gpui-form are still in development, so you'll need to add them via git.
 
 ```toml
-gpui = { git = "https://github.com/zed-industries/zed.git" }
+gpui = "0.2.0"
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git" }
 gpui-form = { git = "https://github.com/stayhydated/gpui-form.git" }
 ```
@@ -39,9 +39,9 @@ pub enum EnumCountry {
     China,
 }
 
-#[derive(Clone, Debug, Default, EsFluent, GpuiForm)]
-#[fluent(display = "std")]
-#[fluent(keys = ["Description", "Label"])]
+#[derive(Clone, Debug, Default, EsFluentKv, GpuiForm)]
+#[fluent_kv(display = "std")]
+#[fluent_kv(keys = ["Description", "Label"])]
 pub struct User {
     #[gpui_form(component(input))]
     pub username: Option<String>,
