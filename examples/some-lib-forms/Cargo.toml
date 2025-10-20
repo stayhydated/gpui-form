@@ -7,10 +7,11 @@ publish = false
 
 
 [dependencies]
-es-fluent-manager-embedded = { workspace = true }
 automod = { workspace = true }
 chrono = { workspace = true }
 es-fluent = { workspace = true }
+es-fluent-lang = { workspace = true }
+es-fluent-manager-embedded = { workspace = true }
 garde = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
@@ -18,10 +19,12 @@ gpui-form = { features = [ "derive" ], workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
 inventory = { workspace = true }
 paste = { workspace = true }
+rust-embed = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
-unwrapped = { workspace = true }
+strum = { workspace = true }
 unic-langid = { workspace = true }
+unwrapped = { workspace = true }
 
 [lints]
 workspace = true

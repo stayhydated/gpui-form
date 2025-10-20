@@ -36,6 +36,5 @@ user_label_ftl-country = Pays
 user_label_ftl-email = Email
 user_label_ftl-enable_notifications = Activer les notifications
 user_label_ftl-preferred = Préféré
-user_label_ftl-skip_me = Skip Me
 user_label_ftl-subscribe_newsletter = S'abonner à la newsletter
 user_label_ftl-username = Nom d'utilisateur
