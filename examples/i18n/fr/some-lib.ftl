@@ -16,6 +16,7 @@ user = Utilisateur
 
 ## UserDescriptionFtl
 
+user_description_ftl = Description de l'utilisateur
 user_description_ftl-age = Âge (Âge de l'utilisateur en années)
 user_description_ftl-balance = Solde (Solde du compte de l'utilisateur)
 user_description_ftl-birth_date = Date de naissance (Date de naissance de l'utilisateur)
@@ -29,6 +30,7 @@ user_description_ftl-username = Nom d'utilisateur (Nom d'utilisateur unique de l
 
 ## UserLabelFtl
 
+user_label_ftl = Étiquette utilisateur
 user_label_ftl-age = Âge
 user_label_ftl-balance = Solde
 user_label_ftl-birth_date = Date de naissance

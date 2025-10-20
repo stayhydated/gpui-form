@@ -16,7 +16,7 @@ user = User
 
 ## UserDescriptionFtl
 
-user_description_ftl = User Description Ftl
+user_description_ftl = User Description
 user_description_ftl-age = Age (User's age in years)
 user_description_ftl-balance = Balance (User's account balance)
 user_description_ftl-birth_date = Date of Birth (User's date of birth)
@@ -29,7 +29,7 @@ user_description_ftl-username = Username (User's unique username)
 
 ## UserLabelFtl
 
-user_label_ftl = User Label Ftl
+user_label_ftl = User Label
 user_label_ftl-age = Age
 user_label_ftl-balance = Balance
 user_label_ftl-birth_date = Birth Date

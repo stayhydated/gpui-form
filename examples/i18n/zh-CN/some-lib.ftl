@@ -16,6 +16,7 @@ user = 用户
 
 ## UserDescriptionFtl
 
+user_description_ftl = 用户描述
 user_description_ftl-age = 年龄 (用户的年龄，以年为单位)
 user_description_ftl-balance = 余额 (用户的帐户余额)
 user_description_ftl-birth_date = 出生日期 (用户的出生日期)
@@ -28,6 +29,7 @@ user_description_ftl-username = 用户名 (用户的唯一用户名)
 
 ## UserLabelFtl
 
+user_label_ftl = 用户标签
 user_label_ftl-age = 年龄
 user_label_ftl-balance = 余额
 user_label_ftl-birth_date = 出生日期
