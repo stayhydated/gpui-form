@@ -22,7 +22,7 @@ fn main() {
         gpui_storybook::change_locale(Languages::default());
         app_cx.activate(true);
 
-        gpui_storybook::create_new_window::<Languages, _, _>(
+        gpui_storybook::create_new_window(
             &format!("{} - Stories", env!("CARGO_PKG_NAME")),
             move |window, cx| {
                 let all_stories = gpui_storybook::generate_stories(window, cx);
