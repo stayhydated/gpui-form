@@ -64,5 +64,6 @@ pub struct User {
 
     #[gpui_form(skip)]
     #[garde(skip)]
+    #[fluent_kv(skip)]
     pub skip_me: bool,
 }

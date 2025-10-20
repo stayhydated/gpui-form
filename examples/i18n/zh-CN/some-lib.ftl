@@ -16,6 +16,7 @@ user = 用户
 
 ## UserDescriptionFtl
 
+user_description_ftl = 用户描述
 user_description_ftl-age = 年龄 (用户的年龄，以年为单位)
 user_description_ftl-balance = 余额 (用户的帐户余额)
 user_description_ftl-birth_date = 出生日期 (用户的出生日期)
@@ -23,12 +24,12 @@ user_description_ftl-country = 国家/地区 (用户的居住国家/地区)
 user_description_ftl-email = 电子邮件 (用户的电子邮件地址)
 user_description_ftl-enable_notifications = 启用通知 (启用/禁用通知的标志)
 user_description_ftl-preferred = 首选 (用户的首选选项)
-user_description_ftl-skip_me = 跳过我 (仅供内部使用)
 user_description_ftl-subscribe_newsletter = 订阅新闻通讯 (订阅/取消订阅新闻通讯的标志)
 user_description_ftl-username = 用户名 (用户的唯一用户名)
 
 ## UserLabelFtl
 
+user_label_ftl = 用户标签
 user_label_ftl-age = 年龄
 user_label_ftl-balance = 余额
 user_label_ftl-birth_date = 出生日期
@@ -36,6 +37,5 @@ user_label_ftl-country = 国家/地区
 user_label_ftl-email = 电子邮件
 user_label_ftl-enable_notifications = 启用通知
 user_label_ftl-preferred = 首选
-user_label_ftl-skip_me = 跳过我
 user_label_ftl-subscribe_newsletter = 订阅新闻通讯
 user_label_ftl-username = 用户名

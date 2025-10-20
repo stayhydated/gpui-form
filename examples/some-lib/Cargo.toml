@@ -9,18 +9,18 @@ publish = false
 anyhow = { workspace = true }
 chrono = { workspace = true }
 es-fluent = { features = [ "derive" ], workspace = true }
+es-fluent-manager-embedded = { workspace = true }
 garde = { features = [ "derive", "email", "rust_decimal" ], workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { features = [ "rust_decimal" ], workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
-es-fluent-manager-embedded = { workspace = true }
 inventory = { workspace = true }
 rust-embed = { workspace = true }
 rust_decimal = { workspace = true }
 strum = { workspace = true }
-unwrapped = { workspace = true }
 unic-langid = { workspace = true }
+unwrapped = { workspace = true }
 
 [build-dependencies]
 es-fluent-build = { workspace = true }
