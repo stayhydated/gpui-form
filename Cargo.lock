@@ -2795,45 +2795,7 @@ dependencies = [
  "chrono",
  "enum-iterator",
  "gpui",
- "gpui-component-macros 0.3.1",
- "gpui-macros",
- "html5ever",
- "itertools 0.13.0",
- "lsp-types",
- "markdown",
- "markup5ever_rcdom",
- "notify",
- "num-traits",
- "once_cell",
- "paste",
- "regex",
- "ropey",
- "rust-i18n",
- "schemars",
- "serde",
- "serde_json",
- "serde_repr",
- "smallvec",
- "smol",
- "tracing",
- "tree-sitter",
- "tree-sitter-json",
- "unicode-segmentation",
- "uuid",
- "zed-sum-tree",
-]
-
-[[package]]
-name = "gpui-component"
-version = "0.4.0-preview0"
-source = "git+https://github.com/longbridge/gpui-component.git#123934237a3cbcd99b853bf43a996301d42db56c"
-dependencies = [
- "aho-corasick",
- "anyhow",
- "chrono",
- "enum-iterator",
- "gpui",
- "gpui-component-macros 0.4.0-preview0",
+ "gpui-component-macros",
  "gpui-macros",
  "html5ever",
  "itertools 0.13.0",
@@ -2866,16 +2828,6 @@ name = "gpui-component-macros"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0908e53be8b27e7c185bd2c8996459055a98cbbf3f266382d028eb28270835a2"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.108",
-]
-
-[[package]]
-name = "gpui-component-macros"
-version = "0.4.0-preview0"
-source = "git+https://github.com/longbridge/gpui-component.git#123934237a3cbcd99b853bf43a996301d42db56c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2966,11 +2918,11 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#16d6c51c4553a3eeeab0c4b080b5d5c592b1c5c9"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#f63dbc12bf175a6a6f08a205ca561d5ee45bfdd4"
 dependencies = [
  "anyhow",
  "gpui",
- "gpui-component 0.4.0-preview0",
+ "gpui-component",
  "gpui-storybook-core",
  "gpui-storybook-macros",
  "inventory",
@@ -2983,14 +2935,14 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#16d6c51c4553a3eeeab0c4b080b5d5c592b1c5c9"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#f63dbc12bf175a6a6f08a205ca561d5ee45bfdd4"
 dependencies = [
  "anyhow",
  "es-fluent",
  "es-fluent-build",
  "es-fluent-manager-embedded",
  "gpui",
- "gpui-component 0.4.0-preview0",
+ "gpui-component",
  "inventory",
  "log",
  "proc-macro2",
@@ -3006,7 +2958,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-storybook.git#16d6c51c4553a3eeeab0c4b080b5d5c592b1c5c9"
+source = "git+https://github.com/stayhydated/gpui-storybook.git#f63dbc12bf175a6a6f08a205ca561d5ee45bfdd4"
 dependencies = [
  "gpui-storybook-core",
  "heck 0.5.0",
@@ -6192,7 +6144,7 @@ dependencies = [
  "es-fluent-manager-embedded",
  "garde",
  "gpui",
- "gpui-component 0.3.1",
+ "gpui-component",
  "gpui-form",
  "gpui-storybook",
  "inventory",
@@ -6214,7 +6166,7 @@ dependencies = [
  "es-fluent-manager-embedded",
  "garde",
  "gpui",
- "gpui-component 0.3.1",
+ "gpui-component",
  "gpui-form",
  "gpui-storybook",
  "inventory",
