@@ -10,11 +10,9 @@ A struct derive macro for deriving [gpui-component](https://github.com/longbridg
 
 ## Usage
 
-GPUI Component and gpui-form are still in development, so you'll need to add them via git.
+gpui-form is still in development, so you'll need to add it via git.
 
 ```toml
-gpui = "0.2.0"
-gpui-component = { git = "https://github.com/longbridge/gpui-component.git" }
 gpui-form = { git = "https://github.com/stayhydated/gpui-form.git" }
 ```
 
