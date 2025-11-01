@@ -5,7 +5,7 @@ use gpui_storybook::{Assets, Gallery};
 use strum::EnumIter;
 
 // bring the stories in scope for inventory
-#[allow(unused_imports)]
+#[allow(unused_imports, clippy::single_component_path_imports)]
 use some_lib_forms;
 
 #[es_fluent_language]
