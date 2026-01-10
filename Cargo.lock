@@ -2703,7 +2703,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "gpui-form-component",
  "gpui-form-core",
@@ -2713,7 +2713,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-component"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -2722,7 +2722,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-core"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "crate-paths",
  "darling",
@@ -2740,7 +2740,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-derive"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "darling",
@@ -2764,7 +2764,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-internal-macros"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2773,7 +2773,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-prototyping-core"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "gpui-form-core",
  "heck 0.5.0",
