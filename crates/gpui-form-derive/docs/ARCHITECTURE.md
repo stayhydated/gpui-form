@@ -12,7 +12,9 @@ power the rest of the ecosystem.
 
 - `#[derive(GpuiForm)]`
 - `#[derive(SelectItem)]`
+- `#[derive(CustomComponent)]`
 - `#[derive(CustomComponentState)]`
+- `custom_component!`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by the facade as
@@ -31,6 +33,8 @@ power the rest of the ecosystem.
   inspection
 - `src/derives/select_item.rs`: `SelectItem` expansion
 - `src/derives/custom_component_state.rs`: `CustomComponentState` expansion
+- `src/derives/custom_component.rs`: function-like custom component shape
+  expansion for local wrappers around external component/state types
 
 ## `GpuiForm` Expansion Pipeline
 
@@ -100,11 +104,25 @@ When the `inventory` feature is enabled:
   but emits fallback titles because `SelectItem::title()` has no localizer
   argument
 
-### `CustomComponentState`
+### `CustomComponent` / `CustomComponentState`
 
 - emits a `CustomComponentShape` impl directly for a state type
+- `CustomComponentState` is a compatibility alias for the same expansion
 - defaults constructor wiring to `Self::new(window, cx)`
 - optionally stores a component path for prototyping output
+- optionally sets shape-level `VALUE_BINDING` metadata for
+  `CustomComponentValueAdapter<T>` prototyping hooks
+- optionally accepts `custom_crate = crate` for runtime crates that implement
+  their local `custom::CustomComponentShape` path directly
+
+### `custom_component!`
+
+- emits a local zero-sized shape type plus `CustomComponentShape` impl
+- accepts caller generics, where clauses, and outer attributes
+- targets external component/state pairs that cannot directly implement
+  `CustomComponentShape` because both the trait and state type are foreign
+- leaves optional `CustomComponentValueAdapter<T>` implementations to the
+  caller or collection crate
 
 ## Coordination Rules
 

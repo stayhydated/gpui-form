@@ -121,11 +121,9 @@ impl<'a> FormShapeAdapter<'a> {
     /// be rendered as grouped `use` statements via [`ImportSet::to_token_stream`].
     pub fn required_imports(&self) -> ImportSet {
         let mut set = ImportSet::default();
-        if !self.shape_data.components.is_empty() {
-            set.extend_items(FRAGMENT_IMPORTS);
-            #[cfg(feature = "fluent")]
-            set.extend_items(FLUENT_FRAGMENT_IMPORTS);
-        }
+        set.extend_items(FRAGMENT_IMPORTS);
+        #[cfg(feature = "fluent")]
+        set.extend_items(FLUENT_FRAGMENT_IMPORTS);
         if self
             .shape_data
             .components
@@ -287,11 +285,9 @@ impl<'a> FormShapeAdapter<'a> {
         };
 
         let mut collected_imports = ImportSet::default();
-        if !generated_fields.is_empty() {
-            collected_imports.extend_items(FRAGMENT_IMPORTS);
-            #[cfg(feature = "fluent")]
-            collected_imports.extend_items(FLUENT_FRAGMENT_IMPORTS);
-        }
+        collected_imports.extend_items(FRAGMENT_IMPORTS);
+        #[cfg(feature = "fluent")]
+        collected_imports.extend_items(FLUENT_FRAGMENT_IMPORTS);
         if !subscription_call_items.is_empty() {
             collected_imports.extend_items(SUBSCRIPTION_IMPORTS);
         }
@@ -511,10 +507,7 @@ mod tests {
             "country",
             "Vec<",
             false,
-            ComponentsBehaviour::Select(gpui_form_schema::components::SelectBehaviour {
-                partial: false,
-                searchable: false,
-            }),
+            ComponentsBehaviour::Custom,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
@@ -543,7 +536,7 @@ mod tests {
             "enabled",
             "bool",
             false,
-            ComponentsBehaviour::Checkbox,
+            ComponentsBehaviour::Custom,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);

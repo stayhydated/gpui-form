@@ -40,7 +40,10 @@ pub struct Age {
 #[cfg_attr(feature = "fluent", fluent_label(origin, variants))]
 #[cfg_attr(feature = "ui", gpui_form(koruma(fluent)))]
 pub struct Item {
-    #[cfg_attr(feature = "ui", gpui_form(component(number_input)))]
+    #[cfg_attr(
+        feature = "ui",
+        gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))
+    )]
     #[cfg_attr(feature = "validation", koruma(newtype))]
     pub index: Age,
 }

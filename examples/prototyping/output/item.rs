@@ -4,9 +4,6 @@ use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
 use gpui::prelude::FluentBuilder as _;
 use gpui_component::ActiveTheme as _;
 use gpui_component::form::field;
-use gpui_component::input::{
-    InputEvent, InputState, NumberInput, NumberInputEvent, StepAction,
-};
 use gpui::{
     App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
@@ -45,86 +42,57 @@ impl gpui_storybook::Story for ItemForm {
     }
 }
 impl ItemForm {
-    fn on_index_input_event(
+    fn on_index_custom_event(
         &mut self,
-        state: &Entity<InputState>,
-        event: &InputEvent,
+        state: &Entity<
+            <gpui_form_collection::input::InputShape<
+                Age,
+            > as ::gpui_form::custom::CustomComponentShape>::State,
+        >,
+        event: &<gpui_form_collection::input::InputShape<
+            Age,
+        > as ::gpui_form::custom::CustomComponentValueAdapter<Age>>::Event,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        match event {
-            InputEvent::Change => {
-                let text = state.read(_cx).value();
-                self.current_data.index = text.parse::<Age>().ok();
+        let change = {
+            let state = state.read(_cx);
+            <gpui_form_collection::input::InputShape<
+                Age,
+            > as ::gpui_form::custom::CustomComponentValueAdapter<
+                Age,
+            >>::value_change(&state, event)
+        };
+        match change {
+            ::gpui_form::custom::CustomComponentValueChange::Set(value) => {
+                self.current_data.index = Some(value);
             }
-            _ => {}
-        }
-    }
-    fn on_index_number_input_event(
-        &mut self,
-        this: &Entity<InputState>,
-        event: &NumberInputEvent,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        match event {
-            NumberInputEvent::Step(step_action) => {
-                match step_action {
-                    StepAction::Decrement => {
-                        let new_value = self
-                            .current_data
-                            .index
-                            .unwrap_or_default()
-                            .saturating_sub(1u8.into());
-                        self.current_data.index = Some(new_value.into());
-                        this.update(
-                            cx,
-                            |input, cx| {
-                                input.set_value(new_value.to_string(), window, cx);
-                            },
-                        );
-                    }
-                    StepAction::Increment => {
-                        let new_value = self
-                            .current_data
-                            .index
-                            .unwrap_or_default()
-                            .saturating_add(1u8.into());
-                        self.current_data.index = Some(new_value.into());
-                        this.update(
-                            cx,
-                            |input, cx| {
-                                input.set_value(new_value.to_string(), window, cx);
-                            },
-                        );
-                    }
-                }
+            ::gpui_form::custom::CustomComponentValueChange::Clear => {
+                self.current_data.index = None;
             }
+            ::gpui_form::custom::CustomComponentValueChange::Unchanged => {}
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = ItemFormValueHolder::default();
-        let index_number_input = cx
-            .new(|cx| ItemFormComponents::index_number_input(window, cx));
+        let index_custom = cx.new(|cx| ItemFormComponents::index_custom(window, cx));
         let mut _subscriptions = vec![
-            cx.subscribe_in(& index_number_input, window, Self::on_index_input_event), cx
-            .subscribe_in(& index_number_input, window,
-            Self::on_index_number_input_event)
+            cx.subscribe_in(& index_custom, window, Self::on_index_custom_event)
         ];
-        if let Some(value) = current_data.index.as_ref() {
-            index_number_input
-                .update(
-                    cx,
-                    |state, cx| {
-                        state.set_value(value.to_string(), window, cx);
-                    },
-                );
-        }
+        index_custom
+            .update(
+                cx,
+                |state, cx| {
+                    <gpui_form_collection::input::InputShape<
+                        Age,
+                    > as ::gpui_form::custom::CustomComponentValueAdapter<
+                        Age,
+                    >>::set_state_value(state, current_data.index.as_ref(), window, cx);
+                },
+            );
         Self {
             current_data,
-            fields: ItemFormFields {
-                index_number_input,
-            },
+            fields: ItemFormFields { index_custom },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -250,7 +218,9 @@ impl Render for ItemForm {
                                         )
                                 }
                             })
-                            .child(NumberInput::new(&self.fields.index_number_input)),
+                            .child(
+                                gpui_component::input::Input::new(&self.fields.index_custom),
+                            ),
                     )
                     .child(
                         field()

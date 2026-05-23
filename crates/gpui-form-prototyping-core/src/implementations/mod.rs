@@ -1,12 +1,4 @@
-pub mod checkbox;
 pub mod custom;
-pub mod date_picker;
-pub mod file_picker;
-pub mod infinite_select;
-pub mod input;
-pub mod number_input;
-pub mod select;
-pub mod switch;
 
 use gpui_form_schema::{
     components::ComponentsBehaviour,
@@ -22,31 +14,11 @@ use crate::{
     imports::ImportItem,
 };
 
-static INPUT_GENERATOR: input::InputCodeGenerator = input::InputCodeGenerator;
-static NUMBER_INPUT_GENERATOR: number_input::NumberInputCodeGenerator =
-    number_input::NumberInputCodeGenerator;
-static CHECKBOX_GENERATOR: checkbox::CheckboxCodeGenerator = checkbox::CheckboxCodeGenerator;
-static SWITCH_GENERATOR: switch::SwitchCodeGenerator = switch::SwitchCodeGenerator;
-static SELECT_GENERATOR: select::SelectCodeGenerator = select::SelectCodeGenerator;
-static INFINITE_SELECT_GENERATOR: infinite_select::InfiniteSelectCodeGenerator =
-    infinite_select::InfiniteSelectCodeGenerator;
 static CUSTOM_GENERATOR: custom::CustomCodeGenerator = custom::CustomCodeGenerator;
-static DATE_PICKER_GENERATOR: date_picker::DatePickerCodeGenerator =
-    date_picker::DatePickerCodeGenerator;
-static FILE_PICKER_GENERATOR: file_picker::FilePickerCodeGenerator =
-    file_picker::FilePickerCodeGenerator;
 
 pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCodeGenerator {
     match behaviour {
-        ComponentsBehaviour::Input => &INPUT_GENERATOR,
-        ComponentsBehaviour::NumberInput(_) => &NUMBER_INPUT_GENERATOR,
-        ComponentsBehaviour::Checkbox => &CHECKBOX_GENERATOR,
-        ComponentsBehaviour::Switch => &SWITCH_GENERATOR,
-        ComponentsBehaviour::Select(_) => &SELECT_GENERATOR,
-        ComponentsBehaviour::InfiniteSelect(_) => &INFINITE_SELECT_GENERATOR,
         ComponentsBehaviour::Custom => &CUSTOM_GENERATOR,
-        ComponentsBehaviour::DatePicker => &DATE_PICKER_GENERATOR,
-        ComponentsBehaviour::FilePicker => &FILE_PICKER_GENERATOR,
     }
 }
 
@@ -514,7 +486,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("index", "Age", false, ComponentsBehaviour::Input)
+                FieldVariant::new("index", "Age", false, ComponentsBehaviour::Custom)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
@@ -537,7 +509,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("age", "Age", true, ComponentsBehaviour::Input)
+                FieldVariant::new("age", "Age", true, ComponentsBehaviour::Custom)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
@@ -558,7 +530,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NestedValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("address", "Address", true, ComponentsBehaviour::Input)
+                FieldVariant::new("address", "Address", true, ComponentsBehaviour::Custom)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);

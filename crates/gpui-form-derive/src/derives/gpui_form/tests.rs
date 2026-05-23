@@ -120,11 +120,11 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma(fluent))]
             struct TestForm {
-                #[gpui_form(component(input))]
+                #[gpui_form(component(custom(shape = crate::InputShape)))]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::general::RequiredValidation::<Option<_>>::builder()))]
                 name: String,
 
-                #[gpui_form(component(number_input))]
+                #[gpui_form(component(custom(shape = crate::NumericShape)))]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::numeric::PositiveValidation::<_>::builder()))]
                 age: u32,
             }
@@ -179,8 +179,9 @@ mod gpui_form_tests {
         );
 
         assert!(
-            expanded_str.contains("validation_errors") || expanded_str.contains("validate"),
-            "Generated code should include validation error handling: {}",
+            expanded_str.contains("RequiredValidation")
+                && expanded_str.contains("PositiveValidation"),
+            "Generated code should preserve parsed validation builders: {}",
             &expanded_str[..expanded_str.len().min(500)]
         );
 
@@ -196,7 +197,7 @@ mod gpui_form_tests {
             #[cfg_attr(feature = "ui", derive(GpuiForm))]
             #[cfg_attr(feature = "ui", gpui_form(koruma(fluent)))]
             pub struct CommonVRead {
-                #[cfg_attr(feature = "ui", gpui_form(component(number_input)))]
+                #[cfg_attr(feature = "ui", gpui_form(component(custom(shape = crate::NumericShape))))]
                 #[cfg_attr(feature = "validation", koruma(newtype))]
                 pub index: CommonVariableIndex,
             }
@@ -320,7 +321,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(number_input))]
+                #[gpui_form(component(custom(shape = crate::NumericShape)))]
                 #[koruma(koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167))]
                 age: u32,
             }
@@ -350,7 +351,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(number_input))]
+                #[gpui_form(component(custom(shape = crate::NumericShape)))]
                 #[koruma(koruma_collection::numeric::PositiveValidation::<_>::builder())]
                 age: u32,
             }
@@ -380,7 +381,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(input))]
+                #[gpui_form(component(custom(shape = crate::InputShape)))]
                 name: String,
             }
         };
@@ -412,7 +413,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    component(date_picker)
+                    component(custom(shape = crate::DatePickerShape))
                 )]
                 birth_date: Option<Timestamp>,
             }
@@ -445,7 +446,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_number_input_override_keeps_full_type_path() {
+    fn test_custom_shape_override_keeps_full_type_path() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -453,7 +454,7 @@ mod gpui_form_tests {
                     type = rust_decimal::Decimal,
                     from = |value| value,
                     into = |value| value,
-                    component(number_input(as = f64))
+                    component(custom(shape = "crate::NumericShape<_>"))
                 )]
                 amount: f64,
             }
@@ -474,14 +475,14 @@ mod gpui_form_tests {
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
         assert!(
-            compact.contains("validate_signed_numeric::<rust_decimal::Decimal>"),
-            "Number input validation should keep the fully-qualified override type"
+            compact.contains(
+                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::custom::CustomComponentShape>::State"
+            ),
+            "Custom shape `_` should resolve to the override type in state metadata"
         );
         assert!(
-            compact.contains(
-                "ComponentsBehaviour::NumberInput(::gpui_form::schema::components::NumberInputBehaviour{validation_type:Some(\"f64\"),kind:::gpui_form::schema::components::NumberInputKind::Float,})"
-            ),
-            "Number input metadata should preserve the validation override and numeric family"
+            compact.contains("with_custom_shape(\"crate::NumericShape<rust_decimal::Decimal>\")"),
+            "Custom shape metadata should preserve the fully-qualified override type"
         );
     }
 
@@ -494,7 +495,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    component(date_picker)
+                    component(custom(shape = crate::DatePickerShape))
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -545,7 +546,7 @@ mod gpui_form_tests {
                 #[gpui_form(
                     type = chrono::NaiveDate,
                     into = |dt| to_model(dt),
-                    component(date_picker)
+                    component(custom(shape = crate::DatePickerShape))
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -585,7 +586,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(input), default = "test@example.com")]
+                #[gpui_form(component(custom(shape = crate::InputShape)), default = "test@example.com")]
                 email: String,
             }
         };
@@ -611,7 +612,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(input), default = "test@example.com")]
+                #[gpui_form(component(custom(shape = crate::InputShape)), default = "test@example.com")]
                 email: String,
 
                 #[gpui_form(skip)]
@@ -701,7 +702,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(input),
+                    component(custom(shape = crate::InputShape)),
                     type = crate::types::AccountCode,
                     from = crate::types::AccountCode::new,
                     into = crate::types::AccountCode::into_string
@@ -803,12 +804,12 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_select_default_expression_initializes_component_selection() {
+    fn test_custom_component_shape_infers_field_type_generic() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(select), default = crate::defaults::country())]
-                country: Country,
+                #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+                account_no: crate::types::AccountCode,
             }
         };
 
@@ -823,58 +824,16 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("let__gpui_form_default=crate::defaults::country()"),
-            "Select component initialization should bind the full default expression once"
+            compact.contains(
+                "<gpui_form_collection::input::InputShape<crate::types::AccountCode>as::gpui_form::custom::CustomComponentShape>::State"
+            ),
+            "custom shape `_` should be resolved to the field type in FormFields: {compact}"
         );
         assert!(
-            compact.contains(".position(|x|x==__gpui_form_default)"),
-            "Select component initialization should compare against the bound default expression"
-        );
-        assert!(
-            compact.contains(".map(::gpui_component::IndexPath::new)")
-                && !compact.contains(".position(|x|x==__gpui_form_default).unwrap()"),
-            "Select component initialization should skip invalid defaults instead of panicking"
-        );
-    }
-
-    #[test]
-    fn test_infinite_select_default_expression_and_max_depth_are_honored() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component(infinite_select(max_depth = 2)), default = crate::defaults::country())]
-                location: Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("let__gpui_form_default=crate::defaults::country()"),
-            "InfiniteSelect initialization should bind the full default expression once"
-        );
-        assert!(
-            compact.contains("new_with_options(__gpui_form_default,")
-                && !compact.contains("new_with_options(crate::defaults::country(),"),
-            "InfiniteSelect initialization should use the bound default expression for runtime construction"
-        );
-        assert!(
-            compact.contains("InfiniteSelectState::new_with_options("),
-            "InfiniteSelect initialization should pass the bound default expression into the runtime state"
-        );
-        assert!(
-            compact.contains("InfiniteSelectStateOptions::default()")
-                && compact.contains(".searchable(false)")
-                && compact.contains(".max_depth(2"),
-            "InfiniteSelect initialization should forward max_depth into the runtime options"
+            compact.contains(
+                "with_custom_shape(\"gpui_form_collection::input::InputShape<crate::types::AccountCode>\")"
+            ),
+            "custom shape metadata should store the resolved shape path: {compact}"
         );
     }
 }

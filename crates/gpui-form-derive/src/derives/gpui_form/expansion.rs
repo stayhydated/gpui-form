@@ -257,9 +257,10 @@ pub fn expand_gpui_form(
                     quote! { .with_default(#expr_str) }
                 });
 
-                let custom_component_tokens = component_def.custom_component_tokens();
-                let custom_shape_tokens = component_def.custom_shape_tokens();
-                let custom_value_binding_tokens = component_def.custom_value_binding_tokens();
+                let custom_component_tokens = component_def.custom_component_tokens(&base_type);
+                let custom_shape_tokens = component_def.custom_shape_tokens(&base_type);
+                let custom_value_binding_tokens =
+                    component_def.custom_value_binding_tokens(&base_type);
                 let from_expr_tokens = option_expr_string_tokens(&field.from);
                 let into_expr_tokens = option_expr_string_tokens(&field.into);
 

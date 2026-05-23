@@ -1,4 +1,4 @@
-use darling::FromAttributes;
+use darling::{FromAttributes, util::Flag};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Path, parse_macro_input};
@@ -13,6 +13,15 @@ struct CustomComponentStateMeta {
     /// field annotations do not need to repeat `component = …`.
     #[darling(default)]
     component: Option<Path>,
+    /// Opt generated prototyping code into CustomComponentValueAdapter by default.
+    #[darling(default)]
+    value_binding: Flag,
+    /// Runtime crate path that owns `custom::CustomComponentShape`.
+    ///
+    /// This defaults to the public `gpui_form` facade for downstream users.
+    /// Runtime crates that own a state type can set `custom_crate = crate`.
+    #[darling(default)]
+    custom_crate: Option<Path>,
 }
 
 fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<CustomComponentStateMeta> {
@@ -23,6 +32,9 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
     let new_path = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
+    let custom_crate = meta
+        .custom_crate
+        .unwrap_or_else(|| syn::parse_quote!(::gpui_form));
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let component_path_const = if let Some(comp) = meta.component {
@@ -32,9 +44,16 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     } else {
         quote! {}
     };
+    let value_binding_const = if meta.value_binding.is_present() {
+        quote! {
+            const VALUE_BINDING: bool = true;
+        }
+    } else {
+        quote! {}
+    };
 
     Ok(quote! {
-        impl #impl_generics ::gpui_form::custom::CustomComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics #custom_crate::custom::CustomComponentShape for #ident #ty_generics #where_clause {
             type State = Self;
 
             fn new(
@@ -45,6 +64,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
             }
 
             #component_path_const
+            #value_binding_const
         }
     })
 }
@@ -129,6 +149,42 @@ mod tests {
         assert!(
             compact.contains("crate::ui::TagsInput"),
             "should embed the component path as a string"
+        );
+    }
+
+    #[test]
+    fn test_custom_component_state_with_value_binding() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(CustomComponentState)]
+            #[gpui_form_custom(new = Self::new, value_binding)]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("VALUE_BINDING:bool=true"),
+            "should emit VALUE_BINDING const when value_binding is specified"
+        );
+    }
+
+    #[test]
+    fn test_custom_component_state_with_custom_crate_path() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(CustomComponentState)]
+            #[gpui_form_custom(new = Self::new, custom_crate = crate)]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("implcrate::custom::CustomComponentShapeforTagsState"),
+            "should allow runtime crates to implement their local custom trait path"
         );
     }
 }

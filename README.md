@@ -31,6 +31,9 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", branch 
 
 gpui-form = "*"
 
+# Optional: ready-made component shapes for gpui-component widgets
+gpui-form-collection = "*"
+
 # Optional: inventory registration for prototyping/code generation
 # gpui-form = { version = "*", features = ["inventory"] }
 ```
@@ -51,16 +54,16 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component(input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     pub username: Option<String>,
 
-    #[gpui_form(component(number_input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     pub age: Option<u32>,
 
-    #[gpui_form(component(select), default = Country::France)]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)), default = Country::France)]
     pub country: Country,
 
-    #[gpui_form(component(checkbox))]
+    #[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]
     pub subscribe: bool,
 }
 ```
@@ -74,45 +77,37 @@ pub struct UserProfile {
 
 ## Component Syntax
 
-These component forms are currently supported:
+`gpui-form` only parses contract-backed custom component annotations:
 
-- `#[gpui_form(component(input))]`
-- `#[gpui_form(component(number_input))]`
-- `#[gpui_form(component(number_input(as = f64)))]`
-- `#[gpui_form(component(checkbox))]`
-- `#[gpui_form(component(switch))]`
-- `#[gpui_form(component(select))]`
-- `#[gpui_form(component(select(searchable)))]`
-- `#[gpui_form(component(select(partial)))]`
-- `#[gpui_form(component(infinite_select))]`
-- `#[gpui_form(component(infinite_select(searchable, max_depth = 3)))]`
-- `#[gpui_form(component(date_picker))]`
-- `#[gpui_form(component(file_picker))]`
 - `#[gpui_form(component(custom(shape = my::Shape)))]`
 - `#[gpui_form(component(custom(state = my::State)))]`
 - `#[gpui_form(component(custom(shape = my::Shape, component = my::ui::Widget)))]`
 - `#[gpui_form(component(custom(shape = my::Shape, wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = my::Shape, value_binding)))]`
+- `#[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]`
+- `#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]`
+- `#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]`
+- `#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]`
+- `#[gpui_form(component(custom(shape = "gpui_form::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
 
 Common field-level helpers:
 
-- `#[gpui_form(default = <expr>)]` seeds the generated value holder and initial
-  select-like choices.
+- `#[gpui_form(default = <expr>)]` seeds the generated value holder.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
   allowing prefill from the original model.
 - `#[gpui_form(type = <form_type>, from = <expr>, into = <expr>)]` lets the
   generated form edit a type that differs from the original field type.
-- `component(input)` parses non-`String` form-side value types with `FromStr`
-  in prototyping output, so value objects can use `type`, `from`, and `into`
-  while the source model keeps its storage type.
+- `gpui_form_collection::input::InputShape<_>` parses non-`String` form-side
+  value types with `FromStr` in prototyping output, so value objects can use
+  `type`, `from`, and `into` while the source model keeps its storage type.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
 
-`component(infinite_select)` expects the field type to implement
-`gpui_form::InfiniteSelect`, usually by deriving it on the enum tree. The enum
-tree must also implement `PartialEq` because the backing `gpui-component`
-select compares selected values.
+`gpui_form::infinite_select::InfiniteSelectState<_>` expects the field type to
+implement `gpui_form::InfiniteSelect`, usually by deriving it on the enum tree.
+The enum tree must also implement `PartialEq` because the backing
+`gpui-component` select compares selected values.
 Lower-level users can derive the same runtime contract from
 `gpui-form-component` or `gpui-form-component-derive`; the macro resolves
 whichever runtime crate is present, including renamed dependencies.
@@ -126,11 +121,11 @@ Common struct-level helpers:
 
 ## Infinite Select Runtime
 
-`component(infinite_select)` fields are backed by
-`gpui_form::infinite_select::InfiniteSelectState`, which owns the root and
-child `SelectState`s, exposes render-ready level snapshots, and emits a single
-typed change event with the rebuilt nested value, both path forms, the
-previous paths, and the changed depth.
+Infinite-select custom fields are backed by
+`gpui_form::infinite_select::InfiniteSelectState`, which owns the root and child
+`SelectState`s, exposes render-ready level snapshots, and emits a single typed
+change event with the rebuilt nested value, both path forms, the previous
+paths, and the changed depth.
 
 ```rs
 use gpui_form::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
@@ -197,11 +192,11 @@ use koruma_collection::{
 #[derive(Clone, Debug, GpuiForm, Koruma, KorumaAllFluent)]
 #[gpui_form(koruma(fluent))]
 pub struct Signup {
-    #[gpui_form(component(input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     #[koruma(NonEmptyValidation::<_>::builder())]
     pub username: String,
 
-    #[gpui_form(component(number_input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     #[koruma(RangeValidation::<_>::builder().min(18).max(120))]
     pub age: Option<u32>,
 }
@@ -217,14 +212,29 @@ When validation is enabled:
 
 ## Custom Components
 
-There are two supported custom-component workflows.
+There are three supported custom-component workflows.
 
-### 1. Derive directly on a state type
+### 1. Use a collection shape
 
 ```rs
-use gpui_form::{CustomComponentState, GpuiForm};
+use gpui_form::GpuiForm;
 
-#[derive(Clone, Debug, CustomComponentState)]
+#[derive(Clone, Debug, Default, GpuiForm)]
+pub struct Account {
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    pub code: AccountCode,
+}
+```
+
+The `_` generic is resolved to the field's form-side type, including any
+`#[gpui_form(type = ...)]` override.
+
+### 2. Derive directly on an owned state type
+
+```rs
+use gpui_form::{CustomComponent, GpuiForm};
+
+#[derive(Clone, Debug, CustomComponent)]
 #[gpui_form_custom(new = Self::new, component = TagsInput)]
 pub struct TagsInputState;
 
@@ -235,15 +245,16 @@ pub struct PostEditor {
 }
 ```
 
-### 2. Declare a reusable shape
+### 3. Declare a reusable external shape
 
 ```rs
-gpui_form::custom_component_shape!(
-    pub EmailInputShape,
-    state = gpui_component::input::InputState,
-    new = gpui_component::input::InputState::new,
-    component = gpui_component::input::Input,
-);
+gpui_form::custom_component! {
+    pub struct EmailInputShape {
+        type State = gpui_component::input::InputState;
+        new = gpui_component::input::InputState::new;
+        component = gpui_component::input::Input;
+    }
+}
 
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct ContactForm {
@@ -252,11 +263,29 @@ pub struct ContactForm {
 }
 ```
 
+`custom_component!` creates a local zero-sized shape type, so downstream crates
+can attach the `gpui-form` contract to external component state without running
+into Rust's orphan rules.
+
 Custom components can also opt into generated value synchronization by
-implementing `gpui_form::custom::CustomComponentValueAdapter<T>` on the shape
-and adding `value_binding` to the custom component options. The adapter remains
-application-owned; `gpui-form` only calls its generic seed and event-conversion
-hooks.
+implementing `gpui_form::custom::CustomComponentValueAdapter<T>` on the shape.
+For one-off fields, add `value_binding` to the custom component options. For a
+reusable component, put that metadata on the shape:
+
+```rs
+use gpui_form::CustomComponent;
+
+#[derive(Clone, Debug, CustomComponent)]
+#[gpui_form_custom(
+    new = Self::new,
+    component = TagsInput,
+    value_binding
+)]
+pub struct TagsInputState;
+```
+
+The adapter remains application-owned; `gpui-form` only calls its generic seed
+and event-conversion hooks.
 
 Runtime helpers are available from both:
 
@@ -267,10 +296,6 @@ Runtime helpers are available from both:
   `gpui_form::numeric`
 
 ## File Picker Runtime
-
-For generated native path selection, use `#[gpui_form(component(file_picker))]`
-on a `PathBuf` field or combine it with `type`, `from`, and `into` when the
-model stores something derived from a path.
 
 For manual native path selection, use `gpui_form::file_picker` or
 `gpui_form::runtime::file_picker`. The runtime uses GPUI's
@@ -311,7 +336,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp,
-        component(date_picker)
+        component(custom(shape = crate::DatePickerShape))
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -324,7 +349,8 @@ The default empty placeholder is plain English fallback copy; pass
 selected-date label and calendar popover use ICU4X for localized month names,
 weekday headers, day/year labels, and locale-specific week starts. Manual
 runtime code can use `DateRangePicker` and `DateRangePickerState` for range
-selection; generated `component(date_picker)` fields remain single-date fields.
+selection. To use this runtime from `GpuiForm`, define an application or
+collection shape that implements `CustomComponentShape`.
 
 ## Prototyping
 

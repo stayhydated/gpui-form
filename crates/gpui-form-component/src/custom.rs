@@ -5,7 +5,8 @@
 //! - `FormFields` entity state type
 //! - `FormComponents` constructor function body
 //!
-//! Prefer using [`custom_component_shape!`] to define shape types.
+//! Prefer using [`custom_component_shape!`] or `#[derive(gpui_form::CustomComponent)]`
+//! to define shape types.
 
 /// Shape contract for user-defined components.
 ///
@@ -26,6 +27,14 @@ pub trait CustomComponentShape {
     ///
     /// A `component = …` on the field attribute always takes precedence.
     const COMPONENT_PATH: Option<&'static str> = None;
+
+    /// Whether generated prototyping code should wire this custom component
+    /// through [`CustomComponentValueAdapter`] by default.
+    ///
+    /// Field-level `component(custom(..., value_binding))` still opts in
+    /// explicitly. This shape-level flag is useful when the component's derive
+    /// or reusable shape owns the metadata and each field should inherit it.
+    const VALUE_BINDING: bool = false;
 }
 
 /// Value update emitted by a custom component adapter.
@@ -57,8 +66,9 @@ impl<T> CustomComponentValueChange<T> {
 ///
 /// Implement this alongside [`CustomComponentShape`] when generated
 /// prototyping code should seed the component from the form value holder and
-/// subscribe to component events. The form derive opts into this path with
-/// `component(custom(..., value_binding))`.
+/// subscribe to component events. The form derive opts into this path either
+/// with `component(custom(..., value_binding))` or by inheriting
+/// [`CustomComponentShape::VALUE_BINDING`] from the shape.
 pub trait CustomComponentValueAdapter<T>: CustomComponentShape {
     /// Event emitted by the custom component state.
     type Event: 'static;
@@ -90,6 +100,24 @@ pub trait CustomComponentValueAdapter<T>: CustomComponentShape {
 /// ```
 #[macro_export]
 macro_rules! custom_component_shape {
+    // With explicit component path and value binding metadata
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, component = $component:path, value_binding $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const COMPONENT_PATH: Option<&'static str> = Some(stringify!($component));
+            const VALUE_BINDING: bool = true;
+        }
+    };
     // With explicit component path
     ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, component = $component:path $(,)?) => {
         $vis struct $shape;
@@ -105,6 +133,23 @@ macro_rules! custom_component_shape {
             }
 
             const COMPONENT_PATH: Option<&'static str> = Some(stringify!($component));
+        }
+    };
+    // Without component path, with value binding metadata
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, value_binding $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const VALUE_BINDING: bool = true;
         }
     };
     // Without component path (original form)

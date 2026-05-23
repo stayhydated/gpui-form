@@ -22,12 +22,11 @@ pub enum Alias {
 /// A single item to be imported into a generated file.
 ///
 /// Both `path` and the inner value of [`Alias::Rename`] are `&'static str`
-/// because all built-in paths are string literals and custom-component paths
-/// are stored as `&'static str` in
+/// because custom-component paths are stored as `&'static str` in
 /// [`FieldVariant::custom_component`](gpui_form_schema::registry::FieldVariant::custom_component).
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ImportItem {
-    /// Full path to the imported item, e.g. `"gpui_component::checkbox::Checkbox"`.
+    /// Full path to the imported item, e.g. `"my_crate::widgets::FieldWidget"`.
     pub path: &'static str,
     /// Optional alias applied to the import.
     pub alias: Option<Alias>,
@@ -77,14 +76,15 @@ impl ImportSet {
     /// sorted, and emitted as a single `use` per group.
     pub fn to_token_stream(&self) -> TokenStream {
         // Group: parent_path → Vec<(name, alias)> — BTreeMap keeps groups sorted.
-        let mut grouped: BTreeMap<String, Vec<(&'static str, Option<&Alias>)>> = BTreeMap::new();
+        let mut grouped: BTreeMap<String, Vec<(String, Option<&Alias>)>> = BTreeMap::new();
 
         for item in &self.0 {
-            let (parent, name) = item.path.rsplit_once("::").unwrap_or(("", item.path));
+            let path = item.path.replace(char::is_whitespace, "");
+            let (parent, name) = path.rsplit_once("::").unwrap_or(("", path.as_str()));
             grouped
                 .entry(parent.to_string())
                 .or_default()
-                .push((name, item.alias.as_ref()));
+                .push((name.to_string(), item.alias.as_ref()));
         }
 
         let mut tokens = TokenStream::new();

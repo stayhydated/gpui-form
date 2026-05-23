@@ -15,13 +15,8 @@ pub struct CustomCodeGenerator;
 
 impl FieldCodeGenerator for CustomCodeGenerator {
     fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
-        // Only emit an import when the path is qualified (contains `::`).
-        // A bare name like `TagsInput` is already brought in scope by the
-        // `use source_module::*;` glob and needs no separate import.
-        match field.custom_component {
-            Some(path) if path.contains("::") => vec![ImportItem::path(path)],
-            _ => vec![],
-        }
+        let _ = field;
+        Vec::new()
     }
 
     fn generate_cx_new_call(
@@ -102,7 +97,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
         let clear_tokens = if field.value_holder_wraps_in_option() {
             quote! { self.current_data.#field_name_ident = None; }
         } else {
-            quote! { self.current_data.#field_name_ident = ::core::default::Default::default(); }
+            quote! {}
         };
 
         let handler = quote! {

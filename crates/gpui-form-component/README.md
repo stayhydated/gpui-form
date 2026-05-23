@@ -48,6 +48,7 @@ Useful runtime types:
 - `InfiniteSelectKeyPathParseError`
 - `InfiniteSelectPathError`
 - `InfiniteSelectState<T>`
+- `InfiniteSelectField<T>`
 - `SearchableInfiniteSelectState<T>`
 - `InfiniteSelectEvent<T>`
 - `InfiniteSelectLevel<D>`
@@ -90,6 +91,16 @@ for field in location.read(cx).form_fields() {
 }
 ```
 
+For `#[derive(GpuiForm)]`, use the owned state shape directly:
+
+```rs
+#[gpui_form(component(custom(
+    shape = "gpui_form::infinite_select::InfiniteSelectState<_>",
+    wraps_in_option = false
+)))]
+pub location: Country,
+```
+
 Derived `InfiniteSelect` enums expose:
 
 - `PartialEq` compatibility with the backing `gpui-component` select value
@@ -109,8 +120,8 @@ Derived `InfiniteSelect` enums expose:
 
 ## Date Picker
 
-This crate provides the localized runtime date-picker used by generated
-`component(date_picker)` fields.
+This crate provides the localized runtime date-picker that custom
+`gpui-form` shapes can wrap.
 Its default empty placeholder is plain English fallback copy. Pass
 `DatePicker::placeholder(...)` with text rendered through your application-owned
 `es-fluent` localizer when a form needs localized or custom copy.
@@ -127,15 +138,14 @@ use gpui_form::runtime::date_picker::{
 };
 ```
 
-Generated forms store `Entity<DatePickerState>`, render `DatePicker`, and
-convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
+Custom form shapes can store `Entity<DatePickerState>`, render `DatePicker`,
+and convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
 The selected-date label and embedded calendar popover share the same display
 locale: ICU4X formats month names, weekday headers, day/year labels, and the
 locale-specific first day of the week.
 Manual forms can use `DateRangePickerState`, `DateRangePicker`, and
 `DateRangePickerEvent` when they need range selection over the same localized
-calendar popover. Generated `component(date_picker)` fields remain single-date
-fields.
+calendar popover.
 Most application code should still go through
 [`gpui-form`](../gpui-form/README.md) instead of depending on this crate
 directly.
@@ -144,9 +154,8 @@ directly.
 
 This crate provides a native path picker backed by the pinned GPUI git API,
 not a separate dialog crate.
-Generated forms can use the same runtime with
-`#[gpui_form(component(file_picker))]`.
-The built-in placeholders, native-dialog prompts, browse label, dropped-dialog
+Custom form shapes can use the same runtime.
+The default placeholders, native-dialog prompts, browse label, dropped-dialog
 error, and selected-count text have plain English fallback copy. Explicit
 builder values such as `placeholder(...)`, `prompt(...)`, and
 `browse_label(...)` remain caller-provided text; render localized strings through
@@ -195,6 +204,11 @@ cargo run -p gpui-form-component-story
 `custom::CustomComponentShape` is the contract used by
 `component(custom(...))`.
 
+For common external widgets, prefer the reusable shapes in
+[`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
+shape when the application owns the component or when a collection shape is not
+specific enough.
+
 You can declare a reusable shape with the helper macro:
 
 ```rs
@@ -210,17 +224,19 @@ Or, through the facade derive, implement the same contract directly on a state
 type:
 
 ```rs
-#[derive(gpui_form::CustomComponentState)]
+#[derive(gpui_form::CustomComponent)]
 #[gpui_form_custom(
     new = crate::state::build,
-    component = crate::ui::TagsInput
+    component = crate::ui::TagsInput,
+    value_binding
 )]
 pub struct TagsState;
 ```
 
 For custom components that should participate in generated prototyping
 subscriptions, implement `custom::CustomComponentValueAdapter<T>` for the same
-shape and add `value_binding` to the `component(custom(...))` options. The
+shape and either set `value_binding` on the shape metadata or add
+`value_binding` to the `component(custom(...))` options for a single field. The
 adapter seeds state from the current form value and maps component events to
 `CustomComponentValueChange<T>`.
 

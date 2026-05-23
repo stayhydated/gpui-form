@@ -1,7 +1,9 @@
 #[cfg(feature = "derive")]
 pub use gpui_form_component::InfiniteSelect;
 #[cfg(feature = "derive")]
-pub use gpui_form_derive::{CustomComponentState, GpuiForm, SelectItem};
+pub use gpui_form_derive::{
+    CustomComponent, CustomComponentState, GpuiForm, SelectItem, custom_component,
+};
 
 pub use gpui_form_component as runtime;
 pub use gpui_form_component::custom;

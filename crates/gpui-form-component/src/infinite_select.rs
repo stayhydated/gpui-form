@@ -6,7 +6,8 @@
 
 use gpui::{
     App, AppContext as _, Context, Empty, Entity, EventEmitter, FocusHandle, Focusable,
-    IntoElement, ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div,
+    IntoElement, ParentElement as _, Render, RenderOnce, SharedString, Styled as _, Subscription,
+    Window, div,
 };
 use gpui_component::{
     IndexPath,
@@ -916,6 +917,16 @@ where
 }
 
 /// Runtime state for a cascading infinite-select field.
+#[cfg_attr(feature = "derive", derive(gpui_form_derive::CustomComponent))]
+#[cfg_attr(
+    feature = "derive",
+    gpui_form_custom(
+        new = Self::new_default,
+        component = gpui_form::infinite_select::InfiniteSelectField,
+        value_binding,
+        custom_crate = crate
+    )
+)]
 pub struct InfiniteSelectState<T, D = Vec<InfiniteSelectItem<T>>>
 where
     T: InfiniteSelect,
@@ -931,7 +942,7 @@ where
     _child_subscriptions: Vec<Subscription>,
 }
 
-/// Search-enabled state alias for `component(infinite_select(searchable))`.
+/// Search-enabled state alias for custom shapes that render searchable levels.
 pub type SearchableInfiniteSelectState<T> =
     InfiniteSelectState<T, SearchableVec<InfiniteSelectItem<T>>>;
 
@@ -957,6 +968,11 @@ where
     T: InfiniteSelect,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
+    /// Creates a new state from `T::default()`.
+    pub fn new_default(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self::new(T::default(), window, cx)
+    }
+
     /// Creates a new state from the given initial value.
     pub fn new(initial_value: T, window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self::new_with_options(
@@ -1229,6 +1245,65 @@ where
             .map(|child| cx.subscribe_in(child, window, Self::on_select_event))
             .collect();
         self.child_selects = child_selects;
+    }
+}
+
+/// Render wrapper used by generated form code for infinite-select fields.
+#[derive(IntoElement)]
+pub struct InfiniteSelectField<T, D = Vec<InfiniteSelectItem<T>>>
+where
+    T: InfiniteSelect,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    state: Entity<InfiniteSelectState<T, D>>,
+}
+
+impl<T, D> InfiniteSelectField<T, D>
+where
+    T: InfiniteSelect,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    pub fn new(state: &Entity<InfiniteSelectState<T, D>>) -> Self {
+        Self {
+            state: state.clone(),
+        }
+    }
+}
+
+impl<T, D> RenderOnce for InfiniteSelectField<T, D>
+where
+    T: InfiniteSelect,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        div().children(self.state.read(cx).form_fields())
+    }
+}
+
+#[cfg(feature = "derive")]
+impl<T, D> crate::custom::CustomComponentValueAdapter<T> for InfiniteSelectState<T, D>
+where
+    T: InfiniteSelect,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    type Event = InfiniteSelectEvent<T>;
+
+    fn set_state_value(
+        state: &mut Self::State,
+        value: Option<&T>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self::State>,
+    ) {
+        if let Some(value) = value {
+            state.set_value(value.clone(), window, cx);
+        }
+    }
+
+    fn value_change(
+        _state: &Self::State,
+        event: &Self::Event,
+    ) -> crate::custom::CustomComponentValueChange<T> {
+        crate::custom::CustomComponentValueChange::Set(event.value().clone())
     }
 }
 

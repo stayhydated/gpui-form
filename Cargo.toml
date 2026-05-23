@@ -4,6 +4,7 @@ members = [
   "crates/gpui-form",
   "crates/gpui-form-core",
   "crates/gpui-form-codegen",
+  "crates/gpui-form-collection",
   "crates/gpui-form-component",
   "crates/gpui-form-component-derive",
   "crates/gpui-form-component-story",
@@ -41,6 +42,7 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
 gpui-form = { path = "crates/gpui-form", version = "0.5.1" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.5.1" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.5.1" }
 gpui-form-component = { path = "crates/gpui-form-component", version = "0.5.1" }
 gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.5.1" }
 gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.5.1" }

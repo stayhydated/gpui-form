@@ -59,8 +59,10 @@ Responsibilities:
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
 - own the cascading root/child `SelectState`s through `InfiniteSelectState`
+- implement the custom component shape on `InfiniteSelectState` itself when the
+  `derive` feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
-  `form_fields()` helpers for form code
+  `form_fields()` helpers plus `InfiniteSelectField` for form code
 - reconstruct nested enum values from stored paths
 - emit `InfiniteSelectEvent<T>` with previous/current value state, both path
   forms, and the changed depth
@@ -95,7 +97,7 @@ Responsibilities:
 - emit `FilePickerEvent::Change`, `Cancel`, and `Error`
 - render the control with `gpui-component` buttons, icons, theme tokens, and
   sizing helpers
-- provide plain English fallback copy for built-in placeholders, prompts,
+- provide plain English fallback copy for default placeholders, prompts,
   button labels, selected-count text, and dropped-dialog errors while keeping
   Fluent resources available for caller-owned localizers
 - use the workspace-pinned GPUI git API instead of adding another native dialog
@@ -134,11 +136,11 @@ Responsibilities:
 
 ### Date picker
 
-1. Generated `component(date_picker)` fields store
-   `Entity<DatePickerState>` in `FormFields`.
+1. Custom shapes can store `Entity<DatePickerState>` in `FormFields`.
 1. Runtime date selection emits `DatePickerEvent::Change`.
-1. Generated handler code converts the `jiff::civil::Date` into the holder field
-   type with `parse_form_date` and any `type`/`into` conversion hooks.
+1. Shape-owned value adapters can convert the `jiff::civil::Date` into the
+   holder field type with `parse_form_date` and any `type`/`into` conversion
+   hooks.
 1. Manual range-picking UI can store `Entity<DateRangePickerState>`, render
    `DateRangePicker`, and subscribe to `DateRangePickerEvent::Change`.
 

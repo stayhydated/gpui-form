@@ -8,7 +8,6 @@ use koruma_collection::{
     numeric::{NegativeValidation, PositiveValidation, RangeValidation},
     string::{PrefixValidation, SuffixValidation},
 };
-use rust_decimal::Decimal;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, Default, EnumIter, EsFluent, PartialEq, SelectItem)]
@@ -20,9 +19,10 @@ pub enum PreferredLanguage {
     Chinese,
 }
 
-#[derive(Clone, Debug, EnumIter, EsFluent, PartialEq, SelectItem)]
+#[derive(Clone, Debug, Default, EnumIter, EsFluent, PartialEq, SelectItem)]
 #[select_item(fluent)]
 pub enum EnumCountry {
+    #[default]
     UnitedStates,
     France,
     China,
@@ -33,7 +33,7 @@ pub enum EnumCountry {
 #[fluent_variants(keys = ["description", "label"])]
 #[gpui_form(koruma(fluent))]
 pub struct User {
-    #[gpui_form(component(input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     #[koruma(
         NonEmptyValidation::<_>::builder(),
         PrefixValidation::<_>::builder().prefix("Xx"),
@@ -41,39 +41,60 @@ pub struct User {
     )]
     pub username: String,
 
-    #[gpui_form(component(input), default = "test@example.com")]
+    #[gpui_form(
+        component(custom(shape = "gpui_form_collection::input::InputShape<_>")),
+        default = "test@example.com"
+    )]
     #[koruma(EmailValidation::<_>::builder())]
     pub email: String,
 
-    #[gpui_form(component(number_input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     #[koruma(RangeValidation::<_>::builder().min(18).max(167))]
     pub age: Option<u32>,
 
-    #[gpui_form(component(number_input(as = f64)), default = 67)]
+    #[gpui_form(
+        component(custom(shape = "gpui_form_collection::input::InputShape<_>")),
+        default = 67
+    )]
     #[koruma(PositiveValidation::<_>::builder())]
-    pub balance: Decimal,
+    pub balance: rust_decimal::Decimal,
 
-    #[gpui_form(component(number_input(as = f64)))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     #[koruma(NegativeValidation::<_>::builder())]
-    pub debt: Decimal,
+    pub debt: rust_decimal::Decimal,
 
-    #[gpui_form(component(checkbox))]
+    #[gpui_form(component(custom(
+        shape = gpui_form_collection::switch::SwitchShape,
+        wraps_in_option = false
+    )))]
     pub subscribe_newsletter: bool,
 
-    #[gpui_form(component(switch))]
+    #[gpui_form(component(custom(
+        shape = gpui_form_collection::checkbox::CheckboxShape,
+        wraps_in_option = false
+    )))]
     pub enable_notifications: bool,
 
-    #[gpui_form(component(select))]
+    #[gpui_form(component(custom(
+        shape = "gpui_form_collection::select::SelectShape<_>",
+        wraps_in_option = false
+    )))]
     pub preferred: PreferredLanguage,
 
-    #[gpui_form(component(select(searchable)), default = EnumCountry::France)]
+    #[gpui_form(
+        component(custom(
+            shape = "gpui_form_collection::select::SelectShape<_>",
+            wraps_in_option = false
+        )),
+        default = EnumCountry::France
+    )]
     pub country: Option<EnumCountry>,
 
     #[gpui_form(
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component(date_picker)
+        component(custom(shape = "gpui_form_collection::input::InputShape<_>"))
     )]
     pub birth_date: Option<Timestamp>,
 

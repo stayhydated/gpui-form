@@ -1,19 +1,11 @@
-use darling::{Error as DarlingError, FromMeta};
-use gpui_form_schema::components::{ComponentKind, NumberInputKind};
+use darling::{Error as DarlingError, FromMeta, util::Flag};
+use gpui_form_schema::components::ComponentKind;
 use proc_macro2::TokenStream;
 use quote::{ToTokens as _, quote};
 
 use crate::implementations::ComponentLayout as _;
 
 pub trait ComponentOption {}
-
-pub trait ComponentDefinition {
-    fn component_kind() -> ComponentKind;
-
-    fn component_name() -> &'static str {
-        Self::component_kind().component_name()
-    }
-}
 
 pub struct FieldInformation<T: ComponentOption> {
     pub options: T,
@@ -37,114 +29,6 @@ pub struct GeneratedFieldLayout {
     pub wrap_in_option: bool,
 }
 
-macro_rules! impl_component_option {
-    ($($option:ty),+ $(,)?) => {
-        $(impl ComponentOption for $option {})+
-    };
-}
-
-macro_rules! define_component_definition {
-    ($component:ident, $options:ty, $kind:ident) => {
-        pub struct $component(pub FieldInformation<$options>);
-
-        impl ComponentDefinition for $component {
-            fn component_kind() -> ComponentKind {
-                ComponentKind::$kind
-            }
-        }
-    };
-}
-
-#[derive(Clone, Debug, Default, Eq, FromMeta, PartialEq)]
-pub struct BehaviourSelectOptions {
-    #[darling(default)]
-    pub partial: bool,
-    #[darling(default)]
-    pub searchable: bool,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SelectOptions {
-    pub behaviour: BehaviourSelectOptions,
-    /// Field-level default value expression (e.g., `EnumCountry::France` or
-    /// `preferred_country()`).
-    /// This is set by the derive macro when the field has a `default = ...` attribute.
-    field_default: Option<syn::Expr>,
-}
-
-impl FromMeta for SelectOptions {
-    fn from_word() -> darling::Result<Self> {
-        Ok(Self::default())
-    }
-
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let behaviour = BehaviourSelectOptions::from_list(items)?;
-        Ok(Self {
-            behaviour,
-            field_default: None,
-        })
-    }
-}
-
-impl SelectOptions {
-    pub fn with_field_default(mut self, default: Option<syn::Expr>) -> Self {
-        self.field_default = default;
-        self
-    }
-
-    pub fn field_default(&self) -> Option<&syn::Expr> {
-        self.field_default.as_ref()
-    }
-
-    pub fn use_enum_default(&self) -> bool {
-        self.field_default.is_none()
-    }
-}
-
-#[derive(Clone, Debug, Default, FromMeta)]
-pub struct InputOptions;
-
-#[derive(Clone, Debug, Default)]
-pub struct NumberInputOptions {
-    /// For custom numeric types (like Decimal), specify a standard numeric type
-    /// for validation purposes (e.g., f64, i32, u64)
-    pub r#as: Option<syn::Ident>,
-}
-
-impl FromMeta for NumberInputOptions {
-    fn from_word() -> darling::Result<Self> {
-        Ok(Self::default())
-    }
-
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let mut r#as = None;
-
-        for item in items {
-            if let darling::ast::NestedMeta::Meta(syn::Meta::NameValue(nv)) = item
-                && nv.path.is_ident("as")
-                && let syn::Expr::Path(expr_path) = &nv.value
-                && let Some(ident) = expr_path.path.get_ident()
-            {
-                r#as = Some(ident.clone());
-            }
-        }
-
-        Ok(Self { r#as })
-    }
-}
-
-#[derive(Clone, Debug, FromMeta)]
-pub struct CheckboxOptions;
-
-#[derive(Clone, Debug, FromMeta)]
-pub struct SwitchOptions;
-
-#[derive(Clone, Debug, FromMeta)]
-pub struct DatePickerOptions;
-
-#[derive(Clone, Debug, FromMeta)]
-pub struct FilePickerOptions;
-
 fn default_custom_wraps_in_option() -> bool {
     true
 }
@@ -161,7 +45,7 @@ pub struct CustomOptions {
     pub wraps_in_option: bool,
     /// Whether prototyping code should wire this custom component through
     /// `CustomComponentValueAdapter`.
-    pub value_binding: bool,
+    pub value_binding: Option<bool>,
 }
 
 #[derive(Debug, Default, FromMeta)]
@@ -175,7 +59,7 @@ struct CustomOptionsMeta {
     #[darling(default = "default_custom_wraps_in_option")]
     wraps_in_option: bool,
     #[darling(default)]
-    value_binding: bool,
+    value_binding: Flag,
 }
 
 impl CustomOptions {
@@ -206,8 +90,17 @@ impl CustomOptions {
             shape,
             component,
             wraps_in_option,
-            value_binding,
+            value_binding: value_binding.is_present().then_some(true),
         })
+    }
+
+    pub fn resolved_shape(&self, field_type: &syn::Type) -> syn::Path {
+        substitute_infer_in_path(&self.shape, field_type)
+    }
+
+    pub fn with_field_type(mut self, field_type: &syn::Type) -> Self {
+        self.shape = self.resolved_shape(field_type);
+        self
     }
 }
 
@@ -224,163 +117,90 @@ impl FromMeta for CustomOptions {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, FromMeta, PartialEq)]
-pub struct BehaviourInfiniteSelectOptions {
-    #[darling(default)]
-    pub searchable: bool,
-    #[darling(default)]
-    pub max_depth: Option<usize>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct InfiniteSelectOptions {
-    pub behaviour: BehaviourInfiniteSelectOptions,
-    /// Field-level default value expression (e.g., `Country::France(...)` or
-    /// `default_country()`).
-    /// This is set by the derive macro when the field has a `default = ...` attribute.
-    field_default: Option<syn::Expr>,
-}
-
-impl FromMeta for InfiniteSelectOptions {
-    fn from_word() -> darling::Result<Self> {
-        Ok(Self::default())
-    }
-
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let behaviour = BehaviourInfiniteSelectOptions::from_list(items)?;
-        Ok(Self {
-            behaviour,
-            field_default: None,
-        })
-    }
-}
-
-impl InfiniteSelectOptions {
-    pub fn with_field_default(mut self, default: Option<syn::Expr>) -> Self {
-        self.field_default = default;
-        self
-    }
-
-    pub fn field_default(&self) -> Option<&syn::Expr> {
-        self.field_default.as_ref()
-    }
-
-    pub fn use_enum_default(&self) -> bool {
-        self.field_default.is_none()
+fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Type {
+    match ty {
+        syn::Type::Infer(_) => replacement.clone(),
+        syn::Type::Path(type_path) => {
+            let mut type_path = type_path.clone();
+            type_path.path = substitute_infer_in_path(&type_path.path, replacement);
+            syn::Type::Path(type_path)
+        },
+        syn::Type::Tuple(tuple) => {
+            let mut tuple = tuple.clone();
+            tuple.elems = tuple
+                .elems
+                .iter()
+                .map(|ty| substitute_infer_in_type(ty, replacement))
+                .collect();
+            syn::Type::Tuple(tuple)
+        },
+        syn::Type::Paren(paren) => {
+            let mut paren = paren.clone();
+            paren.elem = Box::new(substitute_infer_in_type(&paren.elem, replacement));
+            syn::Type::Paren(paren)
+        },
+        syn::Type::Group(group) => {
+            let mut group = group.clone();
+            group.elem = Box::new(substitute_infer_in_type(&group.elem, replacement));
+            syn::Type::Group(group)
+        },
+        syn::Type::Reference(reference) => {
+            let mut reference = reference.clone();
+            reference.elem = Box::new(substitute_infer_in_type(&reference.elem, replacement));
+            syn::Type::Reference(reference)
+        },
+        _ => ty.clone(),
     }
 }
 
-impl_component_option!(
-    BehaviourSelectOptions,
-    SelectOptions,
-    InputOptions,
-    NumberInputOptions,
-    CheckboxOptions,
-    SwitchOptions,
-    DatePickerOptions,
-    FilePickerOptions,
-    CustomOptions,
-    BehaviourInfiniteSelectOptions,
-    InfiniteSelectOptions,
-);
+fn substitute_infer_in_path(path: &syn::Path, replacement: &syn::Type) -> syn::Path {
+    let mut path = path.clone();
+
+    for segment in &mut path.segments {
+        if let syn::PathArguments::AngleBracketed(args) = &mut segment.arguments {
+            for arg in &mut args.args {
+                match arg {
+                    syn::GenericArgument::Type(ty) => {
+                        *ty = substitute_infer_in_type(ty, replacement);
+                    },
+                    syn::GenericArgument::AssocType(assoc_type) => {
+                        assoc_type.ty = substitute_infer_in_type(&assoc_type.ty, replacement);
+                    },
+                    _ => {},
+                }
+            }
+        }
+    }
+
+    path
+}
+
+impl ComponentOption for CustomOptions {}
+
+pub struct CustomComponent(pub FieldInformation<CustomOptions>);
+
+impl CustomComponent {
+    pub fn component_name() -> &'static str {
+        ComponentKind::Custom.component_name()
+    }
+}
 
 #[derive(Clone, Debug, FromMeta)]
 #[darling(rename_all = "snake_case")]
 pub enum Components {
-    Input,
-    NumberInput(NumberInputOptions),
-    Checkbox,
-    Switch,
-    Select(SelectOptions),
-    InfiniteSelect(InfiniteSelectOptions),
     Custom(CustomOptions),
-    DatePicker,
-    FilePicker,
-}
-
-define_component_definition!(InputComponent, InputOptions, Input);
-define_component_definition!(NumberInputComponent, NumberInputOptions, NumberInput);
-define_component_definition!(CheckboxComponent, CheckboxOptions, Checkbox);
-define_component_definition!(SwitchComponent, SwitchOptions, Switch);
-define_component_definition!(SelectComponent, SelectOptions, Select);
-define_component_definition!(
-    InfiniteSelectComponent,
-    InfiniteSelectOptions,
-    InfiniteSelect
-);
-define_component_definition!(CustomComponent, CustomOptions, Custom);
-define_component_definition!(DatePickerComponent, DatePickerOptions, DatePicker);
-define_component_definition!(FilePickerComponent, FilePickerOptions, FilePicker);
-
-fn number_input_kind(type_str: &str) -> NumberInputKind {
-    if type_str.starts_with('f') {
-        NumberInputKind::Float
-    } else if type_str.starts_with('u') {
-        NumberInputKind::UnsignedInteger
-    } else if type_str.starts_with('i') {
-        NumberInputKind::SignedInteger
-    } else {
-        NumberInputKind::Custom
-    }
-}
-
-fn number_input_behaviour_tokens(
-    options: &NumberInputOptions,
-    field_type: &syn::Type,
-) -> TokenStream {
-    let type_str = options
-        .r#as
-        .as_ref()
-        .map(|ty| ty.to_string())
-        .unwrap_or_else(|| field_type.to_token_stream().to_string());
-
-    let kind_tokens = match number_input_kind(&type_str) {
-        NumberInputKind::Float => {
-            quote! { ::gpui_form::schema::components::NumberInputKind::Float }
-        },
-        NumberInputKind::SignedInteger => {
-            quote! { ::gpui_form::schema::components::NumberInputKind::SignedInteger }
-        },
-        NumberInputKind::UnsignedInteger => {
-            quote! { ::gpui_form::schema::components::NumberInputKind::UnsignedInteger }
-        },
-        NumberInputKind::Custom => {
-            quote! { ::gpui_form::schema::components::NumberInputKind::Custom }
-        },
-    };
-    let validation_type = options.r#as.as_ref().map(|value| value.to_string());
-    let validation_type = match validation_type {
-        Some(value) => quote! { Some(#value) },
-        None => quote! { None },
-    };
-
-    quote! {
-        ::gpui_form::schema::components::NumberInputBehaviour {
-            validation_type: #validation_type,
-            kind: #kind_tokens,
-        }
-    }
 }
 
 impl Components {
     pub const fn kind(&self) -> ComponentKind {
         match self {
-            Self::Input => ComponentKind::Input,
-            Self::NumberInput(_) => ComponentKind::NumberInput,
-            Self::Checkbox => ComponentKind::Checkbox,
-            Self::Switch => ComponentKind::Switch,
-            Self::Select(_) => ComponentKind::Select,
-            Self::InfiniteSelect(_) => ComponentKind::InfiniteSelect,
             Self::Custom(_) => ComponentKind::Custom,
-            Self::DatePicker => ComponentKind::DatePicker,
-            Self::FilePicker => ComponentKind::FilePicker,
         }
     }
 
     pub fn wraps_in_option(&self) -> bool {
         match self {
             Self::Custom(options) => options.wraps_in_option,
-            _ => self.kind().default_wraps_in_option(),
         }
     }
 
@@ -388,100 +208,16 @@ impl Components {
         &self,
         field_name: String,
         field_type: syn::Type,
-        field_default: Option<syn::Expr>,
+        _field_default: Option<syn::Expr>,
     ) -> GeneratedFieldLayout {
         let mut field_structure_tokens = TokenStream::new();
         let mut field_base_declarations_tokens = TokenStream::new();
 
         match self {
-            Self::Input => {
-                let component =
-                    InputComponent(FieldInformation::new(InputOptions, field_name, field_type));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::NumberInput(options) => {
-                let component = NumberInputComponent(FieldInformation::new(
-                    options.clone(),
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::Checkbox => {
-                let component = CheckboxComponent(FieldInformation::new(
-                    CheckboxOptions,
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::Switch => {
-                let component =
-                    SwitchComponent(FieldInformation::new(SwitchOptions, field_name, field_type));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::Select(options) => {
-                let component = SelectComponent(FieldInformation::new(
-                    options.clone().with_field_default(field_default),
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::InfiniteSelect(options) => {
-                let component = InfiniteSelectComponent(FieldInformation::new(
-                    options.clone().with_field_default(field_default),
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
             Self::Custom(options) => {
-                let component = CustomComponent(FieldInformation::new(
-                    options.clone(),
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::DatePicker => {
-                let component = DatePickerComponent(FieldInformation::new(
-                    DatePickerOptions,
-                    field_name,
-                    field_type,
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-            Self::FilePicker => {
-                let component = FilePickerComponent(FieldInformation::new(
-                    FilePickerOptions,
-                    field_name,
-                    field_type,
-                ));
+                let options = options.clone().with_field_type(&field_type);
+                let component =
+                    CustomComponent(FieldInformation::new(options, field_name, field_type));
                 component.field_tokens(
                     &mut field_structure_tokens,
                     &mut field_base_declarations_tokens,
@@ -496,71 +232,18 @@ impl Components {
         }
     }
 
-    pub fn behaviour_tokens(&self, field_type: &syn::Type) -> TokenStream {
+    pub fn behaviour_tokens(&self, _field_type: &syn::Type) -> TokenStream {
         match self {
-            Self::Input => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::Input }
-            },
-            Self::NumberInput(options) => {
-                let behaviour = number_input_behaviour_tokens(options, field_type);
-
-                quote! {
-                    ::gpui_form::schema::components::ComponentsBehaviour::NumberInput(
-                        #behaviour
-                    )
-                }
-            },
-            Self::Checkbox => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::Checkbox }
-            },
-            Self::Switch => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::Switch }
-            },
-            Self::Select(options) => {
-                let searchable = options.behaviour.searchable;
-                let partial = options.behaviour.partial;
-                quote! {
-                    ::gpui_form::schema::components::ComponentsBehaviour::Select(
-                        ::gpui_form::schema::components::SelectBehaviour {
-                            searchable: #searchable,
-                            partial: #partial,
-                        }
-                    )
-                }
-            },
-            Self::InfiniteSelect(options) => {
-                let searchable = options.behaviour.searchable;
-                let max_depth = match options.behaviour.max_depth {
-                    Some(depth) => quote! { Some(#depth) },
-                    None => quote! { None },
-                };
-                quote! {
-                    ::gpui_form::schema::components::ComponentsBehaviour::InfiniteSelect(
-                        ::gpui_form::schema::components::InfiniteSelectBehaviour {
-                            searchable: #searchable,
-                            max_depth: #max_depth,
-                        }
-                    )
-                }
-            },
             Self::Custom(_) => {
                 quote! { ::gpui_form::schema::components::ComponentsBehaviour::Custom }
-            },
-            Self::DatePicker => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::DatePicker }
-            },
-            Self::FilePicker => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::FilePicker }
             },
         }
     }
 
-    pub fn custom_component_tokens(&self) -> Option<TokenStream> {
-        let Self::Custom(options) = self else {
-            return None;
-        };
+    pub fn custom_component_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Custom(options) = self;
 
-        let shape = &options.shape;
+        let shape = options.resolved_shape(field_type);
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
             Some(quote! { .with_custom_component(#component_str) })
@@ -573,22 +256,31 @@ impl Components {
         }
     }
 
-    pub fn custom_shape_tokens(&self) -> Option<TokenStream> {
-        let Self::Custom(options) = self else {
-            return None;
-        };
+    pub fn custom_shape_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Custom(options) = self;
 
-        let shape = options.shape.to_token_stream().to_string();
+        let shape = options
+            .resolved_shape(field_type)
+            .to_token_stream()
+            .to_string();
         Some(quote! { .with_custom_shape(#shape) })
     }
 
-    pub fn custom_value_binding_tokens(&self) -> Option<TokenStream> {
-        let Self::Custom(options) = self else {
-            return None;
-        };
+    pub fn custom_value_binding_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Custom(options) = self;
 
-        options
-            .value_binding
-            .then(|| quote! { .with_custom_value_binding(true) })
+        let shape = options.resolved_shape(field_type);
+
+        Some(match options.value_binding {
+            Some(true) => quote! { .with_custom_value_binding(true) },
+            Some(false) => quote! { .with_custom_value_binding(false) },
+            None => {
+                quote! {
+                    .with_custom_value_binding(
+                        <#shape as ::gpui_form::custom::CustomComponentShape>::VALUE_BINDING
+                    )
+                }
+            },
+        })
     }
 }

@@ -25,8 +25,8 @@ not own proc-macro parsing or token emission.
 
 ### `ComponentKind`
 
-Static identity for built-in component categories. It centralizes shared traits
-such as:
+Static identity for component categories. Today the schema only models custom
+component contract fields. It centralizes shared traits such as:
 
 - snake-case component naming
 - whether a component is subscribable
@@ -35,12 +35,9 @@ such as:
 
 ### `ComponentsBehaviour`
 
-Per-field runtime behavior metadata with payloads for:
-
-- select behavior
-- infinite-select behavior
-- number-input behavior
-- file-picker behavior
+Per-field runtime behavior metadata. Today this is `Custom`; shape-specific
+details live in `FieldVariant::custom_shape`, `custom_component`, and
+`custom_value_binding`.
 
 This is the metadata level that downstream consumers use; derive/codegen
 internals should not invent separate parallel runtime models.
