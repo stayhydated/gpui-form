@@ -100,12 +100,12 @@ impl FieldCodeGenerator for CustomCodeGenerator {
             quote! { cx.subscribe_in(&#field_var_name_ident, window, Self::#event_handler_fn_name_ident) },
         ];
 
-        let set_tokens = if field.value_holder_wraps_in_option() {
+        let set_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = Some(value); }
         } else {
             quote! { self.current_data.#field_name_ident = value; }
         };
-        let clear_tokens = if field.value_holder_wraps_in_option() {
+        let clear_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = None; }
         } else {
             quote! {}
@@ -158,7 +158,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_behaviour();
         let field_name_ident = field.field_ident();
-        let value_tokens = if field.value_holder_wraps_in_option() {
+        let value_tokens = if field.value_holder_uses_option() {
             quote! { current_data.#field_name_ident.as_ref() }
         } else {
             quote! { Some(&current_data.#field_name_ident) }
@@ -256,7 +256,7 @@ mod tests {
         const FIELDS: [FieldVariant; 1] =
             [
                 FieldVariant::new("country", "CountryCode", false, ComponentsBehaviour::Custom)
-                    .with_wraps_in_option(true)
+                    .with_requires_value(true)
                     .with_custom_shape("crate::shapes::CountryShape")
                     .with_custom_value_binding(true),
             ];

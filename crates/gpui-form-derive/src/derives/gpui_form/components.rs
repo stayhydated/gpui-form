@@ -15,7 +15,7 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
         return ComponentFieldContent {
             field_structure_tokens: proc_macro2::TokenStream::new(),
             field_base_declarations_tokens: proc_macro2::TokenStream::new(),
-            wrap_in_option: (field_name, false),
+            requires_value: (field_name, false),
         };
     };
 
@@ -28,6 +28,6 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
     ComponentFieldContent {
         field_structure_tokens: layout.field_structure_tokens,
         field_base_declarations_tokens: layout.field_base_declarations_tokens,
-        wrap_in_option: (field_name, layout.wrap_in_option),
+        requires_value: (field_name, layout.requires_value),
     }
 }

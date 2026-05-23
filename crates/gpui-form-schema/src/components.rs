@@ -50,7 +50,7 @@ impl ComponentKind {
         )
     }
 
-    pub const fn default_wraps_in_option(self) -> bool {
+    pub const fn default_requires_value(self) -> bool {
         matches!(self, Self::Input | Self::NumberInput | Self::FilePicker)
     }
 }

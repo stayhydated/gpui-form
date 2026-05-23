@@ -10,15 +10,15 @@ use crate::derives::gpui_form::utils::extract_option_inner_type;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum FieldStorage {
     OriginallyOptional,
-    WrappedOption,
+    RequiredValue,
     Plain,
 }
 
 fn field_storage(field: &FieldOptionality) -> FieldStorage {
     if field.was_optional {
         FieldStorage::OriginallyOptional
-    } else if field.wrap_in_option {
-        FieldStorage::WrappedOption
+    } else if field.requires_value {
+        FieldStorage::RequiredValue
     } else {
         FieldStorage::Plain
     }
@@ -91,7 +91,7 @@ fn try_from_field_tokens(
                 #field_name: #access
             }
         }
-    } else if field.wrap_in_option {
+    } else if field.requires_value {
         let field_name_str = field_name.to_string();
         if needs_into_conversion(field) {
             let converted = apply_into_conversion(field, quote! { value });
@@ -129,7 +129,7 @@ fn generate_conversion_error_type(error_name: &syn::Ident) -> TokenStream {
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 write!(
                     f,
-                    "Failed to unwrap an Option for field '{}', found None",
+                    "Missing required value for field '{}'",
                     self.field_name
                 )
             }
@@ -219,7 +219,7 @@ fn generate_to_wrapped_field(field: &FieldOptionality) -> TokenStream {
                 }
             }
         },
-        FieldStorage::WrappedOption => {
+        FieldStorage::RequiredValue => {
             if let Some(default_expr) = &field.default_expr {
                 let default_original = default_expr_for_original(default_expr);
                 let original_type = &field.original_type;
@@ -288,7 +288,7 @@ fn generate_from_wrapped_field(field: &FieldOptionality) -> TokenStream {
                 }
             }
         },
-        FieldStorage::WrappedOption => {
+        FieldStorage::RequiredValue => {
             if let Some(default_expr) = &field.default_expr {
                 let default_original = default_expr_for_original(default_expr);
                 if needs_into_conversion(field) {
@@ -355,7 +355,7 @@ fn generate_present_fields_json_entry(field: &FieldOptionality) -> TokenStream {
                 }
             }
         },
-        FieldStorage::WrappedOption => {
+        FieldStorage::RequiredValue => {
             if needs_into_conversion(field) {
                 let converted = apply_into_conversion(field, quote! { value });
                 quote! {
@@ -562,7 +562,7 @@ pub fn generate_value_holder(
     let mut from_where_clause = where_clause.cloned();
     let mut new_predicates: Vec<syn::WherePredicate> = Vec::new();
     for f in fields {
-        if !f.skip && !f.was_optional && f.wrap_in_option {
+        if !f.skip && !f.was_optional && f.requires_value {
             let original_type = &f.original_type;
             new_predicates.push(syn::parse_quote!(#original_type: ::core::default::Default));
         }

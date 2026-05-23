@@ -79,7 +79,7 @@ bare identifier. That is important because inventory metadata may carry:
 - crate-qualified enum paths
 - nested module paths
 - type overrides emitted by the derive layer
-- source/form conversion metadata and generated value-holder wrapping policy
+- source/form conversion metadata and required-value holder behavior
 
 Each field is resolved once into a typed internal representation before any
 component-specific generation runs.

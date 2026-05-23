@@ -80,9 +80,12 @@ Behavior notes:
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
-- known reusable components infer generated value-holder wrapping internally:
-  `gpui_form_collection::input::Input` wraps in `Option<T>`, while select,
-  checkbox, switch, and infinite-select components keep required fields as `T`
+- known reusable components infer required-value behavior internally:
+  `gpui_form_collection::input::Input` allows required source fields to be
+  absent in the holder until validation or conversion, while select, checkbox,
+  switch, and infinite-select components keep required fields as `T`
+- in the legacy `component(custom(...))` form, `requires_value = false` opts a
+  custom shape out of required-value holder behavior
 - `searchable(true)` and `.partial(true)` record select behavior metadata
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata

@@ -109,12 +109,15 @@ The expression is parsed as attribute metadata; generated runtime construction
 delegates to `CustomComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
 derive macro.
-Generated value-holder wrapping is inferred internally from known components:
-`gpui_form_collection::input::Input` wraps, while
+Generated required-value behavior is inferred internally from known components:
+`gpui_form_collection::input::Input` allows required source fields to be absent
+in the holder until validation or conversion, while
 `gpui_form_collection::select::Select`, `gpui_form_collection::checkbox::Checkbox`,
 `gpui_form_collection::switch::Switch`, and
 `gpui_form_component::infinite_select::InfiniteSelect` keep non-optional source fields
 as `T`.
+In the legacy `component(custom(...))` form, `requires_value = false` opts a
+custom shape out of that required-value holder behavior.
 
 Common field-level helpers:
 
@@ -239,8 +242,8 @@ pub struct Signup {
 
 When validation is enabled:
 
-- required-value semantics are preserved when the generated holder wraps fields
-  in `Option<T>`
+- required-value semantics are preserved when the generated holder represents
+  required fields as `Option<T>`
 - builder-chain Koruma attrs are mirrored
 - generated value-holder validation uses the same validator set as the source
   struct

@@ -29,7 +29,7 @@ impl<T: ComponentOption> FieldInformation<T> {
 pub struct GeneratedFieldLayout {
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
-    pub wrap_in_option: bool,
+    pub requires_value: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -45,9 +45,9 @@ pub struct CustomOptions {
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<syn::Path>,
-    /// Whether the value holder should store this field as `Option<T>`.
+    /// Whether non-optional source fields should reject a missing holder value.
     /// This is inferred from known shape types for the component expression syntax.
-    pub wraps_in_option: bool,
+    pub requires_value: bool,
     /// User-facing component behavior metadata carried by this shape.
     pub behaviour: ComponentsBehaviour,
     /// Field-level default value expression, used by known shapes that can seed
@@ -70,7 +70,7 @@ struct CustomOptionsMeta {
     #[darling(default)]
     component: Option<syn::Path>,
     #[darling(default)]
-    wraps_in_option: Option<bool>,
+    requires_value: Option<bool>,
     #[darling(default)]
     value_binding: Flag,
     #[darling(default)]
@@ -80,12 +80,12 @@ struct CustomOptionsMeta {
 impl CustomOptions {
     fn from_shape(shape: Path) -> Self {
         let shape = normalize_shape_path(shape);
-        let (behaviour, wraps_in_option, field_suffix) = inferred_shape_defaults(&shape);
+        let (behaviour, requires_value, field_suffix) = inferred_shape_defaults(&shape);
 
         Self {
             shape,
             component: None,
-            wraps_in_option,
+            requires_value,
             behaviour,
             field_default: None,
             value_binding: None,
@@ -99,7 +99,7 @@ impl CustomOptions {
             shape,
             state,
             component,
-            wraps_in_option,
+            requires_value,
             value_binding,
             field_suffix,
         } = meta;
@@ -120,8 +120,8 @@ impl CustomOptions {
 
         let mut options = Self::from_shape(shape);
         options.component = component;
-        if let Some(wraps_in_option) = wraps_in_option {
-            options.wraps_in_option = wraps_in_option;
+        if let Some(requires_value) = requires_value {
+            options.requires_value = requires_value;
         }
         options.value_binding = value_binding.is_present().then_some(true);
         options.field_suffix = field_suffix;
@@ -943,9 +943,9 @@ impl Components {
         }
     }
 
-    pub fn wraps_in_option(&self) -> bool {
+    pub fn requires_value(&self) -> bool {
         match self {
-            Self::Custom(options) => options.wraps_in_option,
+            Self::Custom(options) => options.requires_value,
         }
     }
 
@@ -976,7 +976,7 @@ impl Components {
         GeneratedFieldLayout {
             field_structure_tokens,
             field_base_declarations_tokens,
-            wrap_in_option: self.wraps_in_option(),
+            requires_value: self.requires_value(),
         }
     }
 

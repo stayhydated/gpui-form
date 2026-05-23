@@ -123,8 +123,8 @@ impl<'a> ResolvedField<'a> {
         self.field.optional
     }
 
-    pub fn value_holder_wraps_in_option(&self) -> bool {
-        self.field.value_holder_wraps_in_option()
+    pub fn value_holder_uses_option(&self) -> bool {
+        self.field.value_holder_uses_option()
     }
 
     pub fn custom_value_binding(&self) -> bool {
@@ -402,7 +402,7 @@ pub fn generate_text_value_prefill(field: &ResolvedField<'_>) -> TokenStream {
     let field_var_name_ident = field.field_ident_with_behaviour();
     let field_name_ident = field.field_ident();
 
-    if field.value_holder_wraps_in_option() {
+    if field.value_holder_uses_option() {
         quote! {
             if let Some(value) = current_data.#field_name_ident.as_ref() {
                 #field_var_name_ident.update(cx, |state, cx| {

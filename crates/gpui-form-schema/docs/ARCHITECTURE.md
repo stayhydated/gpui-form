@@ -64,7 +64,7 @@ Important fields:
 - `value_type`
 - `source_value_type`
 - `optional`
-- `wraps_in_option`
+- `requires_value`
 - `behaviour`
 - `validations`
 - `default_expr`
@@ -82,10 +82,11 @@ The fallback suffix strips shape/state wrappers and removes duplicated
 field-name prefixes before falling back to the behavior name. Explicit
 prototyping suffix metadata is normalized against the field name the same way.
 
-`wraps_in_option` is emitted metadata, not a user-facing component constructor
-setting. Known reusable shape wrappers infer it in `gpui-form-codegen`, while
-`behaviour` carries shape settings such as select `searchable` / `partial` and
-infinite-select `searchable` / `max_depth`.
+`requires_value` is emitted metadata and, for legacy `custom(...)` attributes,
+a metadata key rather than a component expression-chain setter. Known reusable
+shape wrappers infer whether a missing generated holder value is invalid in
+`gpui-form-codegen`, while `behaviour` carries shape settings such as select
+`searchable` / `partial` and infinite-select `searchable` / `max_depth`.
 
 ## Data Flow
 

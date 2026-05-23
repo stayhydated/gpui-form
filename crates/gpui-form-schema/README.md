@@ -14,11 +14,12 @@ prototyping flows around generated form metadata.
 - `registry::FieldVariant`
 - `registry::inventory`
 
-`FieldVariant` records both source-model and form-side value types, generated
-value-holder wrapping, conversion expressions, custom component shape paths,
-custom component prototyping suffixes, and opt-in custom value-binding metadata
-for generators. Helpers such as `field_name_with_behaviour()` keep inventory
-consumers aligned with the field names emitted by `#[derive(GpuiForm)]`.
+`FieldVariant` records both source-model and form-side value types,
+required-value holder behavior, conversion expressions, custom component shape
+paths, custom component prototyping suffixes, and opt-in custom value-binding
+metadata for generators. Helpers such as `field_name_with_behaviour()` keep
+inventory consumers aligned with the field names emitted by
+`#[derive(GpuiForm)]`.
 
 ## Example
 

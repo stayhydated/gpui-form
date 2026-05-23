@@ -45,7 +45,7 @@ Important parse-time responsibilities:
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- generated value-holder wrapping is inferred from known shape metadata
+- required-value holder behavior is inferred from known shape metadata
 - `value_binding()` records that generated prototyping code should use
   `CustomComponentValueAdapter`
 - `field_suffix("...")` records a field-level prototyping name override

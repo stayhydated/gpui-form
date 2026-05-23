@@ -769,8 +769,8 @@ mod gpui_form_tests {
             "FieldVariant should store the source model value type: {compact}"
         );
         assert!(
-            compact.contains("with_wraps_in_option(true)"),
-            "FieldVariant should store generated holder wrapping policy: {compact}"
+            compact.contains("with_requires_value(true)"),
+            "FieldVariant should store generated required-value policy: {compact}"
         );
         assert!(
             compact.contains("with_conversions(Some(\"crate::types::AccountCode::new\"),Some(\"crate::types::AccountCode::into_string\"))"),
@@ -779,7 +779,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_known_shape_wraps_in_option_policy_is_internal() {
+    fn test_known_shape_requires_value_policy_is_internal() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -807,8 +807,8 @@ mod gpui_form_tests {
             "switch shape should avoid wrapping in Option"
         );
         assert!(
-            compact.contains("with_wraps_in_option(false)"),
-            "known shape wrapping policy should be stored as metadata: {compact}"
+            compact.contains("with_requires_value(false)"),
+            "known shape required-value policy should be stored as metadata: {compact}"
         );
     }
 
@@ -817,7 +817,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(state = crate::state::TagsState, wraps_in_option = false)))]
+                #[gpui_form(component(custom(state = crate::state::TagsState, requires_value = false)))]
                 tags: Vec<String>,
             }
         };
@@ -841,7 +841,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains("pubtags:Vec<String>"),
-            "wraps_in_option = false should keep field as Vec<String>"
+            "requires_value = false should keep field as Vec<String>"
         );
     }
 

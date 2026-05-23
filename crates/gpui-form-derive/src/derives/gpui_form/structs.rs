@@ -74,7 +74,7 @@ pub struct FieldOptionality {
     #[allow(dead_code)]
     pub inner_type: Type,
     pub was_optional: bool,
-    pub wrap_in_option: bool,
+    pub requires_value: bool,
     pub validation: ValidationInfo,
     pub default_expr: Option<Expr>,
     pub override_type: Option<Type>,
@@ -86,11 +86,11 @@ pub struct FieldOptionality {
 impl FieldOptionality {
     /// Returns true if this field needs the `RequiredValidation` koruma validator.
     /// This applies to fields that:
-    /// - Are wrapped in Option (for form handling)
-    /// - Were not originally Optional in the source struct
+    /// - Can be missing in the form holder
+    /// - Must be present in the source struct
     /// - Are not nested structs (nested fields have their own validation)
     pub fn needs_required_validation(&self) -> bool {
-        !self.skip && self.wrap_in_option && !self.was_optional && !self.validation.is_nested
+        !self.skip && self.requires_value && !self.was_optional && !self.validation.is_nested
     }
 }
 
@@ -532,7 +532,7 @@ pub struct ComponentStruct {
 pub struct ComponentFieldContent {
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
-    pub wrap_in_option: (String, bool),
+    pub requires_value: (String, bool),
 }
 
 pub struct GpuiFormOptions {

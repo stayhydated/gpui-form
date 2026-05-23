@@ -89,7 +89,7 @@ Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3)` when search or depth limits are needed.
-- Treat value-holder wrapping as internal derive behavior for known collection/runtime components; do not add a public wrapping method to the component expression chain.
+- Treat required-value holder behavior as internal derive behavior for known collection/runtime components; use `requires_value = false` only in the legacy `component(custom(...))` form when a custom shape should keep a required source field as `T`.
 - For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
 - For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`.
 - Let reusable custom shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and custom shapes without metadata fall back to the shape-name heuristic.

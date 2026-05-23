@@ -73,10 +73,10 @@ pub struct FieldVariant {
     /// `#[gpui_form(type = ...)]` override is applied.
     pub source_value_type: &'static str,
     pub optional: bool,
-    /// Whether the generated value holder wraps this field in `Option<T>`
-    /// because of component behavior. Source `Option<T>` fields are tracked by
-    /// [`FieldVariant::optional`].
-    pub wraps_in_option: bool,
+    /// Whether a missing generated value-holder value is invalid for this field.
+    /// Source `Option<T>` fields are tracked by [`FieldVariant::optional`] and
+    /// do not require a value.
+    pub requires_value: bool,
     pub behaviour: ComponentsBehaviour,
     /// List of validation rule identifiers applied to this field (for diagnostics/rendering).
     pub validations: &'static [&'static str],
@@ -112,7 +112,7 @@ impl FieldVariant {
             value_type,
             source_value_type: value_type,
             optional,
-            wraps_in_option: behaviour.kind().default_wraps_in_option(),
+            requires_value: !optional && behaviour.kind().default_requires_value(),
             behaviour,
             validations: &[],
             default_expr: None,
@@ -131,9 +131,9 @@ impl FieldVariant {
         self
     }
 
-    /// Attach the component-driven generated value-holder wrapping policy.
-    pub const fn with_wraps_in_option(mut self, wraps_in_option: bool) -> Self {
-        self.wraps_in_option = wraps_in_option;
+    /// Attach the required-value policy for generated value-holder conversion.
+    pub const fn with_requires_value(mut self, requires_value: bool) -> Self {
+        self.requires_value = requires_value && !self.optional;
         self
     }
 
@@ -192,8 +192,8 @@ impl FieldVariant {
     }
 
     /// Returns true when the generated value holder stores this field as `Option<T>`.
-    pub const fn value_holder_wraps_in_option(&self) -> bool {
-        self.optional || self.wraps_in_option
+    pub const fn value_holder_uses_option(&self) -> bool {
+        self.optional || self.requires_value
     }
 
     /// Returns true when generated code should subscribe to this field.
