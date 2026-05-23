@@ -40,6 +40,8 @@ gpui-form-collection = "*"
 
 ## Quick Start
 
+`SelectItem` is re-exported by the facade from `gpui-form-collection-derive`.
+
 ```rs
 use gpui_form::{GpuiForm, SelectItem};
 use strum::EnumIter;

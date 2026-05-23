@@ -61,5 +61,7 @@ Behavior notes:
 - [`gpui-form`](../gpui-form/README.md) for the public facade
 - [`gpui-form-component`](../gpui-form-component/README.md) for the runtime
   state helpers targeted by the derive
-- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`,
-  `SelectItem`, and custom component shape derives
+- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`
+  and custom component shape derives
+- [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
+  `SelectItem`

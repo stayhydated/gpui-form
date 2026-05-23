@@ -16,7 +16,6 @@ proc-macro = true
 
 [dependencies]
 darling = { workspace = true }
-es-fluent = { workspace = true }
 gpui-form-codegen = { workspace = true }
 itertools = { workspace = true }
 koruma-derive-core = { workspace = true }

@@ -2961,6 +2961,7 @@ name = "gpui-form"
 version = "0.5.1"
 dependencies = [
  "bon",
+ "gpui-form-collection-derive",
  "gpui-form-component",
  "gpui-form-core",
  "gpui-form-derive",
@@ -2988,6 +2989,17 @@ dependencies = [
  "gpui-component",
  "gpui-form",
  "strum 0.28.0",
+]
+
+[[package]]
+name = "gpui-form-collection-derive"
+version = "0.5.1"
+dependencies = [
+ "darling",
+ "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -3054,7 +3066,6 @@ name = "gpui-form-derive"
 version = "0.5.1"
 dependencies = [
  "darling",
- "es-fluent",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=832c17e8192e2e1d472f0751e7cef2af84ded622)",
  "gpui-component",
  "gpui-form",

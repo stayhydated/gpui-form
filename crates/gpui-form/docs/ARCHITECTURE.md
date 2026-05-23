@@ -18,8 +18,9 @@ This crate exists to:
 
 `src/lib.rs` re-exports:
 
-- `gpui_form_derive::{custom_component, CustomComponent, CustomComponentState, GpuiForm, SelectItem}`
+- `gpui_form_derive::{custom_component, CustomComponent, CustomComponentState, GpuiForm}`
   behind the `derive` feature
+- `gpui_form_collection_derive::SelectItem` behind the `derive` feature
 - `gpui_form_component::InfiniteSelect` behind the `derive` feature
 - `gpui_form_component` as `gpui_form::runtime`
 - `gpui_form_component::custom`
@@ -37,8 +38,9 @@ paths. Root-level module re-exports remain for compatibility.
 ## Feature Flags
 
 - `derive` (default): enables the public derive surface
-  - `GpuiForm`, `SelectItem`, `CustomComponent`, `CustomComponentState`, and
+  - `GpuiForm`, `CustomComponent`, `CustomComponentState`, and
     `custom_component!` come from `gpui-form-derive`
+  - `SelectItem` comes from `gpui-form-collection-derive`
   - `InfiniteSelect` comes through `gpui-form-component`, which re-exports the
     proc macro from `gpui-form-component-derive`
 - `inventory`: forwards inventory-enabled `GpuiForm` behavior so
@@ -48,14 +50,15 @@ paths. Root-level module re-exports remain for compatibility.
 
 ## Dependency Role
 
-`gpui-form` depends on four lower layers:
+`gpui-form` depends on five lower layers:
 
 - `gpui-form-core` for UI-neutral helper logic
 - `gpui-form-component` for GPUI runtime helpers and the facade's
   `InfiniteSelect` re-export
 - `gpui-form-schema` for metadata and inventory types
-- `gpui-form-derive` for `GpuiForm`, `SelectItem`, and custom component shape
+- `gpui-form-derive` for `GpuiForm` and custom component shape
   derives
+- `gpui-form-collection-derive` for `SelectItem`
 
 `gpui-form-collection` intentionally is not re-exported here. It is an opt-in
 component representation crate, so applications choose it explicitly instead of
@@ -69,8 +72,9 @@ lower crates and is only re-exported here.
 ### Facade-driven derives
 
 1. A user depends on `gpui-form` with the `derive` feature.
-1. `GpuiForm`, `SelectItem`, `CustomComponent`, `CustomComponentState`, and
+1. `GpuiForm`, `CustomComponent`, `CustomComponentState`, and
    `custom_component!` resolve to `gpui-form-derive`.
+1. `SelectItem` resolves to `gpui-form-collection-derive`.
 1. `InfiniteSelect` resolves through `gpui-form-component` to
    `gpui-form-component-derive`.
 1. `GpuiForm` generated code references `gpui_form::runtime`,

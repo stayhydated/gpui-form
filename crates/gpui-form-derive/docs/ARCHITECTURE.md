@@ -11,7 +11,6 @@ power the rest of the ecosystem.
 `src/lib.rs` defines:
 
 - `#[derive(GpuiForm)]`
-- `#[derive(SelectItem)]`
 - `#[derive(CustomComponent)]`
 - `#[derive(CustomComponentState)]`
 - `custom_component!`
@@ -19,6 +18,10 @@ power the rest of the ecosystem.
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by the facade as
 `gpui_form::InfiniteSelect`.
+
+`#[derive(SelectItem)]` is also not part of this crate. It lives in
+`gpui-form-collection-derive` and is re-exported by the facade as
+`gpui_form::SelectItem`.
 
 ## Module Layout
 
@@ -31,7 +34,6 @@ power the rest of the ecosystem.
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
-- `src/derives/select_item.rs`: `SelectItem` expansion
 - `src/derives/custom_component_state.rs`: `CustomComponentState` expansion
 - `src/derives/custom_component.rs`: function-like custom component shape
   expansion for local wrappers around external component/state types
@@ -96,13 +98,6 @@ When the `inventory` feature is enabled:
    downstream generators.
 
 ## Other Derives
-
-### `SelectItem`
-
-- implements `gpui_component::select::SelectItem`
-- accepts `#[select_item(fluent)]` for enums that do not implement `Display`,
-  but emits fallback titles because `SelectItem::title()` has no localizer
-  argument
 
 ### `CustomComponent` / `CustomComponentState`
 

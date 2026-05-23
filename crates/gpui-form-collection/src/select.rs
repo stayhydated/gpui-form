@@ -8,6 +8,9 @@ use strum::IntoEnumIterator;
 
 gpui_form::custom_component! {
     /// Shape for a `gpui_component::select::Select` backed by enum variants.
+    ///
+    /// The enum type `T` must implement `gpui_form::SelectItem`, usually via
+    /// `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
     pub struct SelectShape<T>
     where
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,

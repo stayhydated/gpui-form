@@ -29,5 +29,10 @@ Currently provided shapes:
 - `checkbox::CheckboxShape` for `gpui_component::checkbox::Checkbox`
 - `switch::SwitchShape` for `gpui_component::switch::Switch`
 
+`SelectShape<T>` requires enum values that implement
+`gpui_component::select::SelectItem`; derive that trait with
+`#[derive(SelectItem)]` (or import it from
+`gpui_form::SelectItem` through the facade).
+
 Collection shapes are declared with `gpui_form::custom_component!` and then
 add value adapters where the component can synchronize form state generically.

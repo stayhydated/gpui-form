@@ -9,13 +9,16 @@ layer without the facade's runtime and metadata re-exports.
 ## What This Crate Provides
 
 - `#[derive(GpuiForm)]`
-- `#[derive(SelectItem)]`
 - `#[derive(CustomComponent)]` / `#[derive(CustomComponentState)]`
 - `custom_component! { ... }`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and
 re-exported by the facade as `gpui_form::InfiniteSelect`.
+
+`#[derive(SelectItem)]` is implemented in
+[`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) and
+re-exported by the facade as `gpui_form::SelectItem`.
 
 ## `#[derive(GpuiForm)]`
 
@@ -87,26 +90,6 @@ Behavior notes:
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion
 
-## `#[derive(SelectItem)]`
-
-Implements `gpui_component::select::SelectItem` for enums.
-
-```rs
-use gpui_form::SelectItem;
-
-#[derive(Clone, Debug, SelectItem)]
-pub enum Country {
-    USA,
-    France,
-}
-```
-
-Optional attribute:
-
-- `#[select_item(fluent)]` allows enums that derive `EsFluent` to avoid a
-  `Display` bound, but `SelectItem::title()` has no localizer argument. Render
-  localized select labels in the application layer when localization is needed.
-
 ## `#[derive(CustomComponent)]` / `#[derive(CustomComponentState)]`
 
 Implements `gpui_form::custom::CustomComponentShape` directly for a state type.
@@ -162,6 +145,8 @@ caller can still add a `CustomComponentValueAdapter<T>` impl on that wrapper.
 ## Most Users Should Use Instead
 
 - [`gpui-form`](../gpui-form/README.md) for the main facade
+- [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
+  `#[derive(SelectItem)]` when using derives directly
 - [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) for
   `#[derive(InfiniteSelect)]`
 - [`gpui-form-schema`](../gpui-form-schema/README.md) when you need metadata
