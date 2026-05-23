@@ -74,7 +74,7 @@ pub struct User {
     pub preferred: PreferredLanguage,
 
     #[gpui_form(
-        component = gpui_form_collection::select::SelectShape::<_>.searchable(),
+        component = gpui_form_collection::select::SelectShape::<_>::searchable(true),
         default = EnumCountry::France
     )]
     pub country: Option<EnumCountry>,

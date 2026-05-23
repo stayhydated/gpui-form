@@ -16,6 +16,7 @@ default = [  ]
 derive = [ "dep:gpui-form-component-derive", "dep:gpui-form-derive" ]
 
 [dependencies]
+bon = { workspace = true }
 chrono = { workspace = true }
 es-fluent = { features = [ "derive" ], workspace = true }
 es-fluent-manager-embedded = { workspace = true }

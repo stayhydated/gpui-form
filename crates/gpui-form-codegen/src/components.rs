@@ -33,6 +33,12 @@ pub struct GeneratedFieldLayout {
 }
 
 #[derive(Clone, Debug)]
+pub struct ComponentMethod {
+    pub method: syn::Ident,
+    pub args: Vec<Expr>,
+}
+
+#[derive(Clone, Debug)]
 pub struct CustomOptions {
     /// Path to a type implementing `gpui_form_component::custom::CustomComponentShape`.
     pub shape: syn::Path,
@@ -52,6 +58,7 @@ pub struct CustomOptions {
     pub value_binding: Option<bool>,
     /// Optional explicit generated field/helper suffix for prototyping output.
     pub field_suffix: Option<String>,
+    component_methods: Vec<ComponentMethod>,
 }
 
 #[derive(Debug, Default, FromMeta)]
@@ -83,6 +90,7 @@ impl CustomOptions {
             field_default: None,
             value_binding: None,
             field_suffix: None,
+            component_methods: Vec::new(),
         }
     }
 
@@ -124,11 +132,39 @@ impl CustomOptions {
     fn from_component_expr(expr: &Expr) -> darling::Result<Self> {
         let (shape, methods) = analyze_component_expr(expr)?;
         let mut options = Self::from_shape(shape);
+        let mut behavior_seen = false;
+        let mut metadata_seen = false;
 
-        for method in methods {
+        for method in &methods {
+            let method_name = method.method.to_string();
+            if method_name == "builder" {
+                return Err(DarlingError::custom(
+                    "component behavior chains start setters directly; use \
+                     `SelectShape::<_>::searchable(true)` instead of calling `builder()`",
+                )
+                .with_span(&method.method));
+            }
+
+            let is_behavior = is_component_behavior_method(&method.method);
+            if is_behavior && metadata_seen {
+                return Err(DarlingError::custom(
+                    "component behavior setters must start the component expression",
+                )
+                .with_span(&method.method));
+            }
+            if !is_behavior && behavior_seen {
+                return Err(DarlingError::custom(
+                    "component behavior chains only accept behavior setters",
+                )
+                .with_span(&method.method));
+            }
+
             options.apply_component_method(&method.method, &method.args)?;
+            behavior_seen |= is_behavior;
+            metadata_seen |= !is_behavior;
         }
 
+        options.component_methods = methods;
         Ok(options)
     }
 
@@ -149,25 +185,17 @@ impl CustomOptions {
         args: &[Expr],
     ) -> darling::Result<()> {
         match method.to_string().as_str() {
-            "new" => {
-                if !args.is_empty() {
-                    return Err(DarlingError::custom(
-                        "component `new()` marker does not accept arguments",
-                    )
-                    .with_span(method));
-                }
-            },
-            "value_binding" | "with_value_binding" => {
+            "value_binding" => {
                 self.value_binding = Some(expect_optional_bool_arg(method, args)?);
             },
-            "component" | "with_component" => {
+            "component" => {
                 self.component = Some(expect_path_arg(method, args)?);
             },
-            "field_suffix" | "with_field_suffix" => {
+            "field_suffix" => {
                 self.field_suffix = Some(expect_string_arg(method, args)?);
             },
-            "searchable" | "with_searchable" => {
-                let searchable = expect_optional_bool_arg(method, args)?;
+            "searchable" => {
+                let searchable = expect_bool_arg(method, args)?;
                 match &mut self.behaviour {
                     ComponentsBehaviour::Select(behaviour) => {
                         behaviour.searchable = searchable;
@@ -183,8 +211,8 @@ impl CustomOptions {
                     },
                 }
             },
-            "partial" | "with_partial" => {
-                let partial = expect_optional_bool_arg(method, args)?;
+            "partial" => {
+                let partial = expect_bool_arg(method, args)?;
                 match &mut self.behaviour {
                     ComponentsBehaviour::Select(behaviour) => {
                         behaviour.partial = partial;
@@ -197,7 +225,7 @@ impl CustomOptions {
                     },
                 }
             },
-            "max_depth" | "with_max_depth" => {
+            "max_depth" => {
                 let max_depth = expect_usize_arg(method, args)?;
                 match &mut self.behaviour {
                     ComponentsBehaviour::InfiniteSelect(behaviour) => {
@@ -213,9 +241,9 @@ impl CustomOptions {
             },
             _ => {
                 return Err(DarlingError::custom(format!(
-                    "unknown component behavior `{method}`; supported methods are optional `new`, \
-                     `value_binding`, `component`, `field_suffix`, `searchable`, `partial`, \
-                     and `max_depth`"
+                    "unknown component behavior `{method}`; supported methods are \
+                     `value_binding`, `component`, `field_suffix`, `searchable`, \
+                     `partial`, and `max_depth`"
                 ))
                 .with_span(method));
             },
@@ -328,6 +356,32 @@ impl CustomOptions {
             },
         }
     }
+
+    pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        if self.component_methods.is_empty()
+            || !self
+                .component_methods
+                .iter()
+                .all(|method| is_component_behavior_method(&method.method))
+        {
+            return None;
+        }
+
+        let shape = turbofish_shape_path(self.resolved_shape(field_type));
+        let mut methods = self.component_methods.iter();
+        let first = methods.next()?;
+        let first_method_name = &first.method;
+        let first_args = &first.args;
+        let setter_calls = methods.map(|method| {
+            let method_name = &method.method;
+            let args = &method.args;
+            quote! { .#method_name(#(#args),*) }
+        });
+
+        Some(quote! {
+            let _ = #shape::#first_method_name(#(#first_args),*) #(#setter_calls)* .build();
+        })
+    }
 }
 
 impl FromMeta for CustomOptions {
@@ -341,11 +395,6 @@ impl FromMeta for CustomOptions {
         let meta = CustomOptionsMeta::from_list(items)?;
         Self::from_meta(meta)
     }
-}
-
-struct ComponentMethod {
-    method: syn::Ident,
-    args: Vec<Expr>,
 }
 
 fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMethod>)> {
@@ -453,6 +502,13 @@ fn parse_expr_args(tokens: TokenStream) -> syn::Result<Vec<Expr>> {
     Punctuated::<Expr, Token![,]>::parse_terminated
         .parse2(tokens)
         .map(|args| args.into_iter().collect())
+}
+
+fn is_component_behavior_method(method: &syn::Ident) -> bool {
+    matches!(
+        method.to_string().as_str(),
+        "searchable" | "partial" | "max_depth"
+    )
 }
 
 fn expect_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
@@ -635,15 +691,16 @@ fn searchable_infinite_select_shape(mut shape: Path) -> Path {
 
 fn infinite_select_options_tokens(behaviour: &InfiniteSelectBehaviour) -> TokenStream {
     let searchable = behaviour.searchable;
-    let base = quote! {
-        ::gpui_form_component::infinite_select::InfiniteSelectStateOptions::default()
-            .searchable(#searchable)
+    let max_depth = match behaviour.max_depth {
+        Some(max_depth) => quote! { Some(#max_depth) },
+        None => quote! { None },
     };
 
-    if let Some(max_depth) = behaviour.max_depth {
-        quote! { #base.max_depth(#max_depth) }
-    } else {
-        base
+    quote! {
+        ::gpui_form_component::infinite_select::InfiniteSelectStateOptions::new(
+            #searchable,
+            #max_depth,
+        )
     }
 }
 
@@ -969,6 +1026,12 @@ impl Components {
                         .field_suffix
                 )
             })
+        }
+    }
+
+    pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        match self {
+            Self::Custom(options) => options.type_check_tokens(field_type),
         }
     }
 }

@@ -24,11 +24,31 @@ gpui_form_derive::custom_component! {
     }
 }
 
+/// Options used by `#[gpui_form(component = SelectShape::<_>::searchable(...)...)]`.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SelectShapeOptions {
+    pub searchable: bool,
+    pub partial: bool,
+}
+
+#[bon::bon]
 impl<T, D> SelectShape<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
+    /// Starts a bon-style `#[gpui_form(component = ...)]` option chain.
+    #[builder(start_fn = builder, finish_fn = build)]
+    pub fn options(
+        #[builder(default)] searchable: bool,
+        #[builder(default)] partial: bool,
+    ) -> SelectShapeOptions {
+        SelectShapeOptions {
+            searchable,
+            partial,
+        }
+    }
+
     pub fn new_default(
         window: &mut Window,
         cx: &mut Context<'_, SelectState<D>>,
@@ -50,6 +70,27 @@ where
             window,
             cx,
         )
+    }
+}
+
+#[allow(unnameable_types)]
+impl<T, D> SelectShape<T, D>
+where
+    T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+    D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
+{
+    /// Starts a `#[gpui_form(component = ...)]` option chain with search enabled.
+    pub fn searchable(
+        value: bool,
+    ) -> SelectShapeOptionsBuilder<T, D, select_shape_options_builder::SetSearchable> {
+        Self::builder().searchable(value)
+    }
+
+    /// Starts a `#[gpui_form(component = ...)]` option chain with partial rendering enabled.
+    pub fn partial(
+        value: bool,
+    ) -> SelectShapeOptionsBuilder<T, D, select_shape_options_builder::SetPartial> {
+        Self::builder().partial(value)
     }
 }
 

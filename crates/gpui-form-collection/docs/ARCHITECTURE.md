@@ -30,7 +30,7 @@ this crate owns reusable shape types for common `gpui-component` widgets.
   `gpui_component::select::SelectState<D>`, with `IntoEnumIterator`,
   `Default`, `PartialEq`, `SelectItem<Value = T>`, and delegate bounds.
   Codegen specializes `D` to `gpui_component::select::SearchableVec<T>` when a
-  field uses `.searchable()`.
+  field uses `::searchable(true)`.
 - `checkbox::CheckboxShape`: value-bound checkbox wrapper that stores checked
   state in an entity and renders `gpui_component::checkbox::Checkbox`.
 - `switch::SwitchShape`: value-bound switch wrapper that stores checked state

@@ -888,7 +888,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable())]
+                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true))]
                 country: crate::types::Country,
             }
         };
@@ -933,6 +933,10 @@ mod gpui_form_tests {
             compact.contains("pubcountry:crate::types::Country"),
             "select shape should keep required value holder fields non-optional: {compact}"
         );
+        assert!(
+            compact.contains("SelectShape::<crate::types::Country>::searchable(true).build"),
+            "select direct setter chain should emit a bon builder check for rust-analyzer: {compact}"
+        );
     }
 
     #[test]
@@ -940,7 +944,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.partial())]
+                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::partial(true))]
                 country: crate::types::Country,
             }
         };
@@ -971,8 +975,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
-                        .searchable()
+                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
                         .max_depth(3)
                 )]
                 location: crate::types::Country,
@@ -1014,6 +1017,107 @@ mod gpui_form_tests {
         assert!(
             compact.contains(".max_depth(3"),
             "infinite-select max depth should be applied to runtime options: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "InfiniteSelectState::<crate::types::Country>::searchable(true).max_depth(3).build"
+            ),
+            "infinite-select direct setter chain should be emitted for type checking: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_infinite_select_shape_exposes_behavior_options_with_positional_component() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(
+                    gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
+                        .max_depth(3)
+                )]
+                location: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("InfiniteSelectBehaviour{searchable:true,max_depth:Some(3"),
+            "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
+        );
+        assert!(
+            compact.contains("SearchableInfiniteSelectState<crate::types::Country>"),
+            "searchable infinite select should use the searchable state alias: {compact}"
+        );
+        assert!(
+            compact.contains(".max_depth(3"),
+            "infinite-select max depth should be applied to runtime options: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_component_behavior_rejects_explicit_builder() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(
+                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+                        .builder()
+                        .searchable(true)
+                )]
+                location: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("componentbehaviorchainsstartsettersdirectly"),
+            "explicit builder syntax should fail in gpui_form attributes: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_component_behavior_rejects_removed_combined_infinite_select_helper() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(
+                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable_with_max_depth(3)
+                )]
+                location: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("unknowncomponentbehavior`searchable_with_max_depth`"),
+            "removed pre-bon infinite-select helper should fail: {compact}"
         );
     }
 }

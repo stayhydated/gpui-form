@@ -724,18 +724,12 @@ pub struct InfiniteSelectStateOptions {
 }
 
 impl InfiniteSelectStateOptions {
-    /// Enables or disables search on the backing select widgets.
-    pub fn searchable(mut self, searchable: bool) -> Self {
-        self.searchable = searchable;
-        self
-    }
-
-    /// Limits how many levels the state will render.
-    ///
-    /// The stored value and selection paths still preserve deeper default selections.
-    pub fn max_depth(mut self, max_depth: usize) -> Self {
-        self.max_depth = Some(max_depth);
-        self
+    /// Creates runtime options for `InfiniteSelectState`.
+    pub const fn new(searchable: bool, max_depth: Option<usize>) -> Self {
+        Self {
+            searchable,
+            max_depth,
+        }
     }
 }
 
@@ -964,11 +958,24 @@ where
 {
 }
 
+#[bon::bon]
 impl<T, D> InfiniteSelectState<T, D>
 where
     T: InfiniteSelect,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
+    /// Starts a bon-style `#[gpui_form(component = ...)]` option chain.
+    #[builder(start_fn = builder, finish_fn = build)]
+    pub fn options(
+        #[builder(default)] searchable: bool,
+        max_depth: Option<usize>,
+    ) -> InfiniteSelectStateOptions {
+        InfiniteSelectStateOptions {
+            searchable,
+            max_depth,
+        }
+    }
+
     /// Creates a new state from `T::default()`.
     pub fn new_default(window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self::new(T::default(), window, cx)
@@ -1153,7 +1160,7 @@ where
         self.set_key_path(&key_path, window, cx)
     }
 
-    fn max_depth(&self) -> usize {
+    fn resolved_max_depth(&self) -> usize {
         match self.options.max_depth {
             Some(max_depth) => max_depth.clamp(1, T::depth()),
             None => T::depth(),
@@ -1235,7 +1242,7 @@ where
         let child_selects = build_child_selects::<T, D>(
             &self.value,
             &self.path,
-            self.max_depth(),
+            self.resolved_max_depth(),
             self.options.searchable,
             window,
             cx,
@@ -1246,6 +1253,29 @@ where
             .map(|child| cx.subscribe_in(child, window, Self::on_select_event))
             .collect();
         self.child_selects = child_selects;
+    }
+}
+
+#[allow(unnameable_types)]
+impl<T, D> InfiniteSelectState<T, D>
+where
+    T: InfiniteSelect,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    /// Starts a `#[gpui_form(component = ...)]` option chain with search enabled.
+    pub fn searchable(
+        value: bool,
+    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetSearchable>
+    {
+        Self::builder().searchable(value)
+    }
+
+    /// Starts a `#[gpui_form(component = ...)]` option chain with a max depth.
+    pub fn max_depth(
+        value: usize,
+    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetMaxDepth>
+    {
+        Self::builder().max_depth(value)
     }
 }
 

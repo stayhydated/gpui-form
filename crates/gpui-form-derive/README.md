@@ -45,16 +45,17 @@ Supported component forms:
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
 - `#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable().partial())]`
+- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true))]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]`
 - `#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3))]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3))]`
 
 The older `component(custom(shape = ...))` and `component(custom(state = ...))`
 forms are still accepted for compatibility.
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `CustomComponentShape::new`. A trailing `.new()` marker is still
-accepted for compatibility, but it is not required.
+delegates to `CustomComponentShape::new`. Select and infinite-select behavior
+uses Koruma-style direct setter chains that expand to bon builders inside the
+derive macro.
 
 Supporting field attributes:
 
@@ -81,8 +82,8 @@ Behavior notes:
 - known reusable shapes infer generated value-holder wrapping internally:
   input-like shapes wrap in `Option<T>`, while select, checkbox, switch, and
   infinite-select shapes keep required fields as `T`
-- `.searchable()` and `.partial()` record select behavior metadata
-- `.searchable()` and `.max_depth(...)` record infinite-select behavior
+- `searchable(true)` and `.partial(true)` record select behavior metadata
+- `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata
 - `.value_binding()` records that the custom shape implements
   `gpui_form_component::custom::CustomComponentValueAdapter<T>` for generated

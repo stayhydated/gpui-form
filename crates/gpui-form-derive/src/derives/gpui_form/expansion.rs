@@ -290,6 +290,38 @@ pub fn expand_gpui_form(
         })
         .collect();
 
+    let component_type_check_tokens: Vec<TokenStream> = fields_iter
+        .iter()
+        .filter_map(|field| {
+            if field.skip() {
+                return None;
+            }
+
+            let component_def = field.component.as_ref()?;
+            let (_was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
+            let base_type = field
+                .r#type
+                .as_ref()
+                .map(|ty| extract_option_inner_type(&ty.0).1)
+                .unwrap_or(original_inner_type);
+
+            component_def.type_check_tokens(&base_type)
+        })
+        .collect();
+
+    let component_type_checks = if component_type_check_tokens.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            const _: () = {
+                #[allow(dead_code)]
+                fn __gpui_form_component_type_checks() {
+                    #(#component_type_check_tokens)*
+                }
+            };
+        }
+    };
+
     let shape_impl = if options.generate_shape {
         quote! {
             ::gpui_form::schema::registry::inventory::submit! {
@@ -309,6 +341,8 @@ pub fn expand_gpui_form(
 
     let expanded = quote! {
         #value_holder_tokens
+        #component_type_checks
+
         pub struct #components_holder_name {
             #(#field_structure_tokens)*
         }

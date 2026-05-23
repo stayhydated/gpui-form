@@ -78,8 +78,7 @@ pub struct UserProfile {
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::select::SelectShape::<_>
-            .searchable(),
+        component = gpui_form_collection::select::SelectShape::<_>::searchable(true),
         default = Country::France
     )]
     pub country: Country,
@@ -89,7 +88,7 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3)` when search or depth limits are needed.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3)` when search or depth limits are needed.
 - Treat value-holder wrapping as internal derive behavior for known collection/runtime shapes; do not add a public wrapping method to the component expression chain.
 - For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
 - For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`.

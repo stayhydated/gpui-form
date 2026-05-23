@@ -98,16 +98,17 @@ pub struct UserProfile {
 - `#[gpui_form(component = my::Shape.value_binding())]`
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
 - `#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable().partial())]`
+- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true))]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]`
 - `#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3))]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3))]`
 
 The older `component(custom(shape = ...))` and `component(custom(state = ...))`
 forms are still accepted for compatibility.
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `CustomComponentShape::new`. A trailing `.new()` marker is still
-accepted for compatibility, but it is not required.
+delegates to `CustomComponentShape::new`. Select and infinite-select behavior
+uses Koruma-style direct setter chains that expand to bon builders inside the
+derive macro.
 Generated value-holder wrapping is inferred internally from known shapes:
 `InputShape` wraps, while `SelectShape`, `CheckboxShape`, `SwitchShape`, and
 `InfiniteSelectState` keep non-optional source fields as `T`.

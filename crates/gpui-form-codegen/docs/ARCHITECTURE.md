@@ -32,8 +32,8 @@ crate.
 - `component = my::Shape.component(my::Widget)`
 - `component = my::Shape.value_binding()`
 - `component = my::Shape.field_suffix("input")`
-- `component = gpui_form_collection::select::SelectShape::<_>.searchable().partial()`
-- `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3)`
+- `component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true)`
+- `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3)`
 - legacy `component(custom(shape = my::Shape))`
 - legacy `component(custom(state = my::State))`
 
@@ -49,10 +49,10 @@ Important parse-time responsibilities:
 - `value_binding()` records that generated prototyping code should use
   `CustomComponentValueAdapter`
 - `field_suffix("...")` records a field-level prototyping name override
-- `searchable()` and `partial()` record select behavior metadata
-- `searchable()` and `max_depth(...)` record infinite-select behavior metadata
-- `new()` is accepted as an optional compatibility marker; the generated code
-  owns the real runtime construction call
+- `searchable(true)` and `.partial(true)` record select behavior metadata
+- `searchable(true)` and `.max_depth(...)` record infinite-select behavior metadata
+- direct behavior setter chains are expanded to bon builder checks for
+  rust-analyzer without requiring users to write `builder()` in attributes
 
 ## Component Layout Emission
 
