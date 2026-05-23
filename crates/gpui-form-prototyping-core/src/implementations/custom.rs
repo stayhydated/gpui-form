@@ -343,7 +343,7 @@ mod tests {
                 searchable: true,
             }),
         )
-        .with_custom_shape("gpui_form_collection::select::SelectShape<EnumCountry>")
+        .with_custom_shape("gpui_form_collection::select::Select<EnumCountry>")
         .with_custom_value_binding(true)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
@@ -367,7 +367,7 @@ mod tests {
             "searchable behavior should keep the normal handler suffix: {compact_handler}"
         );
         assert!(
-            compact_handler.contains("gpui_form_collection::select::SelectShape<EnumCountry,::gpui_component::select::SearchableVec<EnumCountry>>"),
+            compact_handler.contains("gpui_form_collection::select::Select<EnumCountry,::gpui_component::select::SearchableVec<EnumCountry>>"),
             "searchable select subscriptions should use the runtime-specialized shape: {compact_handler}"
         );
     }
@@ -383,7 +383,7 @@ mod tests {
                 max_depth: Some(3),
             }),
         )
-        .with_custom_shape("gpui_form_component::infinite_select::InfiniteSelectState<Country>")
+        .with_custom_shape("gpui_form_component::infinite_select::InfiniteSelect<Country>")
         .with_custom_value_binding(true)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
@@ -407,7 +407,7 @@ mod tests {
             "searchable behavior should not leak into generated names: {compact_created}"
         );
         assert!(
-            compact_handler.contains("SearchableInfiniteSelectState<Country>"),
+            compact_handler.contains("SearchableInfiniteSelect<Country>"),
             "searchable infinite-select subscriptions should use the runtime-specialized shape: {compact_handler}"
         );
     }

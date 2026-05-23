@@ -65,19 +65,19 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::select::SelectShape::<_>,
+        component = gpui_form_collection::select::Select::<_>,
         default = Country::France
     )]
     pub country: Country,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]
+    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
     pub subscribe: bool,
 }
 ```
@@ -91,17 +91,17 @@ pub struct UserProfile {
 
 ## Component Syntax
 
-`gpui-form` parses contract-backed component shape expressions:
+`gpui-form` parses contract-backed component expressions:
 
 - `#[gpui_form(component = my::Shape)]`
 - `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(component = my::Shape.value_binding())]`
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
-- `#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true))]`
-- `#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]`
-- `#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3))]`
+- `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]`
+- `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
+- `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
 The older `component(custom(shape = ...))` and `component(custom(state = ...))`
 forms are still accepted for compatibility.
@@ -109,9 +109,12 @@ The expression is parsed as attribute metadata; generated runtime construction
 delegates to `CustomComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
 derive macro.
-Generated value-holder wrapping is inferred internally from known shapes:
-`InputShape` wraps, while `SelectShape`, `CheckboxShape`, `SwitchShape`, and
-`InfiniteSelectState` keep non-optional source fields as `T`.
+Generated value-holder wrapping is inferred internally from known components:
+`gpui_form_collection::input::Input` wraps, while
+`gpui_form_collection::select::Select`, `gpui_form_collection::checkbox::Checkbox`,
+`gpui_form_collection::switch::Switch`, and
+`gpui_form_component::infinite_select::InfiniteSelect` keep non-optional source fields
+as `T`.
 
 Common field-level helpers:
 
@@ -120,24 +123,25 @@ Common field-level helpers:
   allowing prefill from the original model.
 - `#[gpui_form(type = <form_type>, from = <expr>, into = <expr>)]` lets the
   generated form edit a type that differs from the original field type.
-- `gpui_form_collection::input::InputShape::<_>` parses non-`String` form-side
+- `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
   value types with `FromStr` in prototyping output, so value objects can use
   `type`, `from`, and `into` while the source model keeps its storage type.
-- Generic shape expressions use Rust expression turbofish syntax, such as
-  `InputShape::<_>`. The derive normalizes that path and resolves `_` to
+- Generic component expressions use Rust expression turbofish syntax, such as
+  `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.
 - custom component prototyping metadata drives generated field/helper suffixes
-  when present. Collection shapes publish suffixes such as `input`, `select`,
-  `checkbox`, and `switch`; reusable app shapes can use
+  when present. Collection components publish suffixes such as `input`,
+  `select`, `checkbox`, and `switch`; reusable app shapes can use
   `field_suffix = "..."`, and otherwise the generator falls back to the shape
   name heuristic.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
 
-`gpui_form_component::infinite_select::InfiniteSelectState::<_>` expects the
-field type to implement `gpui_form_component::InfiniteSelect`, usually by
-deriving it on the enum tree.
+`gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
+field type to derive `gpui_form_component::InfiniteSelect`, which implements
+the runtime `gpui_form_component::infinite_select::InfiniteSelectValue` trait
+for the enum tree.
 The enum tree must also implement `PartialEq` because the backing
 `gpui-component` select compares selected values.
 Use `gpui-form-component` with its `derive` feature or import
@@ -153,16 +157,16 @@ Common struct-level helpers:
 ## Infinite Select Runtime
 
 Infinite-select custom fields are backed by
-`gpui_form_component::infinite_select::InfiniteSelectState`, which owns the
+`gpui_form_component::infinite_select::InfiniteSelect`, which owns the
 root and child `SelectState`s, exposes render-ready level snapshots, and emits
 a single typed change event with the rebuilt nested value, both path forms, the
 previous paths, and the changed depth.
 
 ```rs
-use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
+use gpui_form_component::infinite_select::{InfiniteSelect, InfiniteSelectEvent};
 
 let location = cx.new(|cx| {
-    InfiniteSelectState::new(Country::default(), window, cx)
+    InfiniteSelect::new(Country::default(), window, cx)
 });
 
 cx.subscribe_in(
@@ -223,11 +227,11 @@ use koruma_collection::{
 #[derive(Clone, Debug, GpuiForm, Koruma, KorumaAllFluent)]
 #[gpui_form(koruma(fluent))]
 pub struct Signup {
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     #[koruma(NonEmptyValidation::<_>::builder())]
     pub username: String,
 
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     #[koruma(RangeValidation::<_>::builder().min(18).max(120))]
     pub age: Option<u32>,
 }
@@ -245,14 +249,14 @@ When validation is enabled:
 
 There are three supported custom-component workflows.
 
-### 1. Use a collection shape
+### 1. Use a collection component
 
 ```rs
 use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct Account {
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     pub code: AccountCode,
 }
 ```

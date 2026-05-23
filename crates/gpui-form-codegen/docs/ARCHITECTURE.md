@@ -32,8 +32,8 @@ crate.
 - `component = my::Shape.component(my::Widget)`
 - `component = my::Shape.value_binding()`
 - `component = my::Shape.field_suffix("input")`
-- `component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true)`
-- `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3)`
+- `component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true)`
+- `component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3)`
 - legacy `component(custom(shape = my::Shape))`
 - legacy `component(custom(state = my::State))`
 
@@ -42,7 +42,7 @@ Important parse-time responsibilities:
 - expression syntax uses a shape path, while legacy `custom(...)` requires
   exactly one of `shape = ...` or `state = ...`
 - generic expression paths may use `_` with turbofish syntax, such as
-  `gpui_form_collection::input::InputShape::<_>`
+  `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
 - generated value-holder wrapping is inferred from known shape metadata

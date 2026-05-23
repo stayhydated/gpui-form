@@ -28,7 +28,7 @@ This crate demonstrates the cross-crate custom-component shape workflow.
 
 Storybook-style GPUI app that renders generated forms around the example types.
 The checked-in `location_form` example shows the runtime-owned
-`InfiniteSelectState` flow with `form_fields()` instead of manual child-select
+`Select` flow with `form_fields()` instead of manual child-select
 rebuilding.
 
 Run it with:

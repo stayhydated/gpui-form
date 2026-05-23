@@ -35,11 +35,11 @@ impl CheckboxState {
 impl EventEmitter<CheckboxEvent> for CheckboxState {}
 
 #[derive(IntoElement)]
-pub struct Checkbox {
+pub struct CheckboxField {
     state: Entity<CheckboxState>,
 }
 
-impl Checkbox {
+impl CheckboxField {
     pub fn new(state: &Entity<CheckboxState>) -> Self {
         Self {
             state: state.clone(),
@@ -47,7 +47,7 @@ impl Checkbox {
     }
 }
 
-impl RenderOnce for Checkbox {
+impl RenderOnce for CheckboxField {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.state.read(cx).checked();
         let state = self.state.clone();
@@ -63,17 +63,17 @@ impl RenderOnce for Checkbox {
 }
 
 gpui_form_derive::custom_component! {
-    /// Shape for a value-bound `gpui_component::checkbox::Checkbox`.
-    pub struct CheckboxShape {
+    /// Form component for a value-bound `gpui_component::checkbox::Checkbox`.
+    pub struct Checkbox {
         type State = CheckboxState;
         new = CheckboxState::new;
-        component = gpui_form_collection::checkbox::Checkbox;
+        component = gpui_form_collection::checkbox::CheckboxField;
         value_binding;
         field_suffix = "checkbox";
     }
 }
 
-impl CustomComponentValueAdapter<bool> for CheckboxShape {
+impl CustomComponentValueAdapter<bool> for Checkbox {
     type Event = CheckboxEvent;
 
     fn set_state_value(

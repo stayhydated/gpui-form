@@ -35,11 +35,11 @@ impl SwitchState {
 impl EventEmitter<SwitchEvent> for SwitchState {}
 
 #[derive(IntoElement)]
-pub struct Switch {
+pub struct SwitchField {
     state: Entity<SwitchState>,
 }
 
-impl Switch {
+impl SwitchField {
     pub fn new(state: &Entity<SwitchState>) -> Self {
         Self {
             state: state.clone(),
@@ -47,7 +47,7 @@ impl Switch {
     }
 }
 
-impl RenderOnce for Switch {
+impl RenderOnce for SwitchField {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.state.read(cx).checked();
         let state = self.state.clone();
@@ -63,17 +63,17 @@ impl RenderOnce for Switch {
 }
 
 gpui_form_derive::custom_component! {
-    /// Shape for a value-bound `gpui_component::switch::Switch`.
-    pub struct SwitchShape {
+    /// Form component for a value-bound `gpui_component::switch::Switch`.
+    pub struct Switch {
         type State = SwitchState;
         new = SwitchState::new;
-        component = gpui_form_collection::switch::Switch;
+        component = gpui_form_collection::switch::SwitchField;
         value_binding;
         field_suffix = "switch";
     }
 }
 
-impl CustomComponentValueAdapter<bool> for SwitchShape {
+impl CustomComponentValueAdapter<bool> for Switch {
     type Event = SwitchEvent;
 
     fn set_state_value(

@@ -30,8 +30,8 @@ This crate exists to:
 1. Component-specific generators produce cached render fragments, event
    handlers, imports, subscriptions, and initialization code.
    Infinite-select fields are generated against one runtime
-   `InfiniteSelectState` subscription instead of raw select-tree glue code,
-   render through `InfiniteSelectState::form_fields()`, and consume the richer
+   `InfiniteSelect` subscription instead of raw select-tree glue code,
+   render through `InfiniteSelect::form_fields()`, and consume the richer
    `InfiniteSelectEvent<T>` payload directly.
    File-picker fields use one `FilePickerState` entity, render the runtime
    `FilePicker`, and store the first selected path in the form value holder.

@@ -29,10 +29,10 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     pub age: Option<u32>,
 }
 ```
@@ -43,12 +43,12 @@ Supported component forms:
 - `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(component = my::Shape.value_binding())]`
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
-- `#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true))]`
-- `#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]`
-- `#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3))]`
+- `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]`
+- `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
+- `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
 The older `component(custom(shape = ...))` and `component(custom(state = ...))`
 forms are still accepted for compatibility.
@@ -74,14 +74,15 @@ Supporting struct attributes:
 Behavior notes:
 
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
-- collection select shapes expect enum-like values that can populate a
+- collection select components expect enum-like values that can populate a
   `gpui_component` select
-- `gpui_form_component::infinite_select::InfiniteSelectState::<_>` expects the field type
-  to implement `gpui_form_component::InfiniteSelect`
+- `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the field type
+  to derive `gpui_form_component::InfiniteSelect`, which implements
+  `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
-- known reusable shapes infer generated value-holder wrapping internally:
-  input-like shapes wrap in `Option<T>`, while select, checkbox, switch, and
-  infinite-select shapes keep required fields as `T`
+- known reusable components infer generated value-holder wrapping internally:
+  `gpui_form_collection::input::Input` wraps in `Option<T>`, while select,
+  checkbox, switch, and infinite-select components keep required fields as `T`
 - `searchable(true)` and `.partial(true)` record select behavior metadata
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata
@@ -90,10 +91,10 @@ Behavior notes:
   prototyping subscriptions
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
-- `gpui_form_collection::input::InputShape::<_>` prototyping code parses
+- `gpui_form_collection::input::Input::<_>` prototyping code parses
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
-- generic shape expressions use `::<_>` in the attribute; the derive normalizes
+- generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
 - custom shape prototyping metadata drives generated `FormFields` and
   `FormComponents` suffixes when present. Collection shapes publish suffixes
@@ -142,7 +143,7 @@ Declares a local shape type for external component/state pairs.
 ```rs
 gpui_form_derive::custom_component! {
     /// Ready-made text input shape.
-    pub struct InputShape<T = String>
+    pub struct Input<T = String>
     where
         T: std::str::FromStr + ToString + 'static,
     {

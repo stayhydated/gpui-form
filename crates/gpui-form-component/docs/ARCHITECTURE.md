@@ -20,7 +20,7 @@ schema metadata:
 - `src/lib.rs`: public module surface
 - `src/custom.rs`: `CustomComponentShape` and `custom_component_shape!`
 - `src/infinite_select.rs`: `InfiniteSelect`, `InfiniteSelectItem`,
-  `InfiniteSelectPath`, `InfiniteSelectState`, and path reconstruction helpers
+  `InfiniteSelectPath`, `Select`, and path reconstruction helpers
 - `src/date_picker.rs`: runtime state and element wrapper for localized date
   editing
 - `src/calendar.rs`: private calendar popover used by `date_picker`, with
@@ -63,8 +63,8 @@ Responsibilities:
 - track stable persisted selections with `InfiniteSelectKeyPath`
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
-- own the cascading root/child `SelectState`s through `InfiniteSelectState`
-- implement the custom component shape on `InfiniteSelectState` itself when the
+- own the cascading root/child `SelectState`s through `Select`
+- implement the custom component shape on `Select` itself when the
   `derive` feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
   `form_fields()` helpers plus `InfiniteSelectField` for form code
@@ -115,7 +115,7 @@ Responsibilities:
 1. `gpui-form-component-derive` generates an `InfiniteSelect` impl for a user
    enum. Applications import it through `gpui-form-component` with the `derive`
    feature or directly from `gpui-form-component-derive`.
-1. `InfiniteSelectState<T>` constructs the master select, derives child selects,
+1. `InfiniteSelect<T>` constructs the master select, derives child selects,
    keeps both `InfiniteSelectPath` and `InfiniteSelectKeyPath` aligned with the
    current nested value, can snapshot the visible levels for rendering, and can
    emit ready-to-render form fields directly.

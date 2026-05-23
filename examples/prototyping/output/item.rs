@@ -48,20 +48,15 @@ impl gpui_storybook::Story for ItemForm {
 impl ItemForm {
     fn on_index_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::InputShape<Age>>,
-        >,
-        event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<Age>,
-            Age,
-        >,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<Age>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<Age>,
+                gpui_form_collection::input::Input<Age>,
                 Age,
             >(&state, event)
         };
@@ -86,7 +81,7 @@ impl ItemForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<Age>,
+                        gpui_form_collection::input::Input<Age>,
                         Age,
                     >(state, current_data.index.as_ref(), window, cx);
                 },

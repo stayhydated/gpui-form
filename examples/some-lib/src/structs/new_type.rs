@@ -42,7 +42,7 @@ pub struct Age {
 pub struct Item {
     #[cfg_attr(
         feature = "ui",
-        gpui_form(component = gpui_form_collection::input::InputShape::<_>)
+        gpui_form(component = gpui_form_collection::input::Input::<_>)
     )]
     #[cfg_attr(feature = "validation", koruma(newtype))]
     pub index: Age,

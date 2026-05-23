@@ -196,13 +196,6 @@ fn runtime_shape_for_behaviour(
     }
 }
 
-fn shape_ident(shape: &Path) -> Option<String> {
-    shape
-        .segments
-        .last()
-        .map(|segment| segment.ident.to_string())
-}
-
 fn type_arg_count(path: &Path) -> usize {
     path.segments
         .last()
@@ -218,9 +211,32 @@ fn type_arg_count(path: &Path) -> usize {
         .unwrap_or_default()
 }
 
+fn is_collection_shape(shape: &Path, module: &str, ident: &str) -> bool {
+    path_ends_with(shape, &["gpui_form_collection", module, ident])
+}
+
+fn is_infinite_select_shape(shape: &Path, ident: &str) -> bool {
+    path_ends_with(shape, &["gpui_form_component", "infinite_select", ident])
+}
+
+fn path_ends_with(path: &Path, expected: &[&str]) -> bool {
+    let actual = path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+
+    actual.len() >= expected.len()
+        && actual
+            .iter()
+            .rev()
+            .zip(expected.iter().rev())
+            .all(|(actual, expected)| actual == expected)
+}
+
 fn searchable_select_shape(mut shape: Path, field_type: &Type) -> Path {
     let existing_type_args = type_arg_count(&shape);
-    if shape_ident(&shape).as_deref() != Some("SelectShape") || existing_type_args > 1 {
+    if !is_collection_shape(&shape, "select", "Select") || existing_type_args > 1 {
         return shape;
     }
 
@@ -251,12 +267,12 @@ fn searchable_select_shape(mut shape: Path, field_type: &Type) -> Path {
 }
 
 fn searchable_infinite_select_shape(mut shape: Path) -> Path {
-    if shape_ident(&shape).as_deref() != Some("InfiniteSelectState") || type_arg_count(&shape) > 1 {
+    if !is_infinite_select_shape(&shape, "InfiniteSelect") || type_arg_count(&shape) > 1 {
         return shape;
     }
 
     if let Some(segment) = shape.segments.last_mut() {
-        segment.ident = syn::Ident::new("SearchableInfiniteSelectState", segment.ident.span());
+        segment.ident = syn::Ident::new("SearchableInfiniteSelect", segment.ident.span());
     }
 
     shape

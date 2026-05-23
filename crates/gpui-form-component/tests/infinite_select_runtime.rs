@@ -1,6 +1,6 @@
 use gpui_form_component::infinite_select::{
-    InfiniteSelect as _, InfiniteSelectKeyPath, InfiniteSelectPath, InfiniteSelectPathErrorReason,
-    InfiniteSelectPathSegment, build_from_key_path, build_from_path,
+    InfiniteSelectKeyPath, InfiniteSelectPath, InfiniteSelectPathErrorReason,
+    InfiniteSelectPathSegment, InfiniteSelectValue as _, build_from_key_path, build_from_path,
 };
 use gpui_form_component_derive::InfiniteSelect;
 

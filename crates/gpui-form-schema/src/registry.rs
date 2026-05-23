@@ -249,6 +249,13 @@ pub fn custom_component_suffix_from_shape(field_name: &str, shape: &str) -> Opti
         .split('<')
         .next()
         .filter(|path| !path.is_empty())?;
+    if path_without_generics.ends_with("gpui_form_component::infinite_select::InfiniteSelect")
+        || path_without_generics
+            .ends_with("gpui_form_component::infinite_select::SearchableInfiniteSelect")
+    {
+        return custom_component_suffix_from_suffix(field_name, "infinite_select");
+    }
+
     let shape_ident = path_without_generics
         .rsplit("::")
         .next()
@@ -322,6 +329,17 @@ mod tests {
             .with_custom_shape("crate::fields::EmailInputShape");
 
         assert_eq!(field.field_name_with_behaviour(), "email_input");
+    }
+
+    #[test]
+    fn infinite_select_component_path_drives_field_suffix() {
+        let field = FieldVariant::new("location", "Country", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("gpui_form_component::infinite_select::InfiniteSelect<Country>");
+
+        assert_eq!(
+            field.field_name_with_behaviour(),
+            "location_infinite_select"
+        );
     }
 
     #[test]

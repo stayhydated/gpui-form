@@ -41,12 +41,12 @@ Useful runtime/helper paths:
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
-#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]
-#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true).partial(true))]
-#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]
-#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]
-#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true).max_depth(3))]
+#[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+#[gpui_form(component = gpui_form_collection::select::Select::<_>)]
+#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]
+#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
+#[gpui_form(component = gpui_form_collection::switch::Switch)]
+#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]
 #[gpui_form(component = my::Shape)]
 #[gpui_form(component = my::Shape.component(my::ui::Widget))]
 #[gpui_form(component = my::Shape.value_binding())]
@@ -71,24 +71,24 @@ Common struct attributes:
 
 ## Component Selection
 
-- Use `gpui_form_collection::input::InputShape::<_>` for text-like and
+- Use `gpui_form_collection::input::Input::<_>` for text-like and
   `FromStr`-parsable values.
-- Use `gpui_form_collection::checkbox::CheckboxShape` or
-  `gpui_form_collection::switch::SwitchShape` for `bool` fields.
-- Use `gpui_form_collection::select::SelectShape::<_>` for a single enum-like
+- Use `gpui_form_collection::checkbox::Checkbox` or
+  `gpui_form_collection::switch::Switch` for `bool` fields.
+- Use `gpui_form_collection::select::Select::<_>` for a single enum-like
   choice; derive `SelectItem`. Chain `::searchable(true)` or `::partial(true)`
   when the select should expose those behaviors.
-- Use `gpui_form_component::infinite_select::InfiniteSelectState::<_>` for
+- Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use
   `::searchable(true)` and `.max_depth(...)` when needed.
 - Use a custom shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
 - Use `component = my::Shape` when the app owns the state/widget
   contract. The older `component(custom(...))` form is still accepted.
-- Treat the shape expression and chained component behavior methods as derive
+- Treat the component expression and chained component behavior methods as derive
   metadata; runtime construction still uses `CustomComponentShape::new`.
 - Treat generated value-holder wrapping as internal derive behavior for known
-  reusable shapes.
+  reusable components.
 
 ## Generated Names
 
@@ -142,7 +142,7 @@ pub enum Country {
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
     #[gpui_form(
-        component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
+        component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
             .max_depth(3)
     )]
     pub location: Country,

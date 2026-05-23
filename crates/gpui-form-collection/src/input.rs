@@ -5,11 +5,11 @@ use gpui_component::input::{InputEvent, InputState};
 use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 
 gpui_form_derive::custom_component! {
-    /// Shape for a `gpui_component::input::Input` backed by `InputState`.
+    /// Form component for a `gpui_component::input::Input` backed by `InputState`.
     ///
-    /// Use `InputShape::<_>` in `#[gpui_form(component = ...)]` so the derive
+    /// Use `Input::<_>` in `#[gpui_form(component = ...)]` so the derive
     /// resolves `_` to the field's form-side type.
-    pub struct InputShape<T = String>
+    pub struct Input<T = String>
     where
         T: FromStr + ToString + 'static,
     {
@@ -22,7 +22,7 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl<T> CustomComponentValueAdapter<T> for InputShape<T>
+impl<T> CustomComponentValueAdapter<T> for Input<T>
 where
     T: FromStr + ToString + 'static,
 {

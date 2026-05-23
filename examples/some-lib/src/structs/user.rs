@@ -34,7 +34,7 @@ pub enum EnumCountry {
 #[fluent_variants(keys = ["description", "label"])]
 #[gpui_form(koruma(fluent))]
 pub struct User {
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     #[koruma(
         NonEmptyValidation::<_>::builder(),
         PrefixValidation::<_>::builder().prefix("Xx"),
@@ -43,38 +43,38 @@ pub struct User {
     pub username: String,
 
     #[gpui_form(
-        component = gpui_form_collection::input::InputShape::<_>,
+        component = gpui_form_collection::input::Input::<_>,
         default = "test@example.com"
     )]
     #[koruma(EmailValidation::<_>::builder())]
     pub email: String,
 
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     #[koruma(RangeValidation::<_>::builder().min(18).max(167))]
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::input::InputShape::<_>,
+        component = gpui_form_collection::input::Input::<_>,
         default = 67
     )]
     #[koruma(PositiveValidation::<_>::builder())]
     pub balance: rust_decimal::Decimal,
 
-    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
     #[koruma(NegativeValidation::<_>::builder())]
     pub debt: rust_decimal::Decimal,
 
-    #[gpui_form(component = gpui_form_collection::switch::SwitchShape)]
+    #[gpui_form(component = gpui_form_collection::switch::Switch)]
     pub subscribe_newsletter: bool,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]
+    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
     pub enable_notifications: bool,
 
-    #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]
+    #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(
-        component = gpui_form_collection::select::SelectShape::<_>::searchable(true),
+        component = gpui_form_collection::select::Select::<_>::searchable(true),
         default = EnumCountry::France
     )]
     pub country: Option<EnumCountry>,
@@ -83,7 +83,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component = gpui_form_collection::input::InputShape::<_>
+        component = gpui_form_collection::input::Input::<_>
     )]
     pub birth_date: Option<Timestamp>,
 

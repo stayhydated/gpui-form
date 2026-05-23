@@ -43,16 +43,14 @@ impl gpui_storybook::Story for LocationFormForm {
 impl LocationFormForm {
     fn on_name_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::InputShape<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::InputShape<String>, String>,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<gpui_form_collection::input::InputShape<String>, String>(
-                &state, event,
-            )
+            custom_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
@@ -68,11 +66,11 @@ impl LocationFormForm {
         &mut self,
         state: &Entity<
             CustomComponentStateOf<
-                gpui_form_component::infinite_select::SearchableInfiniteSelectState<Country>,
+                gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
             >,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_component::infinite_select::SearchableInfiniteSelectState<Country>,
+            gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
             Country,
         >,
         _window: &mut Window,
@@ -81,7 +79,7 @@ impl LocationFormForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_component::infinite_select::SearchableInfiniteSelectState<Country>,
+                gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
                 Country,
             >(&state, event)
         };
@@ -107,7 +105,7 @@ impl LocationFormForm {
             ),
         ];
         name_input.update(cx, |state, cx| {
-            set_custom_state_value::<gpui_form_collection::input::InputShape<String>, String>(
+            set_custom_state_value::<gpui_form_collection::input::Input<String>, String>(
                 state,
                 current_data.name.as_ref(),
                 window,
@@ -116,7 +114,7 @@ impl LocationFormForm {
         });
         location_infinite_select.update(cx, |state, cx| {
             set_custom_state_value::<
-                gpui_form_component::infinite_select::SearchableInfiniteSelectState<Country>,
+                gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
                 Country,
             >(state, Some(&current_data.location), window, cx);
         });

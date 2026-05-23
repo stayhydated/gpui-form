@@ -49,10 +49,10 @@ impl UserForm {
     fn on_username_input_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::InputShape<String>>,
+            CustomComponentStateOf<gpui_form_collection::input::Input<String>>,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<String>,
+            gpui_form_collection::input::Input<String>,
             String,
         >,
         _window: &mut Window,
@@ -61,7 +61,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<String>,
+                gpui_form_collection::input::Input<String>,
                 String,
             >(&state, event)
         };
@@ -78,10 +78,10 @@ impl UserForm {
     fn on_email_input_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::InputShape<String>>,
+            CustomComponentStateOf<gpui_form_collection::input::Input<String>>,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<String>,
+            gpui_form_collection::input::Input<String>,
             String,
         >,
         _window: &mut Window,
@@ -90,7 +90,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<String>,
+                gpui_form_collection::input::Input<String>,
                 String,
             >(&state, event)
         };
@@ -106,20 +106,15 @@ impl UserForm {
     }
     fn on_age_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::InputShape<u32>>,
-        >,
-        event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<u32>,
-            u32,
-        >,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<u32>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<u32>,
+                gpui_form_collection::input::Input<u32>,
                 u32,
             >(&state, event)
         };
@@ -137,11 +132,11 @@ impl UserForm {
         &mut self,
         state: &Entity<
             CustomComponentStateOf<
-                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
             >,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+            gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
         _window: &mut Window,
@@ -150,7 +145,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(&state, event)
         };
@@ -168,11 +163,11 @@ impl UserForm {
         &mut self,
         state: &Entity<
             CustomComponentStateOf<
-                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
             >,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+            gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
         _window: &mut Window,
@@ -181,7 +176,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(&state, event)
         };
@@ -197,17 +192,15 @@ impl UserForm {
     }
     fn on_subscribe_newsletter_switch_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::switch::SwitchShape>,
-        >,
-        event: &CustomComponentEventOf<gpui_form_collection::switch::SwitchShape, bool>,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::switch::Switch>>,
+        event: &CustomComponentEventOf<gpui_form_collection::switch::Switch, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::switch::SwitchShape,
+                gpui_form_collection::switch::Switch,
                 bool,
             >(&state, event)
         };
@@ -221,20 +214,15 @@ impl UserForm {
     }
     fn on_enable_notifications_checkbox_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::checkbox::CheckboxShape>,
-        >,
-        event: &CustomComponentEventOf<
-            gpui_form_collection::checkbox::CheckboxShape,
-            bool,
-        >,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
+        event: &CustomComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::checkbox::CheckboxShape,
+                gpui_form_collection::checkbox::Checkbox,
                 bool,
             >(&state, event)
         };
@@ -250,11 +238,11 @@ impl UserForm {
         &mut self,
         state: &Entity<
             CustomComponentStateOf<
-                gpui_form_collection::select::SelectShape<PreferredLanguage>,
+                gpui_form_collection::select::Select<PreferredLanguage>,
             >,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::select::SelectShape<PreferredLanguage>,
+            gpui_form_collection::select::Select<PreferredLanguage>,
             PreferredLanguage,
         >,
         _window: &mut Window,
@@ -263,7 +251,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::select::SelectShape<PreferredLanguage>,
+                gpui_form_collection::select::Select<PreferredLanguage>,
                 PreferredLanguage,
             >(&state, event)
         };
@@ -279,14 +267,14 @@ impl UserForm {
         &mut self,
         state: &Entity<
             CustomComponentStateOf<
-                gpui_form_collection::select::SelectShape<
+                gpui_form_collection::select::Select<
                     EnumCountry,
                     ::gpui_component::select::SearchableVec<EnumCountry>,
                 >,
             >,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::select::SelectShape<
+            gpui_form_collection::select::Select<
                 EnumCountry,
                 ::gpui_component::select::SearchableVec<EnumCountry>,
             >,
@@ -298,7 +286,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::select::SelectShape<
+                gpui_form_collection::select::Select<
                     EnumCountry,
                     ::gpui_component::select::SearchableVec<EnumCountry>,
                 >,
@@ -318,12 +306,10 @@ impl UserForm {
     fn on_birth_date_input_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
-                gpui_form_collection::input::InputShape<chrono::NaiveDate>,
-            >,
+            CustomComponentStateOf<gpui_form_collection::input::Input<chrono::NaiveDate>>,
         >,
         event: &CustomComponentEventOf<
-            gpui_form_collection::input::InputShape<chrono::NaiveDate>,
+            gpui_form_collection::input::Input<chrono::NaiveDate>,
             chrono::NaiveDate,
         >,
         _window: &mut Window,
@@ -332,7 +318,7 @@ impl UserForm {
         let change = {
             let state = state.read(_cx);
             custom_value_change::<
-                gpui_form_collection::input::InputShape<chrono::NaiveDate>,
+                gpui_form_collection::input::Input<chrono::NaiveDate>,
                 chrono::NaiveDate,
             >(&state, event)
         };
@@ -381,7 +367,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<String>,
+                        gpui_form_collection::input::Input<String>,
                         String,
                     >(state, current_data.username.as_ref(), window, cx);
                 },
@@ -391,7 +377,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<String>,
+                        gpui_form_collection::input::Input<String>,
                         String,
                     >(state, current_data.email.as_ref(), window, cx);
                 },
@@ -401,7 +387,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<u32>,
+                        gpui_form_collection::input::Input<u32>,
                         u32,
                     >(state, current_data.age.as_ref(), window, cx);
                 },
@@ -411,7 +397,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                        gpui_form_collection::input::Input<rust_decimal::Decimal>,
                         rust_decimal::Decimal,
                     >(state, current_data.balance.as_ref(), window, cx);
                 },
@@ -421,7 +407,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                        gpui_form_collection::input::Input<rust_decimal::Decimal>,
                         rust_decimal::Decimal,
                     >(state, current_data.debt.as_ref(), window, cx);
                 },
@@ -431,7 +417,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::switch::SwitchShape,
+                        gpui_form_collection::switch::Switch,
                         bool,
                     >(state, Some(&current_data.subscribe_newsletter), window, cx);
                 },
@@ -441,7 +427,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::checkbox::CheckboxShape,
+                        gpui_form_collection::checkbox::Checkbox,
                         bool,
                     >(state, Some(&current_data.enable_notifications), window, cx);
                 },
@@ -451,7 +437,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::select::SelectShape<PreferredLanguage>,
+                        gpui_form_collection::select::Select<PreferredLanguage>,
                         PreferredLanguage,
                     >(state, Some(&current_data.preferred), window, cx);
                 },
@@ -461,7 +447,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::select::SelectShape<
+                        gpui_form_collection::select::Select<
                             EnumCountry,
                             ::gpui_component::select::SearchableVec<EnumCountry>,
                         >,
@@ -474,7 +460,7 @@ impl UserForm {
                 cx,
                 |state, cx| {
                     set_custom_state_value::<
-                        gpui_form_collection::input::InputShape<chrono::NaiveDate>,
+                        gpui_form_collection::input::Input<chrono::NaiveDate>,
                         chrono::NaiveDate,
                     >(state, current_data.birth_date.as_ref(), window, cx);
                 },
@@ -854,7 +840,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                gpui_form_collection::switch::Switch::new(
+                                gpui_form_collection::switch::SwitchField::new(
                                     &self.fields.subscribe_newsletter_switch,
                                 ),
                             ),
@@ -879,7 +865,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                gpui_form_collection::checkbox::Checkbox::new(
+                                gpui_form_collection::checkbox::CheckboxField::new(
                                     &self.fields.enable_notifications_checkbox,
                                 ),
                             ),

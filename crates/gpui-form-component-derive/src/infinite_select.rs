@@ -354,7 +354,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             let pattern = variant.ignore_pattern();
             quote! {
                 #pattern => {
-                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants()
+                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants()
                         .into_iter()
                         .map(|variant| variant.variant_name())
                         .collect()
@@ -373,7 +373,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             let pattern = variant.ignore_pattern();
             quote! {
                 #pattern => {
-                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants()
+                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants()
                         .into_iter()
                         .map(|variant| variant.variant_key())
                         .collect()
@@ -392,7 +392,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             let pattern = variant.ignore_pattern();
             quote! {
                 #pattern => {
-                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants()
+                    <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants()
                         .into_iter()
                         .map(|variant| variant.variant_label())
                         .collect()
@@ -494,7 +494,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             let constructor = variant.constructor(quote! { child.clone() });
             quote! {
                 #pattern => {
-                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants();
+                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants();
                     children.get(index).map(|child| #constructor)
                 }
             }
@@ -512,7 +512,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             let constructor = variant.constructor(quote! { child });
             quote! {
                 #pattern => {
-                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants();
+                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants();
                     children
                         .into_iter()
                         .find(|child| child.variant_key() == key)
@@ -537,7 +537,7 @@ pub fn from(input: TokenStream) -> TokenStream {
                     if path.is_empty() {
                         return None;
                     }
-                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants();
+                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants();
                     let child = children.get(path[0])?.clone();
                     if path.len() == 1 {
                         Some(#constructor_child)
@@ -565,7 +565,7 @@ pub fn from(input: TokenStream) -> TokenStream {
                     if path.is_empty() {
                         return None;
                     }
-                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::variants();
+                    let children = <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants();
                     let child = children
                         .into_iter()
                         .find(|child| child.variant_key() == path[0].as_str())?;
@@ -588,7 +588,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, inner_type| {
             let pattern = variant.ignore_pattern();
-            quote! { #pattern => <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::depth(), }
+            quote! { #pattern => <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::depth(), }
         },
     );
 
@@ -702,7 +702,7 @@ pub fn from(input: TokenStream) -> TokenStream {
             &variants,
             |_| quote! {},
             |_, inner_type| {
-                quote! { <#inner_type as #runtime_crate::infinite_select::InfiniteSelect>::depth() }
+                quote! { <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::depth() }
             },
         )
         .into_iter()
@@ -715,7 +715,7 @@ pub fn from(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        impl #runtime_crate::infinite_select::InfiniteSelect for #enum_ident {
+        impl #runtime_crate::infinite_select::InfiniteSelectValue for #enum_ident {
             fn variants() -> Vec<Self> {
                 vec![
                     #(#variant_items)*

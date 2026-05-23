@@ -7,11 +7,11 @@ use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentVa
 use strum::IntoEnumIterator;
 
 gpui_form_derive::custom_component! {
-    /// Shape for a `gpui_component::select::Select` backed by enum variants.
+    /// Form component for a `gpui_component::select::Select` backed by enum variants.
     ///
     /// The enum type `T` must implement `gpui_component::select::SelectItem`,
     /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
-    pub struct SelectShape<T, D = Vec<T>>
+    pub struct Select<T, D = Vec<T>>
     where
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
         D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -24,15 +24,15 @@ gpui_form_derive::custom_component! {
     }
 }
 
-/// Options used by `#[gpui_form(component = SelectShape::<_>::searchable(...)...)]`.
+/// Options used by `#[gpui_form(component = Select::<_>::searchable(...)...)]`.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct SelectShapeOptions {
+pub struct SelectOptions {
     pub searchable: bool,
     pub partial: bool,
 }
 
 #[bon::bon]
-impl<T, D> SelectShape<T, D>
+impl<T, D> Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -42,8 +42,8 @@ where
     pub fn options(
         #[builder(default)] searchable: bool,
         #[builder(default)] partial: bool,
-    ) -> SelectShapeOptions {
-        SelectShapeOptions {
+    ) -> SelectOptions {
+        SelectOptions {
             searchable,
             partial,
         }
@@ -74,7 +74,7 @@ where
 }
 
 #[allow(unnameable_types)]
-impl<T, D> SelectShape<T, D>
+impl<T, D> Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -82,19 +82,17 @@ where
     /// Starts a `#[gpui_form(component = ...)]` option chain with search enabled.
     pub fn searchable(
         value: bool,
-    ) -> SelectShapeOptionsBuilder<T, D, select_shape_options_builder::SetSearchable> {
+    ) -> SelectOptionsBuilder<T, D, select_options_builder::SetSearchable> {
         Self::builder().searchable(value)
     }
 
     /// Starts a `#[gpui_form(component = ...)]` option chain with partial rendering enabled.
-    pub fn partial(
-        value: bool,
-    ) -> SelectShapeOptionsBuilder<T, D, select_shape_options_builder::SetPartial> {
+    pub fn partial(value: bool) -> SelectOptionsBuilder<T, D, select_options_builder::SetPartial> {
         Self::builder().partial(value)
     }
 }
 
-impl<T, D> CustomComponentValueAdapter<T> for SelectShape<T, D>
+impl<T, D> CustomComponentValueAdapter<T> for Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,

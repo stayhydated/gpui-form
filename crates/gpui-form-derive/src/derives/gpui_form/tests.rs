@@ -120,7 +120,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma(fluent))]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::InputShape)))]
+                #[gpui_form(component(custom(shape = crate::Input)))]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::general::RequiredValidation::<Option<_>>::builder()))]
                 name: String,
 
@@ -381,7 +381,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::InputShape)))]
+                #[gpui_form(component(custom(shape = crate::Input)))]
                 name: String,
             }
         };
@@ -586,7 +586,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::InputShape)), default = "test@example.com")]
+                #[gpui_form(component(custom(shape = crate::Input)), default = "test@example.com")]
                 email: String,
             }
         };
@@ -612,7 +612,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::InputShape)), default = "test@example.com")]
+                #[gpui_form(component(custom(shape = crate::Input)), default = "test@example.com")]
                 email: String,
 
                 #[gpui_form(skip)]
@@ -740,7 +740,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(custom(shape = crate::InputShape)),
+                    component(custom(shape = crate::Input)),
                     type = crate::types::AccountCode,
                     from = crate::types::AccountCode::new,
                     into = crate::types::AccountCode::into_string
@@ -783,7 +783,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::switch::SwitchShape)]
+                #[gpui_form(component = gpui_form_collection::switch::Switch)]
                 enabled: bool,
             }
         };
@@ -850,7 +850,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+                #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
                 account_no: crate::types::AccountCode,
             }
         };
@@ -867,7 +867,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "<gpui_form_collection::input::InputShape<crate::types::AccountCode>as::gpui_form_component::custom::CustomComponentShape>::State"
+                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_component::custom::CustomComponentShape>::State"
             ),
             "custom shape `_` should be resolved to the field type in FormFields: {compact}"
         );
@@ -877,7 +877,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_collection::input::InputShape<crate::types::AccountCode>\")"
+                "with_custom_shape(\"gpui_form_collection::input::Input<crate::types::AccountCode>\")"
             ),
             "custom shape metadata should store the resolved shape path: {compact}"
         );
@@ -888,7 +888,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::searchable(true))]
+                #[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true))]
                 country: crate::types::Country,
             }
         };
@@ -921,12 +921,14 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_collection::select::SelectShape<crate::types::Country>\")"
+                "with_custom_shape(\"gpui_form_collection::select::Select<crate::types::Country>\")"
             ),
             "searchable select metadata should keep the original shape identity: {compact}"
         );
         assert!(
-            !compact.contains("with_custom_shape(\"gpui_form_collection::select::SelectShape<crate::types::Country,"),
+            !compact.contains(
+                "with_custom_shape(\"gpui_form_collection::select::Select<crate::types::Country,"
+            ),
             "searchable select behavior should not leak into custom shape metadata: {compact}"
         );
         assert!(
@@ -934,7 +936,7 @@ mod gpui_form_tests {
             "select shape should keep required value holder fields non-optional: {compact}"
         );
         assert!(
-            compact.contains("SelectShape::<crate::types::Country>::searchable(true).build"),
+            compact.contains("Select::<crate::types::Country>::searchable(true).build"),
             "select direct setter chain should emit a bon builder check for rust-analyzer: {compact}"
         );
     }
@@ -944,7 +946,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>::partial(true))]
+                #[gpui_form(component = gpui_form_collection::select::Select::<_>::partial(true))]
                 country: crate::types::Country,
             }
         };
@@ -975,7 +977,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
+                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
                         .max_depth(3)
                 )]
                 location: crate::types::Country,
@@ -997,7 +999,7 @@ mod gpui_form_tests {
             "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
         );
         assert!(
-            compact.contains("SearchableInfiniteSelectState<crate::types::Country>"),
+            compact.contains("SearchableInfiniteSelect<crate::types::Country>"),
             "searchable infinite select should use the searchable state alias: {compact}"
         );
         assert!(
@@ -1010,7 +1012,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_component::infinite_select::InfiniteSelectState<crate::types::Country>\")"
+                "with_custom_shape(\"gpui_form_component::infinite_select::InfiniteSelect<crate::types::Country>\")"
             ),
             "searchable infinite select metadata should keep the original shape identity: {compact}"
         );
@@ -1020,7 +1022,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "InfiniteSelectState::<crate::types::Country>::searchable(true).max_depth(3).build"
+                "InfiniteSelect::<crate::types::Country>::searchable(true).max_depth(3).build"
             ),
             "infinite-select direct setter chain should be emitted for type checking: {compact}"
         );
@@ -1032,7 +1034,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
+                    gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
                         .max_depth(3)
                 )]
                 location: crate::types::Country,
@@ -1054,7 +1056,7 @@ mod gpui_form_tests {
             "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
         );
         assert!(
-            compact.contains("SearchableInfiniteSelectState<crate::types::Country>"),
+            compact.contains("SearchableInfiniteSelect<crate::types::Country>"),
             "searchable infinite select should use the searchable state alias: {compact}"
         );
         assert!(
@@ -1069,7 +1071,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>
                         .builder()
                         .searchable(true)
                 )]
@@ -1099,7 +1101,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable_with_max_depth(3)
+                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable_with_max_depth(3)
                 )]
                 location: crate::types::Country,
             }

@@ -39,19 +39,19 @@ pub enum Country {
 
 Useful runtime types:
 
-- `InfiniteSelect`
+- `InfiniteSelectValue`
 - `InfiniteSelectItem<T>`
 - `InfiniteSelectPath`
 - `InfiniteSelectKeyPath`
 - `InfiniteSelectKeyPathParseError`
 - `InfiniteSelectPathError`
-- `InfiniteSelectState<T>`
+- `InfiniteSelect<T>`
 - `InfiniteSelectField<T>`
-- `SearchableInfiniteSelectState<T>`
+- `SearchableInfiniteSelect<T>`
 - `InfiniteSelectEvent<T>`
 - `InfiniteSelectLevel<D>`
 - `InfiniteSelectSnapshot<T, D>`
-- `InfiniteSelectStateOptions`
+- `InfiniteSelectOptions`
 - `to_select_items::<T>()`
 - `path_from_value(&value)`
 - `key_path_from_value(&value)`
@@ -62,10 +62,10 @@ Manual forms can subscribe to one runtime entity instead of rebuilding nested
 child selects themselves:
 
 ```rs
-use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
+use gpui_form_component::infinite_select::{InfiniteSelect, InfiniteSelectEvent};
 
 let location = cx.new(|cx| {
-    InfiniteSelectState::new(Country::default(), window, cx)
+    InfiniteSelect::new(Country::default(), window, cx)
 });
 
 cx.subscribe_in(
@@ -89,11 +89,11 @@ for field in location.read(cx).form_fields() {
 }
 ```
 
-For `#[derive(GpuiForm)]`, use the owned state shape directly:
+For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
 #[gpui_form(
-    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>::searchable(true)
+    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
         .max_depth(3)
 )]
 pub location: Country,

@@ -80,7 +80,7 @@ struct CustomOptionsMeta {
 impl CustomOptions {
     fn from_shape(shape: Path) -> Self {
         let shape = normalize_shape_path(shape);
-        let (behaviour, wraps_in_option) = inferred_shape_defaults(&shape);
+        let (behaviour, wraps_in_option, field_suffix) = inferred_shape_defaults(&shape);
 
         Self {
             shape,
@@ -89,7 +89,7 @@ impl CustomOptions {
             behaviour,
             field_default: None,
             value_binding: None,
-            field_suffix: None,
+            field_suffix: field_suffix.map(str::to_owned),
             component_methods: Vec::new(),
         }
     }
@@ -140,7 +140,7 @@ impl CustomOptions {
             if method_name == "builder" {
                 return Err(DarlingError::custom(
                     "component behavior chains start setters directly; use \
-                     `SelectShape::<_>::searchable(true)` instead of calling `builder()`",
+                     `Select::<_>::searchable(true)` instead of calling `builder()`",
                 )
                 .with_span(&method.method));
             }
@@ -205,7 +205,7 @@ impl CustomOptions {
                     },
                     _ => {
                         return Err(DarlingError::custom(
-                            "`searchable` is only supported by SelectShape and InfiniteSelectState",
+                            "`searchable` is only supported by gpui_form_collection::select::Select and gpui_form_component::infinite_select::InfiniteSelect",
                         )
                         .with_span(method));
                     },
@@ -219,7 +219,7 @@ impl CustomOptions {
                     },
                     _ => {
                         return Err(DarlingError::custom(
-                            "`partial` is only supported by SelectShape",
+                            "`partial` is only supported by gpui_form_collection::select::Select",
                         )
                         .with_span(method));
                     },
@@ -233,7 +233,7 @@ impl CustomOptions {
                     },
                     _ => {
                         return Err(DarlingError::custom(
-                            "`max_depth` is only supported by InfiniteSelectState",
+                            "`max_depth` is only supported by gpui_form_component::infinite_select::InfiniteSelect",
                         )
                         .with_span(method));
                     },
@@ -595,39 +595,60 @@ fn expect_usize_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<usize
     }
 }
 
-fn inferred_shape_defaults(shape: &Path) -> (ComponentsBehaviour, bool) {
-    let Some(ident) = shape_ident(shape) else {
-        return (ComponentsBehaviour::Custom, true);
-    };
-
-    match ident.as_str() {
-        "InputShape" => (ComponentsBehaviour::Input, true),
-        "CheckboxShape" => (ComponentsBehaviour::Checkbox, false),
-        "SwitchShape" => (ComponentsBehaviour::Switch, false),
-        "SelectShape" => (
+fn inferred_shape_defaults(shape: &Path) -> (ComponentsBehaviour, bool, Option<&'static str>) {
+    if is_collection_shape(shape, "input", "Input") {
+        (ComponentsBehaviour::Input, true, Some("input"))
+    } else if is_collection_shape(shape, "checkbox", "Checkbox") {
+        (ComponentsBehaviour::Checkbox, false, Some("checkbox"))
+    } else if is_collection_shape(shape, "switch", "Switch") {
+        (ComponentsBehaviour::Switch, false, Some("switch"))
+    } else if is_collection_shape(shape, "select", "Select") {
+        (
             ComponentsBehaviour::Select(SelectBehaviour::default()),
             false,
-        ),
-        "InfiniteSelectState" => (
+            Some("select"),
+        )
+    } else if is_infinite_select_shape(shape, "InfiniteSelect") {
+        (
             ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour::default()),
             false,
-        ),
-        "SearchableInfiniteSelectState" => (
+            Some("infinite_select"),
+        )
+    } else if is_infinite_select_shape(shape, "SearchableInfiniteSelect") {
+        (
             ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
                 searchable: true,
                 max_depth: None,
             }),
             false,
-        ),
-        _ => (ComponentsBehaviour::Custom, true),
+            Some("infinite_select"),
+        )
+    } else {
+        (ComponentsBehaviour::Custom, true, None)
     }
 }
 
-fn shape_ident(shape: &Path) -> Option<String> {
-    shape
+fn is_collection_shape(shape: &Path, module: &str, ident: &str) -> bool {
+    path_ends_with(shape, &["gpui_form_collection", module, ident])
+}
+
+fn is_infinite_select_shape(shape: &Path, ident: &str) -> bool {
+    path_ends_with(shape, &["gpui_form_component", "infinite_select", ident])
+}
+
+fn path_ends_with(path: &Path, expected: &[&str]) -> bool {
+    let actual = path
         .segments
-        .last()
+        .iter()
         .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+
+    actual.len() >= expected.len()
+        && actual
+            .iter()
+            .rev()
+            .zip(expected.iter().rev())
+            .all(|(actual, expected)| actual == expected)
 }
 
 fn type_arg_count(path: &Path) -> usize {
@@ -647,7 +668,7 @@ fn type_arg_count(path: &Path) -> usize {
 
 fn searchable_select_shape(mut shape: Path, field_type: &syn::Type) -> Path {
     let existing_type_args = type_arg_count(&shape);
-    if shape_ident(&shape).as_deref() != Some("SelectShape") || existing_type_args > 1 {
+    if !is_collection_shape(&shape, "select", "Select") || existing_type_args > 1 {
         return shape;
     }
 
@@ -678,12 +699,12 @@ fn searchable_select_shape(mut shape: Path, field_type: &syn::Type) -> Path {
 }
 
 fn searchable_infinite_select_shape(mut shape: Path) -> Path {
-    if shape_ident(&shape).as_deref() != Some("InfiniteSelectState") || type_arg_count(&shape) > 1 {
+    if !is_infinite_select_shape(&shape, "InfiniteSelect") || type_arg_count(&shape) > 1 {
         return shape;
     }
 
     if let Some(segment) = shape.segments.last_mut() {
-        segment.ident = syn::Ident::new("SearchableInfiniteSelectState", segment.ident.span());
+        segment.ident = syn::Ident::new("SearchableInfiniteSelect", segment.ident.span());
     }
 
     shape
@@ -697,7 +718,7 @@ fn infinite_select_options_tokens(behaviour: &InfiniteSelectBehaviour) -> TokenS
     };
 
     quote! {
-        ::gpui_form_component::infinite_select::InfiniteSelectStateOptions::new(
+        ::gpui_form_component::infinite_select::InfiniteSelectOptions::new(
             #searchable,
             #max_depth,
         )
