@@ -93,4 +93,5 @@ Common patterns:
 - For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
 - For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`.
 - Let reusable custom shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and custom shapes without metadata fall back to the shape-name heuristic.
+- Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

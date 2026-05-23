@@ -40,7 +40,8 @@ This crate exists to:
 1. The adapter returns:
    - `FormParts` for caller-controlled assembly, or
    - a complete `syn::File` through `generate_file(&impl FormLayout)`
-1. The caller formats and writes the resulting file.
+1. The caller writes the resulting file and runs a final formatter such as
+   `rustfmt`.
 
 ## `FormParts` Role
 

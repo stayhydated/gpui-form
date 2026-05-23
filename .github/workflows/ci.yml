@@ -56,7 +56,9 @@ jobs:
           components: rustfmt
 
       - name: Check formatting
-        run: cargo fmt --check
+        run: |
+          cargo fmt --check
+          rustfmt --edition 2024 --check examples/prototyping/output/*.rs
 
   clippy:
     runs-on: ubuntu-latest

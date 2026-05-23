@@ -2,7 +2,12 @@ use gpui_form::schema::registry::GpuiFormShape;
 use gpui_form_prototyping_core::{FormLayout, FormParts, FormShapeAdapter};
 use heck::ToSnakeCase as _;
 use quote::quote;
-use std::{collections::BTreeSet, fs, path::Path};
+use std::{
+    collections::BTreeSet,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 // import targeted lib to get inventory registrations
 extern crate some_lib;
@@ -246,6 +251,27 @@ impl FormLayout for StorybookLayout {
     }
 }
 
+fn rustfmt_generated_files(paths: &[PathBuf]) {
+    if paths.is_empty() {
+        return;
+    }
+
+    let output = Command::new("rustfmt")
+        .arg("--edition")
+        .arg("2024")
+        .args(paths)
+        .output()
+        .expect("failed to run rustfmt; install the rustfmt component to generate form scaffolds");
+
+    if !output.status.success() {
+        panic!(
+            "rustfmt failed for generated form scaffolds\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
+}
+
 fn main() {
     let output_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("output");
     fs::create_dir_all(&output_dir).expect("Failed to create output directory");
@@ -262,6 +288,7 @@ fn main() {
     println!("Generating forms in: {}", output_dir.display());
 
     let mut modules: BTreeSet<String> = BTreeSet::new();
+    let mut generated_files = Vec::new();
 
     for shape in inventory::iter::<GpuiFormShape>() {
         println!("Shape: {:?}", shape);
@@ -280,8 +307,9 @@ fn main() {
         fs::write(&file_path, prettyplease::unparse(&syn_file))
             .unwrap_or_else(|_| panic!("Failed to write file: {}", file_path.display()));
 
+        generated_files.push(file_path.clone());
         modules.insert(file_stem);
-        println!("Generated and formatted: {}", file_path.display());
+        println!("Generated: {}", file_path.display());
     }
 
     let mod_rs_path = output_dir.join("mod.rs");
@@ -292,7 +320,10 @@ fn main() {
 
     fs::write(&mod_rs_path, mod_rs)
         .unwrap_or_else(|_| panic!("Failed to write file: {}", mod_rs_path.display()));
+    generated_files.push(mod_rs_path.clone());
 
     println!("Generated module index: {}", mod_rs_path.display());
+    rustfmt_generated_files(&generated_files);
+    println!("Formatted generated files with rustfmt.");
     println!("Form generation complete.");
 }

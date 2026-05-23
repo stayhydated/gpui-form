@@ -42,6 +42,7 @@ shows the normal flow:
 1. adapt each shape with `FormShapeAdapter`
 1. render a file through a custom `FormLayout`
 1. clear stale generated modules and write the generated form files
+1. run `rustfmt` over the written files before treating the scaffold as ready
 
 When the layout emits `gpui_storybook::Story`, pass the `cx: &gpui::App`
 provided by `Story::title` into the application i18n helper so generated form

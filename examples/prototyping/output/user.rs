@@ -1,26 +1,21 @@
-use some_lib::structs::user::*;
 use es_fluent::FluentMessage as _;
-use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
 use gpui::prelude::FluentBuilder as _;
+use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
+use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
 use gpui_component::ActiveTheme as _;
+use gpui_component::Disableable as _;
 use gpui_component::form::field;
+use gpui_component::form::v_form;
+use gpui_component::separator::Separator;
+use gpui_component::v_flex;
 use gpui_form_component::custom::{
     CustomComponentEventOf, CustomComponentStateOf, CustomComponentValueChange,
     custom_value_change, set_custom_state_value,
 };
-use gpui::{
-    App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
-};
-use gpui_component::Disableable as _;
-use gpui_component::separator::Separator;
-use gpui_component::form::v_form;
-use gpui_component::v_flex;
 use some_lib::structs::form_action::FormAction;
+use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
-fn localize(
-    cx: &impl std::borrow::Borrow<App>,
-    message: &impl es_fluent::FluentMessage,
-) -> String {
+fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
     crate::i18n::localize_message(cx, message)
 }
 #[gpui_storybook::story_init]
@@ -48,60 +43,44 @@ impl gpui_storybook::Story for UserForm {
 impl UserForm {
     fn on_username_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::Input<String>>,
-        >,
-        event: &CustomComponentEventOf<
-            gpui_form_collection::input::Input<String>,
-            String,
-        >,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
-                gpui_form_collection::input::Input<String>,
-                String,
-            >(&state, event)
+            custom_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.username = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.username = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_email_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::Input<String>>,
-        >,
-        event: &CustomComponentEventOf<
-            gpui_form_collection::input::Input<String>,
-            String,
-        >,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
-                gpui_form_collection::input::Input<String>,
-                String,
-            >(&state, event)
+            custom_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.email = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.email = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_age_input_event(
@@ -113,27 +92,22 @@ impl UserForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
-                gpui_form_collection::input::Input<u32>,
-                u32,
-            >(&state, event)
+            custom_value_change::<gpui_form_collection::input::Input<u32>, u32>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.age = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.age = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_balance_input_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
-                gpui_form_collection::input::Input<rust_decimal::Decimal>,
-            >,
+            CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
         >,
         event: &CustomComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
@@ -152,19 +126,17 @@ impl UserForm {
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.balance = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.balance = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_debt_input_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
-                gpui_form_collection::input::Input<rust_decimal::Decimal>,
-            >,
+            CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
         >,
         event: &CustomComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
@@ -183,11 +155,11 @@ impl UserForm {
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.debt = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.debt = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_subscribe_newsletter_switch_event(
@@ -199,17 +171,14 @@ impl UserForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
-                gpui_form_collection::switch::Switch,
-                bool,
-            >(&state, event)
+            custom_value_change::<gpui_form_collection::switch::Switch, bool>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.subscribe_newsletter = value;
-            }
-            CustomComponentValueChange::Clear => {}
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_enable_notifications_checkbox_event(
@@ -221,25 +190,20 @@ impl UserForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
-                gpui_form_collection::checkbox::Checkbox,
-                bool,
-            >(&state, event)
+            custom_value_change::<gpui_form_collection::checkbox::Checkbox, bool>(&state, event)
         };
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.enable_notifications = value;
-            }
-            CustomComponentValueChange::Clear => {}
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_preferred_select_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
-                gpui_form_collection::select::Select<PreferredLanguage>,
-            >,
+            CustomComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>,
         >,
         event: &CustomComponentEventOf<
             gpui_form_collection::select::Select<PreferredLanguage>,
@@ -258,9 +222,9 @@ impl UserForm {
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.preferred = value;
-            }
-            CustomComponentValueChange::Clear => {}
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_country_select_event(
@@ -296,11 +260,11 @@ impl UserForm {
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.country = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.country = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_birth_date_input_event(
@@ -325,11 +289,11 @@ impl UserForm {
         match change {
             CustomComponentValueChange::Set(value) => {
                 self.current_data.birth_date = Some(value);
-            }
+            },
             CustomComponentValueChange::Clear => {
                 self.current_data.birth_date = None;
-            }
-            CustomComponentValueChange::Unchanged => {}
+            },
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -339,132 +303,106 @@ impl UserForm {
         let age_input = cx.new(|cx| UserFormComponents::age_input(window, cx));
         let balance_input = cx.new(|cx| UserFormComponents::balance_input(window, cx));
         let debt_input = cx.new(|cx| UserFormComponents::debt_input(window, cx));
-        let subscribe_newsletter_switch = cx
-            .new(|cx| UserFormComponents::subscribe_newsletter_switch(window, cx));
-        let enable_notifications_checkbox = cx
-            .new(|cx| UserFormComponents::enable_notifications_checkbox(window, cx));
-        let preferred_select = cx
-            .new(|cx| UserFormComponents::preferred_select(window, cx));
+        let subscribe_newsletter_switch =
+            cx.new(|cx| UserFormComponents::subscribe_newsletter_switch(window, cx));
+        let enable_notifications_checkbox =
+            cx.new(|cx| UserFormComponents::enable_notifications_checkbox(window, cx));
+        let preferred_select = cx.new(|cx| UserFormComponents::preferred_select(window, cx));
         let country_select = cx.new(|cx| UserFormComponents::country_select(window, cx));
-        let birth_date_input = cx
-            .new(|cx| UserFormComponents::birth_date_input(window, cx));
+        let birth_date_input = cx.new(|cx| UserFormComponents::birth_date_input(window, cx));
         let mut _subscriptions = vec![
-            cx.subscribe_in(& username_input, window, Self::on_username_input_event), cx
-            .subscribe_in(& email_input, window, Self::on_email_input_event), cx
-            .subscribe_in(& age_input, window, Self::on_age_input_event), cx
-            .subscribe_in(& balance_input, window, Self::on_balance_input_event), cx
-            .subscribe_in(& debt_input, window, Self::on_debt_input_event), cx
-            .subscribe_in(& subscribe_newsletter_switch, window,
-            Self::on_subscribe_newsletter_switch_event), cx.subscribe_in(&
-            enable_notifications_checkbox, window,
-            Self::on_enable_notifications_checkbox_event), cx.subscribe_in(&
-            preferred_select, window, Self::on_preferred_select_event), cx.subscribe_in(&
-            country_select, window, Self::on_country_select_event), cx.subscribe_in(&
-            birth_date_input, window, Self::on_birth_date_input_event)
+            cx.subscribe_in(&username_input, window, Self::on_username_input_event),
+            cx.subscribe_in(&email_input, window, Self::on_email_input_event),
+            cx.subscribe_in(&age_input, window, Self::on_age_input_event),
+            cx.subscribe_in(&balance_input, window, Self::on_balance_input_event),
+            cx.subscribe_in(&debt_input, window, Self::on_debt_input_event),
+            cx.subscribe_in(
+                &subscribe_newsletter_switch,
+                window,
+                Self::on_subscribe_newsletter_switch_event,
+            ),
+            cx.subscribe_in(
+                &enable_notifications_checkbox,
+                window,
+                Self::on_enable_notifications_checkbox_event,
+            ),
+            cx.subscribe_in(&preferred_select, window, Self::on_preferred_select_event),
+            cx.subscribe_in(&country_select, window, Self::on_country_select_event),
+            cx.subscribe_in(&birth_date_input, window, Self::on_birth_date_input_event),
         ];
-        username_input
-            .update(
+        username_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::Input<String>, String>(
+                state,
+                current_data.username.as_ref(),
+                window,
                 cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<String>,
-                        String,
-                    >(state, current_data.username.as_ref(), window, cx);
-                },
             );
-        email_input
-            .update(
+        });
+        email_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::Input<String>, String>(
+                state,
+                current_data.email.as_ref(),
+                window,
                 cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<String>,
-                        String,
-                    >(state, current_data.email.as_ref(), window, cx);
-                },
             );
-        age_input
-            .update(
+        });
+        age_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::Input<u32>, u32>(
+                state,
+                current_data.age.as_ref(),
+                window,
                 cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<u32>,
-                        u32,
-                    >(state, current_data.age.as_ref(), window, cx);
-                },
             );
-        balance_input
-            .update(
+        });
+        balance_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
+                rust_decimal::Decimal,
+            >(state, current_data.balance.as_ref(), window, cx);
+        });
+        debt_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::Input<rust_decimal::Decimal>,
+                rust_decimal::Decimal,
+            >(state, current_data.debt.as_ref(), window, cx);
+        });
+        subscribe_newsletter_switch.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::switch::Switch, bool>(
+                state,
+                Some(&current_data.subscribe_newsletter),
+                window,
                 cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<rust_decimal::Decimal>,
-                        rust_decimal::Decimal,
-                    >(state, current_data.balance.as_ref(), window, cx);
-                },
             );
-        debt_input
-            .update(
+        });
+        enable_notifications_checkbox.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::checkbox::Checkbox, bool>(
+                state,
+                Some(&current_data.enable_notifications),
+                window,
                 cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<rust_decimal::Decimal>,
-                        rust_decimal::Decimal,
-                    >(state, current_data.debt.as_ref(), window, cx);
-                },
             );
-        subscribe_newsletter_switch
-            .update(
-                cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::switch::Switch,
-                        bool,
-                    >(state, Some(&current_data.subscribe_newsletter), window, cx);
-                },
-            );
-        enable_notifications_checkbox
-            .update(
-                cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::checkbox::Checkbox,
-                        bool,
-                    >(state, Some(&current_data.enable_notifications), window, cx);
-                },
-            );
-        preferred_select
-            .update(
-                cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::select::Select<PreferredLanguage>,
-                        PreferredLanguage,
-                    >(state, Some(&current_data.preferred), window, cx);
-                },
-            );
-        country_select
-            .update(
-                cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::select::Select<
-                            EnumCountry,
-                            ::gpui_component::select::SearchableVec<EnumCountry>,
-                        >,
-                        EnumCountry,
-                    >(state, current_data.country.as_ref(), window, cx);
-                },
-            );
-        birth_date_input
-            .update(
-                cx,
-                |state, cx| {
-                    set_custom_state_value::<
-                        gpui_form_collection::input::Input<chrono::NaiveDate>,
-                        chrono::NaiveDate,
-                    >(state, current_data.birth_date.as_ref(), window, cx);
-                },
-            );
+        });
+        preferred_select.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::select::Select<PreferredLanguage>,
+                PreferredLanguage,
+            >(state, Some(&current_data.preferred), window, cx);
+        });
+        country_select.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::select::Select<
+                    EnumCountry,
+                    ::gpui_component::select::SearchableVec<EnumCountry>,
+                >,
+                EnumCountry,
+            >(state, current_data.country.as_ref(), window, cx);
+        });
+        birth_date_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::Input<chrono::NaiveDate>,
+                chrono::NaiveDate,
+            >(state, current_data.birth_date.as_ref(), window, cx);
+        });
         Self {
             current_data,
             fields: UserFormFields {
@@ -497,21 +435,15 @@ impl UserForm {
         &self,
         cx: &mut Context<Self>,
         label: impl Into<gpui::SharedString>,
-        on_submit: impl Fn(
-            Result<UserFormValueHolder, String>,
-            &mut Window,
-            &mut Context<Self>,
-        ) + 'static,
+        on_submit: impl Fn(Result<UserFormValueHolder, String>, &mut Window, &mut Context<Self>)
+        + 'static,
     ) -> gpui_component::button::Button {
         gpui_component::button::Button::new(format!("{}-submit-button", "user-form"))
             .label(label)
             .disabled(self.current_data.validate().is_err())
-            .on_click(
-                cx
-                    .listener(move |this, _, window, cx| {
-                        on_submit(this.submit_payload(), window, cx);
-                    }),
-            )
+            .on_click(cx.listener(move |this, _, window, cx| {
+                on_submit(this.submit_payload(), window, cx);
+            }))
     }
     fn reset_button(
         &self,
@@ -520,21 +452,15 @@ impl UserForm {
     ) -> gpui_component::button::Button {
         gpui_component::button::Button::new(format!("{}-reset-button", "user-form"))
             .label(label)
-            .on_click(
-                cx
-                    .listener(|this, _, window, cx| {
-                        this.reset_form(window, cx);
-                    }),
-            )
+            .on_click(cx.listener(|this, _, window, cx| {
+                this.reset_form(window, cx);
+            }))
     }
     fn action_buttons(
         &self,
         cx: &mut Context<Self>,
-        on_submit: impl Fn(
-            Result<UserFormValueHolder, String>,
-            &mut Window,
-            &mut Context<Self>,
-        ) + 'static,
+        on_submit: impl Fn(Result<UserFormValueHolder, String>, &mut Window, &mut Context<Self>)
+        + 'static,
     ) -> impl IntoElement {
         div()
             .flex()
@@ -568,22 +494,19 @@ impl Render for UserForm {
                                     localize(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errs = e.username().all();
-                                            if errs.is_empty() {
-                                                None
-                                            } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| localize(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
-                                            }
-                                        })
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.username().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -592,23 +515,18 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(
-                                    &self.fields.username_input,
-                                ),
-                            ),
+                            .child(gpui_component::input::Input::new(
+                                &self.fields.username_input,
+                            )),
                     )
                     .child(
                         field()
@@ -622,22 +540,19 @@ impl Render for UserForm {
                                     localize(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errs = e.email().all();
-                                            if errs.is_empty() {
-                                                None
-                                            } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| localize(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
-                                            }
-                                        })
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.email().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -646,21 +561,16 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(&self.fields.email_input),
-                            ),
+                            .child(gpui_component::input::Input::new(&self.fields.email_input)),
                     )
                     .child(
                         field()
@@ -674,22 +584,19 @@ impl Render for UserForm {
                                     localize(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errs = e.age().all();
-                                            if errs.is_empty() {
-                                                None
-                                            } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| localize(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
-                                            }
-                                        })
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.age().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -698,21 +605,16 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(&self.fields.age_input),
-                            ),
+                            .child(gpui_component::input::Input::new(&self.fields.age_input)),
                     )
                     .child(
                         field()
@@ -726,22 +628,19 @@ impl Render for UserForm {
                                     localize(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errs = e.balance().all();
-                                            if errs.is_empty() {
-                                                None
-                                            } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| localize(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
-                                            }
-                                        })
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.balance().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -750,23 +649,18 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(
-                                    &self.fields.balance_input,
-                                ),
-                            ),
+                            .child(gpui_component::input::Input::new(
+                                &self.fields.balance_input,
+                            )),
                     )
                     .child(
                         field()
@@ -780,22 +674,19 @@ impl Render for UserForm {
                                     localize(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errs = e.debt().all();
-                                            if errs.is_empty() {
-                                                None
-                                            } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| localize(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
-                                            }
-                                        })
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.debt().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -804,21 +695,16 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(&self.fields.debt_input),
-                            ),
+                            .child(gpui_component::input::Input::new(&self.fields.debt_input)),
                     )
                     .child(
                         field()
@@ -839,11 +725,9 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_form_collection::switch::SwitchField::new(
-                                    &self.fields.subscribe_newsletter_switch,
-                                ),
-                            ),
+                            .child(gpui_form_collection::switch::SwitchField::new(
+                                &self.fields.subscribe_newsletter_switch,
+                            )),
                     )
                     .child(
                         field()
@@ -864,11 +748,9 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_form_collection::checkbox::CheckboxField::new(
-                                    &self.fields.enable_notifications_checkbox,
-                                ),
-                            ),
+                            .child(gpui_form_collection::checkbox::CheckboxField::new(
+                                &self.fields.enable_notifications_checkbox,
+                            )),
                     )
                     .child(
                         field()
@@ -889,11 +771,9 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_component::select::Select::new(
-                                    &self.fields.preferred_select,
-                                ),
-                            ),
+                            .child(gpui_component::select::Select::new(
+                                &self.fields.preferred_select,
+                            )),
                     )
                     .child(
                         field()
@@ -914,11 +794,9 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_component::select::Select::new(
-                                    &self.fields.country_select,
-                                ),
-                            ),
+                            .child(gpui_component::select::Select::new(
+                                &self.fields.country_select,
+                            )),
                     )
                     .child(
                         field()
@@ -939,33 +817,22 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_component::input::Input::new(
-                                    &self.fields.birth_date_input,
-                                ),
-                            ),
+                            .child(gpui_component::input::Input::new(
+                                &self.fields.birth_date_input,
+                            )),
                     )
-                    .child(
-                        field()
-                            .label_indent(false)
-                            .child(
-                                self
-                                    .action_buttons(
-                                        cx,
-                                        |payload, _, _| {
-                                            let _ = payload;
-                                        },
-                                    ),
-                            ),
-                    ),
+                    .child(field().label_indent(false).child(self.action_buttons(
+                        cx,
+                        |payload, _, _| {
+                            let _ = payload;
+                        },
+                    ))),
             )
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
-            .child(
-                format!(
-                    "into_original: incomplete; present_fields_json: {}", self
-                    .current_data.present_fields_json()
-                ),
-            )
+            .child(format!(
+                "into_original: incomplete; present_fields_json: {}",
+                self.current_data.present_fields_json()
+            ))
     }
 }
