@@ -69,6 +69,7 @@ gpui_form_derive::custom_component! {
         new = CheckboxState::new;
         component = gpui_form_collection::checkbox::Checkbox;
         value_binding;
+        field_suffix = "checkbox";
     }
 }
 

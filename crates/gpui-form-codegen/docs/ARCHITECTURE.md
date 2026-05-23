@@ -32,6 +32,7 @@ crate.
 - `component(custom(shape = my::Shape, component = my::Widget))`
 - `component(custom(shape = my::Shape, wraps_in_option = false))`
 - `component(custom(shape = my::Shape, value_binding))`
+- `component(custom(shape = my::Shape, field_suffix = "input"))`
 
 Important parse-time responsibilities:
 
@@ -43,6 +44,7 @@ Important parse-time responsibilities:
 - `wraps_in_option` controls generated value-holder storage
 - `value_binding` records that generated prototyping code should use
   `CustomComponentValueAdapter`
+- `field_suffix` records a field-level prototyping name override
 
 ## Component Layout Emission
 
@@ -51,6 +53,14 @@ The custom layout emits two things:
 - a `FormFields` entry with `Entity<<Shape as CustomComponentShape>::State>`
 - a `FormComponents` constructor that delegates to
   `<Shape as CustomComponentShape>::new(window, cx)`
+
+Generated identifiers use an explicit field-level `field_suffix` first, then
+shape-level `CustomComponentShape::PROTOTYPING.field_suffix`, then the resolved
+custom shape's final segment. The shape-name fallback strips `Shape` or
+`State`, removes a duplicate field prefix, and falls back to `custom` when the
+shape name is exactly the field name. Explicit suffix metadata goes through the
+same field-name normalization. For example, `email: EmailInputShape` becomes
+`email_input`, while `tags: TagsState` stays `tags_custom`.
 
 No `gpui-component` UI shape is hard-coded here. Reusable gpui-component-backed
 representations live in `gpui-form-collection`; application-specific widgets
@@ -64,6 +74,7 @@ Inventory/prototyping metadata records:
 - the resolved custom shape path
 - the optional render component path
 - the custom value-binding flag
+- the optional custom prototyping field suffix
 
 `gpui-form-prototyping-core` consumes this metadata through the same contract,
 so adding a new widget family does not require changing this crate.

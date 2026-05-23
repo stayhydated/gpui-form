@@ -15,6 +15,9 @@ this crate owns reusable shape types for common `gpui-component` widgets.
 - `gpui-form-component` owns the custom component contract.
 - `gpui-form-collection` owns opt-in shapes declared through
   `gpui_form_derive::custom_component!` and any value adapters those shapes need.
+- Collection shapes publish `CustomComponentShape::PROTOTYPING.field_suffix`
+  values so prototyping output can use stable widget-role names without
+  rediscovering the same suffixes from type names.
 - Application crates may define their own shape types directly when this
   collection is not the right owner.
 
@@ -34,5 +37,5 @@ this crate owns reusable shape types for common `gpui-component` widgets.
 ## When To Update This Document
 
 Update this file when a new component family is added, when a shape changes its
-value-binding semantics, or when ownership moves between this collection and a
-downstream application crate.
+value-binding or prototyping metadata semantics, or when ownership moves between
+this collection and a downstream application crate.

@@ -261,6 +261,7 @@ pub fn expand_gpui_form(
                 let custom_shape_tokens = component_def.custom_shape_tokens(&base_type);
                 let custom_value_binding_tokens =
                     component_def.custom_value_binding_tokens(&base_type);
+                let custom_prototyping_tokens = component_def.custom_prototyping_tokens(&base_type);
                 let from_expr_tokens = option_expr_string_tokens(&field.from);
                 let into_expr_tokens = option_expr_string_tokens(&field.into);
 
@@ -281,6 +282,7 @@ pub fn expand_gpui_form(
                     #custom_component_tokens
                     #custom_shape_tokens
                     #custom_value_binding_tokens
+                    #custom_prototyping_tokens
                 })
             } else {
                 None

@@ -44,6 +44,7 @@ Supported component forms:
 - `#[gpui_form(component(custom(shape = my::Shape, component = my::ui::Widget)))]`
 - `#[gpui_form(component(custom(shape = my::Shape, wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = my::Shape, value_binding)))]`
+- `#[gpui_form(component(custom(shape = my::Shape, field_suffix = "input")))]`
 - `#[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]`
 - `#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]`
@@ -82,6 +83,11 @@ Behavior notes:
 - `gpui_form_collection::input::InputShape<_>` prototyping code parses
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
+- custom shape prototyping metadata drives generated `FormFields` and
+  `FormComponents` suffixes when present. Collection shapes publish suffixes
+  such as `input`, `select`, `checkbox`, and `switch`; reusable app shapes can
+  use `field_suffix = "..."`, and otherwise generated identifiers fall back to
+  the shape name heuristic
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model
@@ -102,7 +108,8 @@ use gpui_form_derive::CustomComponent;
 #[gpui_form_custom(
     new = crate::state::build,
     component = crate::ui::TagsInput,
-    value_binding
+    value_binding,
+    field_suffix = "input"
 )]
 pub struct TagsState;
 ```
@@ -112,6 +119,9 @@ By default, the generated implementation calls `Self::new(window, cx)`.
 `value_binding` sets `CustomComponentShape::VALUE_BINDING = true`, so generated
 prototyping code can inherit the shape's `CustomComponentValueAdapter<T>`
 contract without repeating `value_binding` on every field.
+`field_suffix = "..."` populates `CustomComponentShape::PROTOTYPING`, giving
+prototyping generators a reusable field/helper suffix without relying on shape
+name heuristics.
 
 ## `custom_component!`
 
@@ -129,6 +139,7 @@ gpui_form_derive::custom_component! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         value_binding;
+        field_suffix = "input";
     }
 }
 ```

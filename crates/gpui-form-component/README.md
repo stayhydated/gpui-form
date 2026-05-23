@@ -212,6 +212,7 @@ gpui_form_component::custom_component_shape!(
     state = gpui_component::input::InputState,
     new = gpui_component::input::InputState::new,
     component = gpui_component::input::Input,
+    field_suffix = "input",
 );
 ```
 
@@ -223,7 +224,8 @@ type:
 #[gpui_form_custom(
     new = crate::state::build,
     component = crate::ui::TagsInput,
-    value_binding
+    value_binding,
+    field_suffix = "input"
 )]
 pub struct TagsState;
 ```
@@ -234,6 +236,14 @@ shape and either set `value_binding` on the shape metadata or add
 `value_binding` to the `component(custom(...))` options for a single field. The
 adapter seeds state from the current form value and maps component events to
 `CustomComponentValueChange<T>`.
+
+Reusable shapes can also publish `custom::CustomComponentPrototyping` metadata.
+Set `field_suffix = "..."` through `custom_component_shape!` or
+`#[gpui_form_custom(...)]` so prototyping generators can emit names such as
+`email_input` without deriving that suffix from the shape type. Generated
+value-binding scaffolds can use `CustomComponentStateOf`,
+`CustomComponentEventOf`, `set_custom_state_value`, and `custom_value_change`
+to avoid repeating associated-type projections at every call site.
 
 ## Most Users Should Use Instead
 

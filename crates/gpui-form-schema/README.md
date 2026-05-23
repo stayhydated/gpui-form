@@ -16,7 +16,9 @@ prototyping flows around generated form metadata.
 
 `FieldVariant` records both source-model and form-side value types, generated
 value-holder wrapping, conversion expressions, custom component shape paths,
-and opt-in custom value-binding metadata for generators.
+custom component prototyping suffixes, and opt-in custom value-binding metadata
+for generators. Helpers such as `field_name_with_behaviour()` keep inventory
+consumers aligned with the field names emitted by `#[derive(GpuiForm)]`.
 
 ## Example
 

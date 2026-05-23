@@ -924,6 +924,7 @@ where
         new = Self::new_default,
         component = gpui_form_component::infinite_select::InfiniteSelectField,
         value_binding,
+        field_suffix = "infinite_select",
         custom_crate = crate
     )
 )]

@@ -8,6 +8,10 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
+use gpui_form_component::custom::{
+    CustomComponentEventOf, CustomComponentStateOf, CustomComponentValueChange,
+    custom_value_change, set_custom_state_value,
+};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
@@ -37,462 +41,372 @@ impl gpui_storybook::Story for UserForm {
     }
 }
 impl UserForm {
-    fn on_username_custom_event(
+    fn on_username_input_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                String,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::input::InputShape<
-            String,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<String>>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::InputShape<String>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::InputShape<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
-                String,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                String,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::input::InputShape<String>, String>(
+                &state, event,
+            )
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.username = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.username = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_email_custom_event(
+    fn on_email_input_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                String,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::input::InputShape<
-            String,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<String>>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::InputShape<String>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::InputShape<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
-                String,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                String,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::input::InputShape<String>, String>(
+                &state, event,
+            )
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.email = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.email = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_age_custom_event(
+    fn on_age_input_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                u32,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::input::InputShape<
-            u32,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<u32>>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::InputShape<u32>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::InputShape<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
-                u32,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                u32,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::input::InputShape<u32>, u32>(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.age = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.age = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_balance_custom_event(
+    fn on_balance_input_event(
         &mut self,
         state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                rust_decimal::Decimal,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
+            CustomComponentStateOf<gpui_form_collection::input::InputShape<rust_decimal::Decimal>>,
         >,
-        event: &<gpui_form_collection::input::InputShape<
+        event: &CustomComponentEventOf<
+            gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
             rust_decimal::Decimal,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-            rust_decimal::Decimal,
-        >>::Event,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
+            custom_value_change::<
+                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                rust_decimal::Decimal,
-            >>::value_change(&state, event)
+            >(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.balance = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.balance = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_debt_custom_event(
+    fn on_debt_input_event(
         &mut self,
         state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                rust_decimal::Decimal,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
+            CustomComponentStateOf<gpui_form_collection::input::InputShape<rust_decimal::Decimal>>,
         >,
-        event: &<gpui_form_collection::input::InputShape<
+        event: &CustomComponentEventOf<
+            gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
             rust_decimal::Decimal,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-            rust_decimal::Decimal,
-        >>::Event,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
+            custom_value_change::<
+                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                rust_decimal::Decimal,
-            >>::value_change(&state, event)
+            >(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.debt = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.debt = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_subscribe_newsletter_custom_event(
+    fn on_subscribe_newsletter_switch_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::switch::SwitchShape as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::switch::SwitchShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-            bool,
-        >>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::switch::SwitchShape>>,
+        event: &CustomComponentEventOf<gpui_form_collection::switch::SwitchShape, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::switch::SwitchShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                bool,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::switch::SwitchShape, bool>(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.subscribe_newsletter = value;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {},
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_enable_notifications_custom_event(
+    fn on_enable_notifications_checkbox_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::checkbox::CheckboxShape as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::checkbox::CheckboxShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-            bool,
-        >>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::checkbox::CheckboxShape>>,
+        event: &CustomComponentEventOf<gpui_form_collection::checkbox::CheckboxShape, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::checkbox::CheckboxShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                bool,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::checkbox::CheckboxShape, bool>(
+                &state, event,
+            )
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.enable_notifications = value;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {},
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_preferred_custom_event(
+    fn on_preferred_select_event(
         &mut self,
         state: &Entity<
-            <gpui_form_collection::select::SelectShape<
-                PreferredLanguage,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
+            CustomComponentStateOf<gpui_form_collection::select::SelectShape<PreferredLanguage>>,
         >,
-        event: &<gpui_form_collection::select::SelectShape<
+        event: &CustomComponentEventOf<
+            gpui_form_collection::select::SelectShape<PreferredLanguage>,
             PreferredLanguage,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<PreferredLanguage>>::Event,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::select::SelectShape<
+            custom_value_change::<
+                gpui_form_collection::select::SelectShape<PreferredLanguage>,
                 PreferredLanguage,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                PreferredLanguage,
-            >>::value_change(&state, event)
+            >(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.preferred = value;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {},
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Clear => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_country_custom_event(
+    fn on_country_select_event(
         &mut self,
         state: &Entity<
-            <gpui_form_collection::select::SelectShape<
-                EnumCountry,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
+            CustomComponentStateOf<gpui_form_collection::select::SelectShape<EnumCountry>>,
         >,
-        event: &<gpui_form_collection::select::SelectShape<
+        event: &CustomComponentEventOf<
+            gpui_form_collection::select::SelectShape<EnumCountry>,
             EnumCountry,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<EnumCountry>>::Event,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::select::SelectShape<
-                EnumCountry,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                EnumCountry,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::select::SelectShape<EnumCountry>, EnumCountry>(
+                &state, event,
+            )
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.country = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.country = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
-    fn on_birth_date_custom_event(
+    fn on_birth_date_input_event(
         &mut self,
         state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                chrono::NaiveDate,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
+            CustomComponentStateOf<gpui_form_collection::input::InputShape<chrono::NaiveDate>>,
         >,
-        event: &<gpui_form_collection::input::InputShape<
+        event: &CustomComponentEventOf<
+            gpui_form_collection::input::InputShape<chrono::NaiveDate>,
             chrono::NaiveDate,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<chrono::NaiveDate>>::Event,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
+            custom_value_change::<
+                gpui_form_collection::input::InputShape<chrono::NaiveDate>,
                 chrono::NaiveDate,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                chrono::NaiveDate,
-            >>::value_change(&state, event)
+            >(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.birth_date = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.birth_date = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = UserFormValueHolder::default();
-        let username_custom = cx.new(|cx| UserFormComponents::username_custom(window, cx));
-        let email_custom = cx.new(|cx| UserFormComponents::email_custom(window, cx));
-        let age_custom = cx.new(|cx| UserFormComponents::age_custom(window, cx));
-        let balance_custom = cx.new(|cx| UserFormComponents::balance_custom(window, cx));
-        let debt_custom = cx.new(|cx| UserFormComponents::debt_custom(window, cx));
-        let subscribe_newsletter_custom =
-            cx.new(|cx| UserFormComponents::subscribe_newsletter_custom(window, cx));
-        let enable_notifications_custom =
-            cx.new(|cx| UserFormComponents::enable_notifications_custom(window, cx));
-        let preferred_custom = cx.new(|cx| UserFormComponents::preferred_custom(window, cx));
-        let country_custom = cx.new(|cx| UserFormComponents::country_custom(window, cx));
-        let birth_date_custom = cx.new(|cx| UserFormComponents::birth_date_custom(window, cx));
+        let username_input = cx.new(|cx| UserFormComponents::username_input(window, cx));
+        let email_input = cx.new(|cx| UserFormComponents::email_input(window, cx));
+        let age_input = cx.new(|cx| UserFormComponents::age_input(window, cx));
+        let balance_input = cx.new(|cx| UserFormComponents::balance_input(window, cx));
+        let debt_input = cx.new(|cx| UserFormComponents::debt_input(window, cx));
+        let subscribe_newsletter_switch =
+            cx.new(|cx| UserFormComponents::subscribe_newsletter_switch(window, cx));
+        let enable_notifications_checkbox =
+            cx.new(|cx| UserFormComponents::enable_notifications_checkbox(window, cx));
+        let preferred_select = cx.new(|cx| UserFormComponents::preferred_select(window, cx));
+        let country_select = cx.new(|cx| UserFormComponents::country_select(window, cx));
+        let birth_date_input = cx.new(|cx| UserFormComponents::birth_date_input(window, cx));
         let mut _subscriptions = vec![
-            cx.subscribe_in(&username_custom, window, Self::on_username_custom_event),
-            cx.subscribe_in(&email_custom, window, Self::on_email_custom_event),
-            cx.subscribe_in(&age_custom, window, Self::on_age_custom_event),
-            cx.subscribe_in(&balance_custom, window, Self::on_balance_custom_event),
-            cx.subscribe_in(&debt_custom, window, Self::on_debt_custom_event),
+            cx.subscribe_in(&username_input, window, Self::on_username_input_event),
+            cx.subscribe_in(&email_input, window, Self::on_email_input_event),
+            cx.subscribe_in(&age_input, window, Self::on_age_input_event),
+            cx.subscribe_in(&balance_input, window, Self::on_balance_input_event),
+            cx.subscribe_in(&debt_input, window, Self::on_debt_input_event),
             cx.subscribe_in(
-                &subscribe_newsletter_custom,
+                &subscribe_newsletter_switch,
                 window,
-                Self::on_subscribe_newsletter_custom_event,
+                Self::on_subscribe_newsletter_switch_event,
             ),
             cx.subscribe_in(
-                &enable_notifications_custom,
+                &enable_notifications_checkbox,
                 window,
-                Self::on_enable_notifications_custom_event,
+                Self::on_enable_notifications_checkbox_event,
             ),
-            cx.subscribe_in(&preferred_custom, window, Self::on_preferred_custom_event),
-            cx.subscribe_in(&country_custom, window, Self::on_country_custom_event),
-            cx.subscribe_in(&birth_date_custom, window, Self::on_birth_date_custom_event),
+            cx.subscribe_in(&preferred_select, window, Self::on_preferred_select_event),
+            cx.subscribe_in(&country_select, window, Self::on_country_select_event),
+            cx.subscribe_in(&birth_date_input, window, Self::on_birth_date_input_event),
         ];
-        username_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        String,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        String,
-                    >>::set_state_value(
-                        state,
-                        current_data.username.as_ref(),
-                        window,
-                        cx,
-                    );
-        });
-        email_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        String,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        String,
-                    >>::set_state_value(state, current_data.email.as_ref(), window, cx);
-        });
-        age_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        u32,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        u32,
-                    >>::set_state_value(state, current_data.age.as_ref(), window, cx);
-        });
-        balance_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        rust_decimal::Decimal,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        rust_decimal::Decimal,
-                    >>::set_state_value(
-                        state,
-                        current_data.balance.as_ref(),
-                        window,
-                        cx,
-                    );
-        });
-        debt_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        rust_decimal::Decimal,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        rust_decimal::Decimal,
-                    >>::set_state_value(state, current_data.debt.as_ref(), window, cx);
-        });
-        subscribe_newsletter_custom
-            .update(
+        username_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::InputShape<String>, String>(
+                state,
+                current_data.username.as_ref(),
+                window,
                 cx,
-                |state, cx| {
-                    <gpui_form_collection::switch::SwitchShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        bool,
-                    >>::set_state_value(
-                        state,
-                        Some(&current_data.subscribe_newsletter),
-                        window,
-                        cx,
-                    );
-                },
             );
-        enable_notifications_custom
-            .update(
+        });
+        email_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::InputShape<String>, String>(
+                state,
+                current_data.email.as_ref(),
+                window,
                 cx,
-                |state, cx| {
-                    <gpui_form_collection::checkbox::CheckboxShape as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        bool,
-                    >>::set_state_value(
-                        state,
-                        Some(&current_data.enable_notifications),
-                        window,
-                        cx,
-                    );
-                },
             );
-        preferred_custom.update(cx, |state, cx| {
-            <gpui_form_collection::select::SelectShape<
-                        PreferredLanguage,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        PreferredLanguage,
-                    >>::set_state_value(
-                        state,
-                        Some(&current_data.preferred),
-                        window,
-                        cx,
-                    );
         });
-        country_custom.update(cx, |state, cx| {
-            <gpui_form_collection::select::SelectShape<
-                        EnumCountry,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        EnumCountry,
-                    >>::set_state_value(
-                        state,
-                        current_data.country.as_ref(),
-                        window,
-                        cx,
-                    );
+        age_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::InputShape<u32>, u32>(
+                state,
+                current_data.age.as_ref(),
+                window,
+                cx,
+            );
         });
-        birth_date_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        chrono::NaiveDate,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        chrono::NaiveDate,
-                    >>::set_state_value(
-                        state,
-                        current_data.birth_date.as_ref(),
-                        window,
-                        cx,
-                    );
+        balance_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                rust_decimal::Decimal,
+            >(state, current_data.balance.as_ref(), window, cx);
+        });
+        debt_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::InputShape<rust_decimal::Decimal>,
+                rust_decimal::Decimal,
+            >(state, current_data.debt.as_ref(), window, cx);
+        });
+        subscribe_newsletter_switch.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::switch::SwitchShape, bool>(
+                state,
+                Some(&current_data.subscribe_newsletter),
+                window,
+                cx,
+            );
+        });
+        enable_notifications_checkbox.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::checkbox::CheckboxShape, bool>(
+                state,
+                Some(&current_data.enable_notifications),
+                window,
+                cx,
+            );
+        });
+        preferred_select.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::select::SelectShape<PreferredLanguage>,
+                PreferredLanguage,
+            >(state, Some(&current_data.preferred), window, cx);
+        });
+        country_select.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::select::SelectShape<EnumCountry>,
+                EnumCountry,
+            >(state, current_data.country.as_ref(), window, cx);
+        });
+        birth_date_input.update(cx, |state, cx| {
+            set_custom_state_value::<
+                gpui_form_collection::input::InputShape<chrono::NaiveDate>,
+                chrono::NaiveDate,
+            >(state, current_data.birth_date.as_ref(), window, cx);
         });
         Self {
             current_data,
             fields: UserFormFields {
-                username_custom,
-                email_custom,
-                age_custom,
-                balance_custom,
-                debt_custom,
-                subscribe_newsletter_custom,
-                enable_notifications_custom,
-                preferred_custom,
-                country_custom,
-                birth_date_custom,
+                username_input,
+                email_input,
+                age_input,
+                balance_input,
+                debt_input,
+                subscribe_newsletter_switch,
+                enable_notifications_checkbox,
+                preferred_select,
+                country_select,
+                birth_date_input,
             },
             focus_handle: cx.focus_handle(),
             _subscriptions,
@@ -602,7 +516,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::input::Input::new(
-                                &self.fields.username_custom,
+                                &self.fields.username_input,
                             )),
                     )
                     .child(
@@ -647,7 +561,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.email_custom)),
+                            .child(gpui_component::input::Input::new(&self.fields.email_input)),
                     )
                     .child(
                         field()
@@ -691,7 +605,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.age_custom)),
+                            .child(gpui_component::input::Input::new(&self.fields.age_input)),
                     )
                     .child(
                         field()
@@ -736,7 +650,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::input::Input::new(
-                                &self.fields.balance_custom,
+                                &self.fields.balance_input,
                             )),
                     )
                     .child(
@@ -781,7 +695,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.debt_custom)),
+                            .child(gpui_component::input::Input::new(&self.fields.debt_input)),
                     )
                     .child(
                         field()
@@ -803,7 +717,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_form_collection::switch::Switch::new(
-                                &self.fields.subscribe_newsletter_custom,
+                                &self.fields.subscribe_newsletter_switch,
                             )),
                     )
                     .child(
@@ -826,7 +740,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_form_collection::checkbox::Checkbox::new(
-                                &self.fields.enable_notifications_custom,
+                                &self.fields.enable_notifications_checkbox,
                             )),
                     )
                     .child(
@@ -849,7 +763,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::select::Select::new(
-                                &self.fields.preferred_custom,
+                                &self.fields.preferred_select,
                             )),
                     )
                     .child(
@@ -872,7 +786,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::select::Select::new(
-                                &self.fields.country_custom,
+                                &self.fields.country_select,
                             )),
                     )
                     .child(
@@ -895,7 +809,7 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::input::Input::new(
-                                &self.fields.birth_date_custom,
+                                &self.fields.birth_date_input,
                             )),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(

@@ -16,6 +16,9 @@ struct CustomComponentStateMeta {
     /// Opt generated prototyping code into CustomComponentValueAdapter by default.
     #[darling(default)]
     value_binding: Flag,
+    /// Preferred generated field/helper suffix for prototyping output.
+    #[darling(default)]
+    field_suffix: Option<String>,
     /// Runtime crate path that owns `custom::CustomComponentShape`.
     ///
     /// This defaults to the explicit `gpui_form_component` runtime crate for
@@ -52,6 +55,16 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     } else {
         quote! {}
     };
+    let prototyping_const = if let Some(field_suffix) = meta.field_suffix {
+        let field_suffix = syn::LitStr::new(&field_suffix, proc_macro2::Span::call_site());
+        quote! {
+            const PROTOTYPING: #custom_crate::custom::CustomComponentPrototyping =
+                #custom_crate::custom::CustomComponentPrototyping::new()
+                    .field_suffix(#field_suffix);
+        }
+    } else {
+        quote! {}
+    };
 
     Ok(quote! {
         impl #impl_generics #custom_crate::custom::CustomComponentShape for #ident #ty_generics #where_clause {
@@ -66,6 +79,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
 
             #component_path_const
             #value_binding_const
+            #prototyping_const
         }
     })
 }
@@ -168,6 +182,24 @@ mod tests {
         assert!(
             compact.contains("VALUE_BINDING:bool=true"),
             "should emit VALUE_BINDING const when value_binding is specified"
+        );
+    }
+
+    #[test]
+    fn test_custom_component_state_with_field_suffix() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(CustomComponentState)]
+            #[gpui_form_custom(new = Self::new, field_suffix = "tags")]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("CustomComponentPrototyping::new().field_suffix(\"tags\")"),
+            "should emit prototyping field suffix metadata"
         );
     }
 

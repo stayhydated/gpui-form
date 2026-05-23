@@ -18,6 +18,7 @@ gpui_form_derive::custom_component! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         value_binding;
+        field_suffix = "input";
     }
 }
 

@@ -88,12 +88,18 @@ component-specific generation runs.
 For `ComponentsBehaviour::Custom`:
 
 - the generator still initializes custom state into generated `FormFields`
+- generated local variable, field, and handler names use
+  `FieldVariant::field_name_with_behaviour`, which prefers custom prototyping
+  suffix metadata before falling back to shape-derived suffixes
 - if `FieldVariant::custom_component` is present, the generator can emit
   `Component::new(&entity)` and import the component type
 - if that metadata is missing, the generator falls back to a placeholder row
 - custom subscriptions are generated only when `FieldVariant::custom_value_binding`
   is true; the field's shape must provide the generic
   `CustomComponentValueAdapter<T>` hook that maps events to value updates
+- value-bound custom subscriptions use runtime projection aliases and helper
+  functions from `gpui_form_component::custom` inline for state seeding and
+  event conversion
 
 ## Coordination Rules
 

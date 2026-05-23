@@ -42,8 +42,12 @@ Responsibilities:
 - define the state type that generated forms store in `FormFields`
 - define how that state type is constructed
 - optionally carry a UI component path for prototyping output
+- optionally carry prototyping preferences such as the generated field/helper
+  suffix
 - optionally implement `CustomComponentValueAdapter<T>` so generated
   prototyping code can seed state and map component events back into form values
+  through helper aliases/functions instead of exposing associated-type
+  projections at every generated call site
 
 ### `infinite_select`
 
@@ -131,9 +135,13 @@ Responsibilities:
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path
    for scaffold generation.
+1. Shape-level prototyping metadata can carry a preferred field/helper suffix
+   for scaffold generation, with field-level annotations able to override it.
 1. When the field opts into `value_binding`, prototyping code calls the
    shape-owned `CustomComponentValueAdapter<T>` hooks instead of inferring any
-   domain-specific event semantics.
+   domain-specific event semantics; generated code can route those calls
+   through `CustomComponentStateOf`, `CustomComponentEventOf`,
+   `set_custom_state_value`, and `custom_value_change`.
 
 ### Date picker
 

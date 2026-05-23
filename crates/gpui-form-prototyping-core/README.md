@@ -54,7 +54,12 @@ of assuming every text field stores `String`.
 
 Custom fields remain inert by default. If a field's shape opts into
 `value_binding`, the adapter emits generic seed and subscription hooks through
-`gpui_form_component::custom::CustomComponentValueAdapter<T>`.
+`gpui_form_component::custom::CustomComponentValueAdapter<T>`. Generated
+scaffolds use `CustomComponentShape::PROTOTYPING.field_suffix` when available
+for field and handler suffixes, such as `email_input` and
+`on_email_input_event`, then fall back to the custom shape name heuristic.
+Value-bound scaffolds use `gpui_form_component::custom` helper functions and
+runtime aliases for state and event projections so the output stays readable.
 
 ## Feature Flags
 

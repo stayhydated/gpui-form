@@ -36,8 +36,8 @@ component contract fields. It centralizes shared traits such as:
 ### `ComponentsBehaviour`
 
 Per-field runtime behavior metadata. Today this is `Custom`; shape-specific
-details live in `FieldVariant::custom_shape`, `custom_component`, and
-`custom_value_binding`.
+details live in `FieldVariant::custom_shape`, `custom_component`,
+`custom_value_binding`, and `custom_prototyping_field_suffix`.
 
 This is the metadata level that downstream consumers use; derive/codegen
 internals should not invent separate parallel runtime models.
@@ -73,6 +73,14 @@ Important fields:
 - `custom_shape`
 - `custom_component`
 - `custom_value_binding`
+- `custom_prototyping_field_suffix`
+
+`FieldVariant::field_name_with_behaviour()` derives the generated component
+field name from `custom_prototyping_field_suffix` or `custom_shape` when
+available, so inventory consumers use the same suffixes as the derive output.
+The fallback suffix strips shape/state wrappers and removes duplicated
+field-name prefixes before falling back to the behavior name. Explicit
+prototyping suffix metadata is normalized against the field name the same way.
 
 ## Data Flow
 

@@ -1,21 +1,16 @@
-use some_lib::structs::empty::*;
 use es_fluent::FluentMessage as _;
-use gpui::{InteractiveElement, ParentElement as _, Styled, div};
 use gpui::prelude::FluentBuilder as _;
+use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
+use gpui::{InteractiveElement, ParentElement as _, Styled, div};
 use gpui_component::ActiveTheme as _;
-use gpui_component::form::field;
-use gpui::{
-    App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
-};
 use gpui_component::Disableable as _;
-use gpui_component::separator::Separator;
+use gpui_component::form::field;
 use gpui_component::form::v_form;
+use gpui_component::separator::Separator;
 use gpui_component::v_flex;
+use some_lib::structs::empty::*;
 const CONTEXT: &str = "EmptyForm";
-fn localize(
-    cx: &impl std::borrow::Borrow<App>,
-    message: &impl es_fluent::FluentMessage,
-) -> String {
+fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
     crate::i18n::localize_message(cx, message)
 }
 #[gpui_storybook::story_init]

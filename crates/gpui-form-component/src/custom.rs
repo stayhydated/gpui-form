@@ -35,6 +35,37 @@ pub trait CustomComponentShape {
     /// explicitly. This shape-level flag is useful when the component's derive
     /// or reusable shape owns the metadata and each field should inherit it.
     const VALUE_BINDING: bool = false;
+
+    /// Metadata used by prototyping generators.
+    ///
+    /// This is intentionally separate from runtime construction so reusable
+    /// component crates can describe generated-code preferences once, and
+    /// downstream fields can inherit those preferences.
+    const PROTOTYPING: CustomComponentPrototyping = CustomComponentPrototyping::new();
+}
+
+/// Shape-owned metadata for prototyping generators.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CustomComponentPrototyping {
+    /// Preferred generated field/helper suffix, such as `"input"` or `"select"`.
+    pub field_suffix: Option<&'static str>,
+}
+
+impl CustomComponentPrototyping {
+    pub const fn new() -> Self {
+        Self { field_suffix: None }
+    }
+
+    pub const fn field_suffix(mut self, suffix: &'static str) -> Self {
+        self.field_suffix = Some(suffix);
+        self
+    }
+}
+
+impl Default for CustomComponentPrototyping {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Value update emitted by a custom component adapter.
@@ -86,6 +117,38 @@ pub trait CustomComponentValueAdapter<T>: CustomComponentShape {
     fn value_change(state: &Self::State, event: &Self::Event) -> CustomComponentValueChange<T>;
 }
 
+/// State type for a custom shape.
+pub type CustomComponentStateOf<Shape> = <Shape as CustomComponentShape>::State;
+
+/// Event type for a value-bound custom shape and value.
+pub type CustomComponentEventOf<Shape, Value> =
+    <Shape as CustomComponentValueAdapter<Value>>::Event;
+
+/// Seed component state from the current form value without spelling out the
+/// associated-type projection at every generated call site.
+pub fn set_custom_state_value<Shape, Value>(
+    state: &mut CustomComponentStateOf<Shape>,
+    value: Option<&Value>,
+    window: &mut gpui::Window,
+    cx: &mut gpui::Context<'_, CustomComponentStateOf<Shape>>,
+) where
+    Shape: CustomComponentValueAdapter<Value>,
+{
+    Shape::set_state_value(state, value, window, cx);
+}
+
+/// Convert a component event into a form value update without repeating UFCS
+/// projections in generated code.
+pub fn custom_value_change<Shape, Value>(
+    state: &CustomComponentStateOf<Shape>,
+    event: &CustomComponentEventOf<Shape, Value>,
+) -> CustomComponentValueChange<Value>
+where
+    Shape: CustomComponentValueAdapter<Value>,
+{
+    Shape::value_change(state, event)
+}
+
 /// Define a custom component shape with minimal boilerplate.
 ///
 /// # Example
@@ -96,10 +159,87 @@ pub trait CustomComponentValueAdapter<T>: CustomComponentShape {
 ///     state = gpui_component::input::InputState,
 ///     new = gpui_component::input::InputState::new,
 ///     component = gpui_component::input::Input,
+///     field_suffix = "input",
 /// );
 /// ```
 #[macro_export]
 macro_rules! custom_component_shape {
+    // With explicit component path, value binding metadata, and prototyping suffix
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, component = $component:path, value_binding, field_suffix = $field_suffix:literal $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const COMPONENT_PATH: Option<&'static str> = Some(stringify!($component));
+            const VALUE_BINDING: bool = true;
+            const PROTOTYPING: $crate::custom::CustomComponentPrototyping =
+                $crate::custom::CustomComponentPrototyping::new().field_suffix($field_suffix);
+        }
+    };
+    // With explicit component path and prototyping suffix
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, component = $component:path, field_suffix = $field_suffix:literal $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const COMPONENT_PATH: Option<&'static str> = Some(stringify!($component));
+            const PROTOTYPING: $crate::custom::CustomComponentPrototyping =
+                $crate::custom::CustomComponentPrototyping::new().field_suffix($field_suffix);
+        }
+    };
+    // Without component path, with value binding metadata and prototyping suffix
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, value_binding, field_suffix = $field_suffix:literal $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const VALUE_BINDING: bool = true;
+            const PROTOTYPING: $crate::custom::CustomComponentPrototyping =
+                $crate::custom::CustomComponentPrototyping::new().field_suffix($field_suffix);
+        }
+    };
+    // Without component path, with prototyping suffix
+    ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, field_suffix = $field_suffix:literal $(,)?) => {
+        $vis struct $shape;
+
+        impl $crate::custom::CustomComponentShape for $shape {
+            type State = $state;
+
+            fn new(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) -> Self::State {
+                ($new)(window, cx)
+            }
+
+            const PROTOTYPING: $crate::custom::CustomComponentPrototyping =
+                $crate::custom::CustomComponentPrototyping::new().field_suffix($field_suffix);
+        }
+    };
     // With explicit component path and value binding metadata
     ($vis:vis $shape:ident, state = $state:ty, new = $new:expr, component = $component:path, value_binding $(,)?) => {
         $vis struct $shape;
@@ -167,4 +307,23 @@ macro_rules! custom_component_shape {
             }
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CustomComponentShape as _;
+
+    crate::custom_component_shape!(
+        pub TestShape,
+        state = (),
+        new = |_, _| (),
+        value_binding,
+        field_suffix = "test",
+    );
+
+    #[test]
+    fn custom_component_shape_macro_emits_prototyping_metadata() {
+        assert_eq!(TestShape::PROTOTYPING.field_suffix, Some("test"));
+        assert!(TestShape::VALUE_BINDING);
+    }
 }

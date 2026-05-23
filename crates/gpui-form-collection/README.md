@@ -35,4 +35,7 @@ Currently provided shapes:
 
 Collection shapes implement `gpui_form_component::custom::CustomComponentShape`
 and add value adapters where the component can synchronize form state
-generically.
+generically. They also publish prototyping field suffix metadata, so generated
+scaffolds use names such as `code_input`, `country_select`,
+`enabled_checkbox`, and `notifications_switch` without relying on shape-name
+fallbacks.

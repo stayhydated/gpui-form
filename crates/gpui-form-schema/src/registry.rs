@@ -1,5 +1,5 @@
 use crate::components::ComponentsBehaviour;
-use heck::{ToKebabCase as _, ToPascalCase as _};
+use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 inventory::collect!(GpuiFormShape);
 
@@ -95,6 +95,9 @@ pub struct FieldVariant {
     /// Whether the custom component opted into
     /// `gpui_form_component::custom::CustomComponentValueAdapter` generation.
     pub custom_value_binding: bool,
+    /// Preferred generated field/helper suffix supplied by the custom shape's
+    /// prototyping metadata.
+    pub custom_prototyping_field_suffix: Option<&'static str>,
 }
 
 impl FieldVariant {
@@ -118,6 +121,7 @@ impl FieldVariant {
             custom_shape: None,
             custom_component: None,
             custom_value_binding: false,
+            custom_prototyping_field_suffix: None,
         }
     }
 
@@ -178,6 +182,15 @@ impl FieldVariant {
         self
     }
 
+    /// Attach the custom component's preferred prototyping field suffix.
+    pub const fn with_custom_prototyping_field_suffix(
+        mut self,
+        suffix: Option<&'static str>,
+    ) -> Self {
+        self.custom_prototyping_field_suffix = suffix;
+        self
+    }
+
     /// Returns true when the generated value holder stores this field as `Option<T>`.
     pub const fn value_holder_wraps_in_option(&self) -> bool {
         self.optional || self.wraps_in_option
@@ -192,12 +205,23 @@ impl FieldVariant {
         self.behaviour.component_name()
     }
 
+    pub fn component_suffix(&self) -> String {
+        self.custom_prototyping_field_suffix
+            .and_then(|suffix| custom_component_suffix_from_suffix(self.field_name, suffix))
+            .or_else(|| {
+                self.custom_shape
+                    .and_then(|shape| custom_component_suffix_from_shape(self.field_name, shape))
+            })
+            .filter(|suffix| !suffix.is_empty())
+            .unwrap_or_else(|| self.behaviour_suffix().to_string())
+    }
+
     pub fn field_name_pascal(&self) -> String {
         self.field_name.to_pascal_case()
     }
 
     pub fn field_name_with_behaviour(&self) -> String {
-        format!("{}_{}", self.field_name, self.behaviour_suffix())
+        format!("{}_{}", self.field_name, self.component_suffix())
     }
 
     pub fn kebab_id(&self) -> String {
@@ -213,6 +237,99 @@ impl FieldVariant {
     pub const fn with_validations(mut self, validations: &'static [&'static str]) -> Self {
         self.validations = validations;
         self
+    }
+}
+
+pub fn custom_component_suffix_from_shape(field_name: &str, shape: &str) -> Option<String> {
+    let compact_shape = shape
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>();
+    let path_without_generics = compact_shape
+        .split('<')
+        .next()
+        .filter(|path| !path.is_empty())?;
+    let shape_ident = path_without_generics
+        .rsplit("::")
+        .next()
+        .map(|ident| ident.trim_start_matches("r#"))?;
+    let suffix_source = shape_ident
+        .strip_suffix("Shape")
+        .or_else(|| shape_ident.strip_suffix("State"))
+        .unwrap_or(shape_ident);
+    custom_component_suffix_from_suffix(field_name, suffix_source)
+}
+
+pub fn custom_component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
+    let mut suffix = suffix.to_snake_case();
+    let field_name = field_name.to_snake_case();
+
+    if suffix == field_name {
+        return None;
+    }
+
+    let field_prefix = format!("{field_name}_");
+    if let Some(rest) = suffix.strip_prefix(&field_prefix) {
+        suffix = rest.to_string();
+    }
+
+    (!suffix.is_empty()).then_some(suffix)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ComponentsBehaviour, FieldVariant};
+
+    #[test]
+    fn custom_shape_name_drives_field_suffix() {
+        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::fields::CountrySelectShape");
+
+        assert_eq!(field.field_name_with_behaviour(), "country_select");
+        assert_eq!(field.kebab_id(), "country-select");
+    }
+
+    #[test]
+    fn custom_prototyping_suffix_overrides_shape_heuristic() {
+        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::fields::CountrySelectorState")
+            .with_custom_prototyping_field_suffix(Some("select"));
+
+        assert_eq!(field.field_name_with_behaviour(), "country_select");
+    }
+
+    #[test]
+    fn custom_prototyping_suffix_removes_duplicate_field_prefix() {
+        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::fields::TextInputShape")
+            .with_custom_prototyping_field_suffix(Some("email_input"));
+
+        assert_eq!(field.field_name_with_behaviour(), "email_input");
+    }
+
+    #[test]
+    fn custom_prototyping_suffix_exact_duplicate_uses_shape_fallback() {
+        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::fields::TagsInputShape")
+            .with_custom_prototyping_field_suffix(Some("tags"));
+
+        assert_eq!(field.field_name_with_behaviour(), "tags_input");
+    }
+
+    #[test]
+    fn duplicate_field_prefix_is_removed_from_custom_suffix() {
+        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::fields::EmailInputShape");
+
+        assert_eq!(field.field_name_with_behaviour(), "email_input");
+    }
+
+    #[test]
+    fn exact_duplicate_shape_name_falls_back_to_custom_suffix() {
+        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Custom)
+            .with_custom_shape("crate::state::TagsState");
+
+        assert_eq!(field.field_name_with_behaviour(), "tags_custom");
     }
 }
 

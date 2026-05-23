@@ -46,6 +46,8 @@ pub struct CustomOptions {
     /// Whether prototyping code should wire this custom component through
     /// `CustomComponentValueAdapter`.
     pub value_binding: Option<bool>,
+    /// Optional explicit generated field/helper suffix for prototyping output.
+    pub field_suffix: Option<String>,
 }
 
 #[derive(Debug, Default, FromMeta)]
@@ -60,6 +62,8 @@ struct CustomOptionsMeta {
     wraps_in_option: bool,
     #[darling(default)]
     value_binding: Flag,
+    #[darling(default)]
+    field_suffix: Option<String>,
 }
 
 impl CustomOptions {
@@ -70,6 +74,7 @@ impl CustomOptions {
             component,
             wraps_in_option,
             value_binding,
+            field_suffix,
         } = meta;
 
         let shape = match (shape, state) {
@@ -91,6 +96,7 @@ impl CustomOptions {
             component,
             wraps_in_option,
             value_binding: value_binding.is_present().then_some(true),
+            field_suffix,
         })
     }
 
@@ -101,6 +107,20 @@ impl CustomOptions {
     pub fn with_field_type(mut self, field_type: &syn::Type) -> Self {
         self.shape = self.resolved_shape(field_type);
         self
+    }
+
+    pub fn component_suffix(&self, field_name: &str) -> String {
+        if let Some(field_suffix) = &self.field_suffix {
+            return gpui_form_schema::registry::custom_component_suffix_from_suffix(
+                field_name,
+                field_suffix,
+            )
+            .unwrap_or_else(|| ComponentKind::Custom.component_name().to_string());
+        }
+
+        let shape = self.shape.to_token_stream().to_string();
+        gpui_form_schema::registry::custom_component_suffix_from_shape(field_name, &shape)
+            .unwrap_or_else(|| ComponentKind::Custom.component_name().to_string())
     }
 }
 
@@ -282,5 +302,25 @@ impl Components {
                 }
             },
         })
+    }
+
+    pub fn custom_prototyping_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Custom(options) = self;
+
+        if let Some(field_suffix) = &options.field_suffix {
+            let field_suffix = syn::LitStr::new(field_suffix, proc_macro2::Span::call_site());
+            Some(quote! {
+                .with_custom_prototyping_field_suffix(Some(#field_suffix))
+            })
+        } else {
+            let shape = options.resolved_shape(field_type);
+
+            Some(quote! {
+                .with_custom_prototyping_field_suffix(
+                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::PROTOTYPING
+                        .field_suffix
+                )
+            })
+        }
     }
 }

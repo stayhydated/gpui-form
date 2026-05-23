@@ -88,4 +88,5 @@ Common patterns:
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false))`.
 - For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
 - For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `component(custom(shape = ..., value_binding))`.
+- Let reusable custom shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection shapes already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and custom shapes without metadata fall back to the shape-name heuristic.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

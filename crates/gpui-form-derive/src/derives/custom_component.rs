@@ -8,6 +8,7 @@ use syn::{
 
 mod kw {
     syn::custom_keyword!(component);
+    syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
     syn::custom_keyword!(value_binding);
 }
@@ -21,6 +22,7 @@ struct CustomComponentInput {
     new: Expr,
     component: Option<Path>,
     value_binding: bool,
+    field_suffix: Option<syn::LitStr>,
 }
 
 impl Parse for CustomComponentInput {
@@ -39,6 +41,7 @@ impl Parse for CustomComponentInput {
         let mut new = None;
         let mut component = None;
         let mut value_binding = false;
+        let mut field_suffix = None;
 
         while !content.is_empty() {
             if content.peek(Token![type]) {
@@ -67,9 +70,14 @@ impl Parse for CustomComponentInput {
                 content.parse::<kw::value_binding>()?;
                 value_binding = true;
                 content.parse::<Token![;]>()?;
+            } else if content.peek(kw::field_suffix) {
+                content.parse::<kw::field_suffix>()?;
+                content.parse::<Token![=]>()?;
+                field_suffix = Some(content.parse()?);
+                content.parse::<Token![;]>()?;
             } else {
                 return Err(content.error(
-                    "expected `type State = ...;`, `new = ...;`, `component = ...;`, or `value_binding;`",
+                    "expected `type State = ...;`, `new = ...;`, `component = ...;`, `value_binding;`, or `field_suffix = ...;`",
                 ));
             }
         }
@@ -83,6 +91,7 @@ impl Parse for CustomComponentInput {
             new: new.ok_or_else(|| input.error("missing `new = ...;`"))?,
             component,
             value_binding,
+            field_suffix,
         })
     }
 }
@@ -121,6 +130,7 @@ fn expand(input: CustomComponentInput) -> TokenStream {
         new,
         component,
         value_binding,
+        field_suffix,
     } = input;
 
     let phantom_type = phantom_type_tokens(&generics);
@@ -133,6 +143,13 @@ fn expand(input: CustomComponentInput) -> TokenStream {
     let value_binding_const = value_binding.then(|| {
         quote! {
             const VALUE_BINDING: bool = true;
+        }
+    });
+    let prototyping_const = field_suffix.map(|field_suffix| {
+        quote! {
+            const PROTOTYPING: ::gpui_form_component::custom::CustomComponentPrototyping =
+                ::gpui_form_component::custom::CustomComponentPrototyping::new()
+                    .field_suffix(#field_suffix);
         }
     });
     quote! {
@@ -153,6 +170,7 @@ fn expand(input: CustomComponentInput) -> TokenStream {
 
             #component_path_const
             #value_binding_const
+            #prototyping_const
         }
     }
 }
@@ -182,6 +200,7 @@ mod tests {
                 new = |window, cx| ::gpui_component::input::InputState::new(window, cx);
                 component = ::gpui_component::input::Input;
                 value_binding;
+                field_suffix = "input";
             }
         })
         .unwrap();
@@ -208,6 +227,10 @@ mod tests {
         assert!(
             compact.contains("VALUE_BINDING:bool=true"),
             "macro should emit value-binding metadata: {compact}"
+        );
+        assert!(
+            compact.contains("CustomComponentPrototyping::new().field_suffix(\"input\")"),
+            "macro should emit prototyping field suffix metadata: {compact}"
         );
     }
 }

@@ -663,11 +663,11 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubbio_custom:::gpui::Entity<")
+            compact.contains("pubbio_input:::gpui::Entity<")
                 && compact.contains(
                     "<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::State"
                 ),
-            "Custom component field should use shape state type"
+            "Custom component field should use the shape-derived suffix and shape state type"
         );
 
         assert!(
@@ -693,6 +693,42 @@ mod gpui_form_tests {
         assert!(
             compact.contains("with_custom_value_binding(true)"),
             "FieldVariant should record opt-in custom value binding: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "with_custom_prototyping_field_suffix(<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::PROTOTYPING.field_suffix)"
+            ),
+            "FieldVariant should inherit custom shape prototyping metadata: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_custom_component_field_suffix_override() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component(custom(shape = crate::state::TagsState, field_suffix = "tags")))]
+                labels: Vec<String>,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("publabels_tags:::gpui::Entity<"),
+            "field_suffix should control generated FormFields names: {compact}"
+        );
+        assert!(
+            compact.contains("with_custom_prototyping_field_suffix(Some(\"tags\"))"),
+            "FieldVariant should record explicit prototyping suffix: {compact}"
         );
     }
 
@@ -828,6 +864,10 @@ mod gpui_form_tests {
                 "<gpui_form_collection::input::InputShape<crate::types::AccountCode>as::gpui_form_component::custom::CustomComponentShape>::State"
             ),
             "custom shape `_` should be resolved to the field type in FormFields: {compact}"
+        );
+        assert!(
+            compact.contains("pubaccount_no_input:::gpui::Entity<"),
+            "collection shape names should drive generated FormFields suffixes: {compact}"
         );
         assert!(
             compact.contains(

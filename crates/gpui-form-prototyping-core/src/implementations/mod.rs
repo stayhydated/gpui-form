@@ -161,8 +161,8 @@ impl<'a> ResolvedField<'a> {
         format_ident!("{}_{}", prefix, self.field.field_name)
     }
 
-    pub fn event_handler_ident(&self, suffix: &str) -> Ident {
-        format_ident!("on_{}_{}", self.field.field_name, suffix)
+    pub fn component_event_handler_ident(&self) -> Ident {
+        format_ident!("on_{}_event", self.field_ident_with_behaviour)
     }
 }
 

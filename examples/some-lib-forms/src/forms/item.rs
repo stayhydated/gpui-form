@@ -8,6 +8,10 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
+use gpui_form_component::custom::{
+    CustomComponentEventOf, CustomComponentStateOf, CustomComponentValueChange,
+    custom_value_change, set_custom_state_value,
+};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
 const CONTEXT: &str = "ItemForm";
@@ -37,52 +41,43 @@ impl gpui_storybook::Story for ItemForm {
     }
 }
 impl ItemForm {
-    fn on_index_custom_event(
+    fn on_index_input_event(
         &mut self,
-        state: &Entity<
-            <gpui_form_collection::input::InputShape<
-                Age,
-            > as ::gpui_form_component::custom::CustomComponentShape>::State,
-        >,
-        event: &<gpui_form_collection::input::InputShape<
-            Age,
-        > as ::gpui_form_component::custom::CustomComponentValueAdapter<Age>>::Event,
+        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::InputShape<Age>>>,
+        event: &CustomComponentEventOf<gpui_form_collection::input::InputShape<Age>, Age>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form_collection::input::InputShape<
-                Age,
-            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                Age,
-            >>::value_change(&state, event)
+            custom_value_change::<gpui_form_collection::input::InputShape<Age>, Age>(&state, event)
         };
         match change {
-            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
+            CustomComponentValueChange::Set(value) => {
                 self.current_data.index = Some(value);
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
+            CustomComponentValueChange::Clear => {
                 self.current_data.index = None;
             },
-            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
+            CustomComponentValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = ItemFormValueHolder::default();
-        let index_custom = cx.new(|cx| ItemFormComponents::index_custom(window, cx));
+        let index_input = cx.new(|cx| ItemFormComponents::index_input(window, cx));
         let mut _subscriptions =
-            vec![cx.subscribe_in(&index_custom, window, Self::on_index_custom_event)];
-        index_custom.update(cx, |state, cx| {
-            <gpui_form_collection::input::InputShape<
-                        Age,
-                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
-                        Age,
-                    >>::set_state_value(state, current_data.index.as_ref(), window, cx);
+            vec![cx.subscribe_in(&index_input, window, Self::on_index_input_event)];
+        index_input.update(cx, |state, cx| {
+            set_custom_state_value::<gpui_form_collection::input::InputShape<Age>, Age>(
+                state,
+                current_data.index.as_ref(),
+                window,
+                cx,
+            );
         });
         Self {
             current_data,
-            fields: ItemFormFields { index_custom },
+            fields: ItemFormFields { index_input },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -188,7 +183,7 @@ impl Render for ItemForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.index_custom)),
+                            .child(gpui_component::input::Input::new(&self.fields.index_input)),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(
                         cx,

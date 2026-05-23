@@ -14,7 +14,8 @@ impl super::ComponentLayout for CustomComponent {
             r#type: _,
         } = &self.0;
 
-        let field_name_ident = crate::component_field_name!(name);
+        let field_name_ident =
+            crate::names::ComponentFieldName::new(&options.component_suffix(name), name);
         let shape = &options.shape;
 
         let state_type = quote! {

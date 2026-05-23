@@ -69,6 +69,7 @@ gpui_form_derive::custom_component! {
         new = SwitchState::new;
         component = gpui_form_collection::switch::Switch;
         value_binding;
+        field_suffix = "switch";
     }
 }
 

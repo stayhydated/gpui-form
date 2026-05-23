@@ -24,6 +24,7 @@ gpui_form_derive::custom_component! {
         };
         component = gpui_component::select::Select;
         value_binding;
+        field_suffix = "select";
     }
 }
 
