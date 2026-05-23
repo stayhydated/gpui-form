@@ -35,7 +35,7 @@ fn default_custom_wraps_in_option() -> bool {
 
 #[derive(Clone, Debug)]
 pub struct CustomOptions {
-    /// Path to a type implementing `gpui_form::custom::CustomComponentShape`.
+    /// Path to a type implementing `gpui_form_component::custom::CustomComponentShape`.
     pub shape: syn::Path,
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
@@ -250,7 +250,7 @@ impl Components {
         } else {
             Some(quote! {
                 .with_custom_component_opt(
-                    <#shape as ::gpui_form::custom::CustomComponentShape>::COMPONENT_PATH
+                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::COMPONENT_PATH
                 )
             })
         }
@@ -277,7 +277,7 @@ impl Components {
             None => {
                 quote! {
                     .with_custom_value_binding(
-                        <#shape as ::gpui_form::custom::CustomComponentShape>::VALUE_BINDING
+                        <#shape as ::gpui_form_component::custom::CustomComponentShape>::VALUE_BINDING
                     )
                 }
             },

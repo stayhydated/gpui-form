@@ -12,40 +12,40 @@ versions to the compatibility guidance for the `gpui-form` version in use.
 gpui = { git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
 gpui-form = "*"
+gpui-form-component = { version = "*", features = ["derive"] }
+gpui-form-collection = "*"
+gpui-form-collection-derive = "*"
+gpui-form-derive = "*"
 ```
 
-## Facade Imports
+## Imports
 
-Prefer imports from `gpui_form`:
+Use the facade for `GpuiForm` and import component derives explicitly:
 
 ```rust
-use gpui_form::{CustomComponentState, GpuiForm, InfiniteSelect, SelectItem};
+use gpui_form::GpuiForm;
+use gpui_form_collection_derive::SelectItem;
+use gpui_form_component::InfiniteSelect;
+use gpui_form_derive::CustomComponentState;
 ```
 
-Useful facade paths:
+Useful runtime/helper paths:
 
-- `gpui_form::custom`
-- `gpui_form::date_picker`
-- `gpui_form::file_picker`
-- `gpui_form::infinite_select`
+- `gpui_form_component::custom`
+- `gpui_form_component::date_picker`
+- `gpui_form_component::file_picker`
+- `gpui_form_component::infinite_select`
 - `gpui_form::numeric`
-- `gpui_form::custom_component_shape!`
+- `gpui_form_component::custom_component_shape!`
 
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(component(input))]
-#[gpui_form(component(number_input))]
-#[gpui_form(component(number_input(as = f64)))]
-#[gpui_form(component(checkbox))]
-#[gpui_form(component(switch))]
-#[gpui_form(component(select))]
-#[gpui_form(component(select(searchable)))]
-#[gpui_form(component(select(partial)))]
-#[gpui_form(component(infinite_select))]
-#[gpui_form(component(infinite_select(searchable, max_depth = 3)))]
-#[gpui_form(component(date_picker))]
-#[gpui_form(component(file_picker))]
+#[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]
+#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]
+#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]
+#[gpui_form(component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]
 #[gpui_form(component(custom(shape = my::Shape)))]
 #[gpui_form(component(custom(state = my::State)))]
 #[gpui_form(component(custom(shape = my::Shape, component = my::ui::Widget)))]
@@ -70,17 +70,16 @@ Common struct attributes:
 
 ## Component Selection
 
-- Use `input` for text-like fields.
-- Use `number_input` for numeric fields; use `number_input(as = f64)` when the
-  field editor should parse through a different numeric representation.
-- Use `checkbox` or `switch` for `bool` fields.
-- Use `select` for a single enum-like choice; derive `SelectItem`.
-- Use `select(searchable)` when the option set should be searchable.
-- Use `select(partial)` when partial selection semantics are needed.
-- Use `infinite_select` for nested/cascading enum trees; derive
-  `InfiniteSelect`.
-- Use `date_picker` for single-date editing.
-- Use `file_picker` for native path selection.
+- Use `gpui_form_collection::input::InputShape<_>` for text-like and
+  `FromStr`-parsable values.
+- Use `gpui_form_collection::checkbox::CheckboxShape` or
+  `gpui_form_collection::switch::SwitchShape` for `bool` fields.
+- Use `gpui_form_collection::select::SelectShape<_>` for a single enum-like
+  choice; derive `SelectItem`.
+- Use `gpui_form_component::infinite_select::InfiniteSelectState<_>` for
+  nested/cascading enum trees; derive `InfiniteSelect`.
+- Use a custom shape around `gpui_form_component::date_picker` or
+  `gpui_form_component::file_picker` when a form field needs those runtimes.
 - Use `custom(...)` when the app owns the state/widget contract.
 
 ## Generated Names
@@ -99,7 +98,7 @@ back into the original model.
 ## Select Pattern
 
 ```rust
-use gpui_form::SelectItem;
+use gpui_form_collection_derive::SelectItem;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, Default, EnumIter, PartialEq, SelectItem)]
@@ -116,7 +115,8 @@ handle localized labels outside the `SelectItem::title()` call.
 ## Infinite Select Pattern
 
 ```rust
-use gpui_form::{GpuiForm, InfiniteSelect};
+use gpui_form::GpuiForm;
+use gpui_form_component::InfiniteSelect;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, Default, EnumIter, InfiniteSelect, PartialEq)]
@@ -133,12 +133,15 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(component(infinite_select))]
+    #[gpui_form(component(custom(
+        shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
+        wraps_in_option = false
+    )))]
     pub location: Country,
 }
 ```
 
-Helper state is available from `gpui_form::infinite_select`.
+Helper state is available from `gpui_form_component::infinite_select`.
 
 ## Type Conversion Pattern
 
@@ -152,7 +155,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp,
-        component(date_picker)
+        component(custom(shape = crate::DatePickerShape))
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -166,7 +169,8 @@ wrappers.
 Derive directly on a state type:
 
 ```rust
-use gpui_form::{CustomComponentState, GpuiForm};
+use gpui_form::GpuiForm;
+use gpui_form_derive::CustomComponentState;
 
 #[derive(Clone, Debug, CustomComponentState)]
 #[gpui_form_custom(new = Self::new, component = TagsInput)]
@@ -182,7 +186,7 @@ pub struct PostEditor {
 Or declare a reusable shape:
 
 ```rust
-gpui_form::custom_component_shape!(
+gpui_form_component::custom_component_shape!(
     pub EmailInputShape,
     state = gpui_component::input::InputState,
     new = gpui_component::input::InputState::new,

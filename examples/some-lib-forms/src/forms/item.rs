@@ -42,11 +42,11 @@ impl ItemForm {
         state: &Entity<
             <gpui_form_collection::input::InputShape<
                 Age,
-            > as ::gpui_form::custom::CustomComponentShape>::State,
+            > as ::gpui_form_component::custom::CustomComponentShape>::State,
         >,
         event: &<gpui_form_collection::input::InputShape<
             Age,
-        > as ::gpui_form::custom::CustomComponentValueAdapter<Age>>::Event,
+        > as ::gpui_form_component::custom::CustomComponentValueAdapter<Age>>::Event,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -54,18 +54,18 @@ impl ItemForm {
             let state = state.read(_cx);
             <gpui_form_collection::input::InputShape<
                 Age,
-            > as ::gpui_form::custom::CustomComponentValueAdapter<
+            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                 Age,
             >>::value_change(&state, event)
         };
         match change {
-            ::gpui_form::custom::CustomComponentValueChange::Set(value) => {
+            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
                 self.current_data.index = Some(value);
             },
-            ::gpui_form::custom::CustomComponentValueChange::Clear => {
+            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
                 self.current_data.index = None;
             },
-            ::gpui_form::custom::CustomComponentValueChange::Unchanged => {},
+            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -76,7 +76,7 @@ impl ItemForm {
         index_custom.update(cx, |state, cx| {
             <gpui_form_collection::input::InputShape<
                         Age,
-                    > as ::gpui_form::custom::CustomComponentValueAdapter<
+                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                         Age,
                     >>::set_state_value(state, current_data.index.as_ref(), window, cx);
         });

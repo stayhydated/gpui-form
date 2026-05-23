@@ -922,7 +922,7 @@ where
     feature = "derive",
     gpui_form_custom(
         new = Self::new_default,
-        component = gpui_form::infinite_select::InfiniteSelectField,
+        component = gpui_form_component::infinite_select::InfiniteSelectField,
         value_binding,
         custom_crate = crate
     )

@@ -36,7 +36,7 @@ Before editing, classify the change:
    always user-facing. Internal design belongs in the matching
    `docs/ARCHITECTURE.md`.
 3. **Sync public workflow changes.** If derive attributes, supported component
-   behavior, Koruma validation wiring, runtime re-exports, custom components,
+   behavior, Koruma validation wiring, runtime imports, custom components,
    prototyping output, or recommended usage changes, update the relevant
    README, example, architecture note, and `.agents/skills/*` guidance in the
    same change when applicable.
@@ -99,7 +99,7 @@ syntax, runtime integration patterns, prototyping patterns, or recommended usage
 ## Synchronization Rules
 
 When a substantive change modifies a public derive attribute, supported
-component set, Koruma validation wiring, runtime re-export, custom component
+component set, Koruma validation wiring, runtime import, custom component
 contract, prototyping workflow, or other user-visible API shape:
 
 1. Update the root `README.md`.
@@ -113,7 +113,7 @@ contract, prototyping workflow, or other user-visible API shape:
 `examples/README.md` is the canonical index for runnable workspace examples.
 
 Keep the root `README.md` and `crates/gpui-form/README.md` aligned for install,
-quick-start, feature, and runtime re-export guidance.
+quick-start, feature, and runtime import guidance.
 
 Keep supported-component docs aligned across the root `README.md` and
 `crates/gpui-form-derive/README.md`.
@@ -129,7 +129,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form`
   Audience: **User-facing**
   Docs: [Architecture](crates/gpui-form/docs/ARCHITECTURE.md)
-  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports derive macros plus `core`, `runtime`, and `schema`, and keeps compatibility re-exports such as `custom`, `date_picker`, `infinite_select`, and `numeric`.
+  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, `numeric`, and `bon`. Component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
 
 ### Public Integration Crates
 
@@ -141,7 +141,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-component`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-component/docs/ARCHITECTURE.md)
-  Role: GPUI-facing runtime implementations for infinite select, date picker, and custom component helpers. Most users should go through `gpui_form::runtime` via the facade.
+  Role: GPUI-facing runtime implementations for infinite select, date picker, file picker, and custom component helpers. Users import this crate explicitly when they need component runtime APIs.
 
 - `crates/gpui-form-component-derive`
   Audience: **Public integration**
@@ -234,7 +234,7 @@ inventory or codegen workflows change.
 
 - When adding or changing a component, update `gpui-form-codegen` component parsing and layout, `gpui-form-schema` runtime behavior metadata, and `gpui-form-prototyping-core` `FieldCodeGenerator` mapping together.
 - Update user-facing docs for supported components and usage syntax in the same change.
-- Keep facade re-exports and lower-level runtime and type surfaces aligned when generated code paths change.
+- Keep facade imports and lower-level runtime and type surfaces aligned when generated code paths change.
 
 ### When Editing Prototyping or Generated Outputs
 

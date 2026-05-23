@@ -18,7 +18,7 @@ impl super::ComponentLayout for CustomComponent {
         let shape = &options.shape;
 
         let state_type = quote! {
-            <#shape as ::gpui_form::custom::CustomComponentShape>::State
+            <#shape as ::gpui_form_component::custom::CustomComponentShape>::State
         };
 
         let field_structure_definition = quote! {
@@ -30,7 +30,7 @@ impl super::ComponentLayout for CustomComponent {
                 window: &mut ::gpui::Window,
                 cx: &mut ::gpui::Context<'_, #state_type>,
             ) -> #state_type {
-                <#shape as ::gpui_form::custom::CustomComponentShape>::new(window, cx)
+                <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(window, cx)
             }
         };
 

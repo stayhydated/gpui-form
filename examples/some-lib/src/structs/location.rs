@@ -4,7 +4,7 @@
 //! using the InfiniteSelect derive macro.
 
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
-use gpui_form::InfiniteSelect;
+use gpui_form_component::InfiniteSelect;
 use strum::EnumIter;
 
 // ============================================================================
@@ -152,7 +152,7 @@ pub struct LocationForm {
 
     /// Location selection using cascading selects
     #[gpui_form(component(custom(
-        shape = "gpui_form::infinite_select::InfiniteSelectState<_>",
+        shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
         wraps_in_option = false
     )))]
     pub location: Country,

@@ -1,6 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CheckboxEvent {
@@ -62,7 +62,7 @@ impl RenderOnce for Checkbox {
     }
 }
 
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     /// Shape for a value-bound `gpui_component::checkbox::Checkbox`.
     pub struct CheckboxShape {
         type State = CheckboxState;

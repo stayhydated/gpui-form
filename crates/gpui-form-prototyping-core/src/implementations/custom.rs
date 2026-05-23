@@ -103,27 +103,27 @@ impl FieldCodeGenerator for CustomCodeGenerator {
         let handler = quote! {
             fn #event_handler_fn_name_ident(
                 &mut self,
-                state: &Entity<<#shape as ::gpui_form::custom::CustomComponentShape>::State>,
-                event: &<#shape as ::gpui_form::custom::CustomComponentValueAdapter<#field_type>>::Event,
+                state: &Entity<<#shape as ::gpui_form_component::custom::CustomComponentShape>::State>,
+                event: &<#shape as ::gpui_form_component::custom::CustomComponentValueAdapter<#field_type>>::Event,
                 _window: &mut Window,
                 _cx: &mut Context<Self>,
             ) {
                 let change = {
                     let state = state.read(_cx);
-                    <#shape as ::gpui_form::custom::CustomComponentValueAdapter<#field_type>>::value_change(
+                    <#shape as ::gpui_form_component::custom::CustomComponentValueAdapter<#field_type>>::value_change(
                         &state,
                         event,
                     )
                 };
 
                 match change {
-                    ::gpui_form::custom::CustomComponentValueChange::Set(value) => {
+                    ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
                         #set_tokens
                     }
-                    ::gpui_form::custom::CustomComponentValueChange::Clear => {
+                    ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
                         #clear_tokens
                     }
-                    ::gpui_form::custom::CustomComponentValueChange::Unchanged => {}
+                    ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {}
                 }
             }
         };
@@ -155,7 +155,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
 
         Some(quote! {
             #field_var_name_ident.update(cx, |state, cx| {
-                <#shape as ::gpui_form::custom::CustomComponentValueAdapter<#field_type>>::set_state_value(
+                <#shape as ::gpui_form_component::custom::CustomComponentValueAdapter<#field_type>>::set_state_value(
                     state,
                     #value_tokens,
                     window,
@@ -260,7 +260,7 @@ mod tests {
 
         assert!(
             compact_handler.contains(
-                "<crate::shapes::CountryShapeas::gpui_form::custom::CustomComponentValueAdapter<CountryCode>>::Event"
+                "<crate::shapes::CountryShapeas::gpui_form_component::custom::CustomComponentValueAdapter<CountryCode>>::Event"
             ),
             "custom event handler should use the shape's value adapter event type: {compact_handler}"
         );

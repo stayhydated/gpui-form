@@ -45,8 +45,8 @@ pub fn derive_custom_component(input: TokenStream) -> TokenStream {
 ///
 /// This is the external-item counterpart to `#[derive(CustomComponent)]`: the
 /// generated shape type is local to the caller, so it can implement
-/// `gpui_form::custom::CustomComponentShape` even when the UI component and
-/// state live in another crate.
+/// `gpui_form_component::custom::CustomComponentShape` even when the UI
+/// component and state live in another crate.
 #[proc_macro]
 #[proc_macro_error]
 pub fn custom_component(input: TokenStream) -> TokenStream {

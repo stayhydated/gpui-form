@@ -165,23 +165,16 @@ fn crate_tokens(found_crate: FoundCrate) -> proc_macro2::TokenStream {
 }
 
 fn resolve_runtime_crate() -> syn::Result<proc_macro2::TokenStream> {
-    let facade_error = match crate_name("gpui-form") {
-        Ok(found_crate) => return Ok(crate_tokens(found_crate)),
-        Err(err) => err,
-    };
-
-    let runtime_error = match crate_name("gpui-form-component") {
-        Ok(found_crate) => return Ok(crate_tokens(found_crate)),
-        Err(err) => err,
-    };
-
-    Err(syn::Error::new(
-        proc_macro2::Span::call_site(),
-        format!(
-            "InfiniteSelect derive could not resolve the runtime crate. Add either `gpui-form` or `gpui-form-component` as a dependency. Resolution errors: `gpui-form`: {}; `gpui-form-component`: {}",
-            facade_error, runtime_error,
-        ),
-    ))
+    match crate_name("gpui-form-component") {
+        Ok(found_crate) => Ok(crate_tokens(found_crate)),
+        Err(err) => Err(syn::Error::new(
+            proc_macro2::Span::call_site(),
+            format!(
+                "InfiniteSelect derive could not resolve the runtime crate. Add `gpui-form-component` as an explicit dependency. Resolution error: {}",
+                err,
+            ),
+        )),
+    }
 }
 
 pub fn from(input: TokenStream) -> TokenStream {

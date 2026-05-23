@@ -5,7 +5,7 @@
 //! - `FormFields` entity state type
 //! - `FormComponents` constructor function body
 //!
-//! Prefer using [`custom_component_shape!`] or `#[derive(gpui_form::CustomComponent)]`
+//! Prefer using [`custom_component_shape!`] or `#[derive(gpui_form_derive::CustomComponent)]`
 //! to define shape types.
 
 /// Shape contract for user-defined components.

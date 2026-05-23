@@ -2,9 +2,9 @@
 
 GPUI-facing runtime helpers for the `gpui-form` ecosystem.
 
-Most applications should use [`gpui-form`](../gpui-form/README.md), which
-re-exports this crate as `gpui_form::runtime`. Depend on this crate directly
-when you want the runtime implementation layer without the facade.
+Applications that use these runtime helpers should depend on this crate
+directly. `gpui-form` does not re-export the component runtime or its derive
+macros.
 
 ## What It Provides
 
@@ -15,16 +15,14 @@ when you want the runtime implementation layer without the facade.
 
 ## Infinite Select
 
-Most applications derive `gpui_form::InfiniteSelect` through the facade and use
-the runtime types from `gpui_form::runtime` or
-`gpui_form::infinite_select`. This crate owns the runtime trait and state
-helpers those derives target.
+Most applications derive `gpui_form_component::InfiniteSelect` by enabling this
+crate's `derive` feature and use runtime types from
+`gpui_form_component::infinite_select`. This crate owns the runtime trait and
+state helpers those derives target.
 
-If you want the derive without the full facade, either enable this crate's
-`derive` feature or pair it with
+If you want to depend on the derive crate directly, pair this crate with
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md). The
-proc macro resolves either `gpui-form` or `gpui-form-component`
-automatically, so direct users do not need a dependency rename.
+proc macro resolves `gpui-form-component` as the runtime crate.
 
 ```rs
 use gpui_form_component::InfiniteSelect;
@@ -64,7 +62,7 @@ Manual forms can subscribe to one runtime entity instead of rebuilding nested
 child selects themselves:
 
 ```rs
-use gpui_form::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
+use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
 
 let location = cx.new(|cx| {
     InfiniteSelectState::new(Country::default(), window, cx)
@@ -95,7 +93,7 @@ For `#[derive(GpuiForm)]`, use the owned state shape directly:
 
 ```rs
 #[gpui_form(component(custom(
-    shape = "gpui_form::infinite_select::InfiniteSelectState<_>",
+    shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
     wraps_in_option = false
 )))]
 pub location: Country,
@@ -127,7 +125,7 @@ Its default empty placeholder is plain English fallback copy. Pass
 `es-fluent` localizer when a form needs localized or custom copy.
 
 ```rs
-use gpui_form::runtime::date_picker::{
+use gpui_form_component::date_picker::{
     DateDisplayStyle,
     DatePicker,
     DatePickerEvent,
@@ -146,9 +144,6 @@ locale-specific first day of the week.
 Manual forms can use `DateRangePickerState`, `DateRangePicker`, and
 `DateRangePickerEvent` when they need range selection over the same localized
 calendar popover.
-Most application code should still go through
-[`gpui-form`](../gpui-form/README.md) instead of depending on this crate
-directly.
 
 ## File Picker
 
@@ -162,7 +157,7 @@ builder values such as `placeholder(...)`, `prompt(...)`, and
 your application-owned `es-fluent` localizer before passing them in.
 
 ```rs
-use gpui_form::runtime::file_picker::{
+use gpui_form_component::file_picker::{
     FilePicker,
     FilePickerEvent,
     FilePickerState,
@@ -212,7 +207,7 @@ specific enough.
 You can declare a reusable shape with the helper macro:
 
 ```rs
-gpui_form::custom_component_shape!(
+gpui_form_component::custom_component_shape!(
     pub EmailInputShape,
     state = gpui_component::input::InputState,
     new = gpui_component::input::InputState::new,
@@ -220,11 +215,11 @@ gpui_form::custom_component_shape!(
 );
 ```
 
-Or, through the facade derive, implement the same contract directly on a state
+Or, with `gpui-form-derive`, implement the same contract directly on a state
 type:
 
 ```rs
-#[derive(gpui_form::CustomComponent)]
+#[derive(gpui_form_derive::CustomComponent)]
 #[gpui_form_custom(
     new = crate::state::build,
     component = crate::ui::TagsInput,
@@ -242,7 +237,7 @@ adapter seeds state from the current form value and maps component events to
 
 ## Most Users Should Use Instead
 
-- [`gpui-form`](../gpui-form/README.md) for the public facade
+- [`gpui-form`](../gpui-form/README.md) for the `GpuiForm` facade
 - [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) when
   you want only the `InfiniteSelect` derive plus this runtime layer
 - [`gpui-component`](https://github.com/longbridge/gpui-component) for the

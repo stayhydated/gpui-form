@@ -141,7 +141,7 @@ fn expand(input: CustomComponentInput) -> TokenStream {
             ::core::marker::PhantomData<fn() -> #phantom_type>
         ) #where_clause;
 
-        impl #impl_generics ::gpui_form::custom::CustomComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics ::gpui_form_component::custom::CustomComponentShape for #ident #ty_generics #where_clause {
             type State = #state;
 
             fn new(
@@ -194,7 +194,7 @@ mod tests {
             "generic shape type should carry PhantomData for external component wrappers: {compact}"
         );
         assert!(
-            compact.contains("impl<T>::gpui_form::custom::CustomComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
+            compact.contains("impl<T>::gpui_form_component::custom::CustomComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
             "macro should implement the shape contract with caller generics and where clause: {compact}"
         );
         assert!(

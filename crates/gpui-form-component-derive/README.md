@@ -2,16 +2,15 @@
 
 Proc macros for the `InfiniteSelect` runtime surface.
 
-Most applications should use [`gpui-form`](../gpui-form/README.md), which
-re-exports `#[derive(InfiniteSelect)]` as `gpui_form::InfiniteSelect`. Use this
-crate directly when you want only the infinite-select derive plus the runtime
-crate.
+Most applications should use [`gpui-form-component`](../gpui-form-component/README.md)
+with its `derive` feature, which re-exports `#[derive(InfiniteSelect)]` as
+`gpui_form_component::InfiniteSelect`. Use this crate directly when you want
+only the infinite-select derive plus the runtime crate.
 
 ## Direct Use
 
-When you use this crate without the facade, depend on the runtime crate
-normally. The macro resolves either `gpui-form` or `gpui-form-component`,
-including renamed dependencies:
+When you use this crate directly, depend on the runtime crate normally. The
+macro resolves `gpui-form-component` as the runtime crate:
 
 ```toml
 [dependencies]
@@ -58,9 +57,8 @@ Behavior notes:
 
 ## Most Users Should Use Instead
 
-- [`gpui-form`](../gpui-form/README.md) for the public facade
 - [`gpui-form-component`](../gpui-form-component/README.md) for the runtime
-  state helpers targeted by the derive
+  state helpers targeted by the derive and its `derive` feature re-export
 - [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`
   and custom component shape derives
 - [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for

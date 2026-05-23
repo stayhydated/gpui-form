@@ -2,9 +2,9 @@ use std::str::FromStr;
 
 use gpui::{Context, Window};
 use gpui_component::input::{InputEvent, InputState};
-use gpui_form::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     /// Shape for a `gpui_component::input::Input` backed by `InputState`.
     ///
     /// Use `InputShape<_>` in `#[gpui_form(component(custom(...)))]` so the derive

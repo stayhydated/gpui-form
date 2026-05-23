@@ -42,11 +42,11 @@ impl LocationFormForm {
         state: &Entity<
             <gpui_form_collection::input::InputShape<
                 String,
-            > as ::gpui_form::custom::CustomComponentShape>::State,
+            > as ::gpui_form_component::custom::CustomComponentShape>::State,
         >,
         event: &<gpui_form_collection::input::InputShape<
             String,
-        > as ::gpui_form::custom::CustomComponentValueAdapter<String>>::Event,
+        > as ::gpui_form_component::custom::CustomComponentValueAdapter<String>>::Event,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -54,47 +54,47 @@ impl LocationFormForm {
             let state = state.read(_cx);
             <gpui_form_collection::input::InputShape<
                 String,
-            > as ::gpui_form::custom::CustomComponentValueAdapter<
+            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                 String,
             >>::value_change(&state, event)
         };
         match change {
-            ::gpui_form::custom::CustomComponentValueChange::Set(value) => {
+            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
                 self.current_data.name = Some(value);
             },
-            ::gpui_form::custom::CustomComponentValueChange::Clear => {
+            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {
                 self.current_data.name = None;
             },
-            ::gpui_form::custom::CustomComponentValueChange::Unchanged => {},
+            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
         }
     }
     fn on_location_custom_event(
         &mut self,
         state: &Entity<
-            <gpui_form::infinite_select::InfiniteSelectState<
+            <gpui_form_component::infinite_select::InfiniteSelectState<
                 Country,
-            > as ::gpui_form::custom::CustomComponentShape>::State,
+            > as ::gpui_form_component::custom::CustomComponentShape>::State,
         >,
-        event: &<gpui_form::infinite_select::InfiniteSelectState<
+        event: &<gpui_form_component::infinite_select::InfiniteSelectState<
             Country,
-        > as ::gpui_form::custom::CustomComponentValueAdapter<Country>>::Event,
+        > as ::gpui_form_component::custom::CustomComponentValueAdapter<Country>>::Event,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let change = {
             let state = state.read(_cx);
-            <gpui_form::infinite_select::InfiniteSelectState<
+            <gpui_form_component::infinite_select::InfiniteSelectState<
                 Country,
-            > as ::gpui_form::custom::CustomComponentValueAdapter<
+            > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                 Country,
             >>::value_change(&state, event)
         };
         match change {
-            ::gpui_form::custom::CustomComponentValueChange::Set(value) => {
+            ::gpui_form_component::custom::CustomComponentValueChange::Set(value) => {
                 self.current_data.location = value;
             },
-            ::gpui_form::custom::CustomComponentValueChange::Clear => {},
-            ::gpui_form::custom::CustomComponentValueChange::Unchanged => {},
+            ::gpui_form_component::custom::CustomComponentValueChange::Clear => {},
+            ::gpui_form_component::custom::CustomComponentValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -108,14 +108,14 @@ impl LocationFormForm {
         name_custom.update(cx, |state, cx| {
             <gpui_form_collection::input::InputShape<
                         String,
-                    > as ::gpui_form::custom::CustomComponentValueAdapter<
+                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                         String,
                     >>::set_state_value(state, current_data.name.as_ref(), window, cx);
         });
         location_custom.update(cx, |state, cx| {
-            <gpui_form::infinite_select::InfiniteSelectState<
+            <gpui_form_component::infinite_select::InfiniteSelectState<
                         Country,
-                    > as ::gpui_form::custom::CustomComponentValueAdapter<
+                    > as ::gpui_form_component::custom::CustomComponentValueAdapter<
                         Country,
                     >>::set_state_value(state, Some(&current_data.location), window, cx);
         });
@@ -224,9 +224,11 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form::infinite_select::InfiniteSelectField::new(
-                                &self.fields.location_custom,
-                            )),
+                            .child(
+                                gpui_form_component::infinite_select::InfiniteSelectField::new(
+                                    &self.fields.location_custom,
+                                ),
+                            ),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(
                         cx,

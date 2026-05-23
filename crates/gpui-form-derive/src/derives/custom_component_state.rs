@@ -18,7 +18,8 @@ struct CustomComponentStateMeta {
     value_binding: Flag,
     /// Runtime crate path that owns `custom::CustomComponentShape`.
     ///
-    /// This defaults to the public `gpui_form` facade for downstream users.
+    /// This defaults to the explicit `gpui_form_component` runtime crate for
+    /// downstream users.
     /// Runtime crates that own a state type can set `custom_crate = crate`.
     #[darling(default)]
     custom_crate: Option<Path>,
@@ -34,7 +35,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     let new_path = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
     let custom_crate = meta
         .custom_crate
-        .unwrap_or_else(|| syn::parse_quote!(::gpui_form));
+        .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let component_path_const = if let Some(comp) = meta.component {
@@ -99,7 +100,7 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("impl::gpui_form::custom::CustomComponentShapeforTagsState"),
+            compact.contains("impl::gpui_form_component::custom::CustomComponentShapeforTagsState"),
             "should implement CustomComponentShape for derived type"
         );
         assert!(

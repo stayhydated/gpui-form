@@ -19,15 +19,16 @@ documentation directly.
 
 ## Core Workflow
 
-Start from the user-facing facade. Most application code uses `gpui-form` for
-derives, runtime helpers, and compatibility re-exports:
+Start from the user-facing facade for `GpuiForm`, then import component runtime
+helpers and component-specific derives explicitly:
 
 1. Identify the application struct or enum that should drive the form.
 2. Check the app's existing `Cargo.toml` and form code for local patterns.
-3. Use the facade crate in application code:
+3. Use the facade and component derive crates in application code:
 
    ```rust
-   use gpui_form::{GpuiForm, SelectItem};
+   use gpui_form::GpuiForm;
+   use gpui_form_collection_derive::SelectItem;
    ```
 
 4. Add `GpuiForm` to a normal Rust struct and annotate each visible field with
@@ -40,8 +41,9 @@ derives, runtime helpers, and compatibility re-exports:
    `#[gpui_form(type = ..., from = ..., into = ..., component(...))]` when the
    UI edits a form-side type that differs from the model field. Text input
    prototyping parses non-`String` form-side types with `FromStr`.
-7. Use paths such as `gpui_form::date_picker`, `gpui_form::file_picker`, and
-   `gpui_form::infinite_select` for helper state and facade compatibility modules.
+7. Use paths such as `gpui_form_component::date_picker`,
+   `gpui_form_component::file_picker`, and
+   `gpui_form_component::infinite_select` for helper state.
 
 ## Reference Selection
 
@@ -56,7 +58,8 @@ Prefer current public docs or source examples over memory when details matter.
 Derive application forms from app-owned data types:
 
 ```rust
-use gpui_form::{GpuiForm, SelectItem};
+use gpui_form::GpuiForm;
+use gpui_form_collection_derive::SelectItem;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, Default, EnumIter, PartialEq, SelectItem)]
@@ -68,21 +71,21 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component(input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     pub username: Option<String>,
 
-    #[gpui_form(component(number_input))]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
     pub age: Option<u32>,
 
-    #[gpui_form(component(select), default = Country::France)]
+    #[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)), default = Country::France)]
     pub country: Country,
 }
 ```
 
 Common patterns:
 
-- For selects, derive `SelectItem` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` and `PartialEq` on the enum tree and use `#[gpui_form(component(infinite_select))]`.
-- For custom widgets, derive `CustomComponentState` on a state type or declare a reusable shape with `gpui_form::custom_component_shape!`.
-- For value-bound custom widgets, implement `gpui_form::custom::CustomComponentValueAdapter<T>` on the shape and use `component(custom(shape = ..., value_binding))`.
+- For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false))`.
+- For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
+- For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `component(custom(shape = ..., value_binding))`.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

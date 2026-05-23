@@ -1,6 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::switch::Switch as GpuiSwitch;
-use gpui_form::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SwitchEvent {
@@ -62,7 +62,7 @@ impl RenderOnce for Switch {
     }
 }
 
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     /// Shape for a value-bound `gpui_component::switch::Switch`.
     pub struct SwitchShape {
         type State = SwitchState;

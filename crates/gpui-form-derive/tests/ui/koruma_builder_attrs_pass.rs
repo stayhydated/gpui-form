@@ -1,5 +1,32 @@
 use gpui_form_derive::GpuiForm;
 
+struct NumericShape;
+struct InputShape;
+struct NumericState;
+struct InputState;
+
+impl gpui_form_component::custom::CustomComponentShape for NumericShape {
+    type State = NumericState;
+
+    fn new(
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        NumericState
+    }
+}
+
+impl gpui_form_component::custom::CustomComponentShape for InputShape {
+    type State = InputState;
+
+    fn new(
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        InputState
+    }
+}
+
 #[derive(GpuiForm, koruma::Koruma)]
 #[gpui_form(koruma)]
 struct Demo {

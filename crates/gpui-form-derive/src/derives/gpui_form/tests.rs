@@ -476,7 +476,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::custom::CustomComponentShape>::State"
+                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form_component::custom::CustomComponentShape>::State"
             ),
             "Custom shape `_` should resolve to the override type in state metadata"
         );
@@ -665,14 +665,14 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubbio_custom:::gpui::Entity<")
                 && compact.contains(
-                    "<crate::shapes::BioInputShapeas::gpui_form::custom::CustomComponentShape>::State"
+                    "<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::State"
                 ),
             "Custom component field should use shape state type"
         );
 
         assert!(
             compact.contains(
-                "<crate::shapes::BioInputShapeas::gpui_form::custom::CustomComponentShape>::new(window,cx)"
+                "<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::new(window,cx)"
             ),
             "Custom component constructor should delegate to shape::new"
         );
@@ -793,7 +793,7 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubtags_custom:::gpui::Entity<")
                 && compact.contains(
-                    "<crate::state::TagsStateas::gpui_form::custom::CustomComponentShape>::State"
+                    "<crate::state::TagsStateas::gpui_form_component::custom::CustomComponentShape>::State"
                 ),
             "`state = ...` should map to custom shape path"
         );
@@ -825,7 +825,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "<gpui_form_collection::input::InputShape<crate::types::AccountCode>as::gpui_form::custom::CustomComponentShape>::State"
+                "<gpui_form_collection::input::InputShape<crate::types::AccountCode>as::gpui_form_component::custom::CustomComponentShape>::State"
             ),
             "custom shape `_` should be resolved to the field type in FormFields: {compact}"
         );

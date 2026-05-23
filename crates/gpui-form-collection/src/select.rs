@@ -3,14 +3,14 @@ use gpui_component::{
     IndexPath,
     select::{SelectEvent, SelectItem, SelectState},
 };
-use gpui_form::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 use strum::IntoEnumIterator;
 
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     /// Shape for a `gpui_component::select::Select` backed by enum variants.
     ///
-    /// The enum type `T` must implement `gpui_form::SelectItem`, usually via
-    /// `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
+    /// The enum type `T` must implement `gpui_component::select::SelectItem`,
+    /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
     pub struct SelectShape<T>
     where
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,

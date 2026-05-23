@@ -16,12 +16,11 @@ power the rest of the ecosystem.
 - `custom_component!`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
-`gpui-form-component-derive` and is re-exported by the facade as
-`gpui_form::InfiniteSelect`.
+`gpui-form-component-derive` and is re-exported by `gpui-form-component` when
+that crate's `derive` feature is enabled.
 
 `#[derive(SelectItem)]` is also not part of this crate. It lives in
-`gpui-form-collection-derive` and is re-exported by the facade as
-`gpui_form::SelectItem`.
+`gpui-form-collection-derive`.
 
 ## Module Layout
 
@@ -107,6 +106,8 @@ When the `inventory` feature is enabled:
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
   `CustomComponentValueAdapter<T>` prototyping hooks
+- defaults to implementing `gpui_form_component::custom::CustomComponentShape`
+  for downstream application crates
 - optionally accepts `custom_crate = crate` for runtime crates that implement
   their local `custom::CustomComponentShape` path directly
 
@@ -116,6 +117,7 @@ When the `inventory` feature is enabled:
 - accepts caller generics, where clauses, and outer attributes
 - targets external component/state pairs that cannot directly implement
   `CustomComponentShape` because both the trait and state type are foreign
+- emits the implementation against `gpui_form_component::custom`
 - leaves optional `CustomComponentValueAdapter<T>` implementations to the
   caller or collection crate
 

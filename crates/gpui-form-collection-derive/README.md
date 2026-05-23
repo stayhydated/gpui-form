@@ -2,9 +2,8 @@
 
 Proc macros for collection-oriented workflows in `gpui-form`.
 
-Most users should depend on [`gpui-form`](../gpui-form/README.md) for the full
-derive surface and default re-exports. Use this crate when you only need
-collection-specific derive support, currently `#[derive(SelectItem)]`.
+Use this crate for collection-specific derive support, currently
+`#[derive(SelectItem)]`. `gpui-form` does not re-export this derive.
 
 ## Installation
 
@@ -37,12 +36,9 @@ Optional attribute:
   `SelectItem::title()` output remains plain fallback text because this contract
   has no localizer argument.
 
-`SelectItem` is re-exported by the `gpui-form` facade as
-`gpui_form::SelectItem`.
-
 ## Most Users Should Use Instead
 
-- [`gpui-form`](../gpui-form/README.md) for standard form derives, custom
-  component shapes, runtime, and schema wiring.
+- [`gpui-form`](../gpui-form/README.md) for standard form derives and schema
+  wiring.
 - [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`,
   `CustomComponent`, and `CustomComponentState`.

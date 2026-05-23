@@ -1,6 +1,7 @@
 use anyhow::Context as _;
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
-use gpui_form::{GpuiForm, SelectItem};
+use gpui_form::GpuiForm;
+use gpui_form_collection_derive::SelectItem;
 use koruma::{Koruma, KorumaAllFluent};
 use koruma_collection::{
     collection::NonEmptyValidation,

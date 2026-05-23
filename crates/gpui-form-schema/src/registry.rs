@@ -87,13 +87,13 @@ pub struct FieldVariant {
     /// Form-to-source conversion expression, if one was specified.
     pub into_expr: Option<&'static str>,
     /// For custom components: the shape type path implementing
-    /// `gpui_form::custom::CustomComponentShape`.
+    /// `gpui_form_component::custom::CustomComponentShape`.
     pub custom_shape: Option<&'static str>,
     /// For custom components: the UI component type path (e.g. "TagsInput").
     /// Used by the prototyping code generator to emit `Component::new(&entity)`.
     pub custom_component: Option<&'static str>,
     /// Whether the custom component opted into
-    /// `gpui_form::custom::CustomComponentValueAdapter` generation.
+    /// `gpui_form_component::custom::CustomComponentValueAdapter` generation.
     pub custom_value_binding: bool,
 }
 

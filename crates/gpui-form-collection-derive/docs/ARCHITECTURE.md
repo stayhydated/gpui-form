@@ -22,8 +22,7 @@ from the core `GpuiForm` macro surface.
   `GpuiForm`, custom component shape macros, and custom shape declarations.
 - This crate focuses only on enum-backed select item title/value implementations.
 - Runtime shapes and adapters remain in `gpui-form-collection`.
-- `#[derive(SelectItem)]` re-exported by `gpui-form` remains available via
-  `gpui_form::SelectItem` for facade users.
+- Applications import `#[derive(SelectItem)]` from this crate explicitly.
 
 ## When To Update This Document
 

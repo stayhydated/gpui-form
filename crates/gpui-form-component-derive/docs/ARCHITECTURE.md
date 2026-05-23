@@ -49,13 +49,12 @@ Those belong in `gpui-form-derive`, `gpui-form-codegen`, and
 
 ## Data Flow
 
-1. A user derives `InfiniteSelect` through `gpui-form`, through
-   `gpui-form-component`, or directly through this crate.
+1. A user derives `InfiniteSelect` through `gpui-form-component` with the
+   `derive` feature or directly through this crate.
 1. The macro resolves the runtime crate path from the consuming crate's
-   dependencies and emits trait impls against either `gpui-form` or
-   `gpui-form-component`.
-1. Direct users therefore do not need a `gpui_form` rename in `Cargo.toml`,
-   while facade users keep the same generated path through `gpui-form`.
+   dependencies and emits trait impls against `gpui-form-component`.
+1. Users therefore depend on `gpui-form-component` explicitly whenever they use
+   this derive.
 1. Runtime code in `gpui-form-component` consumes that impl through
    `InfiniteSelectItem`, `InfiniteSelectPath`, `InfiniteSelectKeyPath`, and the
    path reconstruction helpers.

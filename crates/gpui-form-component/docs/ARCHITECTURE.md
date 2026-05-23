@@ -47,7 +47,7 @@ Responsibilities:
 
 ### `infinite_select`
 
-This subsystem provides the runtime half of `gpui_form::InfiniteSelect`.
+This subsystem provides the runtime half of `gpui_form_component::InfiniteSelect`.
 
 Responsibilities:
 
@@ -108,7 +108,8 @@ Responsibilities:
 ### Infinite select
 
 1. `gpui-form-component-derive` generates an `InfiniteSelect` impl for a user
-   enum, usually re-exported to application code through `gpui-form`.
+   enum. Applications import it through `gpui-form-component` with the `derive`
+   feature or directly from `gpui-form-component-derive`.
 1. `InfiniteSelectState<T>` constructs the master select, derives child selects,
    keeps both `InfiniteSelectPath` and `InfiniteSelectKeyPath` aligned with the
    current nested value, can snapshot the visible levels for rendering, and can
@@ -192,8 +193,7 @@ When adding a new component behavior that needs runtime state:
 1. add parse-time support in `gpui-form-codegen`
 1. add metadata in `gpui-form-schema`
 1. update `gpui-form-prototyping-core` generator mapping
-1. update the facade re-exports in `gpui-form` when the runtime surface should
-   be public
+1. update user-facing docs so applications import the runtime crate explicitly
 
 ## When To Update This Document
 

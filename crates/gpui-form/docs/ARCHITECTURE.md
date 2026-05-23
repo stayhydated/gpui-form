@@ -1,48 +1,39 @@
 # gpui-form Architecture
 
-`gpui-form` is the facade crate and compatibility boundary for the workspace.
-Application crates should be able to depend on this crate alone and get the
-derive macros, runtime helpers, schema types, and compatibility re-exports
-they need.
+`gpui-form` is the facade crate and public feature boundary for form
+generation. It intentionally stays thin: applications get the main
+`#[derive(GpuiForm)]` entry point, core helpers, schema metadata, and generated
+code dependencies from this crate, while component runtimes and component
+derive macros are imported from their own crates.
 
 ## Purpose
 
 This crate exists to:
 
-1. present a stable public entry point
-1. centralize public feature flags
-1. re-export lower-level crates under consistent paths
-1. preserve compatibility re-exports for older generated code and examples
+1. present the stable `GpuiForm` entry point
+1. centralize public feature flags for form generation and inventory metadata
+1. re-export UI-neutral lower layers under consistent paths
+1. avoid making component collections or runtime helpers implicit facade APIs
 
 ## Public Surface
 
 `src/lib.rs` re-exports:
 
-- `gpui_form_derive::{custom_component, CustomComponent, CustomComponentState, GpuiForm}`
-  behind the `derive` feature
-- `gpui_form_collection_derive::SelectItem` behind the `derive` feature
-- `gpui_form_component::InfiniteSelect` behind the `derive` feature
-- `gpui_form_component` as `gpui_form::runtime`
-- `gpui_form_component::custom`
-- `gpui_form_component::date_picker`
-- `gpui_form_component::file_picker`
-- `gpui_form_component::infinite_select`
+- `gpui_form_derive::GpuiForm` behind the `derive` feature
 - `gpui_form_core` as `gpui_form::core`
 - `gpui_form_core::numeric`
 - `gpui_form_schema` as `gpui_form::schema`
 - `bon` as `gpui_form::bon`
 
-The explicit namespaces (`core`, `runtime`, `schema`) are the preferred public
-paths. Root-level module re-exports remain for compatibility.
+`gpui-form` does not re-export `gpui-form-component`,
+`gpui-form-collection`, `gpui-form-component-derive`, or
+`gpui-form-collection-derive`. Application crates that use component runtime
+helpers, collection shapes, `InfiniteSelect`, or `SelectItem` depend on and
+import those crates explicitly.
 
 ## Feature Flags
 
-- `derive` (default): enables the public derive surface
-  - `GpuiForm`, `CustomComponent`, `CustomComponentState`, and
-    `custom_component!` come from `gpui-form-derive`
-  - `SelectItem` comes from `gpui-form-collection-derive`
-  - `InfiniteSelect` comes through `gpui-form-component`, which re-exports the
-    proc macro from `gpui-form-component-derive`
+- `derive` (default): re-exports `GpuiForm` from `gpui-form-derive`
 - `inventory`: forwards inventory-enabled `GpuiForm` behavior so
   `#[derive(GpuiForm)]` emits `GpuiFormShape` registrations
 
@@ -50,37 +41,31 @@ paths. Root-level module re-exports remain for compatibility.
 
 ## Dependency Role
 
-`gpui-form` depends on five lower layers:
+`gpui-form` depends on these lower layers:
 
 - `gpui-form-core` for UI-neutral helper logic
-- `gpui-form-component` for GPUI runtime helpers and the facade's
-  `InfiniteSelect` re-export
 - `gpui-form-schema` for metadata and inventory types
-- `gpui-form-derive` for `GpuiForm` and custom component shape
-  derives
-- `gpui-form-collection-derive` for `SelectItem`
+- `gpui-form-derive` for `GpuiForm`
+- `bon` because generated value holders with skipped fields derive
+  `::gpui_form::bon::Builder`
 
-`gpui-form-collection` intentionally is not re-exported here. It is an opt-in
-component representation crate, so applications choose it explicitly instead of
-making the facade depend on any particular widget collection.
-
-This crate should stay thin. New behavior normally belongs in one of those
-lower crates and is only re-exported here.
+Component runtime contracts live in `gpui-form-component`. Curated component
+shapes live in `gpui-form-collection`. Their derive crates remain separate so
+users opt into those component APIs explicitly.
 
 ## Control Flow
 
-### Facade-driven derives
+### Facade-driven form derive
 
 1. A user depends on `gpui-form` with the `derive` feature.
-1. `GpuiForm`, `CustomComponent`, `CustomComponentState`, and
-   `custom_component!` resolve to `gpui-form-derive`.
-1. `SelectItem` resolves to `gpui-form-collection-derive`.
-1. `InfiniteSelect` resolves through `gpui-form-component` to
-   `gpui-form-component-derive`.
-1. `GpuiForm` generated code references `gpui_form::runtime`,
-   `gpui_form::schema`, `gpui_form::core`, and compatibility re-exports such as
-   `gpui_form::numeric`.
-1. `InfiniteSelect` generated code targets `gpui_form::infinite_select`.
+1. `GpuiForm` resolves to `gpui-form-derive`.
+1. `GpuiForm` generated metadata references `gpui_form::schema`.
+1. Generated value-holder code references `gpui_form::core`,
+   `gpui_form::numeric`, and `gpui_form::bon` where needed.
+1. Generated component field code references
+   `gpui_form_component::custom` when a field uses `component(custom(...))`.
+   Users of component-backed fields must depend on `gpui-form-component`
+   explicitly.
 
 ### Prototyping flow
 
@@ -93,12 +78,11 @@ lower crates and is only re-exported here.
 
 ## Compatibility Notes
 
-- `gpui_form::bon` is re-exported because generated value holders with skipped
-  fields derive `::gpui_form::bon::Builder`
-- root-level compatibility modules (`custom`, `date_picker`, `file_picker`,
-  `infinite_select`, `numeric`) should not be removed casually
-- if a lower-level crate adds a new public surface that should be first-class
-  for end users, it usually needs a facade re-export here
+- `gpui_form::bon` remains public because generated value holders use it.
+- `gpui_form::numeric` remains public as a compatibility path for core numeric
+  helper logic.
+- Component module paths such as `custom`, `date_picker`, `file_picker`, and
+  `infinite_select` belong to `gpui-form-component`, not this facade.
 
 ## When To Update This Document
 
@@ -106,5 +90,4 @@ Update this file when:
 
 - the facade re-export layout changes
 - a feature flag is introduced, removed, or re-routed
-- generated code changes which facade paths it targets
-- compatibility guarantees for root-level re-exports change
+- generated code changes which facade or component-runtime paths it targets

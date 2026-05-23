@@ -11,10 +11,10 @@ this crate owns reusable shape types for common `gpui-component` widgets.
 
 ## Boundaries
 
-- `gpui-form` owns the derive API, schema metadata, and custom component
-  contract.
+- `gpui-form` owns the main form derive API and schema metadata.
+- `gpui-form-component` owns the custom component contract.
 - `gpui-form-collection` owns opt-in shapes declared through
-  `gpui_form::custom_component!` and any value adapters those shapes need.
+  `gpui_form_derive::custom_component!` and any value adapters those shapes need.
 - Application crates may define their own shape types directly when this
   collection is not the right owner.
 

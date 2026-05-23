@@ -4,7 +4,7 @@ Procedural macros behind the `gpui-form` ecosystem.
 
 Most users should depend on [`gpui-form`](../gpui-form/README.md) and derive
 from the facade crate. Use this crate directly when you want the proc-macro
-layer without the facade's runtime and metadata re-exports.
+layer, including custom component shape derives and helper macros.
 
 ## What This Crate Provides
 
@@ -13,12 +13,11 @@ layer without the facade's runtime and metadata re-exports.
 - `custom_component! { ... }`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
-[`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and
-re-exported by the facade as `gpui_form::InfiniteSelect`.
+[`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by
+`gpui-form-component` when that crate's `derive` feature is enabled.
 
 `#[derive(SelectItem)]` is implemented in
-[`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) and
-re-exported by the facade as `gpui_form::SelectItem`.
+[`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md).
 
 ## `#[derive(GpuiForm)]`
 
@@ -49,7 +48,7 @@ Supported component forms:
 - `#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = "gpui_form::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
+- `#[gpui_form(component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
 
 Supporting field attributes:
 
@@ -70,13 +69,13 @@ Behavior notes:
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
 - collection select shapes expect enum-like values that can populate a
   `gpui_component` select
-- `gpui_form::infinite_select::InfiniteSelectState<_>` expects the field type
-  to implement `gpui_form::InfiniteSelect`
+- `gpui_form_component::infinite_select::InfiniteSelectState<_>` expects the field type
+  to implement `gpui_form_component::InfiniteSelect`
 - `default = ...` seeds the generated value holder
 - `custom(..., wraps_in_option = false)` keeps the generated value-holder field
   as `T` instead of `Option<T>`
 - `custom(..., value_binding)` records that the custom shape implements
-  `gpui_form::custom::CustomComponentValueAdapter<T>` for generated
+  `gpui_form_component::custom::CustomComponentValueAdapter<T>` for generated
   prototyping subscriptions
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
@@ -92,12 +91,12 @@ Behavior notes:
 
 ## `#[derive(CustomComponent)]` / `#[derive(CustomComponentState)]`
 
-Implements `gpui_form::custom::CustomComponentShape` directly for a state type.
+Implements `gpui_form_component::custom::CustomComponentShape` directly for a state type.
 `CustomComponentState` is kept as a compatibility alias; new reusable custom
 component metadata should prefer the shorter `CustomComponent` name.
 
 ```rs
-use gpui_form::CustomComponent;
+use gpui_form_derive::CustomComponent;
 
 #[derive(Clone, Debug, CustomComponent)]
 #[gpui_form_custom(
@@ -119,7 +118,7 @@ contract without repeating `value_binding` on every field.
 Declares a local shape type for external component/state pairs.
 
 ```rs
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     /// Ready-made text input shape.
     pub struct InputShape<T = String>
     where
@@ -147,7 +146,8 @@ caller can still add a `CustomComponentValueAdapter<T>` impl on that wrapper.
 - [`gpui-form`](../gpui-form/README.md) for the main facade
 - [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
   `#[derive(SelectItem)]` when using derives directly
-- [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) for
-  `#[derive(InfiniteSelect)]`
+- [`gpui-form-component`](../gpui-form-component/README.md) for runtime helpers,
+  custom component contracts, and `#[derive(InfiniteSelect)]` with its `derive`
+  feature
 - [`gpui-form-schema`](../gpui-form-schema/README.md) when you need metadata
   rather than derives

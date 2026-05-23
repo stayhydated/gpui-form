@@ -31,8 +31,8 @@ Currently provided shapes:
 
 `SelectShape<T>` requires enum values that implement
 `gpui_component::select::SelectItem`; derive that trait with
-`#[derive(SelectItem)]` (or import it from
-`gpui_form::SelectItem` through the facade).
+`#[derive(SelectItem)]` from `gpui-form-collection-derive`.
 
-Collection shapes are declared with `gpui_form::custom_component!` and then
-add value adapters where the component can synchronize form state generically.
+Collection shapes implement `gpui_form_component::custom::CustomComponentShape`
+and add value adapters where the component can synchronize form state
+generically.

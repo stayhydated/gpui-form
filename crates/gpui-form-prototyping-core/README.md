@@ -54,7 +54,7 @@ of assuming every text field stores `String`.
 
 Custom fields remain inert by default. If a field's shape opts into
 `value_binding`, the adapter emits generic seed and subscription hooks through
-`gpui_form::custom::CustomComponentValueAdapter<T>`.
+`gpui_form_component::custom::CustomComponentValueAdapter<T>`.
 
 ## Feature Flags
 

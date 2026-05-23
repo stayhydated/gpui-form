@@ -31,8 +31,15 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", branch 
 
 gpui-form = "*"
 
-# Optional: ready-made component shapes for gpui-component widgets
+# Optional: runtime component contracts/helpers and the InfiniteSelect derive
+gpui-form-component = { version = "*", features = ["derive"] }
+
+# Optional: ready-made component shapes and select derive support
 gpui-form-collection = "*"
+gpui-form-collection-derive = "*"
+
+# Optional: CustomComponent derive and custom_component! shape macro
+gpui-form-derive = "*"
 
 # Optional: inventory registration for prototyping/code generation
 # gpui-form = { version = "*", features = ["inventory"] }
@@ -40,10 +47,12 @@ gpui-form-collection = "*"
 
 ## Quick Start
 
-`SelectItem` is re-exported by the facade from `gpui-form-collection-derive`.
+Collection-backed selects use `SelectItem` from
+`gpui-form-collection-derive`.
 
 ```rs
-use gpui_form::{GpuiForm, SelectItem};
+use gpui_form::GpuiForm;
+use gpui_form_collection_derive::SelectItem;
 use strum::EnumIter;
 
 #[derive(Clone, Debug, Default, EnumIter, PartialEq, SelectItem)]
@@ -90,7 +99,7 @@ pub struct UserProfile {
 - `#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]`
 - `#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = "gpui_form::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
+- `#[gpui_form(component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
 
 Common field-level helpers:
 
@@ -106,13 +115,13 @@ Common field-level helpers:
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
 
-`gpui_form::infinite_select::InfiniteSelectState<_>` expects the field type to
-implement `gpui_form::InfiniteSelect`, usually by deriving it on the enum tree.
+`gpui_form_component::infinite_select::InfiniteSelectState<_>` expects the
+field type to implement `gpui_form_component::InfiniteSelect`, usually by
+deriving it on the enum tree.
 The enum tree must also implement `PartialEq` because the backing
 `gpui-component` select compares selected values.
-Lower-level users can derive the same runtime contract from
-`gpui-form-component` or `gpui-form-component-derive`; the macro resolves
-whichever runtime crate is present, including renamed dependencies.
+Use `gpui-form-component` with its `derive` feature or import
+`gpui-form-component-derive` explicitly.
 
 Common struct-level helpers:
 
@@ -124,13 +133,13 @@ Common struct-level helpers:
 ## Infinite Select Runtime
 
 Infinite-select custom fields are backed by
-`gpui_form::infinite_select::InfiniteSelectState`, which owns the root and child
-`SelectState`s, exposes render-ready level snapshots, and emits a single typed
-change event with the rebuilt nested value, both path forms, the previous
-paths, and the changed depth.
+`gpui_form_component::infinite_select::InfiniteSelectState`, which owns the
+root and child `SelectState`s, exposes render-ready level snapshots, and emits
+a single typed change event with the rebuilt nested value, both path forms, the
+previous paths, and the changed depth.
 
 ```rs
-use gpui_form::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
+use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
 
 let location = cx.new(|cx| {
     InfiniteSelectState::new(Country::default(), window, cx)
@@ -234,7 +243,8 @@ The `_` generic is resolved to the field's form-side type, including any
 ### 2. Derive directly on an owned state type
 
 ```rs
-use gpui_form::{CustomComponent, GpuiForm};
+use gpui_form::GpuiForm;
+use gpui_form_derive::CustomComponent;
 
 #[derive(Clone, Debug, CustomComponent)]
 #[gpui_form_custom(new = Self::new, component = TagsInput)]
@@ -250,7 +260,7 @@ pub struct PostEditor {
 ### 3. Declare a reusable external shape
 
 ```rs
-gpui_form::custom_component! {
+gpui_form_derive::custom_component! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
@@ -270,12 +280,12 @@ can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 
 Custom components can also opt into generated value synchronization by
-implementing `gpui_form::custom::CustomComponentValueAdapter<T>` on the shape.
+implementing `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape.
 For one-off fields, add `value_binding` to the custom component options. For a
 reusable component, put that metadata on the shape:
 
 ```rs
-use gpui_form::CustomComponent;
+use gpui_form_derive::CustomComponent;
 
 #[derive(Clone, Debug, CustomComponent)]
 #[gpui_form_custom(
@@ -289,18 +299,13 @@ pub struct TagsInputState;
 The adapter remains application-owned; `gpui-form` only calls its generic seed
 and event-conversion hooks.
 
-Runtime helpers are available from both:
-
-- `gpui_form::runtime`
-- legacy compatibility re-exports such as `gpui_form::custom`,
-  `gpui_form::date_picker`, `gpui_form::file_picker`,
-  `gpui_form::infinite_select`, and
-  `gpui_form::numeric`
+Runtime helpers are available from `gpui_form_component`; `gpui-form` does not
+re-export component modules or their derives.
 
 ## File Picker Runtime
 
-For manual native path selection, use `gpui_form::file_picker` or
-`gpui_form::runtime::file_picker`. The runtime uses GPUI's
+For manual native path selection, use `gpui_form_component::file_picker`. The
+runtime uses GPUI's
 `PathPromptOptions` from the pinned Zed git dependency and renders the control
 with `gpui-component` buttons, icons, sizing, and theme tokens.
 Built-in defaults are plain English fallback copy. When a form needs localized
@@ -310,7 +315,7 @@ application-owned `es-fluent` localizer and pass the resulting strings through
 Fluent resources for callers that localize those messages explicitly.
 
 ```rs
-use gpui_form::file_picker::{FilePicker, FilePickerEvent, FilePickerState};
+use gpui_form_component::file_picker::{FilePicker, FilePickerEvent, FilePickerState};
 
 let picker = cx.new(|cx| FilePickerState::new(window, cx));
 
@@ -352,7 +357,8 @@ selected-date label and calendar popover use ICU4X for localized month names,
 weekday headers, day/year labels, and locale-specific week starts. Manual
 runtime code can use `DateRangePicker` and `DateRangePickerState` for range
 selection. To use this runtime from `GpuiForm`, define an application or
-collection shape that implements `CustomComponentShape`.
+collection shape that implements
+`gpui_form_component::custom::CustomComponentShape`.
 
 ## Prototyping
 
