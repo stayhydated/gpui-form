@@ -1,7 +1,7 @@
 pub mod custom;
 
 use gpui_form_schema::{
-    components::ComponentsBehaviour,
+    components::{ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour},
     registry::{FieldVariant, GpuiFormShape},
 };
 use heck::{ToPascalCase as _, ToSnakeCase as _};
@@ -18,7 +18,15 @@ static CUSTOM_GENERATOR: custom::CustomCodeGenerator = custom::CustomCodeGenerat
 
 pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCodeGenerator {
     match behaviour {
-        ComponentsBehaviour::Custom => &CUSTOM_GENERATOR,
+        ComponentsBehaviour::Input
+        | ComponentsBehaviour::NumberInput(_)
+        | ComponentsBehaviour::Checkbox
+        | ComponentsBehaviour::Switch
+        | ComponentsBehaviour::Select(_)
+        | ComponentsBehaviour::InfiniteSelect(_)
+        | ComponentsBehaviour::Custom
+        | ComponentsBehaviour::DatePicker
+        | ComponentsBehaviour::FilePicker => &CUSTOM_GENERATOR,
     }
 }
 
@@ -131,6 +139,12 @@ impl<'a> ResolvedField<'a> {
         self.custom_shape_path.as_ref()
     }
 
+    pub fn custom_runtime_shape_path(&self) -> Option<Path> {
+        self.custom_shape_path
+            .clone()
+            .map(|shape| runtime_shape_for_behaviour(shape, self.behaviour(), self.value_type()))
+    }
+
     pub fn custom_component_path(&self) -> Option<&Path> {
         self.custom_component_path.as_ref()
     }
@@ -164,6 +178,88 @@ impl<'a> ResolvedField<'a> {
     pub fn component_event_handler_ident(&self) -> Ident {
         format_ident!("on_{}_event", self.field_ident_with_behaviour)
     }
+}
+
+fn runtime_shape_for_behaviour(
+    shape: Path,
+    behaviour: &ComponentsBehaviour,
+    field_type: &Type,
+) -> Path {
+    match behaviour {
+        ComponentsBehaviour::Select(SelectBehaviour {
+            searchable: true, ..
+        }) => searchable_select_shape(shape, field_type),
+        ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
+            searchable: true, ..
+        }) => searchable_infinite_select_shape(shape),
+        _ => shape,
+    }
+}
+
+fn shape_ident(shape: &Path) -> Option<String> {
+    shape
+        .segments
+        .last()
+        .map(|segment| segment.ident.to_string())
+}
+
+fn type_arg_count(path: &Path) -> usize {
+    path.segments
+        .last()
+        .and_then(|segment| match &segment.arguments {
+            syn::PathArguments::AngleBracketed(args) => Some(
+                args.args
+                    .iter()
+                    .filter(|arg| matches!(arg, syn::GenericArgument::Type(_)))
+                    .count(),
+            ),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
+fn searchable_select_shape(mut shape: Path, field_type: &Type) -> Path {
+    let existing_type_args = type_arg_count(&shape);
+    if shape_ident(&shape).as_deref() != Some("SelectShape") || existing_type_args > 1 {
+        return shape;
+    }
+
+    let selected_type = field_type.clone();
+    let delegate_type: Type = syn::parse_quote! {
+        ::gpui_component::select::SearchableVec<#selected_type>
+    };
+    let Some(segment) = shape.segments.last_mut() else {
+        return shape;
+    };
+
+    match &mut segment.arguments {
+        syn::PathArguments::AngleBracketed(args) => {
+            if existing_type_args == 0 {
+                args.args
+                    .push(syn::GenericArgument::Type(field_type.clone()));
+            }
+            args.args.push(syn::GenericArgument::Type(delegate_type));
+        },
+        _ => {
+            let args: syn::AngleBracketedGenericArguments =
+                syn::parse_quote!(<#field_type, #delegate_type>);
+            segment.arguments = syn::PathArguments::AngleBracketed(args);
+        },
+    }
+
+    shape
+}
+
+fn searchable_infinite_select_shape(mut shape: Path) -> Path {
+    if shape_ident(&shape).as_deref() != Some("InfiniteSelectState") || type_arg_count(&shape) > 1 {
+        return shape;
+    }
+
+    if let Some(segment) = shape.segments.last_mut() {
+        segment.ident = syn::Ident::new("SearchableInfiniteSelectState", segment.ident.span());
+    }
+
+    shape
 }
 
 #[derive(Default)]

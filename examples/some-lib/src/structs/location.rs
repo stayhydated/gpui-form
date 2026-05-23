@@ -147,13 +147,14 @@ use gpui_form::GpuiForm;
 #[fluent_variants(keys = ["description", "label"])]
 pub struct LocationForm {
     /// User's name
-    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
     pub name: String,
 
     /// Location selection using cascading selects
-    #[gpui_form(component(custom(
-        shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
-        wraps_in_option = false
-    )))]
+    #[gpui_form(
+        component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+            .searchable()
+            .max_depth(3)
+    )]
     pub location: Country,
 }

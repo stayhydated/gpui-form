@@ -7,7 +7,8 @@ layer used by `gpui-form-derive`.
 
 This crate exists to:
 
-1. parse `component(custom(...))` options into a typed internal model
+1. parse `component = Shape` expressions and legacy
+   `component(custom(...))` options into a typed internal model
 1. emit generated `FormFields` and `FormComponents` tokens from a
    `CustomComponentShape`
 1. emit schema metadata aligned with the same custom-component contract
@@ -25,26 +26,33 @@ crate.
 
 ## Parse-Time Component Model
 
-`components.rs` accepts only custom component annotations:
+`components.rs` accepts custom component shape annotations:
 
-- `component(custom(shape = my::Shape))`
-- `component(custom(state = my::State))`
-- `component(custom(shape = my::Shape, component = my::Widget))`
-- `component(custom(shape = my::Shape, wraps_in_option = false))`
-- `component(custom(shape = my::Shape, value_binding))`
-- `component(custom(shape = my::Shape, field_suffix = "input"))`
+- `component = my::Shape`
+- `component = my::Shape.component(my::Widget)`
+- `component = my::Shape.value_binding()`
+- `component = my::Shape.field_suffix("input")`
+- `component = gpui_form_collection::select::SelectShape::<_>.searchable().partial()`
+- `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3)`
+- legacy `component(custom(shape = my::Shape))`
+- legacy `component(custom(state = my::State))`
 
 Important parse-time responsibilities:
 
-- exactly one of `shape = ...` or `state = ...` must be present
-- generic shape paths may use `_` in type arguments, usually through a string
-  literal such as `"gpui_form_collection::input::InputShape<_>"`
+- expression syntax uses a shape path, while legacy `custom(...)` requires
+  exactly one of `shape = ...` or `state = ...`
+- generic expression paths may use `_` with turbofish syntax, such as
+  `gpui_form_collection::input::InputShape::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- `wraps_in_option` controls generated value-holder storage
-- `value_binding` records that generated prototyping code should use
+- generated value-holder wrapping is inferred from known shape metadata
+- `value_binding()` records that generated prototyping code should use
   `CustomComponentValueAdapter`
-- `field_suffix` records a field-level prototyping name override
+- `field_suffix("...")` records a field-level prototyping name override
+- `searchable()` and `partial()` record select behavior metadata
+- `searchable()` and `max_depth(...)` record infinite-select behavior metadata
+- `new()` is accepted as an optional compatibility marker; the generated code
+  owns the real runtime construction call
 
 ## Component Layout Emission
 
@@ -70,7 +78,8 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- `ComponentsBehaviour::Custom`
+- the inferred `ComponentsBehaviour` for known reusable shapes, including
+  select and infinite-select options
 - the resolved custom shape path
 - the optional render component path
 - the custom value-binding flag

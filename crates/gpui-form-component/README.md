@@ -92,10 +92,11 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the owned state shape directly:
 
 ```rs
-#[gpui_form(component(custom(
-    shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
-    wraps_in_option = false
-)))]
+#[gpui_form(
+    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+        .searchable()
+        .max_depth(3)
+)]
 pub location: Country,
 ```
 
@@ -197,7 +198,7 @@ cargo run -p gpui-form-component-story
 ## Custom Components
 
 `custom::CustomComponentShape` is the contract used by
-`component(custom(...))`.
+`#[gpui_form(component = Shape)]`.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -233,7 +234,7 @@ pub struct TagsState;
 For custom components that should participate in generated prototyping
 subscriptions, implement `custom::CustomComponentValueAdapter<T>` for the same
 shape and either set `value_binding` on the shape metadata or add
-`value_binding` to the `component(custom(...))` options for a single field. The
+`.value_binding()` to the `component = Shape` expression for a single field. The
 adapter seeds state from the current form value and maps component events to
 `CustomComponentValueChange<T>`.
 

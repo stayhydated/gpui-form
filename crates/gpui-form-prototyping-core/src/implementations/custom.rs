@@ -88,7 +88,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
             return None;
         }
 
-        let shape = field.custom_shape_path()?;
+        let shape = field.custom_runtime_shape_path()?;
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_behaviour();
         let field_name_ident = field.field_ident();
@@ -154,7 +154,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
             return None;
         }
 
-        let shape = field.custom_shape_path()?;
+        let shape = field.custom_runtime_shape_path()?;
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_behaviour();
         let field_name_ident = field.field_ident();
@@ -182,7 +182,7 @@ mod tests {
     use super::CustomCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
     use gpui_form_schema::{
-        components::ComponentsBehaviour,
+        components::{ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour},
         registry::{FieldVariant, GpuiFormShape},
     };
 
@@ -329,6 +329,86 @@ mod tests {
         assert!(
             compact_handler.contains("fnon_country_select_event"),
             "shape names should drive generated handler suffixes: {compact_handler}"
+        );
+    }
+
+    #[test]
+    fn custom_generator_uses_runtime_shape_for_searchable_select_without_renaming() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+            "country",
+            "EnumCountry",
+            false,
+            ComponentsBehaviour::Select(SelectBehaviour {
+                partial: false,
+                searchable: true,
+            }),
+        )
+        .with_custom_shape("gpui_form_collection::select::SelectShape<EnumCountry>")
+        .with_custom_value_binding(true)];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+
+        let generator = CustomCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let created = generator
+            .generate_cx_new_call(&field, &SHAPE)
+            .expect("custom fields should generate cx.new initialization");
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound custom fields should generate subscriptions");
+        let compact_created = compact(&created.to_string());
+        let compact_handler = compact(&generated.handlers[0].to_string());
+
+        assert!(
+            compact_created.contains("letcountry_select=cx.new"),
+            "searchable behavior should keep the normal select suffix: {compact_created}"
+        );
+        assert!(
+            compact_handler.contains("fnon_country_select_event"),
+            "searchable behavior should keep the normal handler suffix: {compact_handler}"
+        );
+        assert!(
+            compact_handler.contains("gpui_form_collection::select::SelectShape<EnumCountry,::gpui_component::select::SearchableVec<EnumCountry>>"),
+            "searchable select subscriptions should use the runtime-specialized shape: {compact_handler}"
+        );
+    }
+
+    #[test]
+    fn custom_generator_uses_runtime_shape_for_searchable_infinite_select_without_renaming() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+            "location",
+            "Country",
+            false,
+            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
+                searchable: true,
+                max_depth: Some(3),
+            }),
+        )
+        .with_custom_shape("gpui_form_component::infinite_select::InfiniteSelectState<Country>")
+        .with_custom_value_binding(true)];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+
+        let generator = CustomCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let created = generator
+            .generate_cx_new_call(&field, &SHAPE)
+            .expect("custom fields should generate cx.new initialization");
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound custom fields should generate subscriptions");
+        let compact_created = compact(&created.to_string());
+        let compact_handler = compact(&generated.handlers[0].to_string());
+
+        assert!(
+            compact_created.contains("letlocation_infinite_select=cx.new"),
+            "searchable behavior should keep the normal infinite-select suffix: {compact_created}"
+        );
+        assert!(
+            !compact_created.contains("location_searchable_infinite_select"),
+            "searchable behavior should not leak into generated names: {compact_created}"
+        );
+        assert!(
+            compact_handler.contains("SearchableInfiniteSelectState<Country>"),
+            "searchable infinite-select subscriptions should use the runtime-specialized shape: {compact_handler}"
         );
     }
 }

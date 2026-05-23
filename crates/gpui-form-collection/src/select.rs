@@ -1,7 +1,7 @@
 use gpui::{Context, Window};
 use gpui_component::{
     IndexPath,
-    select::{SelectEvent, SelectItem, SelectState},
+    select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
 use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
 use strum::IntoEnumIterator;
@@ -11,28 +11,54 @@ gpui_form_derive::custom_component! {
     ///
     /// The enum type `T` must implement `gpui_component::select::SelectItem`,
     /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
-    pub struct SelectShape<T>
+    pub struct SelectShape<T, D = Vec<T>>
     where
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+        D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
     {
-        type State = SelectState<Vec<T>>;
-        new = |window, cx| {
-            let selected_index = T::iter()
-                .position(|item| item == T::default())
-                .map(IndexPath::new);
-            SelectState::new(T::iter().collect::<Vec<T>>(), selected_index, window, cx)
-        };
+        type State = SelectState<D>;
+        new = Self::new_default;
         component = gpui_component::select::Select;
         value_binding;
         field_suffix = "select";
     }
 }
 
-impl<T> CustomComponentValueAdapter<T> for SelectShape<T>
+impl<T, D> SelectShape<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+    D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
-    type Event = SelectEvent<Vec<T>>;
+    pub fn new_default(
+        window: &mut Window,
+        cx: &mut Context<'_, SelectState<D>>,
+    ) -> SelectState<D> {
+        Self::new_with_initial(T::default(), window, cx)
+    }
+
+    pub fn new_with_initial(
+        initial_value: T,
+        window: &mut Window,
+        cx: &mut Context<'_, SelectState<D>>,
+    ) -> SelectState<D> {
+        let selected_index = T::iter()
+            .position(|item| item == initial_value)
+            .map(IndexPath::new);
+        SelectState::new(
+            T::iter().collect::<Vec<T>>().into(),
+            selected_index,
+            window,
+            cx,
+        )
+    }
+}
+
+impl<T, D> CustomComponentValueAdapter<T> for SelectShape<T, D>
+where
+    T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+    D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
+{
+    type Event = SelectEvent<D>;
 
     fn set_state_value(
         state: &mut Self::State,

@@ -1,4 +1,5 @@
 use crate::components::*;
+use gpui_form_schema::components::ComponentsBehaviour;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -11,28 +12,34 @@ impl super::ComponentLayout for CustomComponent {
         let FieldInformation::<CustomOptions> {
             options,
             name,
-            r#type: _,
+            r#type,
         } = &self.0;
 
         let field_name_ident =
             crate::names::ComponentFieldName::new(&options.component_suffix(name), name);
-        let shape = &options.shape;
+        let shape = options.runtime_shape(r#type);
 
         let state_type = quote! {
             <#shape as ::gpui_form_component::custom::CustomComponentShape>::State
         };
+        let constructor_tokens = options.constructor_tokens(r#type);
 
         let field_structure_definition = quote! {
             pub #field_name_ident: ::gpui::Entity<#state_type>,
         };
 
-        let field_base_declaration = quote! {
-            pub fn #field_name_ident(
-                window: &mut ::gpui::Window,
-                cx: &mut ::gpui::Context<'_, #state_type>,
-            ) -> #state_type {
-                <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(window, cx)
-            }
+        let field_base_declaration = match &options.behaviour {
+            ComponentsBehaviour::Select(behaviour) if behaviour.partial => quote! {},
+            _ => {
+                quote! {
+                    pub fn #field_name_ident(
+                        window: &mut ::gpui::Window,
+                        cx: &mut ::gpui::Context<'_, #state_type>,
+                    ) -> #state_type {
+                        #constructor_tokens
+                    }
+                }
+            },
         };
 
         field_structure_tokens.extend(field_structure_definition);

@@ -29,27 +29,32 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
     pub age: Option<u32>,
 }
 ```
 
 Supported component forms:
 
-- `#[gpui_form(component(custom(shape = my::Shape)))]`
-- `#[gpui_form(component(custom(state = my::State)))]`
-- `#[gpui_form(component(custom(shape = my::Shape, component = my::ui::Widget)))]`
-- `#[gpui_form(component(custom(shape = my::Shape, wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = my::Shape, value_binding)))]`
-- `#[gpui_form(component(custom(shape = my::Shape, field_suffix = "input")))]`
-- `#[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]`
-- `#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]`
-- `#[gpui_form(component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]`
+- `#[gpui_form(component = my::Shape)]`
+- `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
+- `#[gpui_form(component = my::Shape.value_binding())]`
+- `#[gpui_form(component = my::Shape.field_suffix("input"))]`
+- `#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable().partial())]`
+- `#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]`
+- `#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3))]`
+
+The older `component(custom(shape = ...))` and `component(custom(state = ...))`
+forms are still accepted for compatibility.
+The expression is parsed as attribute metadata; generated runtime construction
+delegates to `CustomComponentShape::new`. A trailing `.new()` marker is still
+accepted for compatibility, but it is not required.
 
 Supporting field attributes:
 
@@ -70,19 +75,25 @@ Behavior notes:
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
 - collection select shapes expect enum-like values that can populate a
   `gpui_component` select
-- `gpui_form_component::infinite_select::InfiniteSelectState<_>` expects the field type
+- `gpui_form_component::infinite_select::InfiniteSelectState::<_>` expects the field type
   to implement `gpui_form_component::InfiniteSelect`
 - `default = ...` seeds the generated value holder
-- `custom(..., wraps_in_option = false)` keeps the generated value-holder field
-  as `T` instead of `Option<T>`
-- `custom(..., value_binding)` records that the custom shape implements
+- known reusable shapes infer generated value-holder wrapping internally:
+  input-like shapes wrap in `Option<T>`, while select, checkbox, switch, and
+  infinite-select shapes keep required fields as `T`
+- `.searchable()` and `.partial()` record select behavior metadata
+- `.searchable()` and `.max_depth(...)` record infinite-select behavior
+  metadata
+- `.value_binding()` records that the custom shape implements
   `gpui_form_component::custom::CustomComponentValueAdapter<T>` for generated
   prototyping subscriptions
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
-- `gpui_form_collection::input::InputShape<_>` prototyping code parses
+- `gpui_form_collection::input::InputShape::<_>` prototyping code parses
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
+- generic shape expressions use `::<_>` in the attribute; the derive normalizes
+  the path and resolves `_` to the field's form-side type
 - custom shape prototyping metadata drives generated `FormFields` and
   `FormComponents` suffixes when present. Collection shapes publish suffixes
   such as `input`, `select`, `checkbox`, and `switch`; reusable app shapes can

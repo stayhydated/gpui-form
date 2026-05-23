@@ -1,7 +1,10 @@
 use darling::{Error as DarlingError, FromMeta, util::Flag};
-use gpui_form_schema::components::ComponentKind;
+use gpui_form_schema::components::{
+    ComponentKind, ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour,
+};
 use proc_macro2::TokenStream;
 use quote::{ToTokens as _, quote};
+use syn::{Expr, Lit, Path, Token, parse::Parser as _, punctuated::Punctuated};
 
 use crate::implementations::ComponentLayout as _;
 
@@ -29,10 +32,6 @@ pub struct GeneratedFieldLayout {
     pub wrap_in_option: bool,
 }
 
-fn default_custom_wraps_in_option() -> bool {
-    true
-}
-
 #[derive(Clone, Debug)]
 pub struct CustomOptions {
     /// Path to a type implementing `gpui_form_component::custom::CustomComponentShape`.
@@ -41,8 +40,13 @@ pub struct CustomOptions {
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<syn::Path>,
     /// Whether the value holder should store this field as `Option<T>`.
-    /// Defaults to `true`.
+    /// This is inferred from known shape types for the component expression syntax.
     pub wraps_in_option: bool,
+    /// User-facing component behavior metadata carried by this shape.
+    pub behaviour: ComponentsBehaviour,
+    /// Field-level default value expression, used by known shapes that can seed
+    /// component state from the model default.
+    pub field_default: Option<syn::Expr>,
     /// Whether prototyping code should wire this custom component through
     /// `CustomComponentValueAdapter`.
     pub value_binding: Option<bool>,
@@ -58,8 +62,8 @@ struct CustomOptionsMeta {
     state: Option<syn::Path>,
     #[darling(default)]
     component: Option<syn::Path>,
-    #[darling(default = "default_custom_wraps_in_option")]
-    wraps_in_option: bool,
+    #[darling(default)]
+    wraps_in_option: Option<bool>,
     #[darling(default)]
     value_binding: Flag,
     #[darling(default)]
@@ -67,6 +71,21 @@ struct CustomOptionsMeta {
 }
 
 impl CustomOptions {
+    fn from_shape(shape: Path) -> Self {
+        let shape = normalize_shape_path(shape);
+        let (behaviour, wraps_in_option) = inferred_shape_defaults(&shape);
+
+        Self {
+            shape,
+            component: None,
+            wraps_in_option,
+            behaviour,
+            field_default: None,
+            value_binding: None,
+            field_suffix: None,
+        }
+    }
+
     fn from_meta(meta: CustomOptionsMeta) -> darling::Result<Self> {
         let CustomOptionsMeta {
             shape,
@@ -77,7 +96,7 @@ impl CustomOptions {
             field_suffix,
         } = meta;
 
-        let shape = match (shape, state) {
+        let shape = normalize_shape_path(match (shape, state) {
             (Some(shape), None) | (None, Some(shape)) => shape,
             (Some(_), Some(_)) => {
                 return Err(DarlingError::custom(
@@ -89,23 +108,147 @@ impl CustomOptions {
                     "custom component requires `shape = ...` or `state = ...`",
                 ));
             },
-        };
+        });
 
-        Ok(Self {
-            shape,
-            component,
-            wraps_in_option,
-            value_binding: value_binding.is_present().then_some(true),
-            field_suffix,
-        })
+        let mut options = Self::from_shape(shape);
+        options.component = component;
+        if let Some(wraps_in_option) = wraps_in_option {
+            options.wraps_in_option = wraps_in_option;
+        }
+        options.value_binding = value_binding.is_present().then_some(true);
+        options.field_suffix = field_suffix;
+
+        Ok(options)
+    }
+
+    fn from_component_expr(expr: &Expr) -> darling::Result<Self> {
+        let (shape, methods) = analyze_component_expr(expr)?;
+        let mut options = Self::from_shape(shape);
+
+        for method in methods {
+            options.apply_component_method(&method.method, &method.args)?;
+        }
+
+        Ok(options)
+    }
+
+    fn from_component_meta_list(meta_list: &syn::MetaList) -> darling::Result<Self> {
+        let mut shape = meta_list.path.clone();
+        let method = pop_component_method(&mut shape)?;
+        let args = parse_expr_args(meta_list.tokens.clone())
+            .map_err(|err| DarlingError::custom(err.to_string()).with_span(meta_list))?;
+
+        let mut options = Self::from_shape(shape);
+        options.apply_component_method(&method, &args)?;
+        Ok(options)
+    }
+
+    fn apply_component_method(
+        &mut self,
+        method: &syn::Ident,
+        args: &[Expr],
+    ) -> darling::Result<()> {
+        match method.to_string().as_str() {
+            "new" => {
+                if !args.is_empty() {
+                    return Err(DarlingError::custom(
+                        "component `new()` marker does not accept arguments",
+                    )
+                    .with_span(method));
+                }
+            },
+            "value_binding" | "with_value_binding" => {
+                self.value_binding = Some(expect_optional_bool_arg(method, args)?);
+            },
+            "component" | "with_component" => {
+                self.component = Some(expect_path_arg(method, args)?);
+            },
+            "field_suffix" | "with_field_suffix" => {
+                self.field_suffix = Some(expect_string_arg(method, args)?);
+            },
+            "searchable" | "with_searchable" => {
+                let searchable = expect_optional_bool_arg(method, args)?;
+                match &mut self.behaviour {
+                    ComponentsBehaviour::Select(behaviour) => {
+                        behaviour.searchable = searchable;
+                    },
+                    ComponentsBehaviour::InfiniteSelect(behaviour) => {
+                        behaviour.searchable = searchable;
+                    },
+                    _ => {
+                        return Err(DarlingError::custom(
+                            "`searchable` is only supported by SelectShape and InfiniteSelectState",
+                        )
+                        .with_span(method));
+                    },
+                }
+            },
+            "partial" | "with_partial" => {
+                let partial = expect_optional_bool_arg(method, args)?;
+                match &mut self.behaviour {
+                    ComponentsBehaviour::Select(behaviour) => {
+                        behaviour.partial = partial;
+                    },
+                    _ => {
+                        return Err(DarlingError::custom(
+                            "`partial` is only supported by SelectShape",
+                        )
+                        .with_span(method));
+                    },
+                }
+            },
+            "max_depth" | "with_max_depth" => {
+                let max_depth = expect_usize_arg(method, args)?;
+                match &mut self.behaviour {
+                    ComponentsBehaviour::InfiniteSelect(behaviour) => {
+                        behaviour.max_depth = Some(max_depth);
+                    },
+                    _ => {
+                        return Err(DarlingError::custom(
+                            "`max_depth` is only supported by InfiniteSelectState",
+                        )
+                        .with_span(method));
+                    },
+                }
+            },
+            _ => {
+                return Err(DarlingError::custom(format!(
+                    "unknown component behavior `{method}`; supported methods are optional `new`, \
+                     `value_binding`, `component`, `field_suffix`, `searchable`, `partial`, \
+                     and `max_depth`"
+                ))
+                .with_span(method));
+            },
+        }
+
+        Ok(())
     }
 
     pub fn resolved_shape(&self, field_type: &syn::Type) -> syn::Path {
         substitute_infer_in_path(&self.shape, field_type)
     }
 
+    pub fn runtime_shape(&self, field_type: &syn::Type) -> syn::Path {
+        let shape = self.resolved_shape(field_type);
+
+        match &self.behaviour {
+            ComponentsBehaviour::Select(behaviour) if behaviour.searchable => {
+                searchable_select_shape(shape, field_type)
+            },
+            ComponentsBehaviour::InfiniteSelect(behaviour) if behaviour.searchable => {
+                searchable_infinite_select_shape(shape)
+            },
+            _ => shape,
+        }
+    }
+
     pub fn with_field_type(mut self, field_type: &syn::Type) -> Self {
         self.shape = self.resolved_shape(field_type);
+        self
+    }
+
+    pub fn with_field_default(mut self, field_default: Option<syn::Expr>) -> Self {
+        self.field_default = field_default;
         self
     }
 
@@ -122,6 +265,69 @@ impl CustomOptions {
         gpui_form_schema::registry::custom_component_suffix_from_shape(field_name, &shape)
             .unwrap_or_else(|| ComponentKind::Custom.component_name().to_string())
     }
+
+    pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
+        let shape = self.runtime_shape(field_type);
+        let constructor_shape = turbofish_shape_path(shape.clone());
+
+        match &self.behaviour {
+            ComponentsBehaviour::Select(behaviour) => {
+                let constructor = if let Some(default_expr) = self.field_default.as_ref() {
+                    quote! {
+                        #constructor_shape::new_with_initial(
+                            {
+                                let __gpui_form_default = #default_expr;
+                                __gpui_form_default
+                            },
+                            window,
+                            cx,
+                        )
+                    }
+                } else {
+                    quote! {
+                        <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(
+                            window,
+                            cx,
+                        )
+                    }
+                };
+
+                if behaviour.searchable {
+                    quote! {
+                        #constructor.searchable(true)
+                    }
+                } else {
+                    constructor
+                }
+            },
+            ComponentsBehaviour::InfiniteSelect(behaviour) => {
+                let options = infinite_select_options_tokens(behaviour);
+                let initial_value = if let Some(default_expr) = self.field_default.as_ref() {
+                    quote! {
+                        {
+                            let __gpui_form_default = #default_expr;
+                            __gpui_form_default
+                        }
+                    }
+                } else {
+                    quote! { ::core::default::Default::default() }
+                };
+                quote! {
+                    #constructor_shape::new_with_options(
+                        #initial_value,
+                        #options,
+                        window,
+                        cx,
+                    )
+                }
+            },
+            _ => {
+                quote! {
+                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(window, cx)
+                }
+            },
+        }
+    }
 }
 
 impl FromMeta for CustomOptions {
@@ -134,6 +340,389 @@ impl FromMeta for CustomOptions {
     fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
         let meta = CustomOptionsMeta::from_list(items)?;
         Self::from_meta(meta)
+    }
+}
+
+struct ComponentMethod {
+    method: syn::Ident,
+    args: Vec<Expr>,
+}
+
+fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMethod>)> {
+    match expr {
+        Expr::Group(group) => analyze_component_expr(&group.expr),
+        Expr::Paren(paren) => analyze_component_expr(&paren.expr),
+        Expr::MethodCall(method_call) => {
+            let (shape, mut methods) = analyze_component_expr(&method_call.receiver)?;
+            methods.push(ComponentMethod {
+                method: method_call.method.clone(),
+                args: method_call.args.iter().cloned().collect(),
+            });
+            Ok((shape, methods))
+        },
+        Expr::Call(call) => analyze_component_call_expr(call),
+        Expr::Path(path) => Ok((path.path.clone(), Vec::new())),
+        Expr::Lit(expr_lit) => {
+            if let Lit::Str(value) = &expr_lit.lit {
+                return value
+                    .parse::<Path>()
+                    .map(|shape| (shape, Vec::new()))
+                    .map_err(|err| DarlingError::custom(err.to_string()).with_span(value));
+            }
+
+            Err(DarlingError::unexpected_lit_type(&expr_lit.lit))
+        },
+        _ => Err(DarlingError::custom(
+            "component syntax expects a shape path or shape behavior expression",
+        )
+        .with_span(expr)),
+    }
+}
+
+fn analyze_component_call_expr(
+    call: &syn::ExprCall,
+) -> darling::Result<(Path, Vec<ComponentMethod>)> {
+    let func = match &*call.func {
+        Expr::Group(group) => &group.expr,
+        Expr::Paren(paren) => &paren.expr,
+        other => other,
+    };
+
+    let Expr::Path(path_expr) = func else {
+        return Err(DarlingError::custom(
+            "component call must be an associated function on the shape path",
+        )
+        .with_span(func));
+    };
+
+    let mut shape = path_expr.path.clone();
+    let method = pop_component_method(&mut shape)?;
+    Ok((
+        shape,
+        vec![ComponentMethod {
+            method,
+            args: call.args.iter().cloned().collect(),
+        }],
+    ))
+}
+
+fn pop_component_method(path: &mut Path) -> darling::Result<syn::Ident> {
+    let method = path
+        .segments
+        .last()
+        .map(|segment| segment.ident.clone())
+        .ok_or_else(|| DarlingError::custom("component expression requires a shape path"))?;
+
+    path.segments.pop();
+    path.segments.pop_punct();
+    if path.segments.is_empty() {
+        return Err(DarlingError::custom(
+            "component expression requires a shape path before the behavior method",
+        )
+        .with_span(&method));
+    }
+
+    Ok(method)
+}
+
+fn normalize_shape_path(mut path: Path) -> Path {
+    for segment in &mut path.segments {
+        if let syn::PathArguments::AngleBracketed(args) = &mut segment.arguments {
+            args.colon2_token = None;
+        }
+    }
+
+    path
+}
+
+fn turbofish_shape_path(mut path: Path) -> Path {
+    for segment in &mut path.segments {
+        if let syn::PathArguments::AngleBracketed(args) = &mut segment.arguments {
+            args.colon2_token = Some(Default::default());
+        }
+    }
+
+    path
+}
+
+fn parse_expr_args(tokens: TokenStream) -> syn::Result<Vec<Expr>> {
+    if tokens.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(tokens)
+        .map(|args| args.into_iter().collect())
+}
+
+fn expect_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
+    let [arg] = args else {
+        return Err(DarlingError::custom(format!(
+            "`{method}` expects exactly one boolean argument"
+        ))
+        .with_span(method));
+    };
+
+    match arg {
+        Expr::Lit(expr_lit) => match &expr_lit.lit {
+            Lit::Bool(value) => Ok(value.value),
+            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
+        },
+        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
+    }
+}
+
+fn expect_optional_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
+    match args {
+        [] => Ok(true),
+        [_] => expect_bool_arg(method, args),
+        _ => Err(DarlingError::custom(format!(
+            "`{method}` expects zero arguments or one boolean argument"
+        ))
+        .with_span(method)),
+    }
+}
+
+fn expect_path_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Path> {
+    let [arg] = args else {
+        return Err(
+            DarlingError::custom(format!("`{method}` expects exactly one path argument"))
+                .with_span(method),
+        );
+    };
+
+    match arg {
+        Expr::Path(path) => Ok(path.path.clone()),
+        Expr::Lit(expr_lit) => match &expr_lit.lit {
+            Lit::Str(value) => value
+                .parse::<Path>()
+                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
+            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
+        },
+        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
+    }
+}
+
+fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<String> {
+    let [arg] = args else {
+        return Err(DarlingError::custom(format!(
+            "`{method}` expects exactly one string literal argument"
+        ))
+        .with_span(method));
+    };
+
+    match arg {
+        Expr::Lit(expr_lit) => match &expr_lit.lit {
+            Lit::Str(value) => Ok(value.value()),
+            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
+        },
+        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
+    }
+}
+
+fn expect_usize_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<usize> {
+    let [arg] = args else {
+        return Err(DarlingError::custom(format!(
+            "`{method}` expects exactly one integer argument"
+        ))
+        .with_span(method));
+    };
+
+    match arg {
+        Expr::Lit(expr_lit) => match &expr_lit.lit {
+            Lit::Int(value) => value
+                .base10_parse::<usize>()
+                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
+            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
+        },
+        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
+    }
+}
+
+fn inferred_shape_defaults(shape: &Path) -> (ComponentsBehaviour, bool) {
+    let Some(ident) = shape_ident(shape) else {
+        return (ComponentsBehaviour::Custom, true);
+    };
+
+    match ident.as_str() {
+        "InputShape" => (ComponentsBehaviour::Input, true),
+        "CheckboxShape" => (ComponentsBehaviour::Checkbox, false),
+        "SwitchShape" => (ComponentsBehaviour::Switch, false),
+        "SelectShape" => (
+            ComponentsBehaviour::Select(SelectBehaviour::default()),
+            false,
+        ),
+        "InfiniteSelectState" => (
+            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour::default()),
+            false,
+        ),
+        "SearchableInfiniteSelectState" => (
+            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
+                searchable: true,
+                max_depth: None,
+            }),
+            false,
+        ),
+        _ => (ComponentsBehaviour::Custom, true),
+    }
+}
+
+fn shape_ident(shape: &Path) -> Option<String> {
+    shape
+        .segments
+        .last()
+        .map(|segment| segment.ident.to_string())
+}
+
+fn type_arg_count(path: &Path) -> usize {
+    path.segments
+        .last()
+        .and_then(|segment| match &segment.arguments {
+            syn::PathArguments::AngleBracketed(args) => Some(
+                args.args
+                    .iter()
+                    .filter(|arg| matches!(arg, syn::GenericArgument::Type(_)))
+                    .count(),
+            ),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
+fn searchable_select_shape(mut shape: Path, field_type: &syn::Type) -> Path {
+    let existing_type_args = type_arg_count(&shape);
+    if shape_ident(&shape).as_deref() != Some("SelectShape") || existing_type_args > 1 {
+        return shape;
+    }
+
+    let selected_type = field_type.clone();
+    let delegate_type: syn::Type = syn::parse_quote! {
+        ::gpui_component::select::SearchableVec<#selected_type>
+    };
+    let Some(segment) = shape.segments.last_mut() else {
+        return shape;
+    };
+
+    match &mut segment.arguments {
+        syn::PathArguments::AngleBracketed(args) => {
+            if existing_type_args == 0 {
+                args.args
+                    .push(syn::GenericArgument::Type(field_type.clone()));
+            }
+            args.args.push(syn::GenericArgument::Type(delegate_type));
+        },
+        _ => {
+            let args: syn::AngleBracketedGenericArguments =
+                syn::parse_quote!(<#field_type, #delegate_type>);
+            segment.arguments = syn::PathArguments::AngleBracketed(args);
+        },
+    }
+
+    shape
+}
+
+fn searchable_infinite_select_shape(mut shape: Path) -> Path {
+    if shape_ident(&shape).as_deref() != Some("InfiniteSelectState") || type_arg_count(&shape) > 1 {
+        return shape;
+    }
+
+    if let Some(segment) = shape.segments.last_mut() {
+        segment.ident = syn::Ident::new("SearchableInfiniteSelectState", segment.ident.span());
+    }
+
+    shape
+}
+
+fn infinite_select_options_tokens(behaviour: &InfiniteSelectBehaviour) -> TokenStream {
+    let searchable = behaviour.searchable;
+    let base = quote! {
+        ::gpui_form_component::infinite_select::InfiniteSelectStateOptions::default()
+            .searchable(#searchable)
+    };
+
+    if let Some(max_depth) = behaviour.max_depth {
+        quote! { #base.max_depth(#max_depth) }
+    } else {
+        base
+    }
+}
+
+fn behaviour_tokens(behaviour: &ComponentsBehaviour) -> TokenStream {
+    match behaviour {
+        ComponentsBehaviour::Input => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Input }
+        },
+        ComponentsBehaviour::NumberInput(options) => {
+            let validation_type = match options.validation_type {
+                Some(value) => quote! { Some(#value) },
+                None => quote! { None },
+            };
+            let kind = match options.kind {
+                gpui_form_schema::components::NumberInputKind::Float => {
+                    quote! { ::gpui_form::schema::components::NumberInputKind::Float }
+                },
+                gpui_form_schema::components::NumberInputKind::SignedInteger => {
+                    quote! { ::gpui_form::schema::components::NumberInputKind::SignedInteger }
+                },
+                gpui_form_schema::components::NumberInputKind::UnsignedInteger => {
+                    quote! { ::gpui_form::schema::components::NumberInputKind::UnsignedInteger }
+                },
+                gpui_form_schema::components::NumberInputKind::Custom => {
+                    quote! { ::gpui_form::schema::components::NumberInputKind::Custom }
+                },
+            };
+
+            quote! {
+                ::gpui_form::schema::components::ComponentsBehaviour::NumberInput(
+                    ::gpui_form::schema::components::NumberInputBehaviour {
+                        validation_type: #validation_type,
+                        kind: #kind,
+                    }
+                )
+            }
+        },
+        ComponentsBehaviour::Checkbox => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Checkbox }
+        },
+        ComponentsBehaviour::Switch => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Switch }
+        },
+        ComponentsBehaviour::Select(options) => {
+            let searchable = options.searchable;
+            let partial = options.partial;
+            quote! {
+                ::gpui_form::schema::components::ComponentsBehaviour::Select(
+                    ::gpui_form::schema::components::SelectBehaviour {
+                        partial: #partial,
+                        searchable: #searchable,
+                    }
+                )
+            }
+        },
+        ComponentsBehaviour::InfiniteSelect(options) => {
+            let searchable = options.searchable;
+            let max_depth = match options.max_depth {
+                Some(max_depth) => quote! { Some(#max_depth) },
+                None => quote! { None },
+            };
+            quote! {
+                ::gpui_form::schema::components::ComponentsBehaviour::InfiniteSelect(
+                    ::gpui_form::schema::components::InfiniteSelectBehaviour {
+                        searchable: #searchable,
+                        max_depth: #max_depth,
+                    }
+                )
+            }
+        },
+        ComponentsBehaviour::Custom => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Custom }
+        },
+        ComponentsBehaviour::DatePicker => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::DatePicker }
+        },
+        ComponentsBehaviour::FilePicker => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::FilePicker }
+        },
     }
 }
 
@@ -205,16 +794,74 @@ impl CustomComponent {
     }
 }
 
-#[derive(Clone, Debug, FromMeta)]
-#[darling(rename_all = "snake_case")]
+#[derive(Clone, Debug)]
 pub enum Components {
     Custom(CustomOptions),
+}
+
+impl FromMeta for Components {
+    fn from_word() -> darling::Result<Self> {
+        Err(DarlingError::custom(
+            "component requires a shape expression, for example \
+             `component = my::Shape`",
+        ))
+    }
+
+    fn from_expr(expr: &Expr) -> darling::Result<Self> {
+        CustomOptions::from_component_expr(expr).map(Self::Custom)
+    }
+
+    fn from_string(value: &str) -> darling::Result<Self> {
+        if let Ok(expr) = syn::parse_str::<Expr>(value)
+            && let Ok(component) = Self::from_expr(&expr)
+        {
+            return Ok(component);
+        }
+
+        syn::parse_str::<Path>(value)
+            .map(CustomOptions::from_shape)
+            .map(Self::Custom)
+            .map_err(|err| DarlingError::custom(err.to_string()))
+    }
+
+    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
+        let [item] = items else {
+            return Err(DarlingError::custom(
+                "component expects one shape expression or one `custom(...)` block",
+            ));
+        };
+
+        match item {
+            darling::ast::NestedMeta::Meta(syn::Meta::List(meta_list))
+                if meta_list.path.is_ident("custom") =>
+            {
+                <CustomOptions as FromMeta>::from_meta(&syn::Meta::List(meta_list.clone()))
+                    .map(Self::Custom)
+            },
+            darling::ast::NestedMeta::Meta(syn::Meta::Path(path)) => {
+                Ok(Self::Custom(CustomOptions::from_shape(path.clone())))
+            },
+            darling::ast::NestedMeta::Meta(syn::Meta::List(meta_list)) => {
+                CustomOptions::from_component_meta_list(meta_list).map(Self::Custom)
+            },
+            darling::ast::NestedMeta::Lit(Lit::Str(value)) => value
+                .parse::<Path>()
+                .map(CustomOptions::from_shape)
+                .map(Self::Custom)
+                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
+            darling::ast::NestedMeta::Lit(lit) => Err(DarlingError::unexpected_lit_type(lit)),
+            darling::ast::NestedMeta::Meta(meta) => Err(DarlingError::custom(
+                "unsupported component metadata; use a shape expression or `custom(...)`",
+            )
+            .with_span(meta)),
+        }
+    }
 }
 
 impl Components {
     pub const fn kind(&self) -> ComponentKind {
         match self {
-            Self::Custom(_) => ComponentKind::Custom,
+            Self::Custom(options) => options.behaviour.kind(),
         }
     }
 
@@ -228,14 +875,17 @@ impl Components {
         &self,
         field_name: String,
         field_type: syn::Type,
-        _field_default: Option<syn::Expr>,
+        field_default: Option<syn::Expr>,
     ) -> GeneratedFieldLayout {
         let mut field_structure_tokens = TokenStream::new();
         let mut field_base_declarations_tokens = TokenStream::new();
 
         match self {
             Self::Custom(options) => {
-                let options = options.clone().with_field_type(&field_type);
+                let options = options
+                    .clone()
+                    .with_field_default(field_default)
+                    .with_field_type(&field_type);
                 let component =
                     CustomComponent(FieldInformation::new(options, field_name, field_type));
                 component.field_tokens(
@@ -254,9 +904,7 @@ impl Components {
 
     pub fn behaviour_tokens(&self, _field_type: &syn::Type) -> TokenStream {
         match self {
-            Self::Custom(_) => {
-                quote! { ::gpui_form::schema::components::ComponentsBehaviour::Custom }
-            },
+            Self::Custom(options) => behaviour_tokens(&options.behaviour),
         }
     }
 

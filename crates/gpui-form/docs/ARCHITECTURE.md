@@ -63,7 +63,8 @@ users opt into those component APIs explicitly.
 1. Generated value-holder code references `gpui_form::core`,
    `gpui_form::numeric`, and `gpui_form::bon` where needed.
 1. Generated component field code references
-   `gpui_form_component::custom` when a field uses `component(custom(...))`.
+   `gpui_form_component::custom` when a field uses a component shape
+   expression, such as `component = Shape`.
    Users of component-backed fields must depend on `gpui-form-component`
    explicitly.
 

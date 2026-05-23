@@ -16,7 +16,8 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
     )
 }
 
-/// Derive macro for custom component state types used by `component(custom(...))`.
+/// Derive macro for custom component state types used by
+/// `#[gpui_form(component = Shape)]`.
 ///
 /// By default it calls `Self::new(window, cx)`. Override the constructor with:
 /// `#[gpui_form_custom(new = path::to::constructor)]`.

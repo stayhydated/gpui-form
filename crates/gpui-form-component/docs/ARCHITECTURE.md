@@ -35,7 +35,8 @@ schema metadata:
 ### `custom`
 
 `CustomComponentShape` is the contract targeted by
-`component(custom(shape = ...))` and `component(custom(state = ...))`.
+`component = Shape` expressions and legacy
+`component(custom(shape = ...))` / `component(custom(state = ...))` metadata.
 
 Responsibilities:
 

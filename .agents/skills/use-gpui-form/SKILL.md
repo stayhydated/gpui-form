@@ -38,7 +38,7 @@ helpers and component-specific derives explicitly:
    `UserProfileFormValueHolder`.
 6. Use `#[gpui_form(default = ...)]` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
-   `#[gpui_form(type = ..., from = ..., into = ..., component(...))]` when the
+   `#[gpui_form(type = ..., from = ..., into = ..., component = ...)]` when the
    UI edits a form-side type that differs from the model field. Text input
    prototyping parses non-`String` form-side types with `FromStr`.
 7. Use paths such as `gpui_form_component::date_picker`,
@@ -71,13 +71,17 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+    #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
     pub age: Option<u32>,
 
-    #[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)), default = Country::France)]
+    #[gpui_form(
+        component = gpui_form_collection::select::SelectShape::<_>
+            .searchable(),
+        default = Country::France
+    )]
     pub country: Country,
 }
 ```
@@ -85,8 +89,9 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false))`.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3)` when search or depth limits are needed.
+- Treat value-holder wrapping as internal derive behavior for known collection/runtime shapes; do not add a public wrapping method to the component expression chain.
 - For custom widgets, derive `CustomComponentState` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
-- For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `component(custom(shape = ..., value_binding))`.
+- For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`.
 - Let reusable custom shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection shapes already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and custom shapes without metadata fall back to the shape-name heuristic.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

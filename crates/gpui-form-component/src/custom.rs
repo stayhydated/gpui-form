@@ -31,7 +31,7 @@ pub trait CustomComponentShape {
     /// Whether generated prototyping code should wire this custom component
     /// through [`CustomComponentValueAdapter`] by default.
     ///
-    /// Field-level `component(custom(..., value_binding))` still opts in
+    /// Field-level `component = Shape.value_binding()` still opts in
     /// explicitly. This shape-level flag is useful when the component's derive
     /// or reusable shape owns the metadata and each field should inherit it.
     const VALUE_BINDING: bool = false;
@@ -98,7 +98,7 @@ impl<T> CustomComponentValueChange<T> {
 /// Implement this alongside [`CustomComponentShape`] when generated
 /// prototyping code should seed the component from the form value holder and
 /// subscribe to component events. The form derive opts into this path either
-/// with `component(custom(..., value_binding))` or by inheriting
+/// with `component = Shape.value_binding()` or by inheriting
 /// [`CustomComponentShape::VALUE_BINDING`] from the shape.
 pub trait CustomComponentValueAdapter<T>: CustomComponentShape {
     /// Event emitted by the custom component state.

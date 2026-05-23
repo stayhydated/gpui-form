@@ -41,15 +41,16 @@ Useful runtime/helper paths:
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
-#[gpui_form(component(custom(shape = "gpui_form_collection::select::SelectShape<_>", wraps_in_option = false)))]
-#[gpui_form(component(custom(shape = gpui_form_collection::checkbox::CheckboxShape, wraps_in_option = false)))]
-#[gpui_form(component(custom(shape = gpui_form_collection::switch::SwitchShape, wraps_in_option = false)))]
-#[gpui_form(component(custom(shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>", wraps_in_option = false)))]
-#[gpui_form(component(custom(shape = my::Shape)))]
-#[gpui_form(component(custom(state = my::State)))]
-#[gpui_form(component(custom(shape = my::Shape, component = my::ui::Widget)))]
-#[gpui_form(component(custom(shape = my::Shape, wraps_in_option = false)))]
+#[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
+#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>)]
+#[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable().partial())]
+#[gpui_form(component = gpui_form_collection::checkbox::CheckboxShape)]
+#[gpui_form(component = gpui_form_collection::switch::SwitchShape)]
+#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelectState::<_>.searchable().max_depth(3))]
+#[gpui_form(component = my::Shape)]
+#[gpui_form(component = my::Shape.component(my::ui::Widget))]
+#[gpui_form(component = my::Shape.value_binding())]
+#[gpui_form(component = my::Shape.field_suffix("input"))]
 ```
 
 Common field attributes:
@@ -70,17 +71,25 @@ Common struct attributes:
 
 ## Component Selection
 
-- Use `gpui_form_collection::input::InputShape<_>` for text-like and
+- Use `gpui_form_collection::input::InputShape::<_>` for text-like and
   `FromStr`-parsable values.
 - Use `gpui_form_collection::checkbox::CheckboxShape` or
   `gpui_form_collection::switch::SwitchShape` for `bool` fields.
-- Use `gpui_form_collection::select::SelectShape<_>` for a single enum-like
-  choice; derive `SelectItem`.
-- Use `gpui_form_component::infinite_select::InfiniteSelectState<_>` for
-  nested/cascading enum trees; derive `InfiniteSelect`.
+- Use `gpui_form_collection::select::SelectShape::<_>` for a single enum-like
+  choice; derive `SelectItem`. Chain `.searchable()` or `.partial()` when the
+  select should expose those behaviors.
+- Use `gpui_form_component::infinite_select::InfiniteSelectState::<_>` for
+  nested/cascading enum trees; derive `InfiniteSelect`. Chain `.searchable()`
+  and `.max_depth(...)` when needed.
 - Use a custom shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
-- Use `custom(...)` when the app owns the state/widget contract.
+- Use `component = my::Shape` when the app owns the state/widget
+  contract. The older `component(custom(...))` form is still accepted.
+- Treat the shape expression and chained component behavior methods as derive
+  metadata; runtime construction still uses `CustomComponentShape::new`. A
+  trailing `.new()` marker remains accepted for compatibility.
+- Treat generated value-holder wrapping as internal derive behavior for known
+  reusable shapes.
 
 ## Generated Names
 
@@ -133,10 +142,11 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(component(custom(
-        shape = "gpui_form_component::infinite_select::InfiniteSelectState<_>",
-        wraps_in_option = false
-    )))]
+    #[gpui_form(
+        component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+            .searchable()
+            .max_depth(3)
+    )]
     pub location: Country,
 }
 ```
@@ -155,7 +165,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp,
-        component(custom(shape = crate::DatePickerShape))
+        component = crate::DatePickerShape
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -178,8 +188,8 @@ pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(component(custom(state = TagsInputState, wraps_in_option = false)))]
-    pub tags: Vec<String>,
+    #[gpui_form(component = TagsInputState)]
+    pub tags: Option<Vec<String>>,
 }
 ```
 

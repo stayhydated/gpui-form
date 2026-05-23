@@ -647,7 +647,9 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::shapes::BioInputShape, component = crate::ui::BioInput, value_binding)))]
+                #[gpui_form(component = crate::shapes::BioInputShape
+                    .component(crate::ui::BioInput)
+                    .value_binding())]
                 bio: String,
             }
         };
@@ -707,7 +709,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::state::TagsState, field_suffix = "tags")))]
+                #[gpui_form(component = crate::state::TagsState.field_suffix("tags"))]
                 labels: Vec<String>,
             }
         };
@@ -777,11 +779,11 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_custom_component_wraps_in_option_controls_value_holder_field() {
+    fn test_known_shape_wraps_in_option_policy_is_internal() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = crate::shapes::ToggleShape, wraps_in_option = false)))]
+                #[gpui_form(component = gpui_form_collection::switch::SwitchShape)]
                 enabled: bool,
             }
         };
@@ -798,11 +800,15 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains("pubenabled:bool"),
-            "wraps_in_option = false should keep value holder field non-optional"
+            "switch shape should keep value holder field non-optional"
         );
         assert!(
             !compact.contains("pubenabled:Option<bool>"),
-            "wraps_in_option = false should avoid wrapping in Option"
+            "switch shape should avoid wrapping in Option"
+        );
+        assert!(
+            compact.contains("with_wraps_in_option(false)"),
+            "known shape wrapping policy should be stored as metadata: {compact}"
         );
     }
 
@@ -844,7 +850,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(custom(shape = "gpui_form_collection::input::InputShape<_>")))]
+                #[gpui_form(component = gpui_form_collection::input::InputShape::<_>)]
                 account_no: crate::types::AccountCode,
             }
         };
@@ -874,6 +880,140 @@ mod gpui_form_tests {
                 "with_custom_shape(\"gpui_form_collection::input::InputShape<crate::types::AccountCode>\")"
             ),
             "custom shape metadata should store the resolved shape path: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_select_shape_exposes_searchable_behavior() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.searchable())]
+                country: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("SelectBehaviour{partial:false,searchable:true,}"),
+            "select searchable behavior should be recorded in FieldVariant metadata: {compact}"
+        );
+        assert!(
+            compact.contains(".searchable(true)"),
+            "select searchable behavior should be applied to the generated constructor: {compact}"
+        );
+        assert!(
+            compact.contains("gpui_component::select::SearchableVec<crate::types::Country>"),
+            "searchable select should use the searchable delegate shape: {compact}"
+        );
+        assert!(
+            compact.contains("pubcountry_select:::gpui::Entity<"),
+            "searchable select should keep the normal select field name: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "with_custom_shape(\"gpui_form_collection::select::SelectShape<crate::types::Country>\")"
+            ),
+            "searchable select metadata should keep the original shape identity: {compact}"
+        );
+        assert!(
+            !compact.contains("with_custom_shape(\"gpui_form_collection::select::SelectShape<crate::types::Country,"),
+            "searchable select behavior should not leak into custom shape metadata: {compact}"
+        );
+        assert!(
+            compact.contains("pubcountry:crate::types::Country"),
+            "select shape should keep required value holder fields non-optional: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_select_shape_exposes_partial_behavior() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component = gpui_form_collection::select::SelectShape::<_>.partial())]
+                country: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("SelectBehaviour{partial:true,searchable:false,}"),
+            "select partial behavior should be recorded in FieldVariant metadata: {compact}"
+        );
+        assert!(
+            !compact.contains("pubfncountry_select("),
+            "partial select should not emit a base component constructor: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_infinite_select_shape_exposes_behavior_options() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(
+                    component = gpui_form_component::infinite_select::InfiniteSelectState::<_>
+                        .searchable()
+                        .max_depth(3)
+                )]
+                location: crate::types::Country,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("InfiniteSelectBehaviour{searchable:true,max_depth:Some(3"),
+            "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
+        );
+        assert!(
+            compact.contains("SearchableInfiniteSelectState<crate::types::Country>"),
+            "searchable infinite select should use the searchable state alias: {compact}"
+        );
+        assert!(
+            compact.contains("publocation_infinite_select:::gpui::Entity<"),
+            "searchable infinite select should keep the normal infinite-select field name: {compact}"
+        );
+        assert!(
+            !compact.contains("location_searchable_infinite_select"),
+            "searchable infinite select should not include behavior in generated field names: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "with_custom_shape(\"gpui_form_component::infinite_select::InfiniteSelectState<crate::types::Country>\")"
+            ),
+            "searchable infinite select metadata should keep the original shape identity: {compact}"
+        );
+        assert!(
+            compact.contains(".max_depth(3"),
+            "infinite-select max depth should be applied to runtime options: {compact}"
         );
     }
 }
