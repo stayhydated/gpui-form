@@ -82,11 +82,11 @@ The fallback suffix strips shape/state wrappers and removes duplicated
 field-name prefixes before falling back to the behavior name. Explicit
 prototyping suffix metadata is normalized against the field name the same way.
 
-`requires_value` is emitted metadata and, for legacy `custom(...)` attributes,
-a metadata key rather than a component expression-chain setter. Known reusable
-shape wrappers infer whether a missing generated holder value is invalid in
-`gpui-form-codegen`, while `behaviour` carries shape settings such as select
-`searchable` / `partial` and infinite-select `searchable` / `max_depth`.
+`requires_value` is emitted metadata inferred by `gpui-form-codegen`; it is not
+a field-level component expression setter. Known reusable shape wrappers infer
+whether a missing generated holder value is invalid, while `behaviour` carries
+shape settings such as select `searchable` / `partial` and infinite-select
+`searchable` / `max_depth`.
 
 ## Data Flow
 

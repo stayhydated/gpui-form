@@ -39,9 +39,8 @@ the text shape or also verifies that the text can parse into `T`.
 ## Data Flow
 
 1. `gpui-form-codegen` emits `number_input` handlers that call numeric helpers
-   through facade paths such as `gpui_form::numeric::*`.
-1. The facade re-exports this crate as `gpui_form::core` and the module as
-   `gpui_form::numeric`.
+   through `gpui_form::core::numeric::*`.
+1. The facade re-exports this crate as `gpui_form::core`.
 1. Generated number-input code uses the helpers during incremental text edits
    before committing parsed values into the holder.
 

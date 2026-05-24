@@ -2,13 +2,10 @@ use darling::{Error as DarlingError, FromField, FromMeta, ast::NestedMeta};
 use gpui_form_codegen::components::Components;
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
-use quote::ToTokens;
 use syn::{
-    Expr, ExprAssign, ExprCall, ExprGroup, ExprParen, ExprPath, Ident, Lit, MacroDelimiter, Meta,
-    MetaList, Type, TypePath,
+    Expr, ExprAssign, ExprGroup, ExprParen, ExprPath, Ident, Lit, Meta, MetaList, Type, TypePath,
     parse::{Parse, ParseStream, Parser as _, discouraged::Speculative},
     punctuated::Punctuated,
-    token::Paren,
 };
 
 #[derive(Clone, Debug)]
@@ -213,10 +210,10 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
     match expr {
         Expr::Assign(ExprAssign { left, right, .. }) => parse_assignment(field, *left, *right),
         Expr::Path(path) => parse_path_keyword(field, path),
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
-            field.component = Some(parse_component_call_expr(&call)?);
-            Ok(())
-        },
+        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => Err(
+            DarlingError::custom("component(...) syntax was removed; use `component = ...`")
+                .with_span(&call),
+        ),
         _ => {
             if field.component.is_some() {
                 return Err(DarlingError::custom(
@@ -303,10 +300,12 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
     }
 }
 
-fn parse_meta_list(field: &mut ComponentField, list: MetaList) -> darling::Result<()> {
+fn parse_meta_list(_field: &mut ComponentField, list: MetaList) -> darling::Result<()> {
     if list.path.is_ident("component") {
-        field.component = Some(parse_component_list(list)?);
-        return Ok(());
+        return Err(DarlingError::custom(
+            "component(...) syntax was removed; use `component = ...`",
+        )
+        .with_span(&list.path));
     }
 
     let key = meta_path_to_key(&list.path)?;
@@ -314,39 +313,6 @@ fn parse_meta_list(field: &mut ComponentField, list: MetaList) -> darling::Resul
         DarlingError::custom(format!("unknown gpui_form field option `{key}`"))
             .with_span(&list.path),
     )
-}
-
-fn parse_component_list(list: MetaList) -> darling::Result<Components> {
-    let args = Punctuated::<NestedMeta, syn::Token![,]>::parse_terminated
-        .parse2(list.tokens.clone())
-        .map_err(|err| DarlingError::custom(err.to_string()).with_span(&list))?;
-
-    let mut args = args.into_iter();
-    let Some(custom_arg) = args.next() else {
-        return Err(DarlingError::custom(
-            "`component(...)` expects one `custom(...)` argument",
-        ));
-    };
-
-    if args.next().is_some() {
-        return Err(DarlingError::custom(
-            "`component(...)` expects exactly one argument",
-        ));
-    }
-
-    let NestedMeta::Meta(Meta::List(custom_list)) = custom_arg else {
-        return Err(DarlingError::custom(
-            "`component(...)` currently supports `custom(...)` only",
-        ));
-    };
-
-    if !is_meta_path_ident(&custom_list.path, "custom") {
-        return Err(DarlingError::custom(
-            "`component(...)` currently supports `custom(...)` only",
-        ));
-    }
-
-    Components::from_list(&[NestedMeta::Meta(Meta::List(custom_list))])
 }
 
 fn parse_meta_path_keyword(field: &mut ComponentField, path: syn::Path) -> darling::Result<()> {
@@ -419,53 +385,12 @@ fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling
 fn parse_component_expr(expr: Expr) -> darling::Result<Components> {
     let expr = unwrap_grouped_expr(expr);
     match expr {
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
-            parse_component_call_expr(&call)
-        },
+        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => Err(
+            DarlingError::custom("component(...) syntax was removed; use `component = ...`")
+                .with_span(&call),
+        ),
         _ => Components::from_expr(&expr),
     }
-}
-
-fn parse_component_call_expr(expr: &ExprCall) -> darling::Result<Components> {
-    let mut args = expr.args.iter();
-    let Some(custom_shape_arg) = args.next() else {
-        return Err(DarlingError::custom(
-            "`component(...)` expects one `custom(...)` argument",
-        ));
-    };
-
-    if args.next().is_some() {
-        return Err(DarlingError::custom(
-            "`component(...)` expects exactly one argument",
-        ));
-    }
-
-    let Expr::Call(custom_call) = custom_shape_arg else {
-        return Err(DarlingError::custom(
-            "`component(...)` currently supports `custom(...)` only",
-        ));
-    };
-
-    if !is_path_ident(custom_call.func.as_ref(), "custom") {
-        return Err(DarlingError::custom(
-            "`component(...)` currently supports `custom(...)` only",
-        ));
-    }
-
-    let custom_path = match custom_call.func.as_ref() {
-        Expr::Path(expr_path) => expr_path.path.clone(),
-        _ => {
-            return Err(DarlingError::custom(
-                "`custom` component syntax requires a path",
-            ));
-        },
-    };
-    let list = MetaList {
-        path: custom_path,
-        delimiter: MacroDelimiter::Paren(Paren::default()),
-        tokens: custom_call.args.to_token_stream(),
-    };
-    Components::from_list(&[NestedMeta::Meta(Meta::List(list))])
 }
 
 fn parse_bool_expr(expr: &Expr) -> darling::Result<bool> {
@@ -495,10 +420,6 @@ fn is_path_ident(expr: &Expr, key: &str) -> bool {
     } else {
         false
     }
-}
-
-fn is_meta_path_ident(path: &syn::Path, key: &str) -> bool {
-    path.is_ident(key)
 }
 
 fn meta_path_to_key(path: &syn::Path) -> darling::Result<String> {

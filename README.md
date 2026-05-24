@@ -103,8 +103,6 @@ pub struct UserProfile {
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
-The older `component(custom(shape = ...))` and `component(custom(state = ...))`
-forms are still accepted for compatibility.
 The expression is parsed as attribute metadata; generated runtime construction
 delegates to `CustomComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
@@ -116,8 +114,6 @@ in the holder until validation or conversion, while
 `gpui_form_collection::switch::Switch`, and
 `gpui_form_component::infinite_select::InfiniteSelect` keep non-optional source fields
 as `T`.
-In the legacy `component(custom(...))` form, `requires_value = false` opts a
-custom shape out of that required-value holder behavior.
 
 Common field-level helpers:
 

@@ -9,7 +9,7 @@ layer, including custom component shape derives and helper macros.
 ## What This Crate Provides
 
 - `#[derive(GpuiForm)]`
-- `#[derive(CustomComponent)]` / `#[derive(CustomComponentState)]`
+- `#[derive(CustomComponent)]`
 - `custom_component! { ... }`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
@@ -50,8 +50,6 @@ Supported component forms:
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
-The older `component(custom(shape = ...))` and `component(custom(state = ...))`
-forms are still accepted for compatibility.
 The expression is parsed as attribute metadata; generated runtime construction
 delegates to `CustomComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
@@ -84,8 +82,6 @@ Behavior notes:
   `gpui_form_collection::input::Input` allows required source fields to be
   absent in the holder until validation or conversion, while select, checkbox,
   switch, and infinite-select components keep required fields as `T`
-- in the legacy `component(custom(...))` form, `requires_value = false` opts a
-  custom shape out of required-value holder behavior
 - `searchable(true)` and `.partial(true)` record select behavior metadata
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata
@@ -111,11 +107,9 @@ Behavior notes:
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion
 
-## `#[derive(CustomComponent)]` / `#[derive(CustomComponentState)]`
+## `#[derive(CustomComponent)]`
 
 Implements `gpui_form_component::custom::CustomComponentShape` directly for a state type.
-`CustomComponentState` is kept as a compatibility alias; new reusable custom
-component metadata should prefer the shorter `CustomComponent` name.
 
 ```rs
 use gpui_form_derive::CustomComponent;

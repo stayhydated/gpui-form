@@ -34,9 +34,8 @@ schema metadata:
 
 ### `custom`
 
-`CustomComponentShape` is the contract targeted by
-`component = Shape` expressions and legacy
-`component(custom(shape = ...))` / `component(custom(state = ...))` metadata.
+`CustomComponentShape` is the contract targeted by `component = Shape`
+expressions.
 
 Responsibilities:
 
@@ -131,7 +130,7 @@ Responsibilities:
 ### Custom components
 
 1. Users either declare a shape with `custom_component_shape!` or derive
-   `CustomComponentState`.
+   `CustomComponent`.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path

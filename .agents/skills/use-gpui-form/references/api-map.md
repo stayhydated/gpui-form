@@ -26,7 +26,7 @@ Use the facade for `GpuiForm` and import component derives explicitly:
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
 use gpui_form_component::InfiniteSelect;
-use gpui_form_derive::CustomComponentState;
+use gpui_form_derive::CustomComponent;
 ```
 
 Useful runtime/helper paths:
@@ -35,7 +35,7 @@ Useful runtime/helper paths:
 - `gpui_form_component::date_picker`
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
-- `gpui_form::numeric`
+- `gpui_form::core::numeric`
 - `gpui_form_component::custom_component_shape!`
 
 ## Supported Component Syntax
@@ -83,8 +83,7 @@ Common struct attributes:
   `::searchable(true)` and `.max_depth(...)` when needed.
 - Use a custom shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
-- Use `component = my::Shape` when the app owns the state/widget
-  contract. The older `component(custom(...))` form is still accepted.
+- Use `component = my::Shape` when the app owns the state/widget contract.
 - Treat the component expression and chained component behavior methods as derive
   metadata; runtime construction still uses `CustomComponentShape::new`.
 - Treat generated value-holder wrapping as internal derive behavior for known
@@ -178,9 +177,9 @@ Derive directly on a state type:
 
 ```rust
 use gpui_form::GpuiForm;
-use gpui_form_derive::CustomComponentState;
+use gpui_form_derive::CustomComponent;
 
-#[derive(Clone, Debug, CustomComponentState)]
+#[derive(Clone, Debug, CustomComponent)]
 #[gpui_form_custom(new = Self::new, component = TagsInput)]
 pub struct TagsInputState;
 

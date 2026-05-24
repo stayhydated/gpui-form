@@ -12,7 +12,6 @@ power the rest of the ecosystem.
 
 - `#[derive(GpuiForm)]`
 - `#[derive(CustomComponent)]`
-- `#[derive(CustomComponentState)]`
 - `custom_component!`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
@@ -33,7 +32,7 @@ that crate's `derive` feature is enabled.
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
-- `src/derives/custom_component_state.rs`: `CustomComponentState` expansion
+- `src/derives/custom_component_state.rs`: `CustomComponent` derive expansion
 - `src/derives/custom_component.rs`: function-like custom component shape
   expansion for local wrappers around external component/state types
 
@@ -98,10 +97,9 @@ When the `inventory` feature is enabled:
 
 ## Other Derives
 
-### `CustomComponent` / `CustomComponentState`
+### `CustomComponent`
 
 - emits a `CustomComponentShape` impl directly for a state type
-- `CustomComponentState` is a compatibility alias for the same expansion
 - defaults constructor wiring to `Self::new(window, cx)`
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for

@@ -5,7 +5,7 @@ use syn::{DeriveInput, Path, parse_macro_input};
 
 #[derive(Debug, Default, FromAttributes)]
 #[darling(attributes(gpui_form_custom))]
-struct CustomComponentStateMeta {
+struct CustomComponentMeta {
     #[darling(default)]
     new: Option<Path>,
     /// Optional UI component type path.
@@ -28,8 +28,8 @@ struct CustomComponentStateMeta {
     custom_crate: Option<Path>,
 }
 
-fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<CustomComponentStateMeta> {
-    CustomComponentStateMeta::from_attributes(attrs)
+fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<CustomComponentMeta> {
+    CustomComponentMeta::from_attributes(attrs)
 }
 
 fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
@@ -103,9 +103,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_default_new_path() {
+    fn test_custom_component_default_new_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             struct TagsState;
         })
         .unwrap();
@@ -124,9 +124,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_explicit_new_path() {
+    fn test_custom_component_explicit_new_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             #[gpui_form_custom(new = crate::state::build)]
             struct TagsState;
         })
@@ -146,9 +146,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_with_component_path() {
+    fn test_custom_component_with_component_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             #[gpui_form_custom(new = Self::new, component = crate::ui::TagsInput)]
             struct TagsState;
         })
@@ -168,9 +168,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_with_value_binding() {
+    fn test_custom_component_with_value_binding() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             #[gpui_form_custom(new = Self::new, value_binding)]
             struct TagsState;
         })
@@ -186,9 +186,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_with_field_suffix() {
+    fn test_custom_component_with_field_suffix() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             #[gpui_form_custom(new = Self::new, field_suffix = "tags")]
             struct TagsState;
         })
@@ -204,9 +204,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_state_with_custom_crate_path() {
+    fn test_custom_component_with_custom_crate_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponentState)]
+            #[derive(CustomComponent)]
             #[gpui_form_custom(new = Self::new, custom_crate = crate)]
             struct TagsState;
         })

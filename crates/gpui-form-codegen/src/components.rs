@@ -1,10 +1,10 @@
-use darling::{Error as DarlingError, FromMeta, util::Flag};
+use darling::{Error as DarlingError, FromMeta};
 use gpui_form_schema::components::{
     ComponentKind, ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour,
 };
 use proc_macro2::TokenStream;
 use quote::{ToTokens as _, quote};
-use syn::{Expr, Lit, Path, Token, parse::Parser as _, punctuated::Punctuated};
+use syn::{Expr, Lit, Path};
 
 use crate::implementations::ComponentLayout as _;
 
@@ -61,22 +61,6 @@ pub struct CustomOptions {
     component_methods: Vec<ComponentMethod>,
 }
 
-#[derive(Debug, Default, FromMeta)]
-struct CustomOptionsMeta {
-    #[darling(default)]
-    shape: Option<syn::Path>,
-    #[darling(default)]
-    state: Option<syn::Path>,
-    #[darling(default)]
-    component: Option<syn::Path>,
-    #[darling(default)]
-    requires_value: Option<bool>,
-    #[darling(default)]
-    value_binding: Flag,
-    #[darling(default)]
-    field_suffix: Option<String>,
-}
-
 impl CustomOptions {
     fn from_shape(shape: Path) -> Self {
         let shape = normalize_shape_path(shape);
@@ -92,41 +76,6 @@ impl CustomOptions {
             field_suffix: field_suffix.map(str::to_owned),
             component_methods: Vec::new(),
         }
-    }
-
-    fn from_meta(meta: CustomOptionsMeta) -> darling::Result<Self> {
-        let CustomOptionsMeta {
-            shape,
-            state,
-            component,
-            requires_value,
-            value_binding,
-            field_suffix,
-        } = meta;
-
-        let shape = normalize_shape_path(match (shape, state) {
-            (Some(shape), None) | (None, Some(shape)) => shape,
-            (Some(_), Some(_)) => {
-                return Err(DarlingError::custom(
-                    "custom component may specify only one of `shape` or `state`",
-                ));
-            },
-            (None, None) => {
-                return Err(DarlingError::custom(
-                    "custom component requires `shape = ...` or `state = ...`",
-                ));
-            },
-        });
-
-        let mut options = Self::from_shape(shape);
-        options.component = component;
-        if let Some(requires_value) = requires_value {
-            options.requires_value = requires_value;
-        }
-        options.value_binding = value_binding.is_present().then_some(true);
-        options.field_suffix = field_suffix;
-
-        Ok(options)
     }
 
     fn from_component_expr(expr: &Expr) -> darling::Result<Self> {
@@ -165,17 +114,6 @@ impl CustomOptions {
         }
 
         options.component_methods = methods;
-        Ok(options)
-    }
-
-    fn from_component_meta_list(meta_list: &syn::MetaList) -> darling::Result<Self> {
-        let mut shape = meta_list.path.clone();
-        let method = pop_component_method(&mut shape)?;
-        let args = parse_expr_args(meta_list.tokens.clone())
-            .map_err(|err| DarlingError::custom(err.to_string()).with_span(meta_list))?;
-
-        let mut options = Self::from_shape(shape);
-        options.apply_component_method(&method, &args)?;
         Ok(options)
     }
 
@@ -384,19 +322,6 @@ impl CustomOptions {
     }
 }
 
-impl FromMeta for CustomOptions {
-    fn from_word() -> darling::Result<Self> {
-        Err(DarlingError::custom(
-            "custom component requires `shape = ...` or `state = ...`",
-        ))
-    }
-
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let meta = CustomOptionsMeta::from_list(items)?;
-        Self::from_meta(meta)
-    }
-}
-
 fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMethod>)> {
     match expr {
         Expr::Group(group) => analyze_component_expr(&group.expr),
@@ -411,16 +336,10 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
         },
         Expr::Call(call) => analyze_component_call_expr(call),
         Expr::Path(path) => Ok((path.path.clone(), Vec::new())),
-        Expr::Lit(expr_lit) => {
-            if let Lit::Str(value) = &expr_lit.lit {
-                return value
-                    .parse::<Path>()
-                    .map(|shape| (shape, Vec::new()))
-                    .map_err(|err| DarlingError::custom(err.to_string()).with_span(value));
-            }
-
-            Err(DarlingError::unexpected_lit_type(&expr_lit.lit))
-        },
+        Expr::Lit(expr_lit) => Err(DarlingError::custom(
+            "component string syntax was removed; use a shape path expression",
+        )
+        .with_span(&expr_lit.lit)),
         _ => Err(DarlingError::custom(
             "component syntax expects a shape path or shape behavior expression",
         )
@@ -492,16 +411,6 @@ fn turbofish_shape_path(mut path: Path) -> Path {
     }
 
     path
-}
-
-fn parse_expr_args(tokens: TokenStream) -> syn::Result<Vec<Expr>> {
-    if tokens.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    Punctuated::<Expr, Token![,]>::parse_terminated
-        .parse2(tokens)
-        .map(|args| args.into_iter().collect())
 }
 
 fn is_component_behavior_method(method: &syn::Ident) -> bool {
@@ -889,50 +798,16 @@ impl FromMeta for Components {
         CustomOptions::from_component_expr(expr).map(Self::Custom)
     }
 
-    fn from_string(value: &str) -> darling::Result<Self> {
-        if let Ok(expr) = syn::parse_str::<Expr>(value)
-            && let Ok(component) = Self::from_expr(&expr)
-        {
-            return Ok(component);
-        }
-
-        syn::parse_str::<Path>(value)
-            .map(CustomOptions::from_shape)
-            .map(Self::Custom)
-            .map_err(|err| DarlingError::custom(err.to_string()))
+    fn from_string(_value: &str) -> darling::Result<Self> {
+        Err(DarlingError::custom(
+            "component string syntax was removed; use a shape path expression",
+        ))
     }
 
-    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let [item] = items else {
-            return Err(DarlingError::custom(
-                "component expects one shape expression or one `custom(...)` block",
-            ));
-        };
-
-        match item {
-            darling::ast::NestedMeta::Meta(syn::Meta::List(meta_list))
-                if meta_list.path.is_ident("custom") =>
-            {
-                <CustomOptions as FromMeta>::from_meta(&syn::Meta::List(meta_list.clone()))
-                    .map(Self::Custom)
-            },
-            darling::ast::NestedMeta::Meta(syn::Meta::Path(path)) => {
-                Ok(Self::Custom(CustomOptions::from_shape(path.clone())))
-            },
-            darling::ast::NestedMeta::Meta(syn::Meta::List(meta_list)) => {
-                CustomOptions::from_component_meta_list(meta_list).map(Self::Custom)
-            },
-            darling::ast::NestedMeta::Lit(Lit::Str(value)) => value
-                .parse::<Path>()
-                .map(CustomOptions::from_shape)
-                .map(Self::Custom)
-                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
-            darling::ast::NestedMeta::Lit(lit) => Err(DarlingError::unexpected_lit_type(lit)),
-            darling::ast::NestedMeta::Meta(meta) => Err(DarlingError::custom(
-                "unsupported component metadata; use a shape expression or `custom(...)`",
-            )
-            .with_span(meta)),
-        }
+    fn from_list(_items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
+        Err(DarlingError::custom(
+            "component list syntax was removed; use `component = my::Shape`",
+        ))
     }
 }
 
