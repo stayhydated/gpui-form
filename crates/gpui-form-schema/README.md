@@ -15,8 +15,8 @@ prototyping flows around generated form metadata.
 - `registry::inventory`
 
 `FieldVariant` records both source-model and form-side value types,
-required-value holder behavior, conversion expressions, custom component shape
-paths, custom component prototyping suffixes, and opt-in custom value-binding
+required-value holder behavior, conversion expressions, component shape
+paths, component shape prototyping suffixes, and opt-in value-binding
 metadata for generators. Helpers such as `field_name_with_behaviour()` keep
 inventory consumers aligned with the field names emitted by
 `#[derive(GpuiForm)]`.
@@ -38,7 +38,7 @@ for shape in inventory::iter::<GpuiFormShape>() {
 ## When To Use This Crate Directly
 
 - You are writing a generator that consumes `GpuiFormShape`
-- You need runtime metadata about custom component behavior
+- You need runtime metadata about component shape behavior
 - You want inventory access without depending on the facade crate
 
 ## Most Users Should Use Instead

@@ -12,10 +12,10 @@ this crate owns reusable component types for common `gpui-component` widgets.
 ## Boundaries
 
 - `gpui-form` owns the main form derive API and schema metadata.
-- `gpui-form-component` owns the custom component contract.
+- `gpui-form-component` owns the component shape contract.
 - `gpui-form-collection` owns opt-in components declared through
-  `gpui_form_derive::custom_component!` and any value adapters those components need.
-- Collection components publish `CustomComponentShape::PROTOTYPING.field_suffix`
+  `gpui_form_derive::component_shape!` and any value adapters those components need.
+- Collection components publish `ComponentShape::PROTOTYPING.field_suffix`
   values so prototyping output can use stable widget-role names without
   rediscovering the same suffixes from type names.
 - Application crates may define their own component shape types directly when this

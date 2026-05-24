@@ -507,7 +507,7 @@ mod tests {
             "country",
             "Vec<",
             false,
-            ComponentsBehaviour::Custom,
+            ComponentsBehaviour::Shape,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
@@ -536,7 +536,7 @@ mod tests {
             "enabled",
             "bool",
             false,
-            ComponentsBehaviour::Custom,
+            ComponentsBehaviour::Shape,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);

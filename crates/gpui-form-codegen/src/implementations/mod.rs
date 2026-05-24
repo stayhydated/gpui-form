@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 
-pub mod custom;
+pub mod shape;
 
 pub trait ComponentLayout {
     fn field_tokens(

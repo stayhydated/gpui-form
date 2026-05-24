@@ -26,17 +26,17 @@ Use the facade for `GpuiForm` and import component derives explicitly:
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
 use gpui_form_component::InfiniteSelect;
-use gpui_form_derive::CustomComponent;
+use gpui_form_derive::ComponentShape;
 ```
 
 Useful runtime/helper paths:
 
-- `gpui_form_component::custom`
+- `gpui_form_component::shape`
 - `gpui_form_component::date_picker`
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
-- `gpui_form_component::custom_component_shape!`
+- `gpui_form_component::component_shape!`
 
 ## Supported Component Syntax
 
@@ -81,11 +81,11 @@ Common struct attributes:
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use
   `::searchable(true)` and `.max_depth(...)` when needed.
-- Use a custom shape around `gpui_form_component::date_picker` or
+- Use a component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
 - Use `component = my::Shape` when the app owns the state/widget contract.
 - Treat the component expression and chained component behavior methods as derive
-  metadata; runtime construction still uses `CustomComponentShape::new`.
+  metadata; runtime construction still uses `ComponentShape::new`.
 - Treat generated value-holder wrapping as internal derive behavior for known
   reusable components.
 
@@ -171,16 +171,16 @@ pub struct User {
 This is useful for dates, paths, numeric newtypes, and other domain-specific
 wrappers.
 
-## Custom Component Patterns
+## Component Shape Patterns
 
 Derive directly on a state type:
 
 ```rust
 use gpui_form::GpuiForm;
-use gpui_form_derive::CustomComponent;
+use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, CustomComponent)]
-#[gpui_form_custom(new = Self::new, component = TagsInput)]
+#[derive(Clone, Debug, ComponentShape)]
+#[gpui_form_shape(new = Self::new, component = TagsInput)]
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
@@ -193,7 +193,7 @@ pub struct PostEditor {
 Or declare a reusable shape:
 
 ```rust
-gpui_form_component::custom_component_shape!(
+gpui_form_component::component_shape!(
     pub EmailInputShape,
     state = gpui_component::input::InputState,
     new = gpui_component::input::InputState::new,

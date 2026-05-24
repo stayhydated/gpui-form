@@ -11,8 +11,8 @@ power the rest of the ecosystem.
 `src/lib.rs` defines:
 
 - `#[derive(GpuiForm)]`
-- `#[derive(CustomComponent)]`
-- `custom_component!`
+- `#[derive(ComponentShape)]`
+- `component_shape!`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by `gpui-form-component` when
@@ -32,8 +32,8 @@ that crate's `derive` feature is enabled.
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
-- `src/derives/custom_component_state.rs`: `CustomComponent` derive expansion
-- `src/derives/custom_component.rs`: function-like custom component shape
+- `src/derives/component_shape_state.rs`: `ComponentShape` derive expansion
+- `src/derives/component_shape.rs`: function-like component shape
   expansion for local wrappers around external component/state types
 
 ## `GpuiForm` Expansion Pipeline
@@ -92,32 +92,32 @@ When the `inventory` feature is enabled:
 1. Each field becomes a `FieldVariant` with behavior metadata from
    `gpui-form-codegen`.
 1. Metadata includes validation rule identifiers, defaults, full value type
-   paths, custom component UI paths, and skipped-field information for
+   paths, component shape UI paths, and skipped-field information for
    downstream generators.
 
 ## Other Derives
 
-### `CustomComponent`
+### `ComponentShape`
 
-- emits a `CustomComponentShape` impl directly for a state type
+- emits a `ComponentShape` impl directly for a state type
 - defaults constructor wiring to `Self::new(window, cx)`
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
-  `CustomComponentValueBinding<T>` prototyping hooks, including
+  `ComponentValueBinding<T>` prototyping hooks, including
   `seed_value_binding_state` and `form_value_change`
-- defaults to implementing `gpui_form_component::custom::CustomComponentShape`
+- defaults to implementing `gpui_form_component::shape::ComponentShape`
   for downstream application crates
-- optionally accepts `custom_crate = crate` for runtime crates that implement
-  their local `custom::CustomComponentShape` path directly
+- optionally accepts `shape_crate = crate` for runtime crates that implement
+  their local `shape::ComponentShape` path directly
 
-### `custom_component!`
+### `component_shape!`
 
-- emits a local zero-sized shape type plus `CustomComponentShape` impl
+- emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
 - targets external component/state pairs that cannot directly implement
-  `CustomComponentShape` because both the trait and state type are foreign
-- emits the implementation against `gpui_form_component::custom`
-- leaves optional `CustomComponentValueBinding<T>` implementations to the
+  `ComponentShape` because both the trait and state type are foreign
+- emits the implementation against `gpui_form_component::shape`
+- leaves optional `ComponentValueBinding<T>` implementations to the
   caller or collection crate
 
 ## Coordination Rules

@@ -37,7 +37,7 @@ default `Vec<T>` delegate unless the field annotation enables searchable select
 behavior, which specializes the shape to
 `gpui_component::select::SearchableVec<T>`.
 
-Collection components implement `gpui_form_component::custom::CustomComponentShape`
+Collection components implement `gpui_form_component::shape::ComponentShape`
 and add value adapters where the component can synchronize form state
 generically. They also publish prototyping field suffix metadata, so generated
 scaffolds use names such as `code_input`, `country_select`,

@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Use when Codex needs to build user-facing application forms with gpui-form, including adding #[derive(GpuiForm)] to app structs, choosing gpui_form component attributes, using generated form fields/components/value holders, wiring SelectItem or InfiniteSelect enums, and adding custom components."
+description: "Use when Codex needs to build user-facing application forms with gpui-form, including adding #[derive(GpuiForm)] to app structs, choosing gpui_form component attributes, using generated form fields/components/value holders, wiring SelectItem or InfiniteSelect enums, and adding component shapes."
 ---
 
 # Use GPUI Form
@@ -10,7 +10,7 @@ description: "Use when Codex needs to build user-facing application forms with g
 Treat this skill as a hosted public-usage guide for `gpui-form` consumers. Use
 it only for user-facing application workflows: deriving forms on app models,
 choosing component attributes, using generated form state, wiring select and
-infinite-select enums, and adding app-owned custom components.
+infinite-select enums, and adding app-owned component shapes.
 
 Do not use this skill as a contributor guide for `gpui-form` repository
 internals. For build, test, format, lint, maintenance, release, or architecture
@@ -90,8 +90,8 @@ Common patterns:
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3)` when search or depth limits are needed.
 - Treat required-value holder behavior as internal derive behavior for known collection/runtime components.
-- For custom widgets, derive `CustomComponent` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::custom_component_shape!`.
-- For value-bound custom widgets, implement `gpui_form_component::custom::CustomComponentValueBinding<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`; the trait's associated `Event` is the actual emitted event enum, external wrappers map upstream events to `FormValueChange<T>`, and owned states can mark the shape with `OwnedCustomComponentValueBinding<T>`.
-- Let reusable custom shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and custom shapes without metadata fall back to the shape-name heuristic.
+- For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::component_shape!`.
+- For value-bound component shapes, implement `gpui_form_component::shape::ComponentValueBinding<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`; the trait's associated `Event` is the actual emitted event enum, external wrappers map upstream events to `FormValueChange<T>`, and owned states can mark the shape with `OwnedComponentValueBinding<T>`.
+- Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and shapes without metadata fall back to the shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

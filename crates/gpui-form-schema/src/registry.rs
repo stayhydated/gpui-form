@@ -86,18 +86,18 @@ pub struct FieldVariant {
     pub from_expr: Option<&'static str>,
     /// Form-to-source conversion expression, if one was specified.
     pub into_expr: Option<&'static str>,
-    /// For custom components: the shape type path implementing
-    /// `gpui_form_component::custom::CustomComponentShape`.
-    pub custom_shape: Option<&'static str>,
-    /// For custom components: the UI component type path (e.g. "TagsInput").
+    /// Shape type path implementing
+    /// `gpui_form_component::shape::ComponentShape`.
+    pub shape_path: Option<&'static str>,
+    /// UI component type path (e.g. "TagsInput").
     /// Used by the prototyping code generator to emit `Component::new(&entity)`.
-    pub custom_component: Option<&'static str>,
-    /// Whether the custom component opted into
-    /// `gpui_form_component::custom::CustomComponentValueBinding` generation.
-    pub custom_value_binding: bool,
-    /// Preferred generated field/helper suffix supplied by the custom shape's
+    pub component_path: Option<&'static str>,
+    /// Whether the component shape opted into
+    /// `gpui_form_component::shape::ComponentValueBinding` generation.
+    pub value_binding: bool,
+    /// Preferred generated field/helper suffix supplied by the shape's
     /// prototyping metadata.
-    pub custom_prototyping_field_suffix: Option<&'static str>,
+    pub prototyping_field_suffix: Option<&'static str>,
 }
 
 impl FieldVariant {
@@ -118,10 +118,10 @@ impl FieldVariant {
             default_expr: None,
             from_expr: None,
             into_expr: None,
-            custom_shape: None,
-            custom_component: None,
-            custom_value_binding: false,
-            custom_prototyping_field_suffix: None,
+            shape_path: None,
+            component_path: None,
+            value_binding: false,
+            prototyping_field_suffix: None,
         }
     }
 
@@ -154,40 +154,37 @@ impl FieldVariant {
         self
     }
 
-    /// Attach a custom UI component path to this field metadata.
-    pub const fn with_custom_component(mut self, component: &'static str) -> Self {
-        self.custom_component = Some(component);
+    /// Attach a UI component path to this field metadata.
+    pub const fn with_component_path(mut self, component: &'static str) -> Self {
+        self.component_path = Some(component);
         self
     }
 
-    /// Attach an optional custom UI component path to this field metadata.
+    /// Attach an optional UI component path to this field metadata.
     ///
     /// Used when the component path may come from the shape's
-    /// `CustomComponentShape::COMPONENT_PATH` constant rather than an explicit
+    /// `ComponentShape::COMPONENT_PATH` constant rather than an explicit
     /// field attribute value.
-    pub const fn with_custom_component_opt(mut self, component: Option<&'static str>) -> Self {
-        self.custom_component = component;
+    pub const fn with_component_path_opt(mut self, component: Option<&'static str>) -> Self {
+        self.component_path = component;
         self
     }
 
-    /// Attach the custom component shape type path.
-    pub const fn with_custom_shape(mut self, shape: &'static str) -> Self {
-        self.custom_shape = Some(shape);
+    /// Attach the component shape type path.
+    pub const fn with_shape_path(mut self, shape: &'static str) -> Self {
+        self.shape_path = Some(shape);
         self
     }
 
-    /// Marks this custom component as value-bound for generated prototyping code.
-    pub const fn with_custom_value_binding(mut self, enabled: bool) -> Self {
-        self.custom_value_binding = enabled;
+    /// Marks this component shape as value-bound for generated prototyping code.
+    pub const fn with_value_binding(mut self, enabled: bool) -> Self {
+        self.value_binding = enabled;
         self
     }
 
-    /// Attach the custom component's preferred prototyping field suffix.
-    pub const fn with_custom_prototyping_field_suffix(
-        mut self,
-        suffix: Option<&'static str>,
-    ) -> Self {
-        self.custom_prototyping_field_suffix = suffix;
+    /// Attach the component shape's preferred prototyping field suffix.
+    pub const fn with_prototyping_field_suffix(mut self, suffix: Option<&'static str>) -> Self {
+        self.prototyping_field_suffix = suffix;
         self
     }
 
@@ -198,7 +195,7 @@ impl FieldVariant {
 
     /// Returns true when generated code should subscribe to this field.
     pub const fn subscribable(&self) -> bool {
-        self.behaviour.kind().subscribable() || self.custom_value_binding
+        self.behaviour.kind().subscribable() || self.value_binding
     }
 
     pub fn behaviour_suffix(&self) -> &'static str {
@@ -206,11 +203,11 @@ impl FieldVariant {
     }
 
     pub fn component_suffix(&self) -> String {
-        self.custom_prototyping_field_suffix
-            .and_then(|suffix| custom_component_suffix_from_suffix(self.field_name, suffix))
+        self.prototyping_field_suffix
+            .and_then(|suffix| component_suffix_from_suffix(self.field_name, suffix))
             .or_else(|| {
-                self.custom_shape
-                    .and_then(|shape| custom_component_suffix_from_shape(self.field_name, shape))
+                self.shape_path
+                    .and_then(|shape| component_suffix_from_shape(self.field_name, shape))
             })
             .filter(|suffix| !suffix.is_empty())
             .unwrap_or_else(|| self.behaviour_suffix().to_string())
@@ -240,7 +237,7 @@ impl FieldVariant {
     }
 }
 
-pub fn custom_component_suffix_from_shape(field_name: &str, shape: &str) -> Option<String> {
+pub fn component_suffix_from_shape(field_name: &str, shape: &str) -> Option<String> {
     let compact_shape = shape
         .chars()
         .filter(|c| !c.is_whitespace())
@@ -253,7 +250,7 @@ pub fn custom_component_suffix_from_shape(field_name: &str, shape: &str) -> Opti
         || path_without_generics
             .ends_with("gpui_form_component::infinite_select::SearchableInfiniteSelect")
     {
-        return custom_component_suffix_from_suffix(field_name, "infinite_select");
+        return component_suffix_from_suffix(field_name, "infinite_select");
     }
 
     let shape_ident = path_without_generics
@@ -264,10 +261,10 @@ pub fn custom_component_suffix_from_shape(field_name: &str, shape: &str) -> Opti
         .strip_suffix("Shape")
         .or_else(|| shape_ident.strip_suffix("State"))
         .unwrap_or(shape_ident);
-    custom_component_suffix_from_suffix(field_name, suffix_source)
+    component_suffix_from_suffix(field_name, suffix_source)
 }
 
-pub fn custom_component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
+pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
     let mut suffix = suffix.to_snake_case();
     let field_name = field_name.to_snake_case();
 
@@ -288,53 +285,53 @@ mod tests {
     use super::{ComponentsBehaviour, FieldVariant};
 
     #[test]
-    fn custom_shape_name_drives_field_suffix() {
-        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::fields::CountrySelectShape");
+    fn shape_name_drives_field_suffix() {
+        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::fields::CountrySelectShape");
 
         assert_eq!(field.field_name_with_behaviour(), "country_select");
         assert_eq!(field.kebab_id(), "country-select");
     }
 
     #[test]
-    fn custom_prototyping_suffix_overrides_shape_heuristic() {
-        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::fields::CountrySelectorState")
-            .with_custom_prototyping_field_suffix(Some("select"));
+    fn prototyping_suffix_overrides_shape_heuristic() {
+        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::fields::CountrySelectorState")
+            .with_prototyping_field_suffix(Some("select"));
 
         assert_eq!(field.field_name_with_behaviour(), "country_select");
     }
 
     #[test]
-    fn custom_prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::fields::TextInputShape")
-            .with_custom_prototyping_field_suffix(Some("email_input"));
+    fn prototyping_suffix_removes_duplicate_field_prefix() {
+        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::fields::TextInputShape")
+            .with_prototyping_field_suffix(Some("email_input"));
 
         assert_eq!(field.field_name_with_behaviour(), "email_input");
     }
 
     #[test]
-    fn custom_prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::fields::TagsInputShape")
-            .with_custom_prototyping_field_suffix(Some("tags"));
+    fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
+        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::fields::TagsInputShape")
+            .with_prototyping_field_suffix(Some("tags"));
 
         assert_eq!(field.field_name_with_behaviour(), "tags_input");
     }
 
     #[test]
-    fn duplicate_field_prefix_is_removed_from_custom_suffix() {
-        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::fields::EmailInputShape");
+    fn duplicate_field_prefix_is_removed_from_shape_suffix() {
+        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::fields::EmailInputShape");
 
         assert_eq!(field.field_name_with_behaviour(), "email_input");
     }
 
     #[test]
     fn infinite_select_component_path_drives_field_suffix() {
-        let field = FieldVariant::new("location", "Country", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("gpui_form_component::infinite_select::InfiniteSelect<Country>");
+        let field = FieldVariant::new("location", "Country", false, ComponentsBehaviour::Shape)
+            .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>");
 
         assert_eq!(
             field.field_name_with_behaviour(),
@@ -343,11 +340,11 @@ mod tests {
     }
 
     #[test]
-    fn exact_duplicate_shape_name_falls_back_to_custom_suffix() {
-        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Custom)
-            .with_custom_shape("crate::state::TagsState");
+    fn exact_duplicate_shape_name_falls_back_to_shape_suffix() {
+        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Shape)
+            .with_shape_path("crate::state::TagsState");
 
-        assert_eq!(field.field_name_with_behaviour(), "tags_custom");
+        assert_eq!(field.field_name_with_behaviour(), "tags_shape");
     }
 }
 

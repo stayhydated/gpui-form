@@ -1,7 +1,7 @@
 //! Runtime helpers for gpui-form components.
 //!
 //! This crate provides:
-//! - `custom` shape contracts/macros for user-defined components
+//! - `shape` contracts/macros for form components
 //! - `date_picker` for localized runtime date and date-range pickers
 //! - `file_picker` for native GPUI path selection with gpui-component styling
 //! - `infinite_select` for cascading selects over nested enums
@@ -9,8 +9,8 @@
 #[cfg(feature = "derive")]
 pub use gpui_form_component_derive::InfiniteSelect;
 
-/// Runtime traits/macros for user-defined custom components.
-pub mod custom;
+/// Runtime traits/macros for component shapes.
+pub mod shape;
 
 mod calendar;
 

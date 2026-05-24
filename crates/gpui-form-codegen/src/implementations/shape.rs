@@ -3,13 +3,13 @@ use gpui_form_schema::components::ComponentsBehaviour;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-impl super::ComponentLayout for CustomComponent {
+impl super::ComponentLayout for ShapeComponent {
     fn field_tokens(
         &self,
         field_structure_tokens: &mut TokenStream,
         field_base_declarations_tokens: &mut TokenStream,
     ) {
-        let FieldInformation::<CustomOptions> {
+        let FieldInformation::<ShapeOptions> {
             options,
             name,
             r#type,
@@ -20,7 +20,7 @@ impl super::ComponentLayout for CustomComponent {
         let shape = options.runtime_shape(r#type);
 
         let state_type = quote! {
-            <#shape as ::gpui_form_component::custom::CustomComponentShape>::State
+            <#shape as ::gpui_form_component::shape::ComponentShape>::State
         };
         let constructor_tokens = options.constructor_tokens(r#type);
 

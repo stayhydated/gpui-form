@@ -3,10 +3,10 @@ use gpui_component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_form_component::custom::{CustomComponentValueBinding, FormValueChange};
+use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::select::Select` backed by enum variants.
     ///
     /// The enum type `T` must implement `gpui_component::select::SelectItem`,
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<T, D> CustomComponentValueBinding<T> for Select<T, D>
+impl<T, D> ComponentValueBinding<T> for Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,

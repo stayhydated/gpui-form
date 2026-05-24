@@ -16,28 +16,28 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
     )
 }
 
-/// Derive macro for custom component shape metadata.
+/// Derive macro for component shape metadata.
 ///
 /// By default it calls `Self::new(window, cx)`. Override the constructor with:
-/// `#[gpui_form_custom(new = path::to::constructor)]`.
+/// `#[gpui_form_shape(new = path::to::constructor)]`.
 ///
 /// Supports `new = ...`, `component = ...`, `value_binding`, and
 /// `field_suffix = ...`.
-#[proc_macro_derive(CustomComponent, attributes(gpui_form_custom))]
+#[proc_macro_derive(ComponentShape, attributes(gpui_form_shape))]
 #[proc_macro_error]
-pub fn derive_custom_component(input: TokenStream) -> TokenStream {
-    derives::custom_component_state::from(input)
+pub fn derive_component_shape(input: TokenStream) -> TokenStream {
+    derives::component_shape_state::from(input)
 }
 
-/// Function-like macro for declaring a local custom component shape around
+/// Function-like macro for declaring a local component shape around
 /// external component/state types.
 ///
-/// This is the external-item counterpart to `#[derive(CustomComponent)]`: the
+/// This is the external-item counterpart to `#[derive(ComponentShape)]`: the
 /// generated shape type is local to the caller, so it can implement
-/// `gpui_form_component::custom::CustomComponentShape` even when the UI
+/// `gpui_form_component::shape::ComponentShape` even when the UI
 /// component and state live in another crate.
 #[proc_macro]
 #[proc_macro_error]
-pub fn custom_component(input: TokenStream) -> TokenStream {
-    derives::custom_component::function(input)
+pub fn component_shape(input: TokenStream) -> TokenStream {
+    derives::component_shape::function(input)
 }

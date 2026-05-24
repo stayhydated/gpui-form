@@ -8,8 +8,8 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
-use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, FormValueChange, form_value_change,
+use gpui_form_component::shape::{
+    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
 };
 use some_lib::structs::form_action::FormAction;
@@ -43,8 +43,8 @@ impl gpui_storybook::Story for ItemForm {
 impl ItemForm {
     fn on_index_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<Age>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<Age>>>,
+        event: &ComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {

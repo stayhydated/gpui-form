@@ -1,7 +1,7 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::switch::Switch as GpuiSwitch;
-use gpui_form_component::custom::{
-    CustomComponentValueBinding, FormValueChange, OwnedCustomComponentValueBinding,
+use gpui_form_component::shape::{
+    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -64,7 +64,7 @@ impl RenderOnce for SwitchField {
     }
 }
 
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     /// Form component for a value-bound `gpui_component::switch::Switch`.
     pub struct Switch {
         type State = SwitchState;
@@ -75,7 +75,7 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl CustomComponentValueBinding<bool> for Switch {
+impl ComponentValueBinding<bool> for Switch {
     type Event = SwitchEvent;
 
     fn seed_value_binding_state(
@@ -94,4 +94,4 @@ impl CustomComponentValueBinding<bool> for Switch {
     }
 }
 
-impl OwnedCustomComponentValueBinding<bool> for Switch {}
+impl OwnedComponentValueBinding<bool> for Switch {}

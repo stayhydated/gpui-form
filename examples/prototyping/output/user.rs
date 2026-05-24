@@ -8,8 +8,8 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
-use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, FormValueChange, form_value_change,
+use gpui_form_component::shape::{
+    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
 };
 use some_lib::structs::form_action::FormAction;
@@ -43,8 +43,8 @@ impl gpui_storybook::Story for UserForm {
 impl UserForm {
     fn on_username_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -64,8 +64,8 @@ impl UserForm {
     }
     fn on_email_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -85,8 +85,8 @@ impl UserForm {
     }
     fn on_age_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<u32>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<u32>>>,
+        event: &ComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -106,10 +106,8 @@ impl UserForm {
     }
     fn on_balance_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
-        >,
-        event: &CustomComponentEventOf<
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>>,
+        event: &ComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
@@ -135,10 +133,8 @@ impl UserForm {
     }
     fn on_debt_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
-        >,
-        event: &CustomComponentEventOf<
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>>,
+        event: &ComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
@@ -164,8 +160,8 @@ impl UserForm {
     }
     fn on_subscribe_newsletter_switch_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::switch::Switch>>,
-        event: &CustomComponentEventOf<gpui_form_collection::switch::Switch, bool>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::switch::Switch>>,
+        event: &ComponentEventOf<gpui_form_collection::switch::Switch, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -183,8 +179,8 @@ impl UserForm {
     }
     fn on_enable_notifications_checkbox_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
-        event: &CustomComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
+        event: &ComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -202,10 +198,8 @@ impl UserForm {
     }
     fn on_preferred_select_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>,
-        >,
-        event: &CustomComponentEventOf<
+        state: &Entity<ComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>>,
+        event: &ComponentEventOf<
             gpui_form_collection::select::Select<PreferredLanguage>,
             PreferredLanguage,
         >,
@@ -230,14 +224,14 @@ impl UserForm {
     fn on_country_select_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
+            ComponentStateOf<
                 gpui_form_collection::select::Select<
                     EnumCountry,
                     ::gpui_component::select::SearchableVec<EnumCountry>,
                 >,
             >,
         >,
-        event: &CustomComponentEventOf<
+        event: &ComponentEventOf<
             gpui_form_collection::select::Select<
                 EnumCountry,
                 ::gpui_component::select::SearchableVec<EnumCountry>,
@@ -269,10 +263,8 @@ impl UserForm {
     }
     fn on_birth_date_input_event(
         &mut self,
-        state: &Entity<
-            CustomComponentStateOf<gpui_form_collection::input::Input<chrono::NaiveDate>>,
-        >,
-        event: &CustomComponentEventOf<
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<chrono::NaiveDate>>>,
+        event: &ComponentEventOf<
             gpui_form_collection::input::Input<chrono::NaiveDate>,
             chrono::NaiveDate,
         >,

@@ -8,8 +8,8 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
-use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, FormValueChange, form_value_change,
+use gpui_form_component::shape::{
+    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
 };
 use some_lib::structs::form_action::FormAction;
@@ -43,8 +43,8 @@ impl gpui_storybook::Story for LocationFormForm {
 impl LocationFormForm {
     fn on_name_input_event(
         &mut self,
-        state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -65,11 +65,11 @@ impl LocationFormForm {
     fn on_location_infinite_select_event(
         &mut self,
         state: &Entity<
-            CustomComponentStateOf<
+            ComponentStateOf<
                 gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
             >,
         >,
-        event: &CustomComponentEventOf<
+        event: &ComponentEventOf<
             gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
             Country,
         >,

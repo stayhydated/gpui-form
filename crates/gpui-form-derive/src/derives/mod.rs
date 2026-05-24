@@ -1,3 +1,3 @@
-pub mod custom_component;
-pub mod custom_component_state;
+pub mod component_shape;
+pub mod component_shape_state;
 pub mod gpui_form;

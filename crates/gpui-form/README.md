@@ -38,7 +38,7 @@ gpui-form-component = { version = "*", features = ["derive"] }
 gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
 
-# Optional: CustomComponent derive and custom_component! shape macro
+# Optional: ComponentShape derive and component_shape! shape macro
 gpui-form-derive = "*"
 
 # Optional: inventory registration for prototyping/code generation
@@ -104,7 +104,7 @@ pub struct UserProfile {
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `CustomComponentShape::new`. Select and infinite-select behavior
+delegates to `ComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
 derive macro.
 Generated required-value behavior is inferred internally from known components:
@@ -128,7 +128,7 @@ Common field-level helpers:
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.
-- custom component prototyping metadata drives generated field/helper suffixes
+- component shape prototyping metadata drives generated field/helper suffixes
   when present. Collection components publish suffixes such as `input`,
   `select`, `checkbox`, and `switch`; reusable app shapes can use
   `field_suffix = "..."`, and otherwise the generator falls back to the shape
@@ -155,7 +155,7 @@ Common struct-level helpers:
 
 ## Infinite Select Runtime
 
-Infinite-select custom fields are backed by
+Infinite-select shape-backed fields are backed by
 `gpui_form_component::infinite_select::InfiniteSelect`, which owns the
 root and child `SelectState`s, exposes render-ready level snapshots, and emits
 a single typed change event with the rebuilt nested value, both path forms, the
@@ -244,9 +244,9 @@ When validation is enabled:
 - generated value-holder validation uses the same validator set as the source
   struct
 
-## Custom Components
+## Component Shapes
 
-There are three supported custom-component workflows.
+There are three supported component-shape workflows.
 
 ### 1. Use a collection component
 
@@ -267,10 +267,10 @@ The `_` generic is resolved to the field's form-side type, including any
 
 ```rs
 use gpui_form::GpuiForm;
-use gpui_form_derive::CustomComponent;
+use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, CustomComponent)]
-#[gpui_form_custom(new = Self::new, component = TagsInput, field_suffix = "input")]
+#[derive(Clone, Debug, ComponentShape)]
+#[gpui_form_shape(new = Self::new, component = TagsInput, field_suffix = "input")]
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
@@ -283,7 +283,7 @@ pub struct PostEditor {
 ### 3. Declare a reusable external shape
 
 ```rs
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
@@ -299,20 +299,20 @@ pub struct ContactForm {
 }
 ```
 
-`custom_component!` creates a local zero-sized shape type, so downstream crates
+`component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 
-Custom components can also opt into generated value synchronization by
-implementing `gpui_form_component::custom::CustomComponentValueBinding<T>` on the shape.
-For one-off fields, add `value_binding` to the custom component options. For a
+Component shapes can also opt into generated value synchronization by
+implementing `gpui_form_component::shape::ComponentValueBinding<T>` on the shape.
+For one-off fields, add `value_binding` to the component shape options. For a
 reusable component, put that metadata on the shape:
 
 ```rs
-use gpui_form_derive::CustomComponent;
+use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, CustomComponent)]
-#[gpui_form_custom(
+#[derive(Clone, Debug, ComponentShape)]
+#[gpui_form_shape(
     new = Self::new,
     component = TagsInput,
     value_binding,
@@ -326,7 +326,7 @@ component state. External component wrappers, such as `gpui-component` inputs,
 can use the upstream event enum and map it into `FormValueChange<T>` with
 `form_value_change`. Components that own their state can expose their own event
 enum, such as `CheckboxEvent`, and mark the shape with
-`OwnedCustomComponentValueBinding<T>`. The binding remains application-owned;
+`OwnedComponentValueBinding<T>`. The binding remains application-owned;
 `gpui-form` only calls `seed_value_binding_state` and `form_value_change`.
 
 Runtime helpers are available from `gpui_form_component`; `gpui-form` does not
@@ -388,7 +388,7 @@ weekday headers, day/year labels, and locale-specific week starts. Manual
 runtime code can use `DateRangePicker` and `DateRangePickerState` for range
 selection. To use this runtime from `GpuiForm`, define an application or
 collection shape that implements
-`gpui_form_component::custom::CustomComponentShape`.
+`gpui_form_component::shape::ComponentShape`.
 
 ## Prototyping
 
@@ -412,9 +412,9 @@ See [`examples/prototyping`](../../examples/prototyping) for a complete
 generator that reads shape inventory, clears stale generated form modules,
 writes scaffolded GPUI form files, and formats them with `rustfmt`. The
 Storybook form titles generated by that example use the GPUI app context so they
-follow the active Storybook locale. Value-bound custom fields use helper
+follow the active Storybook locale. Value-bound shape-backed fields use helper
 functions and runtime aliases from
-`gpui_form_component::custom` for state and event projections, keeping handler
+`gpui_form_component::shape` for state and event projections, keeping handler
 signatures based on names such as `on_email_input_event`.
 
 ## Examples

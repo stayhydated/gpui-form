@@ -913,15 +913,15 @@ where
 }
 
 /// Runtime state for a cascading infinite-select field.
-#[cfg_attr(feature = "derive", derive(gpui_form_derive::CustomComponent))]
+#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
     feature = "derive",
-    gpui_form_custom(
+    gpui_form_shape(
         new = Self::new_default,
         component = gpui_form_component::infinite_select::InfiniteSelectField,
         value_binding,
         field_suffix = "infinite_select",
-        custom_crate = crate
+        shape_crate = crate
     )
 )]
 pub struct InfiniteSelect<T, D = Vec<InfiniteSelectItem<T>>>
@@ -939,7 +939,7 @@ where
     _child_subscriptions: Vec<Subscription>,
 }
 
-/// Search-enabled state alias for custom shapes that render searchable levels.
+/// Search-enabled state alias for component shapes that render searchable levels.
 pub type SearchableInfiniteSelect<T> = InfiniteSelect<T, SearchableVec<InfiniteSelectItem<T>>>;
 
 impl<T, D> Focusable for InfiniteSelect<T, D>
@@ -1306,7 +1306,7 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, D> crate::custom::CustomComponentValueBinding<T> for InfiniteSelect<T, D>
+impl<T, D> crate::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1327,8 +1327,8 @@ where
     fn form_value_change(
         _state: &Self::State,
         event: &Self::Event,
-    ) -> crate::custom::FormValueChange<T> {
-        crate::custom::FormValueChange::Set(event.value().clone())
+    ) -> crate::shape::FormValueChange<T> {
+        crate::shape::FormValueChange::Set(event.value().clone())
     }
 }
 

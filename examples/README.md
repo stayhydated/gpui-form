@@ -12,17 +12,17 @@ Source structs and enums that demonstrate the supported derive surface:
 - nested `InfiniteSelect` enums, including index-path and key-path round trips
   plus typed path-error reporting, custom persisted keys, and key-path string
   serialization
-- custom component state, local shapes, and cross-crate shapes
+- component shape state, local shapes, and cross-crate shapes
 - Koruma validation wiring
 - newtype-backed numeric validation
 - `cfg_attr`-gated derive usage
 - empty forms and date conversion
 
-## some-lib-custom-components
+## some-lib-component-shapes
 
-External custom component state and UI types used by the example forms.
+External component shape state and UI types used by the example forms.
 
-This crate demonstrates the cross-crate custom-component shape workflow.
+This crate demonstrates the cross-crate component-shape workflow.
 
 ## some-lib-forms
 
@@ -53,7 +53,7 @@ cargo run -p gpui-form-component-story
 Generator example that walks `GpuiFormShape` inventory data and emits scaffolded
 form files into `examples/prototyping/output`, then formats them with
 `rustfmt`. Generated Storybook form titles use the example app's active locale.
-Value-bound custom fields keep readable prototyping metadata names such as
+Value-bound shape-backed fields keep readable prototyping metadata names such as
 `email_input` and `on_email_input_event`.
 
 Run it with:

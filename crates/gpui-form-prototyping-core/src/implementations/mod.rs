@@ -1,4 +1,4 @@
-pub mod custom;
+pub mod shape;
 
 use gpui_form_schema::{
     components::{ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour},
@@ -14,7 +14,7 @@ use crate::{
     imports::ImportItem,
 };
 
-static CUSTOM_GENERATOR: custom::CustomCodeGenerator = custom::CustomCodeGenerator;
+static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
 
 pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCodeGenerator {
     match behaviour {
@@ -24,9 +24,9 @@ pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCod
         | ComponentsBehaviour::Switch
         | ComponentsBehaviour::Select(_)
         | ComponentsBehaviour::InfiniteSelect(_)
-        | ComponentsBehaviour::Custom
+        | ComponentsBehaviour::Shape
         | ComponentsBehaviour::DatePicker
-        | ComponentsBehaviour::FilePicker => &CUSTOM_GENERATOR,
+        | ComponentsBehaviour::FilePicker => &SHAPE_GENERATOR,
     }
 }
 
@@ -37,8 +37,8 @@ pub struct ResolvedField<'a> {
     field_ident_with_behaviour: Ident,
     value_type: Type,
     component_ident: Ident,
-    custom_shape_path: Option<Path>,
-    custom_component_path: Option<Path>,
+    shape_path: Option<Path>,
+    component_path: Option<Path>,
 }
 
 impl<'a> ResolvedField<'a> {
@@ -51,11 +51,11 @@ impl<'a> ResolvedField<'a> {
             }
         })?;
 
-        let custom_component_path = match field.custom_component {
+        let component_path = match field.component_path {
             Some(component_path) => {
                 Some(syn::parse_str::<Path>(component_path).map_err(|error| {
                     PrototypingError::InvalidPath {
-                        kind: "custom component path",
+                        kind: "component path",
                         value: component_path.to_string(),
                         error: error.to_string(),
                     }
@@ -64,10 +64,10 @@ impl<'a> ResolvedField<'a> {
             None => None,
         };
 
-        let custom_shape_path = match field.custom_shape {
+        let shape_path = match field.shape_path {
             Some(shape_path) => Some(syn::parse_str::<Path>(shape_path).map_err(|error| {
                 PrototypingError::InvalidPath {
-                    kind: "custom component shape path",
+                    kind: "component shape path",
                     value: shape_path.to_string(),
                     error: error.to_string(),
                 }
@@ -82,8 +82,8 @@ impl<'a> ResolvedField<'a> {
             field_ident_with_behaviour: format_ident!("{}", field.field_name_with_behaviour()),
             value_type,
             component_ident: format_ident!("{}", field.behaviour.component_name().to_pascal_case()),
-            custom_shape_path,
-            custom_component_path,
+            shape_path,
+            component_path,
         })
     }
 
@@ -127,26 +127,26 @@ impl<'a> ResolvedField<'a> {
         self.field.value_holder_uses_option()
     }
 
-    pub fn custom_value_binding(&self) -> bool {
-        self.field.custom_value_binding
+    pub fn value_binding(&self) -> bool {
+        self.field.value_binding
     }
 
-    pub fn custom_component(&self) -> Option<&'a str> {
-        self.field.custom_component
+    pub fn component_path(&self) -> Option<&'a str> {
+        self.field.component_path
     }
 
-    pub fn custom_shape_path(&self) -> Option<&Path> {
-        self.custom_shape_path.as_ref()
+    pub fn shape_path(&self) -> Option<&Path> {
+        self.shape_path.as_ref()
     }
 
-    pub fn custom_runtime_shape_path(&self) -> Option<Path> {
-        self.custom_shape_path
+    pub fn runtime_shape_path(&self) -> Option<Path> {
+        self.shape_path
             .clone()
             .map(|shape| runtime_shape_for_behaviour(shape, self.behaviour(), self.value_type()))
     }
 
-    pub fn custom_component_path(&self) -> Option<&Path> {
-        self.custom_component_path.as_ref()
+    pub fn component_path_parsed(&self) -> Option<&Path> {
+        self.component_path.as_ref()
     }
 
     pub fn kebab_id(&self) -> String {
@@ -598,7 +598,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("index", "Age", false, ComponentsBehaviour::Custom)
+                FieldVariant::new("index", "Age", false, ComponentsBehaviour::Shape)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
@@ -621,7 +621,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("age", "Age", true, ComponentsBehaviour::Custom)
+                FieldVariant::new("age", "Age", true, ComponentsBehaviour::Shape)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
@@ -642,7 +642,7 @@ mod tests {
         const VALIDATIONS: &[&str] = &["NestedValidation"];
         const FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("address", "Address", true, ComponentsBehaviour::Custom)
+                FieldVariant::new("address", "Address", true, ComponentsBehaviour::Shape)
                     .with_validations(VALIDATIONS),
             ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);

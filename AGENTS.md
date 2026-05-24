@@ -24,7 +24,7 @@ Its priorities are:
 
 1. **Type safety**: generate strongly typed form state, metadata, and helper APIs at compile time.
 2. **Ergonomics**: keep `#[derive(GpuiForm)]` and related attributes concise enough for normal application structs.
-3. **Developer experience**: support inventory-driven prototyping, custom components, and layered crates that can be used directly when needed.
+3. **Developer experience**: support inventory-driven prototyping, component shapes, and layered crates that can be used directly when needed.
 
 ## Quick Decision Flow
 
@@ -36,7 +36,7 @@ Before editing, classify the change:
    always user-facing. Internal design belongs in the matching
    `docs/ARCHITECTURE.md`.
 3. **Sync public workflow changes.** If derive attributes, supported component
-   behavior, Koruma validation wiring, runtime imports, custom components,
+   behavior, Koruma validation wiring, runtime imports, component shapes,
    prototyping output, or recommended usage changes, update the relevant
    README, example, architecture note, and `.agents/skills/*` guidance in the
    same change when applicable.
@@ -99,7 +99,7 @@ syntax, runtime integration patterns, prototyping patterns, or recommended usage
 ## Synchronization Rules
 
 When a substantive change modifies a public derive attribute, supported
-component set, Koruma validation wiring, runtime import, custom component
+component set, Koruma validation wiring, runtime import, component shape
 contract, prototyping workflow, or other user-visible API shape:
 
 1. Update the root `README.md`.
@@ -141,7 +141,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-component`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-component/docs/ARCHITECTURE.md)
-  Role: GPUI-facing runtime implementations for infinite select, date picker, file picker, and custom component helpers. Users import this crate explicitly when they need component runtime APIs.
+  Role: GPUI-facing runtime implementations for infinite select, date picker, file picker, and component shape helpers. Users import this crate explicitly when they need component runtime APIs.
 
 - `crates/gpui-form-component-derive`
   Audience: **Public integration**
@@ -156,7 +156,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-derive`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-derive/docs/ARCHITECTURE.md)
-  Role: proc macros for `#[derive(GpuiForm)]`, `SelectItem`, and `CustomComponentState`. Most users should depend on `gpui-form` rather than this crate directly.
+  Role: proc macros for `#[derive(GpuiForm)]`, `SelectItem`, and `ComponentShape`. Most users should depend on `gpui-form` rather than this crate directly.
 
 - `crates/gpui-form-prototyping-core`
   Audience: **Public integration**
@@ -185,8 +185,8 @@ inventory or codegen workflows change.
 - `examples/some-lib`
   Shared example domain types and source structs that derive `GpuiForm`.
 
-- `examples/some-lib-custom-components`
-  Example external custom component state types and UI widgets.
+- `examples/some-lib-component-shapes`
+  Example external component shape state types and UI widgets.
 
 - `examples/some-lib-forms`
   Storybook-like GPUI example app for browsing generated forms.

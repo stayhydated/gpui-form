@@ -259,11 +259,10 @@ pub fn expand_gpui_form(
                     quote! { .with_default(#expr_str) }
                 });
 
-                let custom_component_tokens = component_def.custom_component_tokens(&base_type);
-                let custom_shape_tokens = component_def.custom_shape_tokens(&base_type);
-                let custom_value_binding_tokens =
-                    component_def.custom_value_binding_tokens(&base_type);
-                let custom_prototyping_tokens = component_def.custom_prototyping_tokens(&base_type);
+                let component_path_tokens = component_def.component_path_tokens(&base_type);
+                let shape_path_tokens = component_def.shape_path_tokens(&base_type);
+                let value_binding_tokens = component_def.value_binding_tokens(&base_type);
+                let prototyping_tokens = component_def.prototyping_tokens(&base_type);
                 let from_expr_tokens = option_expr_string_tokens(&field.from);
                 let into_expr_tokens = option_expr_string_tokens(&field.into);
 
@@ -281,10 +280,10 @@ pub fn expand_gpui_form(
                         #( #validation_literals ),*
                     ])
                     #default_expr_tokens
-                    #custom_component_tokens
-                    #custom_shape_tokens
-                    #custom_value_binding_tokens
-                    #custom_prototyping_tokens
+                    #component_path_tokens
+                    #shape_path_tokens
+                    #value_binding_tokens
+                    #prototyping_tokens
                 })
             } else {
                 None

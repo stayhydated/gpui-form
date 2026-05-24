@@ -39,8 +39,8 @@ pub struct ComponentMethod {
 }
 
 #[derive(Clone, Debug)]
-pub struct CustomOptions {
-    /// Path to a type implementing `gpui_form_component::custom::CustomComponentShape`.
+pub struct ShapeOptions {
+    /// Path to a type implementing `gpui_form_component::shape::ComponentShape`.
     pub shape: syn::Path,
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
@@ -53,15 +53,15 @@ pub struct CustomOptions {
     /// Field-level default value expression, used by known shapes that can seed
     /// component state from the model default.
     pub field_default: Option<syn::Expr>,
-    /// Whether prototyping code should wire this custom component through
-    /// `CustomComponentValueBinding`.
+    /// Whether prototyping code should wire this component through
+    /// `ComponentValueBinding`.
     pub value_binding: Option<bool>,
     /// Optional explicit generated field/helper suffix for prototyping output.
     pub field_suffix: Option<String>,
     component_methods: Vec<ComponentMethod>,
 }
 
-impl CustomOptions {
+impl ShapeOptions {
     fn from_shape(shape: Path) -> Self {
         let shape = normalize_shape_path(shape);
         let (behaviour, requires_value, field_suffix) = inferred_shape_defaults(&shape);
@@ -220,16 +220,16 @@ impl CustomOptions {
 
     pub fn component_suffix(&self, field_name: &str) -> String {
         if let Some(field_suffix) = &self.field_suffix {
-            return gpui_form_schema::registry::custom_component_suffix_from_suffix(
+            return gpui_form_schema::registry::component_suffix_from_suffix(
                 field_name,
                 field_suffix,
             )
-            .unwrap_or_else(|| ComponentKind::Custom.component_name().to_string());
+            .unwrap_or_else(|| ComponentKind::Shape.component_name().to_string());
         }
 
         let shape = self.shape.to_token_stream().to_string();
-        gpui_form_schema::registry::custom_component_suffix_from_shape(field_name, &shape)
-            .unwrap_or_else(|| ComponentKind::Custom.component_name().to_string())
+        gpui_form_schema::registry::component_suffix_from_shape(field_name, &shape)
+            .unwrap_or_else(|| ComponentKind::Shape.component_name().to_string())
     }
 
     pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
@@ -251,7 +251,7 @@ impl CustomOptions {
                     }
                 } else {
                     quote! {
-                        <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(
+                        <#shape as ::gpui_form_component::shape::ComponentShape>::new(
                             window,
                             cx,
                         )
@@ -289,7 +289,7 @@ impl CustomOptions {
             },
             _ => {
                 quote! {
-                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::new(window, cx)
+                    <#shape as ::gpui_form_component::shape::ComponentShape>::new(window, cx)
                 }
             },
         }
@@ -533,7 +533,7 @@ fn inferred_shape_defaults(shape: &Path) -> (ComponentsBehaviour, bool, Option<&
             Some("infinite_select"),
         )
     } else {
-        (ComponentsBehaviour::Custom, true, None)
+        (ComponentsBehaviour::Shape, true, None)
     }
 }
 
@@ -701,8 +701,8 @@ fn behaviour_tokens(behaviour: &ComponentsBehaviour) -> TokenStream {
                 )
             }
         },
-        ComponentsBehaviour::Custom => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Custom }
+        ComponentsBehaviour::Shape => {
+            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Shape }
         },
         ComponentsBehaviour::DatePicker => {
             quote! { ::gpui_form::schema::components::ComponentsBehaviour::DatePicker }
@@ -771,19 +771,19 @@ fn substitute_infer_in_path(path: &syn::Path, replacement: &syn::Type) -> syn::P
     path
 }
 
-impl ComponentOption for CustomOptions {}
+impl ComponentOption for ShapeOptions {}
 
-pub struct CustomComponent(pub FieldInformation<CustomOptions>);
+pub struct ShapeComponent(pub FieldInformation<ShapeOptions>);
 
-impl CustomComponent {
+impl ShapeComponent {
     pub fn component_name() -> &'static str {
-        ComponentKind::Custom.component_name()
+        ComponentKind::Shape.component_name()
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum Components {
-    Custom(CustomOptions),
+    Shape(ShapeOptions),
 }
 
 impl FromMeta for Components {
@@ -795,7 +795,7 @@ impl FromMeta for Components {
     }
 
     fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        CustomOptions::from_component_expr(expr).map(Self::Custom)
+        ShapeOptions::from_component_expr(expr).map(Self::Shape)
     }
 
     fn from_string(_value: &str) -> darling::Result<Self> {
@@ -814,13 +814,13 @@ impl FromMeta for Components {
 impl Components {
     pub const fn kind(&self) -> ComponentKind {
         match self {
-            Self::Custom(options) => options.behaviour.kind(),
+            Self::Shape(options) => options.behaviour.kind(),
         }
     }
 
     pub fn requires_value(&self) -> bool {
         match self {
-            Self::Custom(options) => options.requires_value,
+            Self::Shape(options) => options.requires_value,
         }
     }
 
@@ -834,13 +834,13 @@ impl Components {
         let mut field_base_declarations_tokens = TokenStream::new();
 
         match self {
-            Self::Custom(options) => {
+            Self::Shape(options) => {
                 let options = options
                     .clone()
                     .with_field_default(field_default)
                     .with_field_type(&field_type);
                 let component =
-                    CustomComponent(FieldInformation::new(options, field_name, field_type));
+                    ShapeComponent(FieldInformation::new(options, field_name, field_type));
                 component.field_tokens(
                     &mut field_structure_tokens,
                     &mut field_base_declarations_tokens,
@@ -857,68 +857,68 @@ impl Components {
 
     pub fn behaviour_tokens(&self, _field_type: &syn::Type) -> TokenStream {
         match self {
-            Self::Custom(options) => behaviour_tokens(&options.behaviour),
+            Self::Shape(options) => behaviour_tokens(&options.behaviour),
         }
     }
 
-    pub fn custom_component_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Custom(options) = self;
+    pub fn component_path_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
-            Some(quote! { .with_custom_component(#component_str) })
+            Some(quote! { .with_component_path(#component_str) })
         } else {
             Some(quote! {
-                .with_custom_component_opt(
-                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::COMPONENT_PATH
+                .with_component_path_opt(
+                    <#shape as ::gpui_form_component::shape::ComponentShape>::COMPONENT_PATH
                 )
             })
         }
     }
 
-    pub fn custom_shape_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Custom(options) = self;
+    pub fn shape_path_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Shape(options) = self;
 
         let shape = options
             .resolved_shape(field_type)
             .to_token_stream()
             .to_string();
-        Some(quote! { .with_custom_shape(#shape) })
+        Some(quote! { .with_shape_path(#shape) })
     }
 
-    pub fn custom_value_binding_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Custom(options) = self;
+    pub fn value_binding_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
 
         Some(match options.value_binding {
-            Some(true) => quote! { .with_custom_value_binding(true) },
-            Some(false) => quote! { .with_custom_value_binding(false) },
+            Some(true) => quote! { .with_value_binding(true) },
+            Some(false) => quote! { .with_value_binding(false) },
             None => {
                 quote! {
-                    .with_custom_value_binding(
-                        <#shape as ::gpui_form_component::custom::CustomComponentShape>::VALUE_BINDING
+                    .with_value_binding(
+                        <#shape as ::gpui_form_component::shape::ComponentShape>::VALUE_BINDING
                     )
                 }
             },
         })
     }
 
-    pub fn custom_prototyping_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Custom(options) = self;
+    pub fn prototyping_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+        let Self::Shape(options) = self;
 
         if let Some(field_suffix) = &options.field_suffix {
             let field_suffix = syn::LitStr::new(field_suffix, proc_macro2::Span::call_site());
             Some(quote! {
-                .with_custom_prototyping_field_suffix(Some(#field_suffix))
+                .with_prototyping_field_suffix(Some(#field_suffix))
             })
         } else {
             let shape = options.resolved_shape(field_type);
 
             Some(quote! {
-                .with_custom_prototyping_field_suffix(
-                    <#shape as ::gpui_form_component::custom::CustomComponentShape>::PROTOTYPING
+                .with_prototyping_field_suffix(
+                    <#shape as ::gpui_form_component::shape::ComponentShape>::PROTOTYPING
                         .field_suffix
                 )
             })
@@ -927,7 +927,7 @@ impl Components {
 
     pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
         match self {
-            Self::Custom(options) => options.type_check_tokens(field_type),
+            Self::Shape(options) => options.type_check_tokens(field_type),
         }
     }
 }

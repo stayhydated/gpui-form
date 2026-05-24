@@ -2,9 +2,9 @@ use std::str::FromStr;
 
 use gpui::{Context, Window};
 use gpui_component::input::{InputEvent, InputState};
-use gpui_form_component::custom::{CustomComponentValueBinding, FormValueChange};
+use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
 
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::input::Input` backed by `InputState`.
     ///
     /// Use `Input::<_>` in `#[gpui_form(component = ...)]` so the derive
@@ -22,7 +22,7 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl<T> CustomComponentValueBinding<T> for Input<T>
+impl<T> ComponentValueBinding<T> for Input<T>
 where
     T: FromStr + ToString + 'static,
 {

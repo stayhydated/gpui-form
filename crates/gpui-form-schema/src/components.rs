@@ -9,7 +9,7 @@ pub enum ComponentKind {
     Switch,
     Select,
     InfiniteSelect,
-    Custom,
+    Shape,
     DatePicker,
     FilePicker,
 }
@@ -98,7 +98,7 @@ pub enum ComponentsBehaviour {
     Switch,
     Select(SelectBehaviour),
     InfiniteSelect(InfiniteSelectBehaviour),
-    Custom,
+    Shape,
     DatePicker,
     FilePicker,
 }
@@ -112,7 +112,7 @@ impl ComponentsBehaviour {
             Self::Switch => ComponentKind::Switch,
             Self::Select(_) => ComponentKind::Select,
             Self::InfiniteSelect(_) => ComponentKind::InfiniteSelect,
-            Self::Custom => ComponentKind::Custom,
+            Self::Shape => ComponentKind::Shape,
             Self::DatePicker => ComponentKind::DatePicker,
             Self::FilePicker => ComponentKind::FilePicker,
         }

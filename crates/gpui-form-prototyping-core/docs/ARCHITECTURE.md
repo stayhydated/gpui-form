@@ -84,23 +84,23 @@ bare identifier. That is important because inventory metadata may carry:
 Each field is resolved once into a typed internal representation before any
 component-specific generation runs.
 
-## Current Custom Component Behavior
+## Current Component Shape Behavior
 
-For `ComponentsBehaviour::Custom`:
+For `ComponentsBehaviour::Shape`:
 
-- the generator still initializes custom state into generated `FormFields`
+- the generator still initializes component state into generated `FormFields`
 - generated local variable, field, and handler names use
-  `FieldVariant::field_name_with_behaviour`, which prefers custom prototyping
+  `FieldVariant::field_name_with_behaviour`, which prefers component-shape prototyping
   suffix metadata before falling back to shape-derived suffixes
-- if `FieldVariant::custom_component` is present, the generator can emit
+- if `FieldVariant::component_path` is present, the generator can emit
   `Component::new(&entity)` and import the component type
 - if that metadata is missing, the generator falls back to a placeholder row
-- custom subscriptions are generated only when `FieldVariant::custom_value_binding`
+- component subscriptions are generated only when `FieldVariant::value_binding`
   is true; the field's shape must provide the generic
-  `CustomComponentValueBinding<T>` hook that maps component events to
+  `ComponentValueBinding<T>` hook that maps component events to
   `FormValueChange<T>`
-- value-bound custom subscriptions use runtime projection aliases and helper
-  functions from `gpui_form_component::custom` inline for value-binding state
+- value-bound component subscriptions use runtime projection aliases and helper
+  functions from `gpui_form_component::shape` inline for value-binding state
   seeding and event conversion; owned components expose their own event enum,
   while external wrappers keep their upstream event type
 
@@ -119,5 +119,5 @@ Update this file when:
 
 - the adapter/layout boundary changes
 - `FormParts` fields change meaning
-- custom component generation behavior changes
+- component shape generation behavior changes
 - import handling or field-resolution strategy changes

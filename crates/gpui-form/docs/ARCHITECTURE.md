@@ -62,7 +62,7 @@ users opt into those component APIs explicitly.
 1. Generated value-holder code references `gpui_form::core` and
    `gpui_form::bon` where needed.
 1. Generated component field code references
-   `gpui_form_component::custom` when a field uses a component shape
+   `gpui_form_component::shape` when a field uses a component shape
    expression, such as `component = Shape`.
    Users of component-backed fields must depend on `gpui-form-component`
    explicitly.
@@ -80,7 +80,7 @@ users opt into those component APIs explicitly.
 
 - `gpui_form::bon` remains public because generated value holders use it.
 - Numeric helpers live under `gpui_form::core::numeric`.
-- Component module paths such as `custom`, `date_picker`, `file_picker`, and
+- Component module paths such as `shape`, `date_picker`, `file_picker`, and
   `infinite_select` belong to `gpui-form-component`, not this facade.
 
 ## When To Update This Document

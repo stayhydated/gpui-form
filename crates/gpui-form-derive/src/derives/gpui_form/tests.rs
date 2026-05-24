@@ -446,7 +446,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_custom_shape_override_keeps_full_type_path() {
+    fn test_shape_override_keeps_full_type_path() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -476,13 +476,13 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form_component::custom::CustomComponentShape>::State"
+                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form_component::shape::ComponentShape>::State"
             ),
-            "Custom shape `_` should resolve to the override type in state metadata"
+            "Component shape `_` should resolve to the override type in state metadata"
         );
         assert!(
-            compact.contains("with_custom_shape(\"crate::NumericShape<rust_decimal::Decimal>\")"),
-            "Custom shape metadata should preserve the fully-qualified override type"
+            compact.contains("with_shape_path(\"crate::NumericShape<rust_decimal::Decimal>\")"),
+            "Component shape metadata should preserve the fully-qualified override type"
         );
     }
 
@@ -643,7 +643,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_custom_component_generates_shape_based_state_and_constructor() {
+    fn test_component_shape_generates_shape_based_state_and_constructor() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -667,45 +667,45 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubbio_input:::gpui::Entity<")
                 && compact.contains(
-                    "<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::State"
+                    "<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::State"
                 ),
-            "Custom component field should use the shape-derived suffix and shape state type"
+            "Component shape field should use the shape-derived suffix and shape state type"
         );
 
         assert!(
             compact.contains(
-                "<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::new(window,cx)"
+                "<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::new(window,cx)"
             ),
-            "Custom component constructor should delegate to shape::new"
+            "Component shape constructor should delegate to shape::new"
         );
 
         assert!(
-            compact.contains("ComponentsBehaviour::Custom"),
-            "FieldVariant should carry Custom behaviour metadata"
+            compact.contains("ComponentsBehaviour::Shape"),
+            "FieldVariant should carry Shape behaviour metadata"
         );
 
         assert!(
-            compact.contains("with_custom_component("),
-            "FieldVariant should carry the custom component path: {compact}"
+            compact.contains("with_component_path("),
+            "FieldVariant should carry the component path: {compact}"
         );
         assert!(
-            compact.contains("with_custom_shape(\"crate::shapes::BioInputShape\")"),
-            "FieldVariant should carry the custom shape path: {compact}"
+            compact.contains("with_shape_path(\"crate::shapes::BioInputShape\")"),
+            "FieldVariant should carry the component shape path: {compact}"
         );
         assert!(
-            compact.contains("with_custom_value_binding(true)"),
-            "FieldVariant should record opt-in custom value binding: {compact}"
+            compact.contains("with_value_binding(true)"),
+            "FieldVariant should record opt-in component value binding: {compact}"
         );
         assert!(
             compact.contains(
-                "with_custom_prototyping_field_suffix(<crate::shapes::BioInputShapeas::gpui_form_component::custom::CustomComponentShape>::PROTOTYPING.field_suffix)"
+                "with_prototyping_field_suffix(<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::PROTOTYPING.field_suffix)"
             ),
-            "FieldVariant should inherit custom shape prototyping metadata: {compact}"
+            "FieldVariant should inherit component shape prototyping metadata: {compact}"
         );
     }
 
     #[test]
-    fn test_custom_component_field_suffix_override() {
+    fn test_component_shape_field_suffix_override() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -729,7 +729,7 @@ mod gpui_form_tests {
             "field_suffix should control generated FormFields names: {compact}"
         );
         assert!(
-            compact.contains("with_custom_prototyping_field_suffix(Some(\"tags\"))"),
+            compact.contains("with_prototyping_field_suffix(Some(\"tags\"))"),
             "FieldVariant should record explicit prototyping suffix: {compact}"
         );
     }
@@ -813,7 +813,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_custom_component_shape_infers_field_type_generic() {
+    fn test_component_shape_infers_field_type_generic() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -834,9 +834,9 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_component::custom::CustomComponentShape>::State"
+                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_component::shape::ComponentShape>::State"
             ),
-            "custom shape `_` should be resolved to the field type in FormFields: {compact}"
+            "component shape `_` should be resolved to the field type in FormFields: {compact}"
         );
         assert!(
             compact.contains("pubaccount_no_input:::gpui::Entity<"),
@@ -844,9 +844,9 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_collection::input::Input<crate::types::AccountCode>\")"
+                "with_shape_path(\"gpui_form_collection::input::Input<crate::types::AccountCode>\")"
             ),
-            "custom shape metadata should store the resolved shape path: {compact}"
+            "component shape metadata should store the resolved shape path: {compact}"
         );
     }
 
@@ -888,15 +888,15 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_collection::select::Select<crate::types::Country>\")"
+                "with_shape_path(\"gpui_form_collection::select::Select<crate::types::Country>\")"
             ),
             "searchable select metadata should keep the original shape identity: {compact}"
         );
         assert!(
             !compact.contains(
-                "with_custom_shape(\"gpui_form_collection::select::Select<crate::types::Country,"
+                "with_shape_path(\"gpui_form_collection::select::Select<crate::types::Country,"
             ),
-            "searchable select behavior should not leak into custom shape metadata: {compact}"
+            "searchable select behavior should not leak into component shape metadata: {compact}"
         );
         assert!(
             compact.contains("pubcountry:crate::types::Country"),
@@ -979,7 +979,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_custom_shape(\"gpui_form_component::infinite_select::InfiniteSelect<crate::types::Country>\")"
+                "with_shape_path(\"gpui_form_component::infinite_select::InfiniteSelect<crate::types::Country>\")"
             ),
             "searchable infinite select metadata should keep the original shape identity: {compact}"
         );

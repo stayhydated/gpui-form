@@ -19,7 +19,7 @@ from the core `GpuiForm` macro surface.
 ## Boundaries
 
 - The core form derive crate (`gpui-form-derive`) focuses on
-  `GpuiForm`, custom component shape macros, and custom shape declarations.
+  `GpuiForm`, component shape macros, and component shape declarations.
 - This crate focuses only on enum-backed select item title/value implementations.
 - Runtime shapes and adapters remain in `gpui-form-collection`.
 - Applications import `#[derive(SelectItem)]` from this crate explicitly.

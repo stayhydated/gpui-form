@@ -1,0 +1,5 @@
+error: component(...) syntax was removed; use `component = ...`
+ --> tests/ui/component_shape_legacy_syntax.rs:5:17
+  |
+5 |     #[gpui_form(component(shape = crate::shape::DemoShape))]
+  |                 ^^^^^^^^^

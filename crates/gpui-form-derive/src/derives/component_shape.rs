@@ -13,7 +13,7 @@ mod kw {
     syn::custom_keyword!(value_binding);
 }
 
-struct CustomComponentInput {
+struct ComponentShapeInput {
     attrs: Vec<Attribute>,
     vis: Visibility,
     ident: Ident,
@@ -25,7 +25,7 @@ struct CustomComponentInput {
     field_suffix: Option<syn::LitStr>,
 }
 
-impl Parse for CustomComponentInput {
+impl Parse for ComponentShapeInput {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let attrs = input.call(Attribute::parse_outer)?;
         let vis = input.parse()?;
@@ -120,8 +120,8 @@ fn phantom_type_tokens(generics: &Generics) -> TokenStream {
     }
 }
 
-fn expand(input: CustomComponentInput) -> TokenStream {
-    let CustomComponentInput {
+fn expand(input: ComponentShapeInput) -> TokenStream {
+    let ComponentShapeInput {
         attrs,
         vis,
         ident,
@@ -147,8 +147,8 @@ fn expand(input: CustomComponentInput) -> TokenStream {
     });
     let prototyping_const = field_suffix.map(|field_suffix| {
         quote! {
-            const PROTOTYPING: ::gpui_form_component::custom::CustomComponentPrototyping =
-                ::gpui_form_component::custom::CustomComponentPrototyping::new()
+            const PROTOTYPING: ::gpui_form_component::shape::ComponentPrototyping =
+                ::gpui_form_component::shape::ComponentPrototyping::new()
                     .field_suffix(#field_suffix);
         }
     });
@@ -158,7 +158,7 @@ fn expand(input: CustomComponentInput) -> TokenStream {
             ::core::marker::PhantomData<fn() -> #phantom_type>
         ) #where_clause;
 
-        impl #impl_generics ::gpui_form_component::custom::CustomComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics ::gpui_form_component::shape::ComponentShape for #ident #ty_generics #where_clause {
             type State = #state;
 
             fn new(
@@ -176,13 +176,13 @@ fn expand(input: CustomComponentInput) -> TokenStream {
 }
 
 pub fn function(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(input as CustomComponentInput);
+    let input = parse_macro_input!(input as ComponentShapeInput);
     expand(input).into()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{CustomComponentInput, expand};
+    use super::{ComponentShapeInput, expand};
     use quote::quote;
 
     fn compact_tokens(tokens: &str) -> String {
@@ -190,8 +190,8 @@ mod tests {
     }
 
     #[test]
-    fn custom_component_function_macro_emits_contract_impl() {
-        let input: CustomComponentInput = syn::parse2(quote! {
+    fn component_shape_function_macro_emits_contract_impl() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape<T>
             where
                 T: ::std::str::FromStr + ::std::string::ToString + 'static,
@@ -213,7 +213,7 @@ mod tests {
             "generic shape type should carry PhantomData for external component wrappers: {compact}"
         );
         assert!(
-            compact.contains("impl<T>::gpui_form_component::custom::CustomComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
+            compact.contains("impl<T>::gpui_form_component::shape::ComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
             "macro should implement the shape contract with caller generics and where clause: {compact}"
         );
         assert!(
@@ -229,7 +229,7 @@ mod tests {
             "macro should emit value-binding metadata: {compact}"
         );
         assert!(
-            compact.contains("CustomComponentPrototyping::new().field_suffix(\"input\")"),
+            compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
             "macro should emit prototyping field suffix metadata: {compact}"
         );
     }

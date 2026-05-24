@@ -41,4 +41,4 @@ Optional attribute:
 - [`gpui-form`](../gpui-form/README.md) for standard form derives and schema
   wiring.
 - [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`,
-  `CustomComponent`, and `custom_component!`.
+  `ComponentShape`, and `component_shape!`.

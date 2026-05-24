@@ -13,12 +13,12 @@ schema metadata:
 - localized date-picker runtime state
 - native file-picker runtime state over GPUI path prompts
 - cascading select runtime helpers for nested enums
-- the runtime contract for custom component state
+- the runtime contract for component shape state
 
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/custom.rs`: `CustomComponentShape` and `custom_component_shape!`
+- `src/shape.rs`: `ComponentShape` and `component_shape!`
 - `src/infinite_select.rs`: `InfiniteSelect`, `InfiniteSelectItem`,
   `InfiniteSelectPath`, `Select`, and path reconstruction helpers
 - `src/date_picker.rs`: runtime state and element wrapper for localized date
@@ -32,9 +32,9 @@ schema metadata:
 
 ## Subsystem Boundaries
 
-### `custom`
+### `shape`
 
-`CustomComponentShape` is the contract targeted by `component = Shape`
+`ComponentShape` is the contract targeted by `component = Shape`
 expressions.
 
 Responsibilities:
@@ -44,7 +44,7 @@ Responsibilities:
 - optionally carry a UI component path for prototyping output
 - optionally carry prototyping preferences such as the generated field/helper
   suffix
-- optionally implement `CustomComponentValueBinding<T>` so generated
+- optionally implement `ComponentValueBinding<T>` so generated
   prototyping code can seed state and map component events back into
   `FormValueChange<T>`
   through helper aliases/functions instead of exposing associated-type
@@ -64,7 +64,7 @@ Responsibilities:
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
 - own the cascading root/child `SelectState`s through `Select`
-- implement the custom component shape on `Select` itself when the
+- implement the component shape on `Select` itself when the
   `derive` feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
   `form_fields()` helpers plus `InfiniteSelectField` for form code
@@ -128,10 +128,10 @@ Responsibilities:
    `InfiniteSelectPathError`, while string persistence can use
    `InfiniteSelectKeyPath`'s `Display` / `FromStr`.
 
-### Custom components
+### Component shapes
 
-1. Users either declare a shape with `custom_component_shape!` or derive
-   `CustomComponent`.
+1. Users either declare a shape with `component_shape!` or derive
+   `ComponentShape`.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path
@@ -139,17 +139,17 @@ Responsibilities:
 1. Shape-level prototyping metadata can carry a preferred field/helper suffix
    for scaffold generation, with field-level annotations able to override it.
 1. When the field opts into `value_binding`, prototyping code calls the
-   shape-owned `CustomComponentValueBinding<T>` hooks instead of inferring any
+   shape-owned `ComponentValueBinding<T>` hooks instead of inferring any
    domain-specific event semantics; generated code can route those calls
-   through `CustomComponentStateOf`, `CustomComponentEventOf`,
+   through `ComponentStateOf`, `ComponentEventOf`,
    `seed_value_binding_state`, `form_value_change`, and `FormValueChange<T>`.
-   `CustomComponentEventOf` resolves to the binding's associated `Event`, so
+   `ComponentEventOf` resolves to the binding's associated `Event`, so
    owned states can expose their own event enum and external wrappers can keep
    their upstream event type.
 
 ### Date picker
 
-1. Custom shapes can store `Entity<DatePickerState>` in `FormFields`.
+1. Component shapes can store `Entity<DatePickerState>` in `FormFields`.
 1. Runtime date selection emits `DatePickerEvent::Change`.
 1. Shape-owned value adapters can convert the `jiff::civil::Date` into the
    holder field type with `parse_form_date` and any `type`/`into` conversion
@@ -159,7 +159,7 @@ Responsibilities:
 
 ### File picker
 
-1. Manual or custom form code stores `Entity<FilePickerState>`.
+1. Manual form code stores `Entity<FilePickerState>`.
 1. `FilePicker` renders a path display, clear action, and browse button.
 1. Browse actions call `App::prompt_for_paths(PathPromptOptions)` and update the
    state asynchronously when the platform dialog returns.
@@ -213,6 +213,6 @@ Update this file when:
 
 - runtime responsibilities move between modules
 - a new runtime helper module is added
-- the custom component contract changes
+- the component shape contract changes
 - infinite-select or date-picker event/data flow changes
 - story/demo ownership moves back into or out of this runtime crate

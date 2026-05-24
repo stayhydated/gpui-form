@@ -25,7 +25,7 @@ not own proc-macro parsing or token emission.
 
 ### `ComponentKind`
 
-Static identity for component categories. Today the schema only models custom
+Static identity for component categories. Today the schema only models shape-backed
 component contract fields. It centralizes shared traits such as:
 
 - snake-case component naming
@@ -35,9 +35,9 @@ component contract fields. It centralizes shared traits such as:
 
 ### `ComponentsBehaviour`
 
-Per-field runtime behavior metadata. Today this is `Custom`; shape-specific
-details live in `FieldVariant::custom_shape`, `custom_component`,
-`custom_value_binding`, and `custom_prototyping_field_suffix`.
+Per-field runtime behavior metadata. Today this is `Shape`; shape-specific
+details live in `FieldVariant::shape_path`, `component_path`,
+`value_binding`, and `prototyping_field_suffix`.
 
 This is the metadata level that downstream consumers use; derive/codegen
 internals should not invent separate parallel runtime models.
@@ -70,13 +70,13 @@ Important fields:
 - `default_expr`
 - `from_expr`
 - `into_expr`
-- `custom_shape`
-- `custom_component`
-- `custom_value_binding`
-- `custom_prototyping_field_suffix`
+- `shape_path`
+- `component_path`
+- `value_binding`
+- `prototyping_field_suffix`
 
 `FieldVariant::field_name_with_behaviour()` derives the generated component
-field name from `custom_prototyping_field_suffix` or `custom_shape` when
+field name from `prototyping_field_suffix` or `shape_path` when
 available, so inventory consumers use the same suffixes as the derive output.
 The fallback suffix strips shape/state wrappers and removes duplicated
 field-name prefixes before falling back to the behavior name. Explicit

@@ -1,7 +1,7 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form_component::custom::{
-    CustomComponentValueBinding, FormValueChange, OwnedCustomComponentValueBinding,
+use gpui_form_component::shape::{
+    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -64,7 +64,7 @@ impl RenderOnce for CheckboxField {
     }
 }
 
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     /// Form component for a value-bound `gpui_component::checkbox::Checkbox`.
     pub struct Checkbox {
         type State = CheckboxState;
@@ -75,7 +75,7 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl CustomComponentValueBinding<bool> for Checkbox {
+impl ComponentValueBinding<bool> for Checkbox {
     type Event = CheckboxEvent;
 
     fn seed_value_binding_state(
@@ -94,4 +94,4 @@ impl CustomComponentValueBinding<bool> for Checkbox {
     }
 }
 
-impl OwnedCustomComponentValueBinding<bool> for Checkbox {}
+impl OwnedComponentValueBinding<bool> for Checkbox {}

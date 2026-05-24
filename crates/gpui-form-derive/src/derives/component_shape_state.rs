@@ -4,40 +4,40 @@ use quote::quote;
 use syn::{DeriveInput, Path, parse_macro_input};
 
 #[derive(Debug, Default, FromAttributes)]
-#[darling(attributes(gpui_form_custom))]
-struct CustomComponentMeta {
+#[darling(attributes(gpui_form_shape))]
+struct ComponentShapeMeta {
     #[darling(default)]
     new: Option<Path>,
     /// Optional UI component type path.
-    /// When set, `CustomComponentShape::COMPONENT_PATH` is populated so that
+    /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
     /// field annotations do not need to repeat `component = …`.
     #[darling(default)]
     component: Option<Path>,
-    /// Opt generated prototyping code into CustomComponentValueBinding by default.
+    /// Opt generated prototyping code into ComponentValueBinding by default.
     #[darling(default)]
     value_binding: Flag,
     /// Preferred generated field/helper suffix for prototyping output.
     #[darling(default)]
     field_suffix: Option<String>,
-    /// Runtime crate path that owns `custom::CustomComponentShape`.
+    /// Runtime crate path that owns `shape::ComponentShape`.
     ///
     /// This defaults to the explicit `gpui_form_component` runtime crate for
     /// downstream users.
-    /// Runtime crates that own a state type can set `custom_crate = crate`.
+    /// Runtime crates that own a state type can set `shape_crate = crate`.
     #[darling(default)]
-    custom_crate: Option<Path>,
+    shape_crate: Option<Path>,
 }
 
-fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<CustomComponentMeta> {
-    CustomComponentMeta::from_attributes(attrs)
+fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<ComponentShapeMeta> {
+    ComponentShapeMeta::from_attributes(attrs)
 }
 
 fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
     let new_path = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
-    let custom_crate = meta
-        .custom_crate
+    let shape_crate = meta
+        .shape_crate
         .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
@@ -58,8 +58,8 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     let prototyping_const = if let Some(field_suffix) = meta.field_suffix {
         let field_suffix = syn::LitStr::new(&field_suffix, proc_macro2::Span::call_site());
         quote! {
-            const PROTOTYPING: #custom_crate::custom::CustomComponentPrototyping =
-                #custom_crate::custom::CustomComponentPrototyping::new()
+            const PROTOTYPING: #shape_crate::shape::ComponentPrototyping =
+                #shape_crate::shape::ComponentPrototyping::new()
                     .field_suffix(#field_suffix);
         }
     } else {
@@ -67,7 +67,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     };
 
     Ok(quote! {
-        impl #impl_generics #custom_crate::custom::CustomComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics #shape_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
             type State = Self;
 
             fn new(
@@ -103,9 +103,9 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_default_new_path() {
+    fn test_component_shape_default_new_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
+            #[derive(ComponentShape)]
             struct TagsState;
         })
         .unwrap();
@@ -114,8 +114,8 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("impl::gpui_form_component::custom::CustomComponentShapeforTagsState"),
-            "should implement CustomComponentShape for derived type"
+            compact.contains("impl::gpui_form_component::shape::ComponentShapeforTagsState"),
+            "should implement ComponentShape for derived type"
         );
         assert!(
             compact.contains("Self::new(window,cx)"),
@@ -124,10 +124,10 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_explicit_new_path() {
+    fn test_component_shape_explicit_new_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
-            #[gpui_form_custom(new = crate::state::build)]
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = crate::state::build)]
             struct TagsState;
         })
         .unwrap();
@@ -146,10 +146,10 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_with_component_path() {
+    fn test_component_shape_with_component_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
-            #[gpui_form_custom(new = Self::new, component = crate::ui::TagsInput)]
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, component = crate::ui::TagsInput)]
             struct TagsState;
         })
         .unwrap();
@@ -168,10 +168,10 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_with_value_binding() {
+    fn test_component_shape_with_value_binding() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
-            #[gpui_form_custom(new = Self::new, value_binding)]
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, value_binding)]
             struct TagsState;
         })
         .unwrap();
@@ -186,10 +186,10 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_component_with_field_suffix() {
+    fn test_component_shape_with_field_suffix() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
-            #[gpui_form_custom(new = Self::new, field_suffix = "tags")]
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, field_suffix = "tags")]
             struct TagsState;
         })
         .unwrap();
@@ -198,16 +198,16 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("CustomComponentPrototyping::new().field_suffix(\"tags\")"),
+            compact.contains("ComponentPrototyping::new().field_suffix(\"tags\")"),
             "should emit prototyping field suffix metadata"
         );
     }
 
     #[test]
-    fn test_custom_component_with_custom_crate_path() {
+    fn test_component_shape_with_shape_crate_path() {
         let input: DeriveInput = syn::parse2(quote! {
-            #[derive(CustomComponent)]
-            #[gpui_form_custom(new = Self::new, custom_crate = crate)]
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, shape_crate = crate)]
             struct TagsState;
         })
         .unwrap();
@@ -216,8 +216,8 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("implcrate::custom::CustomComponentShapeforTagsState"),
-            "should allow runtime crates to implement their local custom trait path"
+            compact.contains("implcrate::shape::ComponentShapeforTagsState"),
+            "should allow runtime crates to implement their local shape trait path"
         );
     }
 }

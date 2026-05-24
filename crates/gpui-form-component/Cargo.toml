@@ -1,7 +1,7 @@
 [package]
 name = "gpui-form-component"
 description = """
-Custom components for gpui-form, including InfiniteSelect for nested enum support
+Component shape runtimes for gpui-form, including InfiniteSelect for nested enum support
 """
 version.workspace = true
 rust-version.workspace = true

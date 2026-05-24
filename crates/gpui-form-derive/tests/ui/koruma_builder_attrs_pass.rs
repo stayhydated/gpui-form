@@ -5,7 +5,7 @@ struct InputShape;
 struct NumericState;
 struct InputState;
 
-impl gpui_form_component::custom::CustomComponentShape for NumericShape {
+impl gpui_form_component::shape::ComponentShape for NumericShape {
     type State = NumericState;
 
     fn new(
@@ -16,7 +16,7 @@ impl gpui_form_component::custom::CustomComponentShape for NumericShape {
     }
 }
 
-impl gpui_form_component::custom::CustomComponentShape for InputShape {
+impl gpui_form_component::shape::ComponentShape for InputShape {
     type State = InputState;
 
     fn new(

@@ -1,7 +1,7 @@
 #[test]
-fn gpui_form_reports_invalid_custom_component_arguments() {
+fn gpui_form_reports_invalid_component_shape_arguments() {
     let tests = trybuild::TestCases::new();
-    tests.compile_fail("tests/ui/custom_component_*.rs");
+    tests.compile_fail("tests/ui/component_shape_*.rs");
 }
 
 #[test]

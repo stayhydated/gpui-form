@@ -4,13 +4,13 @@ Procedural macros behind the `gpui-form` ecosystem.
 
 Most users should depend on [`gpui-form`](../gpui-form/README.md) and derive
 from the facade crate. Use this crate directly when you want the proc-macro
-layer, including custom component shape derives and helper macros.
+layer, including component-shape derives and helper macros.
 
 ## What This Crate Provides
 
 - `#[derive(GpuiForm)]`
-- `#[derive(CustomComponent)]`
-- `custom_component! { ... }`
+- `#[derive(ComponentShape)]`
+- `component_shape! { ... }`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by
@@ -51,7 +51,7 @@ Supported component forms:
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
 
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `CustomComponentShape::new`. Select and infinite-select behavior
+delegates to `ComponentShape::new`. Select and infinite-select behavior
 uses Koruma-style direct setter chains that expand to bon builders inside the
 derive macro.
 
@@ -85,8 +85,8 @@ Behavior notes:
 - `searchable(true)` and `.partial(true)` record select behavior metadata
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata
-- `.value_binding()` records that the custom shape implements
-  `gpui_form_component::custom::CustomComponentValueBinding<T>` for generated
+- `.value_binding()` records that the component shape implements
+  `gpui_form_component::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
   `seed_value_binding_state` and maps component events to `FormValueChange<T>`
 - `type`/`from`/`into` let the generated holder edit a type that differs from
@@ -96,7 +96,7 @@ Behavior notes:
   `String`s
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
-- custom shape prototyping metadata drives generated `FormFields` and
+- component shape prototyping metadata drives generated `FormFields` and
   `FormComponents` suffixes when present. Collection shapes publish suffixes
   such as `input`, `select`, `checkbox`, and `switch`; reusable app shapes can
   use `field_suffix = "..."`, and otherwise generated identifiers fall back to
@@ -108,15 +108,15 @@ Behavior notes:
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion
 
-## `#[derive(CustomComponent)]`
+## `#[derive(ComponentShape)]`
 
-Implements `gpui_form_component::custom::CustomComponentShape` directly for a state type.
+Implements `gpui_form_component::shape::ComponentShape` directly for a state type.
 
 ```rs
-use gpui_form_derive::CustomComponent;
+use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, CustomComponent)]
-#[gpui_form_custom(
+#[derive(Clone, Debug, ComponentShape)]
+#[gpui_form_shape(
     new = crate::state::build,
     component = crate::ui::TagsInput,
     value_binding,
@@ -126,20 +126,20 @@ pub struct TagsState;
 ```
 
 By default, the generated implementation calls `Self::new(window, cx)`.
-`component = ...` populates `CustomComponentShape::COMPONENT_PATH`.
-`value_binding` sets `CustomComponentShape::VALUE_BINDING = true`, so generated
-prototyping code can inherit the shape's `CustomComponentValueBinding<T>`
+`component = ...` populates `ComponentShape::COMPONENT_PATH`.
+`value_binding` sets `ComponentShape::VALUE_BINDING = true`, so generated
+prototyping code can inherit the shape's `ComponentValueBinding<T>`
 contract without repeating `value_binding` on every field.
-`field_suffix = "..."` populates `CustomComponentShape::PROTOTYPING`, giving
+`field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
 
-## `custom_component!`
+## `component_shape!`
 
 Declares a local shape type for external component/state pairs.
 
 ```rs
-gpui_form_derive::custom_component! {
+gpui_form_derive::component_shape! {
     /// Ready-made text input shape.
     pub struct Input<T = String>
     where
@@ -156,8 +156,8 @@ gpui_form_derive::custom_component! {
 ```
 
 Use this when the component and state live in another crate. The macro creates
-the local wrapper type that owns the `CustomComponentShape` implementation; the
-caller can still add a `CustomComponentValueBinding<T>` impl on that wrapper.
+the local wrapper type that owns the `ComponentShape` implementation; the
+caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
 
 ## Feature Flags
 
@@ -169,7 +169,7 @@ caller can still add a `CustomComponentValueBinding<T>` impl on that wrapper.
 - [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
   `#[derive(SelectItem)]` when using derives directly
 - [`gpui-form-component`](../gpui-form-component/README.md) for runtime helpers,
-  custom component contracts, and `#[derive(InfiniteSelect)]` with its `derive`
+  component shape contracts, and `#[derive(InfiniteSelect)]` with its `derive`
   feature
 - [`gpui-form-schema`](../gpui-form-schema/README.md) when you need metadata
   rather than derives

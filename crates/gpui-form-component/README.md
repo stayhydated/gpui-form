@@ -11,7 +11,7 @@ macros.
 - `infinite_select`: runtime traits and helpers for cascading enum selects
 - `date_picker`: localized runtime state and element wrapper for calendar date input
 - `file_picker`: native GPUI path selection rendered with `gpui-component` controls
-- `custom`: the runtime contract for user-defined component state
+- `shape`: the runtime contract for user-defined component state
 
 ## Infinite Select
 
@@ -118,8 +118,7 @@ Derived `InfiniteSelect` enums expose:
 
 ## Date Picker
 
-This crate provides the localized runtime date-picker that custom
-`gpui-form` shapes can wrap.
+This crate provides the localized runtime date-picker that component shapes can wrap.
 Its default empty placeholder is plain English fallback copy. Pass
 `DatePicker::placeholder(...)` with text rendered through your application-owned
 `es-fluent` localizer when a form needs localized or custom copy.
@@ -136,7 +135,7 @@ use gpui_form_component::date_picker::{
 };
 ```
 
-Custom form shapes can store `Entity<DatePickerState>`, render `DatePicker`,
+Component shapes can store `Entity<DatePickerState>`, render `DatePicker`,
 and convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
 The selected-date label and embedded calendar popover share the same display
 locale: ICU4X formats month names, weekday headers, day/year labels, and the
@@ -149,7 +148,7 @@ calendar popover.
 
 This crate provides a native path picker backed by the pinned GPUI git API,
 not a separate dialog crate.
-Custom form shapes can use the same runtime.
+Component shapes can use the same runtime.
 The default placeholders, native-dialog prompts, browse label, dropped-dialog
 error, and selected-count text have plain English fallback copy. Explicit
 builder values such as `placeholder(...)`, `prompt(...)`, and
@@ -194,9 +193,9 @@ Launch the component gallery with:
 cargo run -p gpui-form-component-story
 ```
 
-## Custom Components
+## Component Shapes
 
-`custom::CustomComponentShape` is the contract used by
+`shape::ComponentShape` is the contract used by
 `#[gpui_form(component = Shape)]`.
 
 For common external widgets, prefer the reusable shapes in
@@ -207,7 +206,7 @@ specific enough.
 You can declare a reusable shape with the helper macro:
 
 ```rs
-gpui_form_component::custom_component_shape!(
+gpui_form_component::component_shape!(
     pub EmailInputShape,
     state = gpui_component::input::InputState,
     new = gpui_component::input::InputState::new,
@@ -220,8 +219,8 @@ Or, with `gpui-form-derive`, implement the same contract directly on a state
 type:
 
 ```rs
-#[derive(gpui_form_derive::CustomComponent)]
-#[gpui_form_custom(
+#[derive(gpui_form_derive::ComponentShape)]
+#[gpui_form_shape(
     new = crate::state::build,
     component = crate::ui::TagsInput,
     value_binding,
@@ -230,23 +229,23 @@ type:
 pub struct TagsState;
 ```
 
-For custom components that should participate in generated prototyping
-subscriptions, implement `custom::CustomComponentValueBinding<T>` for the same
+For component shapes that should participate in generated prototyping
+subscriptions, implement `shape::ComponentValueBinding<T>` for the same
 shape and either set `value_binding` on the shape metadata or add
 `.value_binding()` to the `component = Shape` expression for a single field. The
 binding seeds state from the current form value and maps component events
 to `FormValueChange<T>`. The binding's associated `Event` type is the actual
 event enum emitted by the state. Components that own their state can expose
 their own event enum and mark the shape with
-`custom::OwnedCustomComponentValueBinding<T>`; external wrappers keep their
+`shape::OwnedComponentValueBinding<T>`; external wrappers keep their
 upstream event type and convert it in `form_value_change`.
 
-Reusable shapes can also publish `custom::CustomComponentPrototyping` metadata.
-Set `field_suffix = "..."` through `custom_component_shape!` or
-`#[gpui_form_custom(...)]` so prototyping generators can emit names such as
+Reusable shapes can also publish `shape::ComponentPrototyping` metadata.
+Set `field_suffix = "..."` through `component_shape!` or
+`#[gpui_form_shape(...)]` so prototyping generators can emit names such as
 `email_input` without deriving that suffix from the shape type. Generated
-value-binding scaffolds can use `CustomComponentStateOf`,
-`CustomComponentEventOf`, `seed_value_binding_state`, and `form_value_change` to
+value-binding scaffolds can use `ComponentStateOf`,
+`ComponentEventOf`, `seed_value_binding_state`, and `form_value_change` to
 avoid repeating associated-type projections at every call site.
 
 ## Most Users Should Use Instead
