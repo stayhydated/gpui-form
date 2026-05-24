@@ -304,7 +304,7 @@ can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 
 Custom components can also opt into generated value synchronization by
-implementing `gpui_form_component::custom::CustomComponentValueAdapter<T>` on the shape.
+implementing `gpui_form_component::custom::CustomComponentValueBinding<T>` on the shape.
 For one-off fields, add `value_binding` to the custom component options. For a
 reusable component, put that metadata on the shape:
 
@@ -321,9 +321,11 @@ use gpui_form_derive::CustomComponent;
 pub struct TagsInputState;
 ```
 
-The adapter remains application-owned; `gpui-form` only calls
-`seed_value_binding_state` and `value_binding_change`, which turn native
-component events into `ValueBindingChange<T>`.
+External component wrappers, such as `gpui-component` inputs, map their native
+event into `FormValueEvent<T>` with `form_value_event`. Components that own
+their state can emit `FormValueEvent<T>` directly and mark the shape with
+`OwnedCustomComponentValueBinding<T>`. The binding remains application-owned;
+`gpui-form` only calls `seed_value_binding_state` and `form_value_event`.
 
 Runtime helpers are available from `gpui_form_component`; `gpui-form` does not
 re-export component modules or their derives.

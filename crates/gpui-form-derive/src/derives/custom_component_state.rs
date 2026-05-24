@@ -13,7 +13,7 @@ struct CustomComponentMeta {
     /// field annotations do not need to repeat `component = …`.
     #[darling(default)]
     component: Option<Path>,
-    /// Opt generated prototyping code into CustomComponentValueAdapter by default.
+    /// Opt generated prototyping code into CustomComponentValueBinding by default.
     #[darling(default)]
     value_binding: Flag,
     /// Preferred generated field/helper suffix for prototyping output.

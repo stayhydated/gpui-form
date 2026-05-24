@@ -44,9 +44,9 @@ Responsibilities:
 - optionally carry a UI component path for prototyping output
 - optionally carry prototyping preferences such as the generated field/helper
   suffix
-- optionally implement `CustomComponentValueAdapter<T>` so generated
-  prototyping code can seed state and map native component events back into form
-  value-binding changes
+- optionally implement `CustomComponentValueBinding<T>` so generated
+  prototyping code can seed state and map native component events back into
+  `FormValueEvent<T>`
   through helper aliases/functions instead of exposing associated-type
   projections at every generated call site
 
@@ -139,11 +139,13 @@ Responsibilities:
 1. Shape-level prototyping metadata can carry a preferred field/helper suffix
    for scaffold generation, with field-level annotations able to override it.
 1. When the field opts into `value_binding`, prototyping code calls the
-   shape-owned `CustomComponentValueAdapter<T>` hooks instead of inferring any
+   shape-owned `CustomComponentValueBinding<T>` hooks instead of inferring any
    domain-specific event semantics; generated code can route those calls
-   through `CustomComponentStateOf`, `CustomComponentEventOf`,
-   `seed_value_binding_state`, `value_binding_change`, and
-   `ValueBindingChange<T>`.
+   through `CustomComponentStateOf`, `CustomComponentNativeEventOf`,
+   `seed_value_binding_state`, `form_value_event`, and `FormValueEvent<T>`.
+   Owned states can emit `FormValueEvent<T>` directly and use
+   `OwnedCustomComponentValueBinding<T>` as a marker; external wrappers keep
+   their native event type and map it in `form_value_event`.
 
 ### Date picker
 

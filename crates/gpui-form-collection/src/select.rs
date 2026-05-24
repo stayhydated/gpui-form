@@ -3,7 +3,7 @@ use gpui_component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_form_component::custom::{CustomComponentValueAdapter, ValueBindingChange};
+use gpui_form_component::custom::{CustomComponentValueBinding, FormValueEvent};
 use strum::IntoEnumIterator;
 
 gpui_form_derive::custom_component! {
@@ -92,12 +92,12 @@ where
     }
 }
 
-impl<T, D> CustomComponentValueAdapter<T> for Select<T, D>
+impl<T, D> CustomComponentValueBinding<T> for Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
-    type Event = SelectEvent<D>;
+    type NativeEvent = SelectEvent<D>;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -111,10 +111,10 @@ where
         }
     }
 
-    fn value_binding_change(_state: &Self::State, event: &Self::Event) -> ValueBindingChange<T> {
+    fn form_value_event(_state: &Self::State, event: &Self::NativeEvent) -> FormValueEvent<T> {
         match event {
-            SelectEvent::Confirm(Some(value)) => ValueBindingChange::Set(value.clone()),
-            SelectEvent::Confirm(None) => ValueBindingChange::Clear,
+            SelectEvent::Confirm(Some(value)) => FormValueEvent::Change(value.clone()),
+            SelectEvent::Confirm(None) => FormValueEvent::Clear,
         }
     }
 }

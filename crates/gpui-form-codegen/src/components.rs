@@ -54,7 +54,7 @@ pub struct CustomOptions {
     /// component state from the model default.
     pub field_default: Option<syn::Expr>,
     /// Whether prototyping code should wire this custom component through
-    /// `CustomComponentValueAdapter`.
+    /// `CustomComponentValueBinding`.
     pub value_binding: Option<bool>,
     /// Optional explicit generated field/helper suffix for prototyping output.
     pub field_suffix: Option<String>,

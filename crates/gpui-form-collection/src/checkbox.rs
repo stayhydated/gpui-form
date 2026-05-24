@@ -1,11 +1,10 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form_component::custom::{CustomComponentValueAdapter, ValueBindingChange};
+use gpui_form_component::custom::{
+    CustomComponentValueBinding, FormValueEvent, OwnedCustomComponentValueBinding,
+};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum CheckboxEvent {
-    Change(bool),
-}
+pub type CheckboxEvent = FormValueEvent<bool>;
 
 #[derive(Debug, Default)]
 pub struct CheckboxState {
@@ -27,7 +26,7 @@ impl CheckboxState {
         }
 
         self.checked = checked;
-        cx.emit(CheckboxEvent::Change(checked));
+        cx.emit(FormValueEvent::Change(checked));
         cx.notify();
     }
 }
@@ -73,8 +72,8 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl CustomComponentValueAdapter<bool> for Checkbox {
-    type Event = CheckboxEvent;
+impl CustomComponentValueBinding<bool> for Checkbox {
+    type NativeEvent = FormValueEvent<bool>;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -85,9 +84,9 @@ impl CustomComponentValueAdapter<bool> for Checkbox {
         state.set_checked(value.copied().unwrap_or(false), cx);
     }
 
-    fn value_binding_change(_state: &Self::State, event: &Self::Event) -> ValueBindingChange<bool> {
-        match event {
-            CheckboxEvent::Change(checked) => ValueBindingChange::Set(*checked),
-        }
+    fn form_value_event(_state: &Self::State, event: &Self::NativeEvent) -> FormValueEvent<bool> {
+        event.clone()
     }
 }
+
+impl OwnedCustomComponentValueBinding<bool> for Checkbox {}

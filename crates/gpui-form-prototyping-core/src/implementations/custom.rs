@@ -17,10 +17,10 @@ impl FieldCodeGenerator for CustomCodeGenerator {
     fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
         if field.custom_value_binding {
             vec![
-                ImportItem::path("gpui_form_component::custom::CustomComponentEventOf"),
+                ImportItem::path("gpui_form_component::custom::CustomComponentNativeEventOf"),
                 ImportItem::path("gpui_form_component::custom::CustomComponentStateOf"),
-                ImportItem::path("gpui_form_component::custom::ValueBindingChange"),
-                ImportItem::path("gpui_form_component::custom::value_binding_change"),
+                ImportItem::path("gpui_form_component::custom::FormValueEvent"),
+                ImportItem::path("gpui_form_component::custom::form_value_event"),
                 ImportItem::path("gpui_form_component::custom::seed_value_binding_state"),
             ]
         } else {
@@ -94,7 +94,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
         let field_name_ident = field.field_ident();
         let event_handler_fn_name_ident = field.component_event_handler_ident();
         let state_type = quote! { CustomComponentStateOf<#shape> };
-        let event_type = quote! { CustomComponentEventOf<#shape, #field_type> };
+        let event_type = quote! { CustomComponentNativeEventOf<#shape, #field_type> };
 
         let calls = vec![
             quote! { cx.subscribe_in(&#field_var_name_ident, window, Self::#event_handler_fn_name_ident) },
@@ -119,22 +119,22 @@ impl FieldCodeGenerator for CustomCodeGenerator {
                 _window: &mut Window,
                 _cx: &mut Context<Self>,
             ) {
-                let change = {
+                let form_event = {
                     let state = state.read(_cx);
-                    value_binding_change::<#shape, #field_type>(
+                    form_value_event::<#shape, #field_type>(
                         &state,
                         event,
                     )
                 };
 
-                match change {
-                    ValueBindingChange::Set(value) => {
+                match form_event {
+                    FormValueEvent::Change(value) => {
                         #set_tokens
                     }
-                    ValueBindingChange::Clear => {
+                    FormValueEvent::Clear => {
                         #clear_tokens
                     }
-                    ValueBindingChange::Unchanged => {}
+                    FormValueEvent::Unchanged => {}
                 }
             }
         };
@@ -278,10 +278,10 @@ mod tests {
                 && compact_handler
                     .contains("state:&Entity<CustomComponentStateOf<crate::shapes::CountryShape>>")
                 && compact_handler.contains(
-                    "event:&CustomComponentEventOf<crate::shapes::CountryShape,CountryCode>"
+                    "event:&CustomComponentNativeEventOf<crate::shapes::CountryShape,CountryCode>"
                 )
                 && compact_handler
-                    .contains("value_binding_change::<crate::shapes::CountryShape,CountryCode>"),
+                    .contains("form_value_event::<crate::shapes::CountryShape,CountryCode>"),
             "custom event handler should use runtime helper aliases inline: {compact_handler}"
         );
         assert!(

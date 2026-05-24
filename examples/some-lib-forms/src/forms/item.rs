@@ -9,8 +9,8 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, ValueBindingChange, seed_value_binding_state,
-    value_binding_change,
+    CustomComponentNativeEventOf, CustomComponentStateOf, FormValueEvent, form_value_event,
+    seed_value_binding_state,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
@@ -44,22 +44,22 @@ impl ItemForm {
     fn on_index_input_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<Age>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::input::Input<Age>, Age>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::input::Input<Age>, Age>(&state, event)
+            form_value_event::<gpui_form_collection::input::Input<Age>, Age>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.index = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.index = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {

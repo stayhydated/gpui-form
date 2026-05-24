@@ -1,11 +1,10 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::switch::Switch as GpuiSwitch;
-use gpui_form_component::custom::{CustomComponentValueAdapter, ValueBindingChange};
+use gpui_form_component::custom::{
+    CustomComponentValueBinding, FormValueEvent, OwnedCustomComponentValueBinding,
+};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SwitchEvent {
-    Change(bool),
-}
+pub type SwitchEvent = FormValueEvent<bool>;
 
 #[derive(Debug, Default)]
 pub struct SwitchState {
@@ -27,7 +26,7 @@ impl SwitchState {
         }
 
         self.checked = checked;
-        cx.emit(SwitchEvent::Change(checked));
+        cx.emit(FormValueEvent::Change(checked));
         cx.notify();
     }
 }
@@ -73,8 +72,8 @@ gpui_form_derive::custom_component! {
     }
 }
 
-impl CustomComponentValueAdapter<bool> for Switch {
-    type Event = SwitchEvent;
+impl CustomComponentValueBinding<bool> for Switch {
+    type NativeEvent = FormValueEvent<bool>;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -85,9 +84,9 @@ impl CustomComponentValueAdapter<bool> for Switch {
         state.set_checked(value.copied().unwrap_or(false), cx);
     }
 
-    fn value_binding_change(_state: &Self::State, event: &Self::Event) -> ValueBindingChange<bool> {
-        match event {
-            SwitchEvent::Change(checked) => ValueBindingChange::Set(*checked),
-        }
+    fn form_value_event(_state: &Self::State, event: &Self::NativeEvent) -> FormValueEvent<bool> {
+        event.clone()
     }
 }
+
+impl OwnedCustomComponentValueBinding<bool> for Switch {}

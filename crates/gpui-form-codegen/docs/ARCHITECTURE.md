@@ -43,7 +43,7 @@ Important parse-time responsibilities:
   `#[gpui_form(type = ...)]` override
 - required-value holder behavior is inferred from known shape metadata
 - `value_binding()` records that generated prototyping code should use
-  `CustomComponentValueAdapter`
+  `CustomComponentValueBinding`
 - `field_suffix("...")` records a field-level prototyping name override
 - `searchable(true)` and `.partial(true)` record select behavior metadata
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior metadata

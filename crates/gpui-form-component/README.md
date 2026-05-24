@@ -231,19 +231,23 @@ pub struct TagsState;
 ```
 
 For custom components that should participate in generated prototyping
-subscriptions, implement `custom::CustomComponentValueAdapter<T>` for the same
+subscriptions, implement `custom::CustomComponentValueBinding<T>` for the same
 shape and either set `value_binding` on the shape metadata or add
 `.value_binding()` to the `component = Shape` expression for a single field. The
-adapter seeds state from the current form value and maps native component events
-to `ValueBindingChange<T>`.
+binding seeds state from the current form value and maps native component events
+to `FormValueEvent<T>`. Components that own their state can emit
+`FormValueEvent<T>` directly and mark the shape with
+`custom::OwnedCustomComponentValueBinding<T>`; external wrappers keep their
+native event type and convert it in `form_value_event`.
 
 Reusable shapes can also publish `custom::CustomComponentPrototyping` metadata.
 Set `field_suffix = "..."` through `custom_component_shape!` or
 `#[gpui_form_custom(...)]` so prototyping generators can emit names such as
 `email_input` without deriving that suffix from the shape type. Generated
 value-binding scaffolds can use `CustomComponentStateOf`,
-`CustomComponentEventOf`, `seed_value_binding_state`, and `value_binding_change`
-to avoid repeating associated-type projections at every call site.
+`CustomComponentNativeEventOf`, `seed_value_binding_state`, and
+`form_value_event` to avoid repeating associated-type projections at every call
+site.
 
 ## Most Users Should Use Instead
 

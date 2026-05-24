@@ -97,11 +97,12 @@ For `ComponentsBehaviour::Custom`:
 - if that metadata is missing, the generator falls back to a placeholder row
 - custom subscriptions are generated only when `FieldVariant::custom_value_binding`
   is true; the field's shape must provide the generic
-  `CustomComponentValueAdapter<T>` hook that maps native events to
-  `ValueBindingChange<T>`
+  `CustomComponentValueBinding<T>` hook that maps native events to
+  `FormValueEvent<T>`
 - value-bound custom subscriptions use runtime projection aliases and helper
   functions from `gpui_form_component::custom` inline for value-binding state
-  seeding and event conversion
+  seeding and event conversion; owned components can make their native event
+  `FormValueEvent<T>`, while external wrappers keep their upstream event type
 
 ## Coordination Rules
 

@@ -9,8 +9,8 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, ValueBindingChange, seed_value_binding_state,
-    value_binding_change,
+    CustomComponentNativeEventOf, CustomComponentStateOf, FormValueEvent, form_value_event,
+    seed_value_binding_state,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
@@ -44,68 +44,64 @@ impl UserForm {
     fn on_username_input_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::input::Input<String>, String>(
-                &state, event,
-            )
+            form_value_event::<gpui_form_collection::input::Input<String>, String>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.username = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.username = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_email_input_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::input::Input<String>, String>(
-                &state, event,
-            )
+            form_value_event::<gpui_form_collection::input::Input<String>, String>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.email = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.email = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_age_input_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::input::Input<u32>>>,
-        event: &CustomComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::input::Input<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::input::Input<u32>, u32>(&state, event)
+            form_value_event::<gpui_form_collection::input::Input<u32>, u32>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.age = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.age = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_balance_input_event(
@@ -113,28 +109,28 @@ impl UserForm {
         state: &Entity<
             CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
         >,
-        event: &CustomComponentEventOf<
+        event: &CustomComponentNativeEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<
+            form_value_event::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.balance = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.balance = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_debt_input_event(
@@ -142,66 +138,66 @@ impl UserForm {
         state: &Entity<
             CustomComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
         >,
-        event: &CustomComponentEventOf<
+        event: &CustomComponentNativeEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<
+            form_value_event::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.debt = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.debt = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_subscribe_newsletter_switch_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::switch::Switch>>,
-        event: &CustomComponentEventOf<gpui_form_collection::switch::Switch, bool>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::switch::Switch, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::switch::Switch, bool>(&state, event)
+            form_value_event::<gpui_form_collection::switch::Switch, bool>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.subscribe_newsletter = value;
             },
-            ValueBindingChange::Clear => {},
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Clear => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_enable_notifications_checkbox_event(
         &mut self,
         state: &Entity<CustomComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
-        event: &CustomComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
+        event: &CustomComponentNativeEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<gpui_form_collection::checkbox::Checkbox, bool>(&state, event)
+            form_value_event::<gpui_form_collection::checkbox::Checkbox, bool>(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.enable_notifications = value;
             },
-            ValueBindingChange::Clear => {},
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Clear => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_preferred_select_event(
@@ -209,26 +205,26 @@ impl UserForm {
         state: &Entity<
             CustomComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>,
         >,
-        event: &CustomComponentEventOf<
+        event: &CustomComponentNativeEventOf<
             gpui_form_collection::select::Select<PreferredLanguage>,
             PreferredLanguage,
         >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<
+            form_value_event::<
                 gpui_form_collection::select::Select<PreferredLanguage>,
                 PreferredLanguage,
             >(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.preferred = value;
             },
-            ValueBindingChange::Clear => {},
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Clear => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_country_select_event(
@@ -241,7 +237,7 @@ impl UserForm {
                 >,
             >,
         >,
-        event: &CustomComponentEventOf<
+        event: &CustomComponentNativeEventOf<
             gpui_form_collection::select::Select<
                 EnumCountry,
                 ::gpui_component::select::SearchableVec<EnumCountry>,
@@ -251,9 +247,9 @@ impl UserForm {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<
+            form_value_event::<
                 gpui_form_collection::select::Select<
                     EnumCountry,
                     ::gpui_component::select::SearchableVec<EnumCountry>,
@@ -261,14 +257,14 @@ impl UserForm {
                 EnumCountry,
             >(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.country = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.country = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn on_birth_date_input_event(
@@ -276,28 +272,28 @@ impl UserForm {
         state: &Entity<
             CustomComponentStateOf<gpui_form_collection::input::Input<chrono::NaiveDate>>,
         >,
-        event: &CustomComponentEventOf<
+        event: &CustomComponentNativeEventOf<
             gpui_form_collection::input::Input<chrono::NaiveDate>,
             chrono::NaiveDate,
         >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        let change = {
+        let form_event = {
             let state = state.read(_cx);
-            value_binding_change::<
+            form_value_event::<
                 gpui_form_collection::input::Input<chrono::NaiveDate>,
                 chrono::NaiveDate,
             >(&state, event)
         };
-        match change {
-            ValueBindingChange::Set(value) => {
+        match form_event {
+            FormValueEvent::Change(value) => {
                 self.current_data.birth_date = Some(value);
             },
-            ValueBindingChange::Clear => {
+            FormValueEvent::Clear => {
                 self.current_data.birth_date = None;
             },
-            ValueBindingChange::Unchanged => {},
+            FormValueEvent::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {

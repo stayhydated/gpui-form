@@ -86,9 +86,9 @@ Behavior notes:
 - `searchable(true)` and `.max_depth(...)` record infinite-select behavior
   metadata
 - `.value_binding()` records that the custom shape implements
-  `gpui_form_component::custom::CustomComponentValueAdapter<T>` for generated
+  `gpui_form_component::custom::CustomComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
-  `seed_value_binding_state` and maps native events to `ValueBindingChange<T>`
+  `seed_value_binding_state` and maps native events to `FormValueEvent<T>`
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
 - `gpui_form_collection::input::Input::<_>` prototyping code parses
@@ -128,7 +128,7 @@ pub struct TagsState;
 By default, the generated implementation calls `Self::new(window, cx)`.
 `component = ...` populates `CustomComponentShape::COMPONENT_PATH`.
 `value_binding` sets `CustomComponentShape::VALUE_BINDING = true`, so generated
-prototyping code can inherit the shape's `CustomComponentValueAdapter<T>`
+prototyping code can inherit the shape's `CustomComponentValueBinding<T>`
 contract without repeating `value_binding` on every field.
 `field_suffix = "..."` populates `CustomComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
@@ -157,7 +157,7 @@ gpui_form_derive::custom_component! {
 
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `CustomComponentShape` implementation; the
-caller can still add a `CustomComponentValueAdapter<T>` impl on that wrapper.
+caller can still add a `CustomComponentValueBinding<T>` impl on that wrapper.
 
 ## Feature Flags
 

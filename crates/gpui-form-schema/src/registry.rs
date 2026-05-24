@@ -93,7 +93,7 @@ pub struct FieldVariant {
     /// Used by the prototyping code generator to emit `Component::new(&entity)`.
     pub custom_component: Option<&'static str>,
     /// Whether the custom component opted into
-    /// `gpui_form_component::custom::CustomComponentValueAdapter` generation.
+    /// `gpui_form_component::custom::CustomComponentValueBinding` generation.
     pub custom_value_binding: bool,
     /// Preferred generated field/helper suffix supplied by the custom shape's
     /// prototyping metadata.

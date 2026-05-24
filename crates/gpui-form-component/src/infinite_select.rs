@@ -1306,12 +1306,12 @@ where
 }
 
 #[cfg(feature = "derive")]
-impl<T, D> crate::custom::CustomComponentValueAdapter<T> for InfiniteSelect<T, D>
+impl<T, D> crate::custom::CustomComponentValueBinding<T> for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    type Event = InfiniteSelectEvent<T>;
+    type NativeEvent = InfiniteSelectEvent<T>;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -1324,11 +1324,11 @@ where
         }
     }
 
-    fn value_binding_change(
+    fn form_value_event(
         _state: &Self::State,
-        event: &Self::Event,
-    ) -> crate::custom::ValueBindingChange<T> {
-        crate::custom::ValueBindingChange::Set(event.value().clone())
+        event: &Self::NativeEvent,
+    ) -> crate::custom::FormValueEvent<T> {
+        crate::custom::FormValueEvent::Change(event.value().clone())
     }
 }
 
