@@ -3,7 +3,7 @@ use gpui_component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, ValueBindingChange};
 use strum::IntoEnumIterator;
 
 gpui_form_derive::custom_component! {
@@ -99,7 +99,7 @@ where
 {
     type Event = SelectEvent<D>;
 
-    fn set_state_value(
+    fn seed_value_binding_state(
         state: &mut Self::State,
         value: Option<&T>,
         window: &mut Window,
@@ -111,10 +111,10 @@ where
         }
     }
 
-    fn value_change(_state: &Self::State, event: &Self::Event) -> CustomComponentValueChange<T> {
+    fn value_binding_change(_state: &Self::State, event: &Self::Event) -> ValueBindingChange<T> {
         match event {
-            SelectEvent::Confirm(Some(value)) => CustomComponentValueChange::Set(value.clone()),
-            SelectEvent::Confirm(None) => CustomComponentValueChange::Clear,
+            SelectEvent::Confirm(Some(value)) => ValueBindingChange::Set(value.clone()),
+            SelectEvent::Confirm(None) => ValueBindingChange::Clear,
         }
     }
 }

@@ -19,9 +19,9 @@ impl FieldCodeGenerator for CustomCodeGenerator {
             vec![
                 ImportItem::path("gpui_form_component::custom::CustomComponentEventOf"),
                 ImportItem::path("gpui_form_component::custom::CustomComponentStateOf"),
-                ImportItem::path("gpui_form_component::custom::CustomComponentValueChange"),
-                ImportItem::path("gpui_form_component::custom::custom_value_change"),
-                ImportItem::path("gpui_form_component::custom::set_custom_state_value"),
+                ImportItem::path("gpui_form_component::custom::ValueBindingChange"),
+                ImportItem::path("gpui_form_component::custom::value_binding_change"),
+                ImportItem::path("gpui_form_component::custom::seed_value_binding_state"),
             ]
         } else {
             Vec::new()
@@ -121,20 +121,20 @@ impl FieldCodeGenerator for CustomCodeGenerator {
             ) {
                 let change = {
                     let state = state.read(_cx);
-                    custom_value_change::<#shape, #field_type>(
+                    value_binding_change::<#shape, #field_type>(
                         &state,
                         event,
                     )
                 };
 
                 match change {
-                    CustomComponentValueChange::Set(value) => {
+                    ValueBindingChange::Set(value) => {
                         #set_tokens
                     }
-                    CustomComponentValueChange::Clear => {
+                    ValueBindingChange::Clear => {
                         #clear_tokens
                     }
-                    CustomComponentValueChange::Unchanged => {}
+                    ValueBindingChange::Unchanged => {}
                 }
             }
         };
@@ -166,7 +166,7 @@ impl FieldCodeGenerator for CustomCodeGenerator {
 
         Some(quote! {
             #field_var_name_ident.update(cx, |state, cx| {
-                set_custom_state_value::<#shape, #field_type>(
+                seed_value_binding_state::<#shape, #field_type>(
                     state,
                     #value_tokens,
                     window,
@@ -281,7 +281,7 @@ mod tests {
                     "event:&CustomComponentEventOf<crate::shapes::CountryShape,CountryCode>"
                 )
                 && compact_handler
-                    .contains("custom_value_change::<crate::shapes::CountryShape,CountryCode>"),
+                    .contains("value_binding_change::<crate::shapes::CountryShape,CountryCode>"),
             "custom event handler should use runtime helper aliases inline: {compact_handler}"
         );
         assert!(
@@ -295,7 +295,7 @@ mod tests {
         let compact_init = compact(&init.to_string());
         assert!(
             compact_init.contains(
-                "set_custom_state_value::<crate::shapes::CountryShape,CountryCode>(state,current_data.country.as_ref(),window,cx,)"
+                "seed_value_binding_state::<crate::shapes::CountryShape,CountryCode>(state,current_data.country.as_ref(),window,cx,)"
             ),
             "custom value binding should seed state from current_data: {compact_init}"
         );

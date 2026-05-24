@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use gpui::{Context, Window};
 use gpui_component::input::{InputEvent, InputState};
-use gpui_form_component::custom::{CustomComponentValueAdapter, CustomComponentValueChange};
+use gpui_form_component::custom::{CustomComponentValueAdapter, ValueBindingChange};
 
 gpui_form_derive::custom_component! {
     /// Form component for a `gpui_component::input::Input` backed by `InputState`.
@@ -28,7 +28,7 @@ where
 {
     type Event = InputEvent;
 
-    fn set_state_value(
+    fn seed_value_binding_state(
         state: &mut Self::State,
         value: Option<&T>,
         window: &mut Window,
@@ -41,20 +41,20 @@ where
         );
     }
 
-    fn value_change(state: &Self::State, event: &Self::Event) -> CustomComponentValueChange<T> {
+    fn value_binding_change(state: &Self::State, event: &Self::Event) -> ValueBindingChange<T> {
         match event {
             InputEvent::Change => {
                 let value = state.value();
                 if value.is_empty() {
-                    CustomComponentValueChange::Clear
+                    ValueBindingChange::Clear
                 } else {
                     value
                         .parse::<T>()
-                        .map(CustomComponentValueChange::Set)
-                        .unwrap_or(CustomComponentValueChange::Unchanged)
+                        .map(ValueBindingChange::Set)
+                        .unwrap_or(ValueBindingChange::Unchanged)
                 }
             },
-            _ => CustomComponentValueChange::Unchanged,
+            _ => ValueBindingChange::Unchanged,
         }
     }
 }

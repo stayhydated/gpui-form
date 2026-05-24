@@ -9,8 +9,8 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, CustomComponentValueChange,
-    custom_value_change, set_custom_state_value,
+    CustomComponentEventOf, CustomComponentStateOf, ValueBindingChange, seed_value_binding_state,
+    value_binding_change,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::location::*;
@@ -50,16 +50,18 @@ impl LocationFormForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
+            value_binding_change::<gpui_form_collection::input::Input<String>, String>(
+                &state, event,
+            )
         };
         match change {
-            CustomComponentValueChange::Set(value) => {
+            ValueBindingChange::Set(value) => {
                 self.current_data.name = Some(value);
             },
-            CustomComponentValueChange::Clear => {
+            ValueBindingChange::Clear => {
                 self.current_data.name = None;
             },
-            CustomComponentValueChange::Unchanged => {},
+            ValueBindingChange::Unchanged => {},
         }
     }
     fn on_location_infinite_select_event(
@@ -78,17 +80,17 @@ impl LocationFormForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<
+            value_binding_change::<
                 gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
                 Country,
             >(&state, event)
         };
         match change {
-            CustomComponentValueChange::Set(value) => {
+            ValueBindingChange::Set(value) => {
                 self.current_data.location = value;
             },
-            CustomComponentValueChange::Clear => {},
-            CustomComponentValueChange::Unchanged => {},
+            ValueBindingChange::Clear => {},
+            ValueBindingChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -105,7 +107,7 @@ impl LocationFormForm {
             ),
         ];
         name_input.update(cx, |state, cx| {
-            set_custom_state_value::<gpui_form_collection::input::Input<String>, String>(
+            seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
                 current_data.name.as_ref(),
                 window,
@@ -113,7 +115,7 @@ impl LocationFormForm {
             );
         });
         location_infinite_select.update(cx, |state, cx| {
-            set_custom_state_value::<
+            seed_value_binding_state::<
                 gpui_form_component::infinite_select::SearchableInfiniteSelect<Country>,
                 Country,
             >(state, Some(&current_data.location), window, cx);

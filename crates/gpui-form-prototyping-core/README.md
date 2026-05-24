@@ -59,8 +59,9 @@ Custom fields remain inert by default. If a field's shape opts into
 scaffolds use `CustomComponentShape::PROTOTYPING.field_suffix` when available
 for field and handler suffixes, such as `email_input` and
 `on_email_input_event`, then fall back to the custom shape name heuristic.
-Value-bound scaffolds use `gpui_form_component::custom` helper functions and
-runtime aliases for state and event projections so the output stays readable.
+Value-bound scaffolds use `seed_value_binding_state`, `value_binding_change`,
+`ValueBindingChange<T>`, and runtime aliases for state and event projections so
+the output stays readable.
 
 ## Feature Flags
 

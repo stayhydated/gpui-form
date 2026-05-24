@@ -103,7 +103,8 @@ When the `inventory` feature is enabled:
 - defaults constructor wiring to `Self::new(window, cx)`
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
-  `CustomComponentValueAdapter<T>` prototyping hooks
+  `CustomComponentValueAdapter<T>` prototyping hooks, including
+  `seed_value_binding_state` and `value_binding_change`
 - defaults to implementing `gpui_form_component::custom::CustomComponentShape`
   for downstream application crates
 - optionally accepts `custom_crate = crate` for runtime crates that implement

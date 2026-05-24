@@ -45,7 +45,8 @@ Responsibilities:
 - optionally carry prototyping preferences such as the generated field/helper
   suffix
 - optionally implement `CustomComponentValueAdapter<T>` so generated
-  prototyping code can seed state and map component events back into form values
+  prototyping code can seed state and map native component events back into form
+  value-binding changes
   through helper aliases/functions instead of exposing associated-type
   projections at every generated call site
 
@@ -141,7 +142,8 @@ Responsibilities:
    shape-owned `CustomComponentValueAdapter<T>` hooks instead of inferring any
    domain-specific event semantics; generated code can route those calls
    through `CustomComponentStateOf`, `CustomComponentEventOf`,
-   `set_custom_state_value`, and `custom_value_change`.
+   `seed_value_binding_state`, `value_binding_change`, and
+   `ValueBindingChange<T>`.
 
 ### Date picker
 

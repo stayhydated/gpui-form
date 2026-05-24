@@ -1313,7 +1313,7 @@ where
 {
     type Event = InfiniteSelectEvent<T>;
 
-    fn set_state_value(
+    fn seed_value_binding_state(
         state: &mut Self::State,
         value: Option<&T>,
         window: &mut Window,
@@ -1324,11 +1324,11 @@ where
         }
     }
 
-    fn value_change(
+    fn value_binding_change(
         _state: &Self::State,
         event: &Self::Event,
-    ) -> crate::custom::CustomComponentValueChange<T> {
-        crate::custom::CustomComponentValueChange::Set(event.value().clone())
+    ) -> crate::custom::ValueBindingChange<T> {
+        crate::custom::ValueBindingChange::Set(event.value().clone())
     }
 }
 

@@ -9,8 +9,8 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form_component::custom::{
-    CustomComponentEventOf, CustomComponentStateOf, CustomComponentValueChange,
-    custom_value_change, set_custom_state_value,
+    CustomComponentEventOf, CustomComponentStateOf, ValueBindingChange, seed_value_binding_state,
+    value_binding_change,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
@@ -50,16 +50,16 @@ impl ItemForm {
     ) {
         let change = {
             let state = state.read(_cx);
-            custom_value_change::<gpui_form_collection::input::Input<Age>, Age>(&state, event)
+            value_binding_change::<gpui_form_collection::input::Input<Age>, Age>(&state, event)
         };
         match change {
-            CustomComponentValueChange::Set(value) => {
+            ValueBindingChange::Set(value) => {
                 self.current_data.index = Some(value);
             },
-            CustomComponentValueChange::Clear => {
+            ValueBindingChange::Clear => {
                 self.current_data.index = None;
             },
-            CustomComponentValueChange::Unchanged => {},
+            ValueBindingChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -68,7 +68,7 @@ impl ItemForm {
         let mut _subscriptions =
             vec![cx.subscribe_in(&index_input, window, Self::on_index_input_event)];
         index_input.update(cx, |state, cx| {
-            set_custom_state_value::<gpui_form_collection::input::Input<Age>, Age>(
+            seed_value_binding_state::<gpui_form_collection::input::Input<Age>, Age>(
                 state,
                 current_data.index.as_ref(),
                 window,

@@ -321,8 +321,9 @@ use gpui_form_derive::CustomComponent;
 pub struct TagsInputState;
 ```
 
-The adapter remains application-owned; `gpui-form` only calls its generic seed
-and event-conversion hooks.
+The adapter remains application-owned; `gpui-form` only calls
+`seed_value_binding_state` and `value_binding_change`, which turn native
+component events into `ValueBindingChange<T>`.
 
 Runtime helpers are available from `gpui_form_component`; `gpui-form` does not
 re-export component modules or their derives.
