@@ -321,11 +321,13 @@ use gpui_form_derive::CustomComponent;
 pub struct TagsInputState;
 ```
 
-External component wrappers, such as `gpui-component` inputs, map their native
-event into `FormValueEvent<T>` with `form_value_event`. Components that own
-their state can emit `FormValueEvent<T>` directly and mark the shape with
+The binding's associated `Event` type is the actual event emitted by the
+component state. External component wrappers, such as `gpui-component` inputs,
+can use the upstream event enum and map it into `FormValueChange<T>` with
+`form_value_change`. Components that own their state can expose their own event
+enum, such as `CheckboxEvent`, and mark the shape with
 `OwnedCustomComponentValueBinding<T>`. The binding remains application-owned;
-`gpui-form` only calls `seed_value_binding_state` and `form_value_event`.
+`gpui-form` only calls `seed_value_binding_state` and `form_value_change`.
 
 Runtime helpers are available from `gpui_form_component`; `gpui-form` does not
 re-export component modules or their derives.

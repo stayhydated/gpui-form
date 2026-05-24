@@ -34,7 +34,6 @@ crate.
 - `component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true)`
 - `component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3)`
 Important parse-time responsibilities:
-
 - expression syntax uses a shape path plus optional component metadata or
   behavior setters
 - generic expression paths may use `_` with turbofish syntax, such as

@@ -68,20 +68,20 @@ impl Default for CustomComponentPrototyping {
     }
 }
 
-/// Normalized form-value event emitted by a value-bound component.
+/// Normalized form-value change derived from a component event.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum FormValueEvent<T> {
+pub enum FormValueChange<T> {
     /// The component event did not change the form value.
     Unchanged,
     /// Replace the form value with the supplied value.
-    Change(T),
+    Set(T),
     /// Clear an optional form value.
     Clear,
 }
 
-impl<T> FormValueEvent<T> {
-    pub const fn change(value: T) -> Self {
-        Self::Change(value)
+impl<T> FormValueChange<T> {
+    pub const fn set(value: T) -> Self {
+        Self::Set(value)
     }
 
     pub const fn clear() -> Self {
@@ -93,17 +93,19 @@ impl<T> FormValueEvent<T> {
     }
 }
 
-/// Optional value-binding contract for user-defined custom components backed
-/// by an external/native event type.
+/// Optional value-binding contract for user-defined custom components.
 ///
 /// Implement this alongside [`CustomComponentShape`] when generated
 /// prototyping code should seed the component from the form value holder and
 /// subscribe to component events. The form derive opts into this path either
 /// with `component = Shape.value_binding()` or by inheriting
 /// [`CustomComponentShape::VALUE_BINDING`] from the shape.
-pub trait CustomComponentValueBinding<T>: CustomComponentShape {
+pub trait CustomComponentValueBinding<T>: CustomComponentShape
+where
+    Self::State: gpui::EventEmitter<Self::Event>,
+{
     /// Event emitted by the custom component state.
-    type NativeEvent: 'static;
+    type Event: 'static;
 
     /// Seed component state from the current form value.
     fn seed_value_binding_state(
@@ -114,30 +116,28 @@ pub trait CustomComponentValueBinding<T>: CustomComponentShape {
     ) {
     }
 
-    /// Convert a native component event into a form value event.
-    fn form_value_event(state: &Self::State, event: &Self::NativeEvent) -> FormValueEvent<T>;
+    /// Convert an emitted component event into a form value change.
+    fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T>;
 }
 
-/// Marker contract for components that own their emitted form event.
+/// Marker contract for components that own their emitted event enum.
 ///
-/// Implement this when the component state itself emits [`FormValueEvent<T>`].
-/// This keeps generated subscriptions pointed at the real component event,
-/// while external component wrappers can still implement
-/// [`CustomComponentValueBinding`] to map their native event into a form event.
-pub trait OwnedCustomComponentValueBinding<T>:
-    CustomComponentValueBinding<T, NativeEvent = FormValueEvent<T>>
+/// External component wrappers can use an upstream event enum as
+/// [`CustomComponentValueBinding::Event`]. Owned components can implement this
+/// marker to document that the event enum is part of their own public runtime
+/// surface.
+pub trait OwnedCustomComponentValueBinding<T>: CustomComponentValueBinding<T>
 where
-    Self::State: gpui::EventEmitter<FormValueEvent<T>>,
-    T: Clone + 'static,
+    Self::State: gpui::EventEmitter<Self::Event>,
 {
 }
 
 /// State type for a custom shape.
 pub type CustomComponentStateOf<Shape> = <Shape as CustomComponentShape>::State;
 
-/// Native event type for a value-bound custom shape and value.
-pub type CustomComponentNativeEventOf<Shape, Value> =
-    <Shape as CustomComponentValueBinding<Value>>::NativeEvent;
+/// Event type for a value-bound custom shape and value.
+pub type CustomComponentEventOf<Shape, Value> =
+    <Shape as CustomComponentValueBinding<Value>>::Event;
 
 /// Seed component state from the current form value without spelling out the
 /// associated-type projection at every generated call site.
@@ -148,20 +148,22 @@ pub fn seed_value_binding_state<Shape, Value>(
     cx: &mut gpui::Context<'_, CustomComponentStateOf<Shape>>,
 ) where
     Shape: CustomComponentValueBinding<Value>,
+    CustomComponentStateOf<Shape>: gpui::EventEmitter<CustomComponentEventOf<Shape, Value>>,
 {
     Shape::seed_value_binding_state(state, value, window, cx);
 }
 
-/// Convert a native component event into a form value event without repeating
+/// Convert a component event into a form value change without repeating
 /// UFCS projections in generated code.
-pub fn form_value_event<Shape, Value>(
+pub fn form_value_change<Shape, Value>(
     state: &CustomComponentStateOf<Shape>,
-    event: &CustomComponentNativeEventOf<Shape, Value>,
-) -> FormValueEvent<Value>
+    event: &CustomComponentEventOf<Shape, Value>,
+) -> FormValueChange<Value>
 where
     Shape: CustomComponentValueBinding<Value>,
+    CustomComponentStateOf<Shape>: gpui::EventEmitter<CustomComponentEventOf<Shape, Value>>,
 {
-    Shape::form_value_event(state, event)
+    Shape::form_value_change(state, event)
 }
 
 /// Define a custom component shape with minimal boilerplate.

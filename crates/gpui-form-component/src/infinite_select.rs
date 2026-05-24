@@ -1311,7 +1311,7 @@ where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    type NativeEvent = InfiniteSelectEvent<T>;
+    type Event = InfiniteSelectEvent<T>;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -1324,11 +1324,11 @@ where
         }
     }
 
-    fn form_value_event(
+    fn form_value_change(
         _state: &Self::State,
-        event: &Self::NativeEvent,
-    ) -> crate::custom::FormValueEvent<T> {
-        crate::custom::FormValueEvent::Change(event.value().clone())
+        event: &Self::Event,
+    ) -> crate::custom::FormValueChange<T> {
+        crate::custom::FormValueChange::Set(event.value().clone())
     }
 }
 

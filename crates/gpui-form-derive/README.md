@@ -88,7 +88,7 @@ Behavior notes:
 - `.value_binding()` records that the custom shape implements
   `gpui_form_component::custom::CustomComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
-  `seed_value_binding_state` and maps native events to `FormValueEvent<T>`
+  `seed_value_binding_state` and maps component events to `FormValueChange<T>`
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
 - `gpui_form_collection::input::Input::<_>` prototyping code parses

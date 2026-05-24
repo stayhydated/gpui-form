@@ -104,7 +104,7 @@ When the `inventory` feature is enabled:
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
   `CustomComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `form_value_event`
+  `seed_value_binding_state` and `form_value_change`
 - defaults to implementing `gpui_form_component::custom::CustomComponentShape`
   for downstream application crates
 - optionally accepts `custom_crate = crate` for runtime crates that implement
