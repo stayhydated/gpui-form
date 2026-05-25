@@ -2,6 +2,7 @@ use anyhow::Context as _;
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
+use gpui_form_component::date_picker::DatePickerShape;
 use koruma::{Koruma, KorumaAllFluent};
 use koruma_collection::{
     collection::NonEmptyValidation,
@@ -83,7 +84,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component = gpui_form_collection::input::Input::<_>
+        component = DatePickerShape
     )]
     pub birth_date: Option<Timestamp>,
 

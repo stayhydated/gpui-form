@@ -8,6 +8,7 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
+use gpui_form_component::date_picker::DatePickerShape;
 use gpui_form_component::shape::{
     ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
@@ -244,22 +245,16 @@ impl UserForm {
             FormValueChange::Unchanged => {},
         }
     }
-    fn on_birth_date_input_event(
+    fn on_birth_date_date_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<chrono::NaiveDate>>>,
-        event: &ComponentEventOf<
-            gpui_form_collection::input::Input<chrono::NaiveDate>,
-            chrono::NaiveDate,
-        >,
+        state: &Entity<ComponentStateOf<DatePickerShape>>,
+        event: &ComponentEventOf<DatePickerShape, chrono::NaiveDate>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
-                gpui_form_collection::input::Input<chrono::NaiveDate>,
-                chrono::NaiveDate,
-            >(&state, event)
+            form_value_change::<DatePickerShape, chrono::NaiveDate>(&state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -284,7 +279,8 @@ impl UserForm {
             cx.new(|cx| UserFormComponents::enable_notifications_checkbox(window, cx));
         let preferred_select = cx.new(|cx| UserFormComponents::preferred_select(window, cx));
         let country_select = cx.new(|cx| UserFormComponents::country_select(window, cx));
-        let birth_date_input = cx.new(|cx| UserFormComponents::birth_date_input(window, cx));
+        let birth_date_date_picker =
+            cx.new(|cx| UserFormComponents::birth_date_date_picker(window, cx));
         let mut _subscriptions = vec![
             cx.subscribe_in(&username_input, window, Self::on_username_input_event),
             cx.subscribe_in(&email_input, window, Self::on_email_input_event),
@@ -303,7 +299,11 @@ impl UserForm {
             ),
             cx.subscribe_in(&preferred_select, window, Self::on_preferred_select_event),
             cx.subscribe_in(&country_select, window, Self::on_country_select_event),
-            cx.subscribe_in(&birth_date_input, window, Self::on_birth_date_input_event),
+            cx.subscribe_in(
+                &birth_date_date_picker,
+                window,
+                Self::on_birth_date_date_picker_event,
+            ),
         ];
         username_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
@@ -369,11 +369,13 @@ impl UserForm {
                 EnumCountry,
             >(state, current_data.country.as_ref(), window, cx);
         });
-        birth_date_input.update(cx, |state, cx| {
-            seed_value_binding_state::<
-                gpui_form_collection::input::Input<chrono::NaiveDate>,
-                chrono::NaiveDate,
-            >(state, current_data.birth_date.as_ref(), window, cx);
+        birth_date_date_picker.update(cx, |state, cx| {
+            seed_value_binding_state::<DatePickerShape, chrono::NaiveDate>(
+                state,
+                current_data.birth_date.as_ref(),
+                window,
+                cx,
+            );
         });
         Self {
             current_data,
@@ -387,7 +389,7 @@ impl UserForm {
                 enable_notifications_checkbox,
                 preferred_select,
                 country_select,
-                birth_date_input,
+                birth_date_date_picker,
             },
             focus_handle: cx.focus_handle(),
             _subscriptions,
@@ -789,8 +791,8 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::input::Input::new(
-                                &self.fields.birth_date_input,
+                            .child(gpui_form_component::date_picker::DatePicker::new(
+                                &self.fields.birth_date_date_picker,
                             )),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(

@@ -19,6 +19,7 @@ use jiff::civil::Date as JiffDate;
 
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
+use crate::shape::{ComponentValueBinding, FormValueChange};
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -50,6 +51,41 @@ pub struct DatePickerState {
     display_locale: Option<Locale>,
     display_style: DateDisplayStyle,
     _subscriptions: Vec<Subscription>,
+}
+
+// Form shape for a date picker backed by `DatePickerState`.
+crate::component_shape!(
+    pub DatePickerShape,
+    state = DatePickerState,
+    new = DatePickerState::new,
+    component = gpui_form_component::date_picker::DatePicker,
+    value_binding,
+    field_suffix = "date_picker",
+);
+
+impl ComponentValueBinding<chrono::NaiveDate> for DatePickerShape {
+    type Event = DatePickerEvent;
+
+    fn seed_value_binding_state(
+        state: &mut Self::State,
+        value: Option<&chrono::NaiveDate>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self::State>,
+    ) {
+        let date = value.and_then(|value| value.to_string().parse::<JiffDate>().ok());
+        state.set_date(date, window, cx);
+    }
+
+    fn form_value_change(
+        _state: &Self::State,
+        event: &Self::Event,
+    ) -> FormValueChange<chrono::NaiveDate> {
+        match event {
+            DatePickerEvent::Change(Some(date)) => parse_form_date::<chrono::NaiveDate>(*date)
+                .map_or(FormValueChange::Unchanged, FormValueChange::Set),
+            DatePickerEvent::Change(None) => FormValueChange::Clear,
+        }
+    }
 }
 
 impl Focusable for DatePickerState {
