@@ -73,7 +73,7 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- `ComponentsBehaviour::Shape` for all component fields
+- shape-only field metadata (`FieldVariant::new(field_name, value_type, optional)`)
 - the resolved component shape path
 - the optional render component path
 - the required-value holder policy

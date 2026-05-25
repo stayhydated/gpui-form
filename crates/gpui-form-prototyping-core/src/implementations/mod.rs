@@ -1,10 +1,7 @@
 pub mod shape;
 
-use gpui_form_schema::{
-    components::ComponentsBehaviour,
-    registry::{FieldVariant, GpuiFormShape},
-};
-use heck::{ToPascalCase as _, ToSnakeCase as _};
+use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Ident, Path, Type};
@@ -16,8 +13,7 @@ use crate::{
 
 static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
 
-pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCodeGenerator {
-    let _ = behaviour;
+pub fn field_generator() -> &'static dyn FieldCodeGenerator {
     &SHAPE_GENERATOR
 }
 
@@ -72,7 +68,7 @@ impl<'a> ResolvedField<'a> {
             field_ident_pascal: format_ident!("{}", field.field_name_pascal()),
             field_ident_with_behaviour: format_ident!("{}", field.field_name_with_behaviour()),
             value_type,
-            component_ident: format_ident!("{}", field.behaviour.component_name().to_pascal_case()),
+            component_ident: format_ident!("Shape"),
             shape_path,
             component_path,
         })
@@ -80,10 +76,6 @@ impl<'a> ResolvedField<'a> {
 
     pub fn raw(&self) -> &FieldVariant {
         self.field
-    }
-
-    pub fn behaviour(&self) -> &ComponentsBehaviour {
-        &self.field.behaviour
     }
 
     pub fn field_name(&self) -> &'a str {
@@ -475,10 +467,7 @@ pub fn generate_description_fn_tokens(
 #[cfg(test)]
 mod tests {
     use super::{ResolvedField, generate_description_fn_tokens};
-    use gpui_form_schema::{
-        components::ComponentsBehaviour,
-        registry::{FieldVariant, GpuiFormShape},
-    };
+    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -488,10 +477,7 @@ mod tests {
     fn description_uses_direct_all_for_non_optional_newtype_errors() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [
-                FieldVariant::new("index", "Age", false, ComponentsBehaviour::Shape)
-                    .with_validations(VALIDATIONS),
-            ];
+            [FieldVariant::new("index", "Age", false).with_validations(VALIDATIONS)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -511,10 +497,7 @@ mod tests {
     fn description_unwraps_optional_newtype_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [
-                FieldVariant::new("age", "Age", true, ComponentsBehaviour::Shape)
-                    .with_validations(VALIDATIONS),
-            ];
+            [FieldVariant::new("age", "Age", true).with_validations(VALIDATIONS)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -532,10 +515,7 @@ mod tests {
     fn description_unwraps_optional_nested_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NestedValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [
-                FieldVariant::new("address", "Address", true, ComponentsBehaviour::Shape)
-                    .with_validations(VALIDATIONS),
-            ];
+            [FieldVariant::new("address", "Address", true).with_validations(VALIDATIONS)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");

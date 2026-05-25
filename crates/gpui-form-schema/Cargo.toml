@@ -14,7 +14,6 @@ readme = "README.md"
 [dependencies]
 heck = { workspace = true }
 inventory = { workspace = true }
-strum = { features = [ "derive" ], workspace = true }
 
 [lints]
 workspace = true

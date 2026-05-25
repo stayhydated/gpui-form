@@ -8,7 +8,6 @@ prototyping flows around generated form metadata.
 
 ## What It Provides
 
-- `components::ComponentsBehaviour`
 - `registry::GpuiFormShape`
 - `registry::FieldVariant`
 - `registry::inventory`
@@ -18,7 +17,7 @@ required-value holder behavior, conversion expressions, component shape
 paths, component shape prototyping suffixes, and opt-in value-binding
 metadata for generators. Helpers such as `field_name_with_behaviour()` keep
 inventory consumers aligned with the field names emitted by
-`#[derive(GpuiForm)]`.
+`#[derive(GpuiForm)]`, with a shape-derived `"shape"` fallback suffix.
 
 ## Example
 
@@ -29,7 +28,7 @@ for shape in inventory::iter::<GpuiFormShape>() {
     println!("form: {}", shape.struct_name);
 
     for field in shape.components {
-        println!("  {} -> {}", field.field_name, field.behaviour.component_name());
+        println!("  {} -> {}", field.field_name, field.field_name_with_behaviour());
     }
 }
 ```

@@ -1,5 +1,4 @@
 use darling::{Error as DarlingError, FromMeta};
-use gpui_form_schema::components::ComponentsBehaviour;
 use proc_macro2::TokenStream;
 use quote::{ToTokens as _, quote};
 use syn::{Expr, Lit, Path};
@@ -128,12 +127,12 @@ impl ShapeOptions {
                 field_name,
                 field_suffix,
             )
-            .unwrap_or_else(|| ComponentsBehaviour::Shape.component_name().to_string());
+            .unwrap_or_else(|| "shape".to_string());
         }
 
         let shape = self.shape.to_token_stream().to_string();
         gpui_form_schema::registry::component_suffix_from_shape(field_name, &shape)
-            .unwrap_or_else(|| ComponentsBehaviour::Shape.component_name().to_string())
+            .unwrap_or_else(|| "shape".to_string())
     }
 
     pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
@@ -302,10 +301,6 @@ fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Stri
     }
 }
 
-fn behaviour_tokens() -> TokenStream {
-    quote! { ::gpui_form::schema::components::ComponentsBehaviour::Shape }
-}
-
 fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Type {
     match ty {
         syn::Type::Infer(_) => replacement.clone(),
@@ -367,12 +362,6 @@ fn substitute_infer_in_path(path: &syn::Path, replacement: &syn::Type) -> syn::P
 impl ComponentOption for ShapeOptions {}
 
 pub struct ShapeComponent(pub FieldInformation<ShapeOptions>);
-
-impl ShapeComponent {
-    pub fn component_name() -> &'static str {
-        ComponentsBehaviour::Shape.component_name()
-    }
-}
 
 #[derive(Clone, Debug)]
 pub enum Components {
@@ -436,12 +425,6 @@ impl Components {
             field_structure_tokens,
             field_base_declarations_tokens,
             requires_value: self.requires_value(),
-        }
-    }
-
-    pub fn behaviour_tokens(&self, _field_type: &syn::Type) -> TokenStream {
-        match self {
-            Self::Shape(_) => behaviour_tokens(),
         }
     }
 

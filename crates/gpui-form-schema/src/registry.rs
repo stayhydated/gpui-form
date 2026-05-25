@@ -1,4 +1,3 @@
-use crate::components::ComponentsBehaviour;
 use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 inventory::collect!(GpuiFormShape);
@@ -77,7 +76,6 @@ pub struct FieldVariant {
     /// Source `Option<T>` fields are tracked by [`FieldVariant::optional`] and
     /// do not require a value.
     pub requires_value: bool,
-    pub behaviour: ComponentsBehaviour,
     /// List of validation rule identifiers applied to this field (for diagnostics/rendering).
     pub validations: &'static [&'static str],
     /// Default value expression as a string, if one was specified.
@@ -101,19 +99,13 @@ pub struct FieldVariant {
 }
 
 impl FieldVariant {
-    pub const fn new(
-        field_name: &'static str,
-        value_type: &'static str,
-        optional: bool,
-        behaviour: ComponentsBehaviour,
-    ) -> Self {
+    pub const fn new(field_name: &'static str, value_type: &'static str, optional: bool) -> Self {
         Self {
             field_name,
             value_type,
             source_value_type: value_type,
             optional,
             requires_value: !optional,
-            behaviour,
             validations: &[],
             default_expr: None,
             from_expr: None,
@@ -198,10 +190,6 @@ impl FieldVariant {
         self.value_binding
     }
 
-    pub fn behaviour_suffix(&self) -> &'static str {
-        self.behaviour.component_name()
-    }
-
     pub fn component_suffix(&self) -> String {
         self.prototyping_field_suffix
             .and_then(|suffix| component_suffix_from_suffix(self.field_name, suffix))
@@ -210,7 +198,7 @@ impl FieldVariant {
                     .and_then(|shape| component_suffix_from_shape(self.field_name, shape))
             })
             .filter(|suffix| !suffix.is_empty())
-            .unwrap_or_else(|| self.behaviour_suffix().to_string())
+            .unwrap_or_else(|| "shape".to_string())
     }
 
     pub fn field_name_pascal(&self) -> String {
@@ -275,11 +263,11 @@ pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<St
 
 #[cfg(test)]
 mod tests {
-    use super::{ComponentsBehaviour, FieldVariant};
+    use super::FieldVariant;
 
     #[test]
     fn shape_name_drives_field_suffix() {
-        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("country", "Country", false)
             .with_shape_path("crate::fields::CountrySelectShape");
 
         assert_eq!(field.field_name_with_behaviour(), "country_select");
@@ -288,7 +276,7 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_overrides_shape_heuristic() {
-        let field = FieldVariant::new("country", "Country", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("country", "Country", false)
             .with_shape_path("crate::fields::CountrySelectorState")
             .with_prototyping_field_suffix(Some("select"));
 
@@ -297,7 +285,7 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("email", "String", false)
             .with_shape_path("crate::fields::TextInputShape")
             .with_prototyping_field_suffix(Some("email_input"));
 
@@ -306,7 +294,7 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("tags", "Vec<String>", false)
             .with_shape_path("crate::fields::TagsInputShape")
             .with_prototyping_field_suffix(Some("tags"));
 
@@ -315,7 +303,7 @@ mod tests {
 
     #[test]
     fn duplicate_field_prefix_is_removed_from_shape_suffix() {
-        let field = FieldVariant::new("email", "String", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("email", "String", false)
             .with_shape_path("crate::fields::EmailInputShape");
 
         assert_eq!(field.field_name_with_behaviour(), "email_input");
@@ -323,7 +311,7 @@ mod tests {
 
     #[test]
     fn multiword_shape_name_drives_field_suffix() {
-        let field = FieldVariant::new("location", "Country", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("location", "Country", false)
             .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>");
 
         assert_eq!(
@@ -334,7 +322,7 @@ mod tests {
 
     #[test]
     fn exact_duplicate_shape_name_falls_back_to_shape_suffix() {
-        let field = FieldVariant::new("tags", "Vec<String>", false, ComponentsBehaviour::Shape)
+        let field = FieldVariant::new("tags", "Vec<String>", false)
             .with_shape_path("crate::state::TagsState");
 
         assert_eq!(field.field_name_with_behaviour(), "tags_shape");

@@ -3103,7 +3103,6 @@ version = "0.5.1"
 dependencies = [
  "heck 0.5.0",
  "inventory",
- "strum 0.28.0",
 ]
 
 [[package]]

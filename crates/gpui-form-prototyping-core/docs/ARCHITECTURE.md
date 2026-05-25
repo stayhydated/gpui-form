@@ -86,7 +86,7 @@ generation runs.
 
 ## Component Shape Behavior
 
-All component fields are `ComponentsBehaviour::Shape`:
+All component fields are shape-backed:
 
 - the generator still initializes component state into generated `FormFields`
 - generated local variable, field, and handler names use

@@ -680,8 +680,8 @@ mod gpui_form_tests {
         );
 
         assert!(
-            compact.contains("ComponentsBehaviour::Shape"),
-            "FieldVariant should carry Shape behaviour metadata"
+            compact.contains("FieldVariant::new(\"bio\",\"String\",false)"),
+            "FieldVariant metadata should be shape-only and omit behaviour metadata"
         );
 
         assert!(

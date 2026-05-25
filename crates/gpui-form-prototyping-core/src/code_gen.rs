@@ -91,7 +91,7 @@ impl<'a> FormShapeAdapter<'a> {
                 parse_ident("field component ident", &field.field_name_with_behaviour())?;
 
                 let resolved = ResolvedField::new(field)?;
-                let generator = field_generator(resolved.behaviour());
+                let generator = field_generator();
                 let imports = generator.generate_imports(field);
                 let subscription = if field.subscribable() {
                     generator.generate_subscription(&resolved, self.shape_data)
@@ -133,7 +133,7 @@ impl<'a> FormShapeAdapter<'a> {
             set.extend_items(SUBSCRIPTION_IMPORTS);
         }
         for field in self.shape_data.components {
-            let generator = field_generator(&field.behaviour);
+            let generator = field_generator();
             set.extend(generator.generate_imports(field));
         }
         set
@@ -475,10 +475,7 @@ fn source_path_to_use_path(source_path: &str) -> Option<syn::Path> {
 mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
-    use gpui_form_schema::{
-        components::ComponentsBehaviour,
-        registry::{FieldVariant, GpuiFormShape},
-    };
+    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -503,12 +500,7 @@ mod tests {
 
     #[test]
     fn parts_return_error_for_invalid_field_type_metadata() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
-            "country",
-            "Vec<",
-            false,
-            ComponentsBehaviour::Shape,
-        )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "Vec<", false)];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 
@@ -532,12 +524,7 @@ mod tests {
 
     #[test]
     fn required_imports_only_include_subscription_when_needed() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
-            "enabled",
-            "bool",
-            false,
-            ComponentsBehaviour::Shape,
-        )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("enabled", "bool", false)];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 

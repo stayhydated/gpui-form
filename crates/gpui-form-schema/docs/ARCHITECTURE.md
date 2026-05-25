@@ -16,24 +16,11 @@ information, but not own proc-macro parsing or token emission.
 
 ## Modules
 
-- `src/lib.rs`: exports `components` and `registry`
-- `src/components.rs`: component contract marker metadata
+- `src/lib.rs`: exports `registry`
 - `src/registry.rs`: `GpuiFormShape`, `FieldVariant`, and `inventory`
   collection
 
 ## Metadata Model
-
-### `ComponentsBehaviour`
-
-Per-field runtime contract metadata. This is intentionally shape-only:
-`ComponentsBehaviour::Shape` marks fields backed by
-`gpui_form_component::shape::ComponentShape`.
-
-Shape-specific details live in `FieldVariant::shape_path`, `component_path`,
-`requires_value`, `value_binding`, and `prototyping_field_suffix`.
-
-This is the metadata level that downstream consumers use; derive/codegen
-internals should not invent separate parallel runtime models.
 
 ### `GpuiFormShape`
 
@@ -58,7 +45,6 @@ Important fields:
 - `source_value_type`
 - `optional`
 - `requires_value`
-- `behaviour`
 - `validations`
 - `default_expr`
 - `from_expr`
@@ -72,8 +58,8 @@ Important fields:
 field name from `prototyping_field_suffix` or `shape_path` when
 available. Inventory consumers use this as their generated-code naming policy.
 The fallback suffix strips shape/state wrappers and removes duplicated
-field-name prefixes before falling back to the contract marker name. Explicit
-prototyping suffix metadata is normalized against the field name the same way.
+field-name prefixes before falling back to `"shape"`. Explicit prototyping
+suffix metadata is normalized against the field name the same way.
 
 `requires_value` is emitted by `gpui-form-codegen` from the generic
 shape-contract policy. Non-optional shape-backed fields require a value by
@@ -84,9 +70,10 @@ component can safely synthesize a missing value.
 
 1. `gpui-form-codegen` parses field component syntax and turns it into typed
    component definitions.
-1. `gpui-form-codegen` emits `ComponentsBehaviour` tokens for each field.
-1. `gpui-form-derive` embeds those contract tokens into generated
-   `FieldVariant` metadata.
+1. `gpui-form-codegen` emits shape-only `FieldVariant` metadata for each
+   field.
+1. `gpui-form-derive` embeds that metadata into generated inventory
+   registration.
 1. When inventory registration is enabled, `gpui-form-derive` submits a
    `GpuiFormShape`.
 1. `gpui-form-prototyping-core` reads that metadata and generates scaffolded
@@ -97,7 +84,6 @@ component can safely synthesize a missing value.
 This crate should own:
 
 - runtime-safe metadata
-- shared component contract metadata
 - inventory registration types
 
 This crate should not own:

@@ -237,7 +237,6 @@ pub fn expand_gpui_form(
                 let is_optional = was_optional;
                 let field_type_str = base_type.to_token_stream().to_string();
                 let source_value_type_str = original_inner_type.to_token_stream().to_string();
-                let behaviour_tokens = component_def.behaviour_tokens(&base_type);
                 let mut validation_rules = koruma_validations
                     .get(&field_name_str)
                     .cloned()
@@ -270,8 +269,7 @@ pub fn expand_gpui_form(
                     ::gpui_form::schema::registry::FieldVariant::new(
                         #field_name_str,
                         #field_type_str,
-                        #is_optional,
-                        #behaviour_tokens
+                        #is_optional
                     )
                     .with_source_value_type(#source_value_type_str)
                     .with_requires_value(#requires_value)
