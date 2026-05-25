@@ -43,17 +43,17 @@ Supported component forms:
 - `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(component = my::Shape.value_binding())]`
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
+- `#[gpui_form(component = my::Shape.requires_value(false))]`
 - `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `ComponentShape::new`. Select and infinite-select behavior
-uses Koruma-style direct setter chains that expand to bon builders inside the
-derive macro.
+delegates to `ComponentShape::new`. `gpui-form` treats every component as a
+custom shape contract and does not inspect the shape path for built-in
+component categories.
 
 Supporting field attributes:
 
@@ -78,13 +78,11 @@ Behavior notes:
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
-- known reusable components infer required-value behavior internally:
-  `gpui_form_collection::input::Input` allows required source fields to be
-  absent in the holder until validation or conversion, while select, checkbox,
-  switch, and infinite-select components keep required fields as `T`
-- `searchable(true)` and `.partial(true)` record select behavior metadata
-- `searchable(true)` and `.max_depth(...)` record infinite-select behavior
-  metadata
+- non-optional component fields default to required holder storage, so the
+  generated value holder stores `Option<T>` and conversion back to the source
+  model fails when the field is missing
+- `.requires_value(false)` keeps a non-optional component field as `T` when the
+  component can safely synthesize a value
 - `.value_binding()` records that the component shape implements
   `gpui_form_component::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
@@ -96,11 +94,10 @@ Behavior notes:
   `String`s
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
-- component shape prototyping metadata drives generated `FormFields` and
-  `FormComponents` suffixes when present. Collection shapes publish suffixes
-  such as `input`, `select`, `checkbox`, and `switch`; reusable app shapes can
-  use `field_suffix = "..."`, and otherwise generated identifiers fall back to
-  the shape name heuristic
+- generated `FormFields` and `FormComponents` suffixes use field-level
+  `.field_suffix(...)` first, then the shape-name heuristic. Shape-level
+  `ComponentShape::PROTOTYPING.field_suffix` is inventory metadata for
+  prototyping output
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model

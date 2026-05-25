@@ -8,7 +8,7 @@ examples.
 Source structs and enums that demonstrate the supported derive surface:
 
 - basic input, number input, checkbox, switch, and select fields
-- searchable select, date-picker conversion, and skipped-field workflows
+- select, date-picker conversion, and skipped-field workflows
 - nested `InfiniteSelect` enums, including index-path and key-path round trips
   plus typed path-error reporting, custom persisted keys, and key-path string
   serialization

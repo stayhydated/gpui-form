@@ -64,17 +64,17 @@ pub struct User {
     #[koruma(NegativeValidation::<_>::builder())]
     pub debt: rust_decimal::Decimal,
 
-    #[gpui_form(component = gpui_form_collection::switch::Switch)]
+    #[gpui_form(component = gpui_form_collection::switch::Switch.requires_value(false))]
     pub subscribe_newsletter: bool,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
+    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox.requires_value(false))]
     pub enable_notifications: bool,
 
-    #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
+    #[gpui_form(component = gpui_form_collection::select::Select::<_>.requires_value(false))]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(
-        component = gpui_form_collection::select::Select::<_>::searchable(true),
+        component = gpui_form_collection::select::Select::<_>,
         default = EnumCountry::France
     )]
     pub country: Option<EnumCountry>,

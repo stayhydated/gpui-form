@@ -1,5 +1,4 @@
 use crate::components::*;
-use gpui_form_schema::components::ComponentsBehaviour;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -28,18 +27,13 @@ impl super::ComponentLayout for ShapeComponent {
             pub #field_name_ident: ::gpui::Entity<#state_type>,
         };
 
-        let field_base_declaration = match &options.behaviour {
-            ComponentsBehaviour::Select(behaviour) if behaviour.partial => quote! {},
-            _ => {
-                quote! {
-                    pub fn #field_name_ident(
-                        window: &mut ::gpui::Window,
-                        cx: &mut ::gpui::Context<'_, #state_type>,
-                    ) -> #state_type {
-                        #constructor_tokens
-                    }
-                }
-            },
+        let field_base_declaration = quote! {
+            pub fn #field_name_ident(
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, #state_type>,
+            ) -> #state_type {
+                #constructor_tokens
+            }
         };
 
         field_structure_tokens.extend(field_structure_definition);

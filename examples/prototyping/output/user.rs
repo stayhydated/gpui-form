@@ -223,33 +223,16 @@ impl UserForm {
     }
     fn on_country_select_event(
         &mut self,
-        state: &Entity<
-            ComponentStateOf<
-                gpui_form_collection::select::Select<
-                    EnumCountry,
-                    ::gpui_component::select::SearchableVec<EnumCountry>,
-                >,
-            >,
-        >,
-        event: &ComponentEventOf<
-            gpui_form_collection::select::Select<
-                EnumCountry,
-                ::gpui_component::select::SearchableVec<EnumCountry>,
-            >,
-            EnumCountry,
-        >,
+        state: &Entity<ComponentStateOf<gpui_form_collection::select::Select<EnumCountry>>>,
+        event: &ComponentEventOf<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
-                gpui_form_collection::select::Select<
-                    EnumCountry,
-                    ::gpui_component::select::SearchableVec<EnumCountry>,
-                >,
-                EnumCountry,
-            >(&state, event)
+            form_value_change::<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>(
+                &state, event,
+            )
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -382,10 +365,7 @@ impl UserForm {
         });
         country_select.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_collection::select::Select<
-                    EnumCountry,
-                    ::gpui_component::select::SearchableVec<EnumCountry>,
-                >,
+                gpui_form_collection::select::Select<EnumCountry>,
                 EnumCountry,
             >(state, current_data.country.as_ref(), window, cx);
         });

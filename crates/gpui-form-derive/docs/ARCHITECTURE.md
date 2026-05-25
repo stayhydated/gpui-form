@@ -89,7 +89,7 @@ The derive layer:
 When the `inventory` feature is enabled:
 
 1. `GpuiForm` emits one `GpuiFormShape` per derived struct.
-1. Each field becomes a `FieldVariant` with behavior metadata from
+1. Each field becomes a `FieldVariant` with component contract metadata from
    `gpui-form-codegen`.
 1. Metadata includes validation rule identifiers, defaults, full value type
    paths, component shape UI paths, and skipped-field information for

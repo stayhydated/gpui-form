@@ -29,8 +29,8 @@ this crate owns reusable component types for common `gpui-component` widgets.
 - `select::Select<T, D = Vec<T>>`: enum-backed select over
   `gpui_component::select::SelectState<D>`, with `IntoEnumIterator`,
   `Default`, `PartialEq`, `SelectItem<Value = T>`, and delegate bounds.
-  Codegen specializes `D` to `gpui_component::select::SearchableVec<T>` when a
-  field uses `::searchable(true)`.
+  Applications that need search or other select-specific options should expose
+  those choices through a dedicated `ComponentShape` wrapper.
 - `checkbox::Checkbox`: value-bound checkbox wrapper that stores checked
   state in an entity and renders `gpui_component::checkbox::Checkbox`.
 - `switch::Switch`: value-bound switch wrapper that stores checked state

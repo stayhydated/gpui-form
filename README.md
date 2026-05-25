@@ -72,12 +72,12 @@ pub struct UserProfile {
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::select::Select::<_>,
+        component = gpui_form_collection::select::Select::<_>.requires_value(false),
         default = Country::France
     )]
     pub country: Country,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
+    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox.requires_value(false))]
     pub subscribe: bool,
 }
 ```
@@ -97,23 +97,23 @@ pub struct UserProfile {
 - `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(component = my::Shape.value_binding())]`
 - `#[gpui_form(component = my::Shape.field_suffix("input"))]`
+- `#[gpui_form(component = my::Shape.requires_value(false))]`
 - `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]`
+- `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]`
+- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The expression is parsed as attribute metadata; generated runtime construction
-delegates to `ComponentShape::new`. Select and infinite-select behavior
-uses Koruma-style direct setter chains that expand to bon builders inside the
-derive macro.
-Generated required-value behavior is inferred internally from known components:
-`gpui_form_collection::input::Input` allows required source fields to be absent
-in the holder until validation or conversion, while
-`gpui_form_collection::select::Select`, `gpui_form_collection::checkbox::Checkbox`,
-`gpui_form_collection::switch::Switch`, and
-`gpui_form_component::infinite_select::InfiniteSelect` keep non-optional source fields
-as `T`.
+delegates to `ComponentShape::new`. `gpui-form` treats every component as a
+custom shape contract and does not inspect the shape path for built-in
+component categories.
+
+Non-optional component fields default to required holder storage, so the
+generated value holder stores `Option<T>` and conversion back to the source
+model fails when the field is missing. Use `.requires_value(false)` for
+components that can safely synthesize a value, such as boolean toggles or
+selects with a meaningful default.
 
 Common field-level helpers:
 
@@ -128,11 +128,10 @@ Common field-level helpers:
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.
-- component shape prototyping metadata drives generated field/helper suffixes
-  when present. Collection components publish suffixes such as `input`,
-  `select`, `checkbox`, and `switch`; reusable app shapes can use
-  `field_suffix = "..."`, and otherwise the generator falls back to the shape
-  name heuristic.
+- generated form field/helper suffixes use field-level `.field_suffix(...)`
+  first, then the shape-name heuristic. Shape-level
+  `ComponentShape::PROTOTYPING.field_suffix` is inventory metadata for
+  prototyping output.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.

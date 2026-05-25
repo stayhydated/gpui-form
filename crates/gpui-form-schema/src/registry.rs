@@ -112,7 +112,7 @@ impl FieldVariant {
             value_type,
             source_value_type: value_type,
             optional,
-            requires_value: !optional && behaviour.kind().default_requires_value(),
+            requires_value: !optional,
             behaviour,
             validations: &[],
             default_expr: None,
@@ -195,7 +195,7 @@ impl FieldVariant {
 
     /// Returns true when generated code should subscribe to this field.
     pub const fn subscribable(&self) -> bool {
-        self.behaviour.kind().subscribable() || self.value_binding
+        self.value_binding
     }
 
     pub fn behaviour_suffix(&self) -> &'static str {
@@ -246,13 +246,6 @@ pub fn component_suffix_from_shape(field_name: &str, shape: &str) -> Option<Stri
         .split('<')
         .next()
         .filter(|path| !path.is_empty())?;
-    if path_without_generics.ends_with("gpui_form_component::infinite_select::InfiniteSelect")
-        || path_without_generics
-            .ends_with("gpui_form_component::infinite_select::SearchableInfiniteSelect")
-    {
-        return component_suffix_from_suffix(field_name, "infinite_select");
-    }
-
     let shape_ident = path_without_generics
         .rsplit("::")
         .next()
@@ -329,7 +322,7 @@ mod tests {
     }
 
     #[test]
-    fn infinite_select_component_path_drives_field_suffix() {
+    fn multiword_shape_name_drives_field_suffix() {
         let field = FieldVariant::new("location", "Country", false, ComponentsBehaviour::Shape)
             .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>");
 

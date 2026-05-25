@@ -11,33 +11,26 @@ This crate is the runtime-safe metadata boundary between:
 - the user-facing facade
 - downstream tooling such as `gpui-form-prototyping-core`
 
-It should describe component behavior and discovered form shape information, but
-not own proc-macro parsing or token emission.
+It should describe component contract metadata and discovered form shape
+information, but not own proc-macro parsing or token emission.
 
 ## Modules
 
 - `src/lib.rs`: exports `components` and `registry`
-- `src/components.rs`: component identity and behavior payload types
+- `src/components.rs`: component contract marker metadata
 - `src/registry.rs`: `GpuiFormShape`, `FieldVariant`, and `inventory`
   collection
 
 ## Metadata Model
 
-### `ComponentKind`
-
-Static identity for component categories. Today the schema only models shape-backed
-component contract fields. It centralizes shared traits such as:
-
-- snake-case component naming
-- whether a component is subscribable
-- whether a component is focusable
-- whether generated holder fields wrap in `Option<T>` by default
-
 ### `ComponentsBehaviour`
 
-Per-field runtime behavior metadata. Today this is `Shape`; shape-specific
-details live in `FieldVariant::shape_path`, `component_path`,
-`value_binding`, and `prototyping_field_suffix`.
+Per-field runtime contract metadata. This is intentionally shape-only:
+`ComponentsBehaviour::Shape` marks fields backed by
+`gpui_form_component::shape::ComponentShape`.
+
+Shape-specific details live in `FieldVariant::shape_path`, `component_path`,
+`requires_value`, `value_binding`, and `prototyping_field_suffix`.
 
 This is the metadata level that downstream consumers use; derive/codegen
 internals should not invent separate parallel runtime models.
@@ -77,23 +70,22 @@ Important fields:
 
 `FieldVariant::field_name_with_behaviour()` derives the generated component
 field name from `prototyping_field_suffix` or `shape_path` when
-available, so inventory consumers use the same suffixes as the derive output.
+available. Inventory consumers use this as their generated-code naming policy.
 The fallback suffix strips shape/state wrappers and removes duplicated
-field-name prefixes before falling back to the behavior name. Explicit
+field-name prefixes before falling back to the contract marker name. Explicit
 prototyping suffix metadata is normalized against the field name the same way.
 
-`requires_value` is emitted metadata inferred by `gpui-form-codegen`; it is not
-a field-level component expression setter. Known reusable shape wrappers infer
-whether a missing generated holder value is invalid, while `behaviour` carries
-shape settings such as select `searchable` / `partial` and infinite-select
-`searchable` / `max_depth`.
+`requires_value` is emitted by `gpui-form-codegen` from the generic
+shape-contract policy. Non-optional shape-backed fields require a value by
+default; field syntax can opt out with `.requires_value(false)` when the
+component can safely synthesize a missing value.
 
 ## Data Flow
 
 1. `gpui-form-codegen` parses field component syntax and turns it into typed
    component definitions.
 1. `gpui-form-codegen` emits `ComponentsBehaviour` tokens for each field.
-1. `gpui-form-derive` embeds those behavior tokens into generated
+1. `gpui-form-derive` embeds those contract tokens into generated
    `FieldVariant` metadata.
 1. When inventory registration is enabled, `gpui-form-derive` submits a
    `GpuiFormShape`.
@@ -105,7 +97,7 @@ shape settings such as select `searchable` / `partial` and infinite-select
 This crate should own:
 
 - runtime-safe metadata
-- shared component identity
+- shared component contract metadata
 - inventory registration types
 
 This crate should not own:
@@ -116,18 +108,18 @@ This crate should not own:
 
 ## Coordination Rules
 
-When adding or changing a component:
+When adding or changing a reusable component shape:
 
-1. update `ComponentsBehaviour` and related payload structs here
-1. update `gpui-form-codegen` so the derive layer emits the new metadata
-1. update `gpui-form-prototyping-core` so the generator consumes the new
-   behavior correctly
-1. update `gpui-form-component` if runtime support is required
+1. implement or derive `ComponentShape` for the shape
+1. publish shape-level metadata such as `COMPONENT_PATH`, `VALUE_BINDING`, and
+   `PROTOTYPING.field_suffix` when generators need it
+1. update `gpui-form-component` or the owning runtime crate if runtime support
+   is required
 
 ## When To Update This Document
 
 Update this file when:
 
 - `GpuiFormShape` or `FieldVariant` fields change
-- component behavior payloads change
+- component contract metadata changes
 - inventory ownership or registration semantics change

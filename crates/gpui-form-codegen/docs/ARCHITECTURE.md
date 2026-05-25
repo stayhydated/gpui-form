@@ -31,23 +31,24 @@ crate.
 - `component = my::Shape.component(my::Widget)`
 - `component = my::Shape.value_binding()`
 - `component = my::Shape.field_suffix("input")`
-- `component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true)`
-- `component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3)`
+- `component = my::Shape.requires_value(false)`
+
 Important parse-time responsibilities:
-- expression syntax uses a shape path plus optional component metadata or
-  behavior setters
+- expression syntax uses a shape path plus optional generic component metadata
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- required-value holder behavior is inferred from known shape metadata
+- non-optional shape-backed fields require a holder value by default
+- `requires_value(false)` records a field-level override for components that can
+  safely synthesize a missing value
 - `value_binding()` records that generated prototyping code should use
   `ComponentValueBinding`
 - `field_suffix("...")` records a field-level prototyping name override
-- `searchable(true)` and `.partial(true)` record select behavior metadata
-- `searchable(true)` and `.max_depth(...)` record infinite-select behavior metadata
-- direct behavior setter chains are expanded to bon builder checks for
-  rust-analyzer without requiring users to write `builder()` in attributes
+
+Component-specific settings belong inside the shape's `ComponentShape::new`
+implementation or in a dedicated wrapper shape. This crate does not know about
+selects, inputs, date pickers, or any other component family.
 
 ## Component Layout Emission
 
@@ -58,12 +59,11 @@ The shape layout emits two things:
   `<Shape as ComponentShape>::new(window, cx)`
 
 Generated identifiers use an explicit field-level `field_suffix` first, then
-shape-level `ComponentShape::PROTOTYPING.field_suffix`, then the resolved
-component shape's final segment. The shape-name fallback strips `Shape` or
-`State`, removes a duplicate field prefix, and falls back to `shape` when the
-shape name is exactly the field name. Explicit suffix metadata goes through the
-same field-name normalization. For example, `email: EmailInputShape` becomes
-`email_input`, while `tags: TagsState` falls back to `tags_shape`.
+the resolved component shape's final segment. The shape-name fallback strips
+`Shape` or `State`, removes a duplicate field prefix, and falls back to `shape`
+when the shape name is exactly the field name. Explicit suffix metadata goes
+through the same field-name normalization. For example, `email: EmailInputShape`
+becomes `email_input`, while `tags: TagsState` falls back to `tags_shape`.
 
 No `gpui-component` UI component is hard-coded here. Reusable gpui-component-backed
 representations live in `gpui-form-collection`; application-specific widgets
@@ -73,10 +73,10 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- the inferred `ComponentsBehaviour` for known reusable shapes, including
-  select and infinite-select options
+- `ComponentsBehaviour::Shape` for all component fields
 - the resolved component shape path
 - the optional render component path
+- the required-value holder policy
 - the value-binding flag
 - the optional component-shape prototyping field suffix
 

@@ -81,12 +81,12 @@ bare identifier. That is important because inventory metadata may carry:
 - type overrides emitted by the derive layer
 - source/form conversion metadata and required-value holder behavior
 
-Each field is resolved once into a typed internal representation before any
-component-specific generation runs.
+Each field is resolved once into a typed internal representation before shape
+generation runs.
 
-## Current Component Shape Behavior
+## Component Shape Behavior
 
-For `ComponentsBehaviour::Shape`:
+All component fields are `ComponentsBehaviour::Shape`:
 
 - the generator still initializes component state into generated `FormFields`
 - generated local variable, field, and handler names use
@@ -108,8 +108,8 @@ For `ComponentsBehaviour::Shape`:
 
 When adding or changing a component:
 
-1. update the field generator mapping under `src/implementations/`
-1. consume any new `ComponentsBehaviour` payloads
+1. update the shape metadata emitted by the component's `ComponentShape`
+   implementation
 1. update imports for newly referenced runtime types
 1. verify the example generator under `examples/prototyping`
 

@@ -1,7 +1,7 @@
 pub mod shape;
 
 use gpui_form_schema::{
-    components::{ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour},
+    components::ComponentsBehaviour,
     registry::{FieldVariant, GpuiFormShape},
 };
 use heck::{ToPascalCase as _, ToSnakeCase as _};
@@ -17,17 +17,8 @@ use crate::{
 static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
 
 pub fn field_generator(behaviour: &ComponentsBehaviour) -> &'static dyn FieldCodeGenerator {
-    match behaviour {
-        ComponentsBehaviour::Input
-        | ComponentsBehaviour::NumberInput(_)
-        | ComponentsBehaviour::Checkbox
-        | ComponentsBehaviour::Switch
-        | ComponentsBehaviour::Select(_)
-        | ComponentsBehaviour::InfiniteSelect(_)
-        | ComponentsBehaviour::Shape
-        | ComponentsBehaviour::DatePicker
-        | ComponentsBehaviour::FilePicker => &SHAPE_GENERATOR,
-    }
+    let _ = behaviour;
+    &SHAPE_GENERATOR
 }
 
 pub struct ResolvedField<'a> {
@@ -140,9 +131,7 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn runtime_shape_path(&self) -> Option<Path> {
-        self.shape_path
-            .clone()
-            .map(|shape| runtime_shape_for_behaviour(shape, self.behaviour(), self.value_type()))
+        self.shape_path.clone()
     }
 
     pub fn component_path_parsed(&self) -> Option<&Path> {
@@ -178,104 +167,6 @@ impl<'a> ResolvedField<'a> {
     pub fn component_event_handler_ident(&self) -> Ident {
         format_ident!("on_{}_event", self.field_ident_with_behaviour)
     }
-}
-
-fn runtime_shape_for_behaviour(
-    shape: Path,
-    behaviour: &ComponentsBehaviour,
-    field_type: &Type,
-) -> Path {
-    match behaviour {
-        ComponentsBehaviour::Select(SelectBehaviour {
-            searchable: true, ..
-        }) => searchable_select_shape(shape, field_type),
-        ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
-            searchable: true, ..
-        }) => searchable_infinite_select_shape(shape),
-        _ => shape,
-    }
-}
-
-fn type_arg_count(path: &Path) -> usize {
-    path.segments
-        .last()
-        .and_then(|segment| match &segment.arguments {
-            syn::PathArguments::AngleBracketed(args) => Some(
-                args.args
-                    .iter()
-                    .filter(|arg| matches!(arg, syn::GenericArgument::Type(_)))
-                    .count(),
-            ),
-            _ => None,
-        })
-        .unwrap_or_default()
-}
-
-fn is_collection_shape(shape: &Path, module: &str, ident: &str) -> bool {
-    path_ends_with(shape, &["gpui_form_collection", module, ident])
-}
-
-fn is_infinite_select_shape(shape: &Path, ident: &str) -> bool {
-    path_ends_with(shape, &["gpui_form_component", "infinite_select", ident])
-}
-
-fn path_ends_with(path: &Path, expected: &[&str]) -> bool {
-    let actual = path
-        .segments
-        .iter()
-        .map(|segment| segment.ident.to_string())
-        .collect::<Vec<_>>();
-
-    actual.len() >= expected.len()
-        && actual
-            .iter()
-            .rev()
-            .zip(expected.iter().rev())
-            .all(|(actual, expected)| actual == expected)
-}
-
-fn searchable_select_shape(mut shape: Path, field_type: &Type) -> Path {
-    let existing_type_args = type_arg_count(&shape);
-    if !is_collection_shape(&shape, "select", "Select") || existing_type_args > 1 {
-        return shape;
-    }
-
-    let selected_type = field_type.clone();
-    let delegate_type: Type = syn::parse_quote! {
-        ::gpui_component::select::SearchableVec<#selected_type>
-    };
-    let Some(segment) = shape.segments.last_mut() else {
-        return shape;
-    };
-
-    match &mut segment.arguments {
-        syn::PathArguments::AngleBracketed(args) => {
-            if existing_type_args == 0 {
-                args.args
-                    .push(syn::GenericArgument::Type(field_type.clone()));
-            }
-            args.args.push(syn::GenericArgument::Type(delegate_type));
-        },
-        _ => {
-            let args: syn::AngleBracketedGenericArguments =
-                syn::parse_quote!(<#field_type, #delegate_type>);
-            segment.arguments = syn::PathArguments::AngleBracketed(args);
-        },
-    }
-
-    shape
-}
-
-fn searchable_infinite_select_shape(mut shape: Path) -> Path {
-    if !is_infinite_select_shape(&shape, "InfiniteSelect") || type_arg_count(&shape) > 1 {
-        return shape;
-    }
-
-    if let Some(segment) = shape.segments.last_mut() {
-        segment.ident = syn::Ident::new("SearchableInfiniteSelect", segment.ident.span());
-    }
-
-    shape
 }
 
 #[derive(Default)]

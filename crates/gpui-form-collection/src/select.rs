@@ -24,7 +24,7 @@ gpui_form_derive::component_shape! {
     }
 }
 
-/// Options used by `#[gpui_form(component = Select::<_>::searchable(...)...)]`.
+/// Options for callers that construct select state outside the derive path.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SelectOptions {
     pub searchable: bool,
@@ -79,14 +79,14 @@ where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
-    /// Starts a `#[gpui_form(component = ...)]` option chain with search enabled.
+    /// Starts an option chain with search enabled.
     pub fn searchable(
         value: bool,
     ) -> SelectOptionsBuilder<T, D, select_options_builder::SetSearchable> {
         Self::builder().searchable(value)
     }
 
-    /// Starts a `#[gpui_form(component = ...)]` option chain with partial rendering enabled.
+    /// Starts an option chain with partial rendering enabled.
     pub fn partial(value: bool) -> SelectOptionsBuilder<T, D, select_options_builder::SetPartial> {
         Self::builder().partial(value)
     }

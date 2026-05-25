@@ -32,10 +32,10 @@ Currently provided components:
 
 `Select<T, D>` requires enum values that implement
 `gpui_component::select::SelectItem`; derive that trait with
-`#[derive(SelectItem)]` from `gpui-form-collection-derive`. The derive uses the
-default `Vec<T>` delegate unless the field annotation enables searchable select
-behavior, which specializes the shape to
-`gpui_component::select::SearchableVec<T>`.
+`#[derive(SelectItem)]` from `gpui-form-collection-derive`. The provided shape
+uses the default `Vec<T>` delegate. If an application needs search or other
+select-specific configuration, define a small `ComponentShape` wrapper whose
+`new` function configures the underlying `SelectState`.
 
 Collection components implement `gpui_form_component::shape::ComponentShape`
 and add value adapters where the component can synchronize form state

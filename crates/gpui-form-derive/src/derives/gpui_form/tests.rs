@@ -779,11 +779,11 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_known_shape_requires_value_policy_is_internal() {
+    fn test_component_shape_requires_value_false_override() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::switch::Switch)]
+                #[gpui_form(component = gpui_form_collection::switch::Switch.requires_value(false))]
                 enabled: bool,
             }
         };
@@ -800,15 +800,15 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains("pubenabled:bool"),
-            "switch shape should keep value holder field non-optional"
+            "requires_value(false) should keep value holder field non-optional"
         );
         assert!(
             !compact.contains("pubenabled:Option<bool>"),
-            "switch shape should avoid wrapping in Option"
+            "requires_value(false) should avoid wrapping in Option"
         );
         assert!(
             compact.contains("with_requires_value(false)"),
-            "known shape required-value policy should be stored as metadata: {compact}"
+            "generic shape required-value policy should be stored as metadata: {compact}"
         );
     }
 
@@ -851,11 +851,13 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_select_shape_exposes_searchable_behavior() {
+    fn test_component_shape_rejects_component_specific_metadata_methods() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true))]
+                #[gpui_form(
+                    component = gpui_form_collection::select::Select::<_>::searchable(true)
+                )]
                 country: crate::types::Country,
             }
         };
@@ -871,199 +873,13 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("SelectBehaviour{partial:false,searchable:true,}"),
-            "select searchable behavior should be recorded in FieldVariant metadata: {compact}"
-        );
-        assert!(
-            compact.contains(".searchable(true)"),
-            "select searchable behavior should be applied to the generated constructor: {compact}"
-        );
-        assert!(
-            compact.contains("gpui_component::select::SearchableVec<crate::types::Country>"),
-            "searchable select should use the searchable delegate shape: {compact}"
-        );
-        assert!(
-            compact.contains("pubcountry_select:::gpui::Entity<"),
-            "searchable select should keep the normal select field name: {compact}"
-        );
-        assert!(
-            compact.contains(
-                "with_shape_path(\"gpui_form_collection::select::Select<crate::types::Country>\")"
-            ),
-            "searchable select metadata should keep the original shape identity: {compact}"
-        );
-        assert!(
-            !compact.contains(
-                "with_shape_path(\"gpui_form_collection::select::Select<crate::types::Country,"
-            ),
-            "searchable select behavior should not leak into component shape metadata: {compact}"
-        );
-        assert!(
-            compact.contains("pubcountry:crate::types::Country"),
-            "select shape should keep required value holder fields non-optional: {compact}"
-        );
-        assert!(
-            compact.contains("Select::<crate::types::Country>::searchable(true).build"),
-            "select direct setter chain should emit a bon builder check for rust-analyzer: {compact}"
+            compact.contains("unknowncomponentmetadata`searchable`"),
+            "component-specific methods should fail in gpui_form attributes: {compact}"
         );
     }
 
     #[test]
-    fn test_select_shape_exposes_partial_behavior() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component = gpui_form_collection::select::Select::<_>::partial(true))]
-                country: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("SelectBehaviour{partial:true,searchable:false,}"),
-            "select partial behavior should be recorded in FieldVariant metadata: {compact}"
-        );
-        assert!(
-            !compact.contains("pubfncountry_select("),
-            "partial select should not emit a base component constructor: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_infinite_select_shape_exposes_behavior_options() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
-                        .max_depth(3)
-                )]
-                location: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("InfiniteSelectBehaviour{searchable:true,max_depth:Some(3"),
-            "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
-        );
-        assert!(
-            compact.contains("SearchableInfiniteSelect<crate::types::Country>"),
-            "searchable infinite select should use the searchable state alias: {compact}"
-        );
-        assert!(
-            compact.contains("publocation_infinite_select:::gpui::Entity<"),
-            "searchable infinite select should keep the normal infinite-select field name: {compact}"
-        );
-        assert!(
-            !compact.contains("location_searchable_infinite_select"),
-            "searchable infinite select should not include behavior in generated field names: {compact}"
-        );
-        assert!(
-            compact.contains(
-                "with_shape_path(\"gpui_form_component::infinite_select::InfiniteSelect<crate::types::Country>\")"
-            ),
-            "searchable infinite select metadata should keep the original shape identity: {compact}"
-        );
-        assert!(
-            compact.contains(".max_depth(3"),
-            "infinite-select max depth should be applied to runtime options: {compact}"
-        );
-        assert!(
-            compact.contains(
-                "InfiniteSelect::<crate::types::Country>::searchable(true).max_depth(3).build"
-            ),
-            "infinite-select direct setter chain should be emitted for type checking: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_infinite_select_shape_exposes_behavior_options_with_positional_component() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(
-                    gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
-                        .max_depth(3)
-                )]
-                location: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("InfiniteSelectBehaviour{searchable:true,max_depth:Some(3"),
-            "infinite-select behavior should be recorded in FieldVariant metadata: {compact}"
-        );
-        assert!(
-            compact.contains("SearchableInfiniteSelect<crate::types::Country>"),
-            "searchable infinite select should use the searchable state alias: {compact}"
-        );
-        assert!(
-            compact.contains(".max_depth(3"),
-            "infinite-select max depth should be applied to runtime options: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_behavior_rejects_explicit_builder() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>
-                        .builder()
-                        .searchable(true)
-                )]
-                location: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("componentbehaviorchainsstartsettersdirectly"),
-            "explicit builder syntax should fail in gpui_form attributes: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_behavior_rejects_removed_combined_infinite_select_helper() {
+    fn test_component_shape_rejects_removed_combined_infinite_select_helper() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -1085,7 +901,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("unknowncomponentbehavior`searchable_with_max_depth`"),
+            compact.contains("unknowncomponentmetadata`searchable_with_max_depth`"),
             "removed pre-bon infinite-select helper should fail: {compact}"
         );
     }

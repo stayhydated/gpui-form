@@ -1,7 +1,5 @@
 use darling::{Error as DarlingError, FromMeta};
-use gpui_form_schema::components::{
-    ComponentKind, ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour,
-};
+use gpui_form_schema::components::ComponentsBehaviour;
 use proc_macro2::TokenStream;
 use quote::{ToTokens as _, quote};
 use syn::{Expr, Lit, Path};
@@ -46,74 +44,38 @@ pub struct ShapeOptions {
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<syn::Path>,
     /// Whether non-optional source fields should reject a missing holder value.
-    /// This is inferred from known shape types for the component expression syntax.
+    /// Shape-backed fields default to requiring a value; use
+    /// `.requires_value(false)` on the component expression for value-bearing
+    /// components that can safely synthesize a missing value.
     pub requires_value: bool,
-    /// User-facing component behavior metadata carried by this shape.
-    pub behaviour: ComponentsBehaviour,
-    /// Field-level default value expression, used by known shapes that can seed
-    /// component state from the model default.
-    pub field_default: Option<syn::Expr>,
     /// Whether prototyping code should wire this component through
     /// `ComponentValueBinding`.
     pub value_binding: Option<bool>,
-    /// Optional explicit generated field/helper suffix for prototyping output.
+    /// Optional explicit generated field/helper suffix.
     pub field_suffix: Option<String>,
-    component_methods: Vec<ComponentMethod>,
 }
 
 impl ShapeOptions {
     fn from_shape(shape: Path) -> Self {
         let shape = normalize_shape_path(shape);
-        let (behaviour, requires_value, field_suffix) = inferred_shape_defaults(&shape);
 
         Self {
             shape,
             component: None,
-            requires_value,
-            behaviour,
-            field_default: None,
+            requires_value: true,
             value_binding: None,
-            field_suffix: field_suffix.map(str::to_owned),
-            component_methods: Vec::new(),
+            field_suffix: None,
         }
     }
 
     fn from_component_expr(expr: &Expr) -> darling::Result<Self> {
         let (shape, methods) = analyze_component_expr(expr)?;
         let mut options = Self::from_shape(shape);
-        let mut behavior_seen = false;
-        let mut metadata_seen = false;
 
         for method in &methods {
-            let method_name = method.method.to_string();
-            if method_name == "builder" {
-                return Err(DarlingError::custom(
-                    "component behavior chains start setters directly; use \
-                     `Select::<_>::searchable(true)` instead of calling `builder()`",
-                )
-                .with_span(&method.method));
-            }
-
-            let is_behavior = is_component_behavior_method(&method.method);
-            if is_behavior && metadata_seen {
-                return Err(DarlingError::custom(
-                    "component behavior setters must start the component expression",
-                )
-                .with_span(&method.method));
-            }
-            if !is_behavior && behavior_seen {
-                return Err(DarlingError::custom(
-                    "component behavior chains only accept behavior setters",
-                )
-                .with_span(&method.method));
-            }
-
             options.apply_component_method(&method.method, &method.args)?;
-            behavior_seen |= is_behavior;
-            metadata_seen |= !is_behavior;
         }
 
-        options.component_methods = methods;
         Ok(options)
     }
 
@@ -132,56 +94,13 @@ impl ShapeOptions {
             "field_suffix" => {
                 self.field_suffix = Some(expect_string_arg(method, args)?);
             },
-            "searchable" => {
-                let searchable = expect_bool_arg(method, args)?;
-                match &mut self.behaviour {
-                    ComponentsBehaviour::Select(behaviour) => {
-                        behaviour.searchable = searchable;
-                    },
-                    ComponentsBehaviour::InfiniteSelect(behaviour) => {
-                        behaviour.searchable = searchable;
-                    },
-                    _ => {
-                        return Err(DarlingError::custom(
-                            "`searchable` is only supported by gpui_form_collection::select::Select and gpui_form_component::infinite_select::InfiniteSelect",
-                        )
-                        .with_span(method));
-                    },
-                }
-            },
-            "partial" => {
-                let partial = expect_bool_arg(method, args)?;
-                match &mut self.behaviour {
-                    ComponentsBehaviour::Select(behaviour) => {
-                        behaviour.partial = partial;
-                    },
-                    _ => {
-                        return Err(DarlingError::custom(
-                            "`partial` is only supported by gpui_form_collection::select::Select",
-                        )
-                        .with_span(method));
-                    },
-                }
-            },
-            "max_depth" => {
-                let max_depth = expect_usize_arg(method, args)?;
-                match &mut self.behaviour {
-                    ComponentsBehaviour::InfiniteSelect(behaviour) => {
-                        behaviour.max_depth = Some(max_depth);
-                    },
-                    _ => {
-                        return Err(DarlingError::custom(
-                            "`max_depth` is only supported by gpui_form_component::infinite_select::InfiniteSelect",
-                        )
-                        .with_span(method));
-                    },
-                }
+            "requires_value" => {
+                self.requires_value = expect_bool_arg(method, args)?;
             },
             _ => {
                 return Err(DarlingError::custom(format!(
-                    "unknown component behavior `{method}`; supported methods are \
-                     `value_binding`, `component`, `field_suffix`, `searchable`, \
-                     `partial`, and `max_depth`"
+                    "unknown component metadata `{method}`; supported methods are \
+                     `value_binding`, `component`, `field_suffix`, and `requires_value`"
                 ))
                 .with_span(method));
             },
@@ -195,26 +114,11 @@ impl ShapeOptions {
     }
 
     pub fn runtime_shape(&self, field_type: &syn::Type) -> syn::Path {
-        let shape = self.resolved_shape(field_type);
-
-        match &self.behaviour {
-            ComponentsBehaviour::Select(behaviour) if behaviour.searchable => {
-                searchable_select_shape(shape, field_type)
-            },
-            ComponentsBehaviour::InfiniteSelect(behaviour) if behaviour.searchable => {
-                searchable_infinite_select_shape(shape)
-            },
-            _ => shape,
-        }
+        self.resolved_shape(field_type)
     }
 
     pub fn with_field_type(mut self, field_type: &syn::Type) -> Self {
         self.shape = self.resolved_shape(field_type);
-        self
-    }
-
-    pub fn with_field_default(mut self, field_default: Option<syn::Expr>) -> Self {
-        self.field_default = field_default;
         self
     }
 
@@ -224,100 +128,30 @@ impl ShapeOptions {
                 field_name,
                 field_suffix,
             )
-            .unwrap_or_else(|| ComponentKind::Shape.component_name().to_string());
+            .unwrap_or_else(|| ComponentsBehaviour::Shape.component_name().to_string());
         }
 
         let shape = self.shape.to_token_stream().to_string();
         gpui_form_schema::registry::component_suffix_from_shape(field_name, &shape)
-            .unwrap_or_else(|| ComponentKind::Shape.component_name().to_string())
+            .unwrap_or_else(|| ComponentsBehaviour::Shape.component_name().to_string())
     }
 
     pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.runtime_shape(field_type);
-        let constructor_shape = turbofish_shape_path(shape.clone());
 
-        match &self.behaviour {
-            ComponentsBehaviour::Select(behaviour) => {
-                let constructor = if let Some(default_expr) = self.field_default.as_ref() {
-                    quote! {
-                        #constructor_shape::new_with_initial(
-                            {
-                                let __gpui_form_default = #default_expr;
-                                __gpui_form_default
-                            },
-                            window,
-                            cx,
-                        )
-                    }
-                } else {
-                    quote! {
-                        <#shape as ::gpui_form_component::shape::ComponentShape>::new(
-                            window,
-                            cx,
-                        )
-                    }
-                };
-
-                if behaviour.searchable {
-                    quote! {
-                        #constructor.searchable(true)
-                    }
-                } else {
-                    constructor
-                }
-            },
-            ComponentsBehaviour::InfiniteSelect(behaviour) => {
-                let options = infinite_select_options_tokens(behaviour);
-                let initial_value = if let Some(default_expr) = self.field_default.as_ref() {
-                    quote! {
-                        {
-                            let __gpui_form_default = #default_expr;
-                            __gpui_form_default
-                        }
-                    }
-                } else {
-                    quote! { ::core::default::Default::default() }
-                };
-                quote! {
-                    #constructor_shape::new_with_options(
-                        #initial_value,
-                        #options,
-                        window,
-                        cx,
-                    )
-                }
-            },
-            _ => {
-                quote! {
-                    <#shape as ::gpui_form_component::shape::ComponentShape>::new(window, cx)
-                }
-            },
+        quote! {
+            <#shape as ::gpui_form_component::shape::ComponentShape>::new(window, cx)
         }
     }
 
     pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        if self.component_methods.is_empty()
-            || !self
-                .component_methods
-                .iter()
-                .all(|method| is_component_behavior_method(&method.method))
-        {
-            return None;
-        }
-
-        let shape = turbofish_shape_path(self.resolved_shape(field_type));
-        let mut methods = self.component_methods.iter();
-        let first = methods.next()?;
-        let first_method_name = &first.method;
-        let first_args = &first.args;
-        let setter_calls = methods.map(|method| {
-            let method_name = &method.method;
-            let args = &method.args;
-            quote! { .#method_name(#(#args),*) }
-        });
+        let shape = self.resolved_shape(field_type);
 
         Some(quote! {
-            let _ = #shape::#first_method_name(#(#first_args),*) #(#setter_calls)* .build();
+            {
+                fn __gpui_form_assert_component_shape<Shape: ::gpui_form_component::shape::ComponentShape>() {}
+                __gpui_form_assert_component_shape::<#shape>();
+            }
         })
     }
 }
@@ -341,7 +175,7 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
         )
         .with_span(&expr_lit.lit)),
         _ => Err(DarlingError::custom(
-            "component syntax expects a shape path or shape behavior expression",
+            "component syntax expects a shape path or shape metadata expression",
         )
         .with_span(expr)),
     }
@@ -385,7 +219,7 @@ fn pop_component_method(path: &mut Path) -> darling::Result<syn::Ident> {
     path.segments.pop_punct();
     if path.segments.is_empty() {
         return Err(DarlingError::custom(
-            "component expression requires a shape path before the behavior method",
+            "component expression requires a shape path before the metadata method",
         )
         .with_span(&method));
     }
@@ -401,23 +235,6 @@ fn normalize_shape_path(mut path: Path) -> Path {
     }
 
     path
-}
-
-fn turbofish_shape_path(mut path: Path) -> Path {
-    for segment in &mut path.segments {
-        if let syn::PathArguments::AngleBracketed(args) = &mut segment.arguments {
-            args.colon2_token = Some(Default::default());
-        }
-    }
-
-    path
-}
-
-fn is_component_behavior_method(method: &syn::Ident) -> bool {
-    matches!(
-        method.to_string().as_str(),
-        "searchable" | "partial" | "max_depth"
-    )
 }
 
 fn expect_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
@@ -485,232 +302,8 @@ fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Stri
     }
 }
 
-fn expect_usize_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<usize> {
-    let [arg] = args else {
-        return Err(DarlingError::custom(format!(
-            "`{method}` expects exactly one integer argument"
-        ))
-        .with_span(method));
-    };
-
-    match arg {
-        Expr::Lit(expr_lit) => match &expr_lit.lit {
-            Lit::Int(value) => value
-                .base10_parse::<usize>()
-                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
-            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
-        },
-        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
-    }
-}
-
-fn inferred_shape_defaults(shape: &Path) -> (ComponentsBehaviour, bool, Option<&'static str>) {
-    if is_collection_shape(shape, "input", "Input") {
-        (ComponentsBehaviour::Input, true, Some("input"))
-    } else if is_collection_shape(shape, "checkbox", "Checkbox") {
-        (ComponentsBehaviour::Checkbox, false, Some("checkbox"))
-    } else if is_collection_shape(shape, "switch", "Switch") {
-        (ComponentsBehaviour::Switch, false, Some("switch"))
-    } else if is_collection_shape(shape, "select", "Select") {
-        (
-            ComponentsBehaviour::Select(SelectBehaviour::default()),
-            false,
-            Some("select"),
-        )
-    } else if is_infinite_select_shape(shape, "InfiniteSelect") {
-        (
-            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour::default()),
-            false,
-            Some("infinite_select"),
-        )
-    } else if is_infinite_select_shape(shape, "SearchableInfiniteSelect") {
-        (
-            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
-                searchable: true,
-                max_depth: None,
-            }),
-            false,
-            Some("infinite_select"),
-        )
-    } else {
-        (ComponentsBehaviour::Shape, true, None)
-    }
-}
-
-fn is_collection_shape(shape: &Path, module: &str, ident: &str) -> bool {
-    path_ends_with(shape, &["gpui_form_collection", module, ident])
-}
-
-fn is_infinite_select_shape(shape: &Path, ident: &str) -> bool {
-    path_ends_with(shape, &["gpui_form_component", "infinite_select", ident])
-}
-
-fn path_ends_with(path: &Path, expected: &[&str]) -> bool {
-    let actual = path
-        .segments
-        .iter()
-        .map(|segment| segment.ident.to_string())
-        .collect::<Vec<_>>();
-
-    actual.len() >= expected.len()
-        && actual
-            .iter()
-            .rev()
-            .zip(expected.iter().rev())
-            .all(|(actual, expected)| actual == expected)
-}
-
-fn type_arg_count(path: &Path) -> usize {
-    path.segments
-        .last()
-        .and_then(|segment| match &segment.arguments {
-            syn::PathArguments::AngleBracketed(args) => Some(
-                args.args
-                    .iter()
-                    .filter(|arg| matches!(arg, syn::GenericArgument::Type(_)))
-                    .count(),
-            ),
-            _ => None,
-        })
-        .unwrap_or_default()
-}
-
-fn searchable_select_shape(mut shape: Path, field_type: &syn::Type) -> Path {
-    let existing_type_args = type_arg_count(&shape);
-    if !is_collection_shape(&shape, "select", "Select") || existing_type_args > 1 {
-        return shape;
-    }
-
-    let selected_type = field_type.clone();
-    let delegate_type: syn::Type = syn::parse_quote! {
-        ::gpui_component::select::SearchableVec<#selected_type>
-    };
-    let Some(segment) = shape.segments.last_mut() else {
-        return shape;
-    };
-
-    match &mut segment.arguments {
-        syn::PathArguments::AngleBracketed(args) => {
-            if existing_type_args == 0 {
-                args.args
-                    .push(syn::GenericArgument::Type(field_type.clone()));
-            }
-            args.args.push(syn::GenericArgument::Type(delegate_type));
-        },
-        _ => {
-            let args: syn::AngleBracketedGenericArguments =
-                syn::parse_quote!(<#field_type, #delegate_type>);
-            segment.arguments = syn::PathArguments::AngleBracketed(args);
-        },
-    }
-
-    shape
-}
-
-fn searchable_infinite_select_shape(mut shape: Path) -> Path {
-    if !is_infinite_select_shape(&shape, "InfiniteSelect") || type_arg_count(&shape) > 1 {
-        return shape;
-    }
-
-    if let Some(segment) = shape.segments.last_mut() {
-        segment.ident = syn::Ident::new("SearchableInfiniteSelect", segment.ident.span());
-    }
-
-    shape
-}
-
-fn infinite_select_options_tokens(behaviour: &InfiniteSelectBehaviour) -> TokenStream {
-    let searchable = behaviour.searchable;
-    let max_depth = match behaviour.max_depth {
-        Some(max_depth) => quote! { Some(#max_depth) },
-        None => quote! { None },
-    };
-
-    quote! {
-        ::gpui_form_component::infinite_select::InfiniteSelectOptions::new(
-            #searchable,
-            #max_depth,
-        )
-    }
-}
-
-fn behaviour_tokens(behaviour: &ComponentsBehaviour) -> TokenStream {
-    match behaviour {
-        ComponentsBehaviour::Input => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Input }
-        },
-        ComponentsBehaviour::NumberInput(options) => {
-            let validation_type = match options.validation_type {
-                Some(value) => quote! { Some(#value) },
-                None => quote! { None },
-            };
-            let kind = match options.kind {
-                gpui_form_schema::components::NumberInputKind::Float => {
-                    quote! { ::gpui_form::schema::components::NumberInputKind::Float }
-                },
-                gpui_form_schema::components::NumberInputKind::SignedInteger => {
-                    quote! { ::gpui_form::schema::components::NumberInputKind::SignedInteger }
-                },
-                gpui_form_schema::components::NumberInputKind::UnsignedInteger => {
-                    quote! { ::gpui_form::schema::components::NumberInputKind::UnsignedInteger }
-                },
-                gpui_form_schema::components::NumberInputKind::Custom => {
-                    quote! { ::gpui_form::schema::components::NumberInputKind::Custom }
-                },
-            };
-
-            quote! {
-                ::gpui_form::schema::components::ComponentsBehaviour::NumberInput(
-                    ::gpui_form::schema::components::NumberInputBehaviour {
-                        validation_type: #validation_type,
-                        kind: #kind,
-                    }
-                )
-            }
-        },
-        ComponentsBehaviour::Checkbox => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Checkbox }
-        },
-        ComponentsBehaviour::Switch => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Switch }
-        },
-        ComponentsBehaviour::Select(options) => {
-            let searchable = options.searchable;
-            let partial = options.partial;
-            quote! {
-                ::gpui_form::schema::components::ComponentsBehaviour::Select(
-                    ::gpui_form::schema::components::SelectBehaviour {
-                        partial: #partial,
-                        searchable: #searchable,
-                    }
-                )
-            }
-        },
-        ComponentsBehaviour::InfiniteSelect(options) => {
-            let searchable = options.searchable;
-            let max_depth = match options.max_depth {
-                Some(max_depth) => quote! { Some(#max_depth) },
-                None => quote! { None },
-            };
-            quote! {
-                ::gpui_form::schema::components::ComponentsBehaviour::InfiniteSelect(
-                    ::gpui_form::schema::components::InfiniteSelectBehaviour {
-                        searchable: #searchable,
-                        max_depth: #max_depth,
-                    }
-                )
-            }
-        },
-        ComponentsBehaviour::Shape => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::Shape }
-        },
-        ComponentsBehaviour::DatePicker => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::DatePicker }
-        },
-        ComponentsBehaviour::FilePicker => {
-            quote! { ::gpui_form::schema::components::ComponentsBehaviour::FilePicker }
-        },
-    }
+fn behaviour_tokens() -> TokenStream {
+    quote! { ::gpui_form::schema::components::ComponentsBehaviour::Shape }
 }
 
 fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Type {
@@ -777,7 +370,7 @@ pub struct ShapeComponent(pub FieldInformation<ShapeOptions>);
 
 impl ShapeComponent {
     pub fn component_name() -> &'static str {
-        ComponentKind::Shape.component_name()
+        ComponentsBehaviour::Shape.component_name()
     }
 }
 
@@ -812,12 +405,6 @@ impl FromMeta for Components {
 }
 
 impl Components {
-    pub const fn kind(&self) -> ComponentKind {
-        match self {
-            Self::Shape(options) => options.behaviour.kind(),
-        }
-    }
-
     pub fn requires_value(&self) -> bool {
         match self {
             Self::Shape(options) => options.requires_value,
@@ -828,17 +415,14 @@ impl Components {
         &self,
         field_name: String,
         field_type: syn::Type,
-        field_default: Option<syn::Expr>,
+        _field_default: Option<syn::Expr>,
     ) -> GeneratedFieldLayout {
         let mut field_structure_tokens = TokenStream::new();
         let mut field_base_declarations_tokens = TokenStream::new();
 
         match self {
             Self::Shape(options) => {
-                let options = options
-                    .clone()
-                    .with_field_default(field_default)
-                    .with_field_type(&field_type);
+                let options = options.clone().with_field_type(&field_type);
                 let component =
                     ShapeComponent(FieldInformation::new(options, field_name, field_type));
                 component.field_tokens(
@@ -857,7 +441,7 @@ impl Components {
 
     pub fn behaviour_tokens(&self, _field_type: &syn::Type) -> TokenStream {
         match self {
-            Self::Shape(options) => behaviour_tokens(&options.behaviour),
+            Self::Shape(_) => behaviour_tokens(),
         }
     }
 

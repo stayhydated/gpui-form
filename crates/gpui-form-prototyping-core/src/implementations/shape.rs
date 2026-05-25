@@ -182,7 +182,7 @@ mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
     use gpui_form_schema::{
-        components::{ComponentsBehaviour, InfiniteSelectBehaviour, SelectBehaviour},
+        components::ComponentsBehaviour,
         registry::{FieldVariant, GpuiFormShape},
     };
 
@@ -328,86 +328,6 @@ mod tests {
         assert!(
             compact_handler.contains("fnon_country_select_event"),
             "shape names should drive generated handler suffixes: {compact_handler}"
-        );
-    }
-
-    #[test]
-    fn shape_generator_uses_runtime_shape_for_searchable_select_without_renaming() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
-            "country",
-            "EnumCountry",
-            false,
-            ComponentsBehaviour::Select(SelectBehaviour {
-                partial: false,
-                searchable: true,
-            }),
-        )
-        .with_shape_path("gpui_form_collection::select::Select<EnumCountry>")
-        .with_value_binding(true)];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
-
-        let generator = ShapeCodeGenerator;
-        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
-        let created = generator
-            .generate_cx_new_call(&field, &SHAPE)
-            .expect("shape-backed fields should generate cx.new initialization");
-        let generated = generator
-            .generate_subscription(&field, &SHAPE)
-            .expect("value-bound shape-backed fields should generate subscriptions");
-        let compact_created = compact(&created.to_string());
-        let compact_handler = compact(&generated.handlers[0].to_string());
-
-        assert!(
-            compact_created.contains("letcountry_select=cx.new"),
-            "searchable behavior should keep the normal select suffix: {compact_created}"
-        );
-        assert!(
-            compact_handler.contains("fnon_country_select_event"),
-            "searchable behavior should keep the normal handler suffix: {compact_handler}"
-        );
-        assert!(
-            compact_handler.contains("gpui_form_collection::select::Select<EnumCountry,::gpui_component::select::SearchableVec<EnumCountry>>"),
-            "searchable select subscriptions should use the runtime-specialized shape: {compact_handler}"
-        );
-    }
-
-    #[test]
-    fn shape_generator_uses_runtime_shape_for_searchable_infinite_select_without_renaming() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
-            "location",
-            "Country",
-            false,
-            ComponentsBehaviour::InfiniteSelect(InfiniteSelectBehaviour {
-                searchable: true,
-                max_depth: Some(3),
-            }),
-        )
-        .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>")
-        .with_value_binding(true)];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
-
-        let generator = ShapeCodeGenerator;
-        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
-        let created = generator
-            .generate_cx_new_call(&field, &SHAPE)
-            .expect("shape-backed fields should generate cx.new initialization");
-        let generated = generator
-            .generate_subscription(&field, &SHAPE)
-            .expect("value-bound shape-backed fields should generate subscriptions");
-        let compact_created = compact(&created.to_string());
-        let compact_handler = compact(&generated.handlers[0].to_string());
-
-        assert!(
-            compact_created.contains("letlocation_infinite_select=cx.new"),
-            "searchable behavior should keep the normal infinite-select suffix: {compact_created}"
-        );
-        assert!(
-            !compact_created.contains("location_searchable_infinite_select"),
-            "searchable behavior should not leak into generated names: {compact_created}"
-        );
-        assert!(
-            compact_handler.contains("SearchableInfiniteSelect<Country>"),
-            "searchable infinite-select subscriptions should use the runtime-specialized shape: {compact_handler}"
         );
     }
 }

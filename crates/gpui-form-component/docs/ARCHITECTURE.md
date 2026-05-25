@@ -199,12 +199,12 @@ Those belong in `gpui-form-codegen`, `gpui-form-derive`, and
 
 ## Coordination Rules
 
-When adding a new component behavior that needs runtime state:
+When adding a new reusable component shape that needs runtime state:
 
 1. add the runtime helper in this crate
-1. add parse-time support in `gpui-form-codegen`
-1. add metadata in `gpui-form-schema`
-1. update `gpui-form-prototyping-core` generator mapping
+1. expose it through `ComponentShape` or a helper macro/derive
+1. publish shape metadata such as `COMPONENT_PATH`, `VALUE_BINDING`, and
+   `PROTOTYPING.field_suffix` when generated scaffolds need it
 1. update user-facing docs so applications import the runtime crate explicitly
 
 ## When To Update This Document

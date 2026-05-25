@@ -92,12 +92,13 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(
-    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
-        .max_depth(3)
-)]
+#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 pub location: Country,
 ```
+
+If a form needs non-default infinite-select options such as search or a depth
+limit, define a small `ComponentShape` wrapper whose `new` function calls
+`InfiniteSelect::new_with_options(...)`.
 
 Derived `InfiniteSelect` enums expose:
 

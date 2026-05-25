@@ -43,14 +43,14 @@ Useful runtime/helper paths:
 ```rust
 #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
 #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
-#[gpui_form(component = gpui_form_collection::select::Select::<_>::searchable(true).partial(true))]
 #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
 #[gpui_form(component = gpui_form_collection::switch::Switch)]
-#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true).max_depth(3))]
+#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 #[gpui_form(component = my::Shape)]
 #[gpui_form(component = my::Shape.component(my::ui::Widget))]
 #[gpui_form(component = my::Shape.value_binding())]
 #[gpui_form(component = my::Shape.field_suffix("input"))]
+#[gpui_form(component = my::Shape.requires_value(false))]
 ```
 
 Common field attributes:
@@ -76,18 +76,19 @@ Common struct attributes:
 - Use `gpui_form_collection::checkbox::Checkbox` or
   `gpui_form_collection::switch::Switch` for `bool` fields.
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
-  choice; derive `SelectItem`. Chain `::searchable(true)` or `::partial(true)`
-  when the select should expose those behaviors.
+  choice; derive `SelectItem`. Use a custom `ComponentShape` wrapper when the
+  select should expose search or other component-specific behavior.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
-  nested/cascading enum trees; derive `InfiniteSelect`. Use
-  `::searchable(true)` and `.max_depth(...)` when needed.
+  nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
+  `ComponentShape` wrapper when search or depth limits are needed.
 - Use a component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
 - Use `component = my::Shape` when the app owns the state/widget contract.
-- Treat the component expression and chained component behavior methods as derive
+- Treat the component expression and chained generic metadata methods as derive
   metadata; runtime construction still uses `ComponentShape::new`.
-- Treat generated value-holder wrapping as internal derive behavior for known
-  reusable components.
+- Non-optional component fields default to required holder storage; add
+  `.requires_value(false)` when a component can safely synthesize a missing
+  value.
 
 ## Generated Names
 
@@ -140,10 +141,7 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(
-        component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)
-            .max_depth(3)
-    )]
+    #[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
     pub location: Country,
 }
 ```

@@ -8,7 +8,6 @@ prototyping flows around generated form metadata.
 
 ## What It Provides
 
-- `components::ComponentKind`
 - `components::ComponentsBehaviour`
 - `registry::GpuiFormShape`
 - `registry::FieldVariant`
@@ -38,7 +37,7 @@ for shape in inventory::iter::<GpuiFormShape>() {
 ## When To Use This Crate Directly
 
 - You are writing a generator that consumes `GpuiFormShape`
-- You need runtime metadata about component shape behavior
+- You need runtime metadata about component shape contracts
 - You want inventory access without depending on the facade crate
 
 ## Most Users Should Use Instead

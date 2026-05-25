@@ -1258,14 +1258,14 @@ where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    /// Starts a `#[gpui_form(component = ...)]` option chain with search enabled.
+    /// Starts an option chain with search enabled.
     pub fn searchable(
         value: bool,
     ) -> InfiniteSelectOptionsBuilder<T, D, infinite_select_options_builder::SetSearchable> {
         Self::builder().searchable(value)
     }
 
-    /// Starts a `#[gpui_form(component = ...)]` option chain with a max depth.
+    /// Starts an option chain with a max depth.
     pub fn max_depth(
         value: usize,
     ) -> InfiniteSelectOptionsBuilder<T, D, infinite_select_options_builder::SetMaxDepth> {
