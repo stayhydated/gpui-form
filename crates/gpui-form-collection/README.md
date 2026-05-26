@@ -27,8 +27,19 @@ Currently provided components:
 - `input::Input<T>` for `gpui_component::input::Input`
 - `select::Select<T, D = Vec<T>>` for enum-backed
   `gpui_component::select::Select`
+- `combobox::Combobox<T, D = Vec<T>>` for enum-backed
+  `gpui_component::combobox::Combobox`
 - `checkbox::Checkbox` for `gpui_component::checkbox::Checkbox`
 - `switch::Switch` for `gpui_component::switch::Switch`
+- `number_input::NumberInput<T>` for `gpui_component::input::NumberInput`
+- `slider::Slider` for `gpui_component::slider::Slider`
+- `color_picker::ColorPicker` for `gpui_component::color_picker::ColorPicker`
+- `date_picker::DatePicker` for `gpui_form_component::date_picker::DatePicker`
+- `date_picker::DateRangePicker` for
+  `gpui_form_component::date_picker::DateRangePicker`
+- `file_picker::FilePicker` for
+  `gpui_form_component::file_picker::FilePicker`
+- `otp_input::OtpInput<T>` for `gpui_component::input::OtpInput`
 
 `Select<T, D>` requires enum values that implement
 `gpui_component::select::SelectItem`; derive that trait with
@@ -41,5 +52,7 @@ Collection components implement `gpui_form_component::shape::ComponentShape`
 and add value adapters where the component can synchronize form state
 generically. They also publish prototyping field suffix metadata, so generated
 scaffolds use names such as `code_input`, `country_select`,
-`enabled_checkbox`, and `notifications_switch` without relying on shape-name
-fallbacks.
+`theme_combobox`, `notifications_switch`, `age_number_input`, `volume_slider`,
+`theme_color_picker`, `birth_date_picker`, `holiday_date_range_picker`,
+`files_file_picker`, and `otp_code_otp_input` without relying on
+shape-name fallbacks.

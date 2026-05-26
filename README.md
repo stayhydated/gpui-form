@@ -100,8 +100,16 @@ pub struct UserProfile {
 - `#[gpui_form(component = my::Shape.requires_value(false))]`
 - `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::combobox::Combobox::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
+- `#[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::slider::Slider)]`
+- `#[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]`
+- `#[gpui_form(component = gpui_form_collection::date_picker::DatePicker)]`
+- `#[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]`
+- `#[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]`
+- `#[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]`
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The expression is parsed as attribute metadata; generated runtime construction
@@ -125,6 +133,10 @@ Common field-level helpers:
 - `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
   value types with `FromStr` in prototyping output, so value objects can use
   `type`, `from`, and `into` while the source model keeps its storage type.
+- `gpui_form_collection::number_input::NumberInput::<_>` uses `FromStr` for
+  non-`String` form-side values when parsing edits.
+- `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr` for
+  non-`String` form-side values.
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.

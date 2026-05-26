@@ -2,7 +2,6 @@ use anyhow::Context as _;
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
-use gpui_form_component::date_picker::DatePickerShape;
 use koruma::{Koruma, KorumaAllFluent};
 use koruma_collection::{
     collection::NonEmptyValidation,
@@ -65,6 +64,24 @@ pub struct User {
     #[koruma(NegativeValidation::<_>::builder())]
     pub debt: rust_decimal::Decimal,
 
+    #[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]
+    pub rating: Option<u32>,
+
+    #[gpui_form(component = gpui_form_collection::slider::Slider.requires_value(false))]
+    pub attention_level: f32,
+
+    #[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]
+    pub brand_color: Option<gpui::Hsla>,
+
+    #[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
+    pub otp_code: String,
+
+    #[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]
+    pub uploaded_files: Vec<std::path::PathBuf>,
+
+    #[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
+    pub holiday_range: Option<(chrono::NaiveDate, chrono::NaiveDate)>,
+
     #[gpui_form(component = gpui_form_collection::switch::Switch.requires_value(false))]
     pub subscribe_newsletter: bool,
 
@@ -84,7 +101,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component = DatePickerShape
+        component = gpui_form_component::date_picker::DatePickerShape
     )]
     pub birth_date: Option<Timestamp>,
 

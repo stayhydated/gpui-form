@@ -46,8 +46,16 @@ Supported component forms:
 - `#[gpui_form(component = my::Shape.requires_value(false))]`
 - `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::combobox::Combobox::<_>)]`
 - `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
+- `#[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]`
+- `#[gpui_form(component = gpui_form_collection::slider::Slider)]`
+- `#[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]`
+- `#[gpui_form(component = gpui_form_collection::date_picker::DatePicker)]`
+- `#[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]`
+- `#[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]`
+- `#[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]`
 - `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The expression is parsed as attribute metadata; generated runtime construction
@@ -72,8 +80,8 @@ Supporting struct attributes:
 Behavior notes:
 
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
-- collection select components expect enum-like values that can populate a
-  `gpui_component` select
+- collection components that are enum-driven (`Select`, `Combobox`) expect enum-like
+  values that can populate a `gpui_component` list widget
 - `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the field type
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
@@ -89,7 +97,9 @@ Behavior notes:
   `seed_value_binding_state` and maps component events to `FormValueChange<T>`
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
-- `gpui_form_collection::input::Input::<_>` prototyping code parses
+- `gpui_form_collection::input::Input::<_>`,
+  `gpui_form_collection::number_input::NumberInput::<_>`, and
+  `gpui_form_collection::otp_input::OtpInput::<_>` prototyping code parse
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
 - generic component expressions use `::<_>` in the attribute; the derive normalizes

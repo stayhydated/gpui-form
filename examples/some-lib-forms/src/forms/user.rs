@@ -8,7 +8,6 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
-use gpui_form_component::date_picker::DatePickerShape;
 use gpui_form_component::shape::{
     ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
@@ -159,6 +158,148 @@ impl UserForm {
             FormValueChange::Unchanged => {},
         }
     }
+    fn on_rating_number_input_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::number_input::NumberInput<u32>>>,
+        event: &ComponentEventOf<gpui_form_collection::number_input::NumberInput<u32>, u32>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<gpui_form_collection::number_input::NumberInput<u32>, u32>(
+                &state, event,
+            )
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.rating = Some(value);
+            },
+            FormValueChange::Clear => {
+                self.current_data.rating = None;
+            },
+            FormValueChange::Unchanged => {},
+        }
+    }
+    fn on_attention_level_slider_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::slider::Slider>>,
+        event: &ComponentEventOf<gpui_form_collection::slider::Slider, f32>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<gpui_form_collection::slider::Slider, f32>(&state, event)
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.attention_level = value;
+            },
+            FormValueChange::Clear => {},
+            FormValueChange::Unchanged => {},
+        }
+    }
+    fn on_brand_color_color_picker_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::color_picker::ColorPicker>>,
+        event: &ComponentEventOf<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
+                &state, event,
+            )
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.brand_color = Some(value);
+            },
+            FormValueChange::Clear => {
+                self.current_data.brand_color = None;
+            },
+            FormValueChange::Unchanged => {},
+        }
+    }
+    fn on_otp_code_otp_input_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::otp_input::OtpInput<String>>>,
+        event: &ComponentEventOf<gpui_form_collection::otp_input::OtpInput<String>, String>,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<gpui_form_collection::otp_input::OtpInput<String>, String>(
+                &state, event,
+            )
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.otp_code = Some(value);
+            },
+            FormValueChange::Clear => {
+                self.current_data.otp_code = None;
+            },
+            FormValueChange::Unchanged => {},
+        }
+    }
+    fn on_uploaded_files_file_picker_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::file_picker::FilePicker>>,
+        event: &ComponentEventOf<
+            gpui_form_collection::file_picker::FilePicker,
+            Vec<std::path::PathBuf>,
+        >,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<
+                gpui_form_collection::file_picker::FilePicker,
+                Vec<std::path::PathBuf>,
+            >(&state, event)
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.uploaded_files = Some(value);
+            },
+            FormValueChange::Clear => {
+                self.current_data.uploaded_files = None;
+            },
+            FormValueChange::Unchanged => {},
+        }
+    }
+    fn on_holiday_range_date_range_picker_event(
+        &mut self,
+        state: &Entity<ComponentStateOf<gpui_form_collection::date_picker::DateRangePicker>>,
+        event: &ComponentEventOf<
+            gpui_form_collection::date_picker::DateRangePicker,
+            (chrono::NaiveDate, chrono::NaiveDate),
+        >,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        let form_change = {
+            let state = state.read(_cx);
+            form_value_change::<
+                gpui_form_collection::date_picker::DateRangePicker,
+                (chrono::NaiveDate, chrono::NaiveDate),
+            >(&state, event)
+        };
+        match form_change {
+            FormValueChange::Set(value) => {
+                self.current_data.holiday_range = Some(value);
+            },
+            FormValueChange::Clear => {
+                self.current_data.holiday_range = None;
+            },
+            FormValueChange::Unchanged => {},
+        }
+    }
     fn on_subscribe_newsletter_switch_event(
         &mut self,
         state: &Entity<ComponentStateOf<gpui_form_collection::switch::Switch>>,
@@ -247,14 +388,19 @@ impl UserForm {
     }
     fn on_birth_date_date_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<DatePickerShape>>,
-        event: &ComponentEventOf<DatePickerShape, chrono::NaiveDate>,
+        state: &Entity<ComponentStateOf<gpui_form_component::date_picker::DatePickerShape>>,
+        event: &ComponentEventOf<
+            gpui_form_component::date_picker::DatePickerShape,
+            chrono::NaiveDate,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<DatePickerShape, chrono::NaiveDate>(&state, event)
+            form_value_change::<gpui_form_component::date_picker::DatePickerShape, chrono::NaiveDate>(
+                &state, event,
+            )
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -273,6 +419,16 @@ impl UserForm {
         let age_input = cx.new(|cx| UserFormComponents::age_input(window, cx));
         let balance_input = cx.new(|cx| UserFormComponents::balance_input(window, cx));
         let debt_input = cx.new(|cx| UserFormComponents::debt_input(window, cx));
+        let rating_number_input = cx.new(|cx| UserFormComponents::rating_number_input(window, cx));
+        let attention_level_slider =
+            cx.new(|cx| UserFormComponents::attention_level_slider(window, cx));
+        let brand_color_color_picker =
+            cx.new(|cx| UserFormComponents::brand_color_color_picker(window, cx));
+        let otp_code_otp_input = cx.new(|cx| UserFormComponents::otp_code_otp_input(window, cx));
+        let uploaded_files_file_picker =
+            cx.new(|cx| UserFormComponents::uploaded_files_file_picker(window, cx));
+        let holiday_range_date_range_picker =
+            cx.new(|cx| UserFormComponents::holiday_range_date_range_picker(window, cx));
         let subscribe_newsletter_switch =
             cx.new(|cx| UserFormComponents::subscribe_newsletter_switch(window, cx));
         let enable_notifications_checkbox =
@@ -287,6 +443,36 @@ impl UserForm {
             cx.subscribe_in(&age_input, window, Self::on_age_input_event),
             cx.subscribe_in(&balance_input, window, Self::on_balance_input_event),
             cx.subscribe_in(&debt_input, window, Self::on_debt_input_event),
+            cx.subscribe_in(
+                &rating_number_input,
+                window,
+                Self::on_rating_number_input_event,
+            ),
+            cx.subscribe_in(
+                &attention_level_slider,
+                window,
+                Self::on_attention_level_slider_event,
+            ),
+            cx.subscribe_in(
+                &brand_color_color_picker,
+                window,
+                Self::on_brand_color_color_picker_event,
+            ),
+            cx.subscribe_in(
+                &otp_code_otp_input,
+                window,
+                Self::on_otp_code_otp_input_event,
+            ),
+            cx.subscribe_in(
+                &uploaded_files_file_picker,
+                window,
+                Self::on_uploaded_files_file_picker_event,
+            ),
+            cx.subscribe_in(
+                &holiday_range_date_range_picker,
+                window,
+                Self::on_holiday_range_date_range_picker_event,
+            ),
             cx.subscribe_in(
                 &subscribe_newsletter_switch,
                 window,
@@ -341,6 +527,50 @@ impl UserForm {
                 rust_decimal::Decimal,
             >(state, current_data.debt.as_ref(), window, cx);
         });
+        rating_number_input.update(cx, |state, cx| {
+            seed_value_binding_state::<gpui_form_collection::number_input::NumberInput<u32>, u32>(
+                state,
+                current_data.rating.as_ref(),
+                window,
+                cx,
+            );
+        });
+        attention_level_slider.update(cx, |state, cx| {
+            seed_value_binding_state::<gpui_form_collection::slider::Slider, f32>(
+                state,
+                Some(&current_data.attention_level),
+                window,
+                cx,
+            );
+        });
+        brand_color_color_picker.update(cx, |state, cx| {
+            seed_value_binding_state::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
+                state,
+                current_data.brand_color.as_ref(),
+                window,
+                cx,
+            );
+        });
+        otp_code_otp_input.update(cx, |state, cx| {
+            seed_value_binding_state::<gpui_form_collection::otp_input::OtpInput<String>, String>(
+                state,
+                current_data.otp_code.as_ref(),
+                window,
+                cx,
+            );
+        });
+        uploaded_files_file_picker.update(cx, |state, cx| {
+            seed_value_binding_state::<
+                gpui_form_collection::file_picker::FilePicker,
+                Vec<std::path::PathBuf>,
+            >(state, current_data.uploaded_files.as_ref(), window, cx);
+        });
+        holiday_range_date_range_picker.update(cx, |state, cx| {
+            seed_value_binding_state::<
+                gpui_form_collection::date_picker::DateRangePicker,
+                (chrono::NaiveDate, chrono::NaiveDate),
+            >(state, current_data.holiday_range.as_ref(), window, cx);
+        });
         subscribe_newsletter_switch.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::switch::Switch, bool>(
                 state,
@@ -370,12 +600,10 @@ impl UserForm {
             >(state, current_data.country.as_ref(), window, cx);
         });
         birth_date_date_picker.update(cx, |state, cx| {
-            seed_value_binding_state::<DatePickerShape, chrono::NaiveDate>(
-                state,
-                current_data.birth_date.as_ref(),
-                window,
-                cx,
-            );
+            seed_value_binding_state::<
+                gpui_form_component::date_picker::DatePickerShape,
+                chrono::NaiveDate,
+            >(state, current_data.birth_date.as_ref(), window, cx);
         });
         Self {
             current_data,
@@ -385,6 +613,12 @@ impl UserForm {
                 age_input,
                 balance_input,
                 debt_input,
+                rating_number_input,
+                attention_level_slider,
+                brand_color_color_picker,
+                otp_code_otp_input,
+                uploaded_files_file_picker,
+                holiday_range_date_range_picker,
                 subscribe_newsletter_switch,
                 enable_notifications_checkbox,
                 preferred_select,
@@ -679,6 +913,190 @@ impl Render for UserForm {
                                 }
                             })
                             .child(gpui_component::input::Input::new(&self.fields.debt_input)),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::Rating;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::Rating;
+                                    localize(cx, &message)
+                                };
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                }
+                            })
+                            .child(gpui_form_collection::number_input::NumberInputField::new(
+                                &self.fields.rating_number_input,
+                            )),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::AttentionLevel;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::AttentionLevel;
+                                    localize(cx, &message)
+                                };
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                }
+                            })
+                            .child(gpui_component::slider::Slider::new(
+                                &self.fields.attention_level_slider,
+                            )),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::BrandColor;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::BrandColor;
+                                    localize(cx, &message)
+                                };
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                }
+                            })
+                            .child(gpui_component::color_picker::ColorPicker::new(
+                                &self.fields.brand_color_color_picker,
+                            )),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::OtpCode;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::OtpCode;
+                                    localize(cx, &message)
+                                };
+                                let error = {
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.otp_code().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
+                                };
+                                let error_color = cx.theme().danger;
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
+                                }
+                            })
+                            .child(gpui_form_collection::otp_input::OtpInputField::new(
+                                &self.fields.otp_code_otp_input,
+                            )),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::UploadedFiles;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::UploadedFiles;
+                                    localize(cx, &message)
+                                };
+                                let error = {
+                                    validation_errors.as_ref().and_then(|e| {
+                                        let errs = e.uploaded_files().all();
+                                        if errs.is_empty() {
+                                            None
+                                        } else {
+                                            Some(
+                                                errs.iter()
+                                                    .map(|v| localize(cx, v))
+                                                    .collect::<Vec<_>>()
+                                                    .join("\n"),
+                                            )
+                                        }
+                                    })
+                                };
+                                let error_color = cx.theme().danger;
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                        .when(error.is_some(), |this| {
+                                            this.child(
+                                                div()
+                                                    .text_color(error_color)
+                                                    .child(error.clone().unwrap_or_default()),
+                                            )
+                                        })
+                                }
+                            })
+                            .child(gpui_form_component::file_picker::FilePicker::new(
+                                &self.fields.uploaded_files_file_picker,
+                            )),
+                    )
+                    .child(
+                        field()
+                            .label({
+                                let message = UserLabelVariants::HolidayRange;
+                                localize(cx, &message)
+                            })
+                            .description_fn({
+                                let description = {
+                                    let message = UserDescriptionVariants::HolidayRange;
+                                    localize(cx, &message)
+                                };
+                                move |_, _| {
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(div().child(description.clone()))
+                                }
+                            })
+                            .child(gpui_form_component::date_picker::DateRangePicker::new(
+                                &self.fields.holiday_range_date_range_picker,
+                            )),
                     )
                     .child(
                         field()

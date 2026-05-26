@@ -44,6 +44,15 @@ helpers and component-specific derives explicitly:
 7. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
+   Directly-reusable collection shapes are also available as
+   `gpui_form_collection::date_picker::DatePicker`,
+   `gpui_form_collection::date_picker::DateRangePicker`,
+   `gpui_form_collection::combobox::Combobox::<_>`,
+   `gpui_form_collection::number_input::NumberInput::<_>`,
+   `gpui_form_collection::file_picker::FilePicker`,
+   `gpui_form_collection::slider::Slider`,
+   `gpui_form_collection::color_picker::ColorPicker`, and
+   `gpui_form_collection::otp_input::OtpInput::<_>`.
 
 ## Reference Selection
 
@@ -92,6 +101,7 @@ Common patterns:
 - Non-optional component fields default to required holder storage; add `.requires_value(false)` when a component can safely synthesize a missing value.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on a state type or declare a reusable shape with `gpui_form_component::component_shape!`.
 - For value-bound component shapes, implement `gpui_form_component::shape::ComponentValueBinding<T>` on the shape and use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`; the trait's associated `Event` is the actual emitted event enum, external wrappers map upstream events to `FormValueChange<T>`, and owned states can mark the shape with `OwnedComponentValueBinding<T>`.
-- Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `checkbox`, and `switch`, and shapes without metadata fall back to the shape-name heuristic.
+- Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`, `file_picker`, and
+  `otp_input`, and shapes without metadata fall back to the shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

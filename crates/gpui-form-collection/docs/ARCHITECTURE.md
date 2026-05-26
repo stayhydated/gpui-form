@@ -31,10 +31,35 @@ this crate owns reusable component types for common `gpui-component` widgets.
   `Default`, `PartialEq`, `SelectItem<Value = T>`, and delegate bounds.
   Applications that need search or other select-specific options should expose
   those choices through a dedicated `ComponentShape` wrapper.
+- `combobox::Combobox<T, D = Vec<T>>`: enum-backed combobox over
+  `gpui_component::combobox::ComboboxState<D>`, with `IntoEnumIterator`,
+  `PartialEq`, `SelectItem<Value = T>`, and delegate bounds. Selection is
+  persisted as a `Vec<T>` form value.
 - `checkbox::Checkbox`: value-bound checkbox wrapper that stores checked
   state in an entity and renders `gpui_component::checkbox::Checkbox`.
 - `switch::Switch`: value-bound switch wrapper that stores checked state
   in an entity and renders `gpui_component::switch::Switch`.
+- `number_input::NumberInput<T>`: number input wrapper around
+  `gpui_component::input::InputState`, re-emitting normalized change events for
+  both keystrokes and step actions from
+  `gpui_component::input::NumberInput`.
+- `slider::Slider`: value-bound numeric slider backed by
+  `gpui_component::slider::SliderState` and `SliderEvent`.
+- `color_picker::ColorPicker`: value-bound color picker backed by
+  `gpui_component::color_picker::ColorPickerState`.
+- `date_picker::DatePicker`: date picker wrapper backed by
+  `gpui_form_component::date_picker::DatePickerState`; `DatePickerEvent::Change`
+  events map clear and selected dates to `chrono::NaiveDate` form values.
+- `date_picker::DateRangePicker`: date range picker wrapper backed by
+  `gpui_form_component::date_picker::DateRangePickerState`; `Change` events map
+  clear and selected ranges to `(chrono::NaiveDate, chrono::NaiveDate)` form
+  values.
+- `file_picker::FilePicker`: path picker wrapper backed by
+  `gpui_form_component::file_picker::FilePickerState` and mapping `Change`
+  updates to `Vec<std::path::PathBuf>`.
+- `otp_input::OtpInput<T>`: OTP input wrapper backed by
+  `gpui_component::input::OtpState`; `InputEvent::Change` maps to parsed value
+  updates.
 
 ## When To Update This Document
 

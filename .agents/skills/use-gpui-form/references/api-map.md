@@ -43,6 +43,14 @@ Useful runtime/helper paths:
 ```rust
 #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
 #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
+#[gpui_form(component = gpui_form_collection::combobox::Combobox::<_>)]
+#[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]
+#[gpui_form(component = gpui_form_collection::slider::Slider)]
+#[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]
+#[gpui_form(component = gpui_form_collection::date_picker::DatePicker)]
+#[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
+#[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]
+#[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
 #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
 #[gpui_form(component = gpui_form_collection::switch::Switch)]
 #[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
@@ -78,6 +86,17 @@ Common struct attributes:
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
   choice; derive `SelectItem`. Use a custom `ComponentShape` wrapper when the
   select should expose search or other component-specific behavior.
+- Use `gpui_form_collection::combobox::Combobox::<_>` for multi-value enum-like
+  choices from `gpui_component::combobox::Combobox`.
+- Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
+  input with step buttons.
+- Use `gpui_form_collection::slider::Slider` for continuous numeric values.
+- Use `gpui_form_collection::color_picker::ColorPicker` for color selection.
+- Use `gpui_form_collection::date_picker::DatePicker` for single-date editing.
+- Use `gpui_form_collection::date_picker::DateRangePicker` for date-range editing.
+- Use `gpui_form_collection::file_picker::FilePicker` for native file/directory
+  selection.
+- Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
   `ComponentShape` wrapper when search or depth limits are needed.

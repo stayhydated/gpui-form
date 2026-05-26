@@ -6,7 +6,6 @@ use gpui_component::ActiveTheme as _;
 use gpui_component::Disableable as _;
 use gpui_component::form::field;
 use gpui_component::form::v_form;
-use gpui_component::input::InputEvent;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form_component::shape::{
