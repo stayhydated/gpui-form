@@ -138,6 +138,16 @@ inventory or codegen workflows change.
   Docs: [Architecture](crates/gpui-form-core/docs/ARCHITECTURE.md)
   Role: pure, non-GPUI helper logic such as numeric validation. Most application users should start with `gpui-form`.
 
+- `crates/gpui-form-collection`
+  Audience: **Public integration**
+  Docs: [Architecture](crates/gpui-form-collection/docs/ARCHITECTURE.md)
+  Role: collection-field runtime support (for example row state, collection editing behavior, and shared collection traits/types) used by generated forms and integration layers.
+
+- `crates/gpui-form-collection-derive`
+  Audience: **Public integration**
+  Docs: [Architecture](crates/gpui-form-collection-derive/docs/ARCHITECTURE.md)
+  Role: proc macros for collection runtime integration and derive-time helpers that pair with `gpui-form-collection`.
+
 - `crates/gpui-form-component`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-component/docs/ARCHITECTURE.md)
