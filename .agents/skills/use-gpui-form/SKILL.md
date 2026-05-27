@@ -44,13 +44,17 @@ helpers and component-specific derives explicitly:
    `component = ...` key remains available when it reads better in a multi-line
    attribute. Text input prototyping parses non-`String` form-side types with
    `FromStr`.
-7. Use paths such as `gpui_form_component::file_picker` and
+7. Use paths such as `gpui_form_component::date_picker`,
+   `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
    Add `gpui-form-runtime` explicitly when any field uses a component shape,
    because generated code references `gpui_form_runtime::shape`.
    Use `gpui_form_component::file_picker::FilePicker` as a ready-made form
    shape when `gpui-form-component` has its `component-shape` feature enabled;
    generated fields still store `FilePickerState` as the backing entity state.
+   `gpui_form_component::date_picker::DatePicker` and
+   `gpui_form_component::date_picker::DateRangePicker` are also ready-made
+   localized date form shapes under the same feature.
    Directly-reusable collection shapes are also available as
    `gpui_form_collection::date_picker::DatePicker`,
    `gpui_form_collection::date_picker::DateRangePicker`,
@@ -104,13 +108,13 @@ Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
-- Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`.
+- Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required.
 - Put `requires_value = false` on reusable wrapper or owned component shapes that can synthesize missing values; consuming field attributes do not accept `.requires_value(...)`.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on the rendered component with `state = ...`, or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
 - Use `gpui_form_derive::component_shape!` for wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; add `requires_value = false` when the wrapper can synthesize missing values; options may be separated with semicolons or commas.
 - For component-derived shapes, put `#[gpui_form_derive::component_value_binding]` on the backing state's `ComponentValueBinding<T>` impl so the component shape can delegate through `ComponentStateValueBinding<T>`. Wrapper shapes from `component_shape!` put reusable `ComponentValueBinding<T>` impls inside the macro block; nested binding impls publish shape-level value-binding metadata automatically.
 - Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection and component-owned shapes already publish suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
-  `file_picker`, and `otp_input`, and shapes without metadata fall back to the
+  `file_picker`, `infinite_select`, and `otp_input`, and shapes without metadata fall back to the
   shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

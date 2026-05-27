@@ -11,6 +11,7 @@ layer, including component-shape derives and helper macros.
 - `#[derive(GpuiForm)]`
 - `#[derive(ComponentShape)]`
 - `component_shape! { ... }`
+- `#[gpui_form_derive::component_value_binding]`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by
@@ -54,6 +55,8 @@ Supported component forms:
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
+- `#[gpui_form(gpui_form_component::date_picker::DatePicker)]`
+- `#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
@@ -159,8 +162,9 @@ Component-derived shapes always publish `VALUE_BINDING = true` and delegate
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
 
-Use `#[component_value_binding]` on the backing state's binding impl when the
-component-derived shape should delegate value binding to that state:
+Use `#[gpui_form_derive::component_value_binding]` on the backing state's
+binding impl when the component-derived shape should delegate value binding to
+that state:
 
 ```rs
 #[gpui_form_derive::component_value_binding]

@@ -13,7 +13,8 @@ Today this crate is intentionally small and focused:
 - `numeric::validate_signed_numeric`
 - `numeric::validate_unsigned_numeric`
 
-These helpers match the text-entry rules used by `gpui-form` number inputs.
+These helpers are available for custom numeric input wrappers that want shared
+text-entry validation without depending on GPUI runtime crates.
 
 ## Example
 

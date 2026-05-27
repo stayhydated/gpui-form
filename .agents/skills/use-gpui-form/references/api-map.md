@@ -54,6 +54,8 @@ because generated code references `gpui_form_runtime::shape`.
 #[gpui_form(gpui_form_collection::date_picker::DatePicker)]
 #[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]
 #[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]
+#[gpui_form(gpui_form_component::date_picker::DatePicker)]
+#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]
 #[gpui_form(gpui_form_component::file_picker::FilePicker)]
 #[gpui_form(gpui_form_collection::checkbox::Checkbox)]
 #[gpui_form(gpui_form_collection::switch::Switch)]
@@ -79,6 +81,8 @@ Common struct attributes:
 
 ```rust
 #[gpui_form(empty)]
+#[gpui_form(koruma)]
+#[gpui_form(koruma(fluent))]
 ```
 
 ## Component Selection
@@ -98,6 +102,10 @@ Common struct attributes:
 - Use `gpui_form_collection::color_picker::ColorPicker` for color selection.
 - Use `gpui_form_collection::date_picker::DatePicker` for single-date editing.
 - Use `gpui_form_collection::date_picker::DateRangePicker` for date-range editing.
+- Use `gpui_form_component::date_picker::DatePicker` or
+  `gpui_form_component::date_picker::DateRangePicker` when the localized
+  runtime date picker should be used directly as the form shape; enable
+  `gpui-form-component`'s `component-shape` feature.
 - Use `gpui_form_component::file_picker::FilePicker` for native file/directory
   selection; enable `gpui-form-component`'s `component-shape` feature.
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.

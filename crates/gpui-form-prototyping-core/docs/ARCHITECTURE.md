@@ -34,7 +34,7 @@ This crate exists to:
    render through `InfiniteSelect::form_fields()`, and consume the richer
    `InfiniteSelectEvent<T>` payload directly.
    File-picker fields use one `FilePickerState` entity, render the runtime
-   `FilePicker`, and store the first selected path in the form value holder.
+   `FilePicker`, and store the selected path list in the form value holder.
    Text input fields parse the form-side value type from `FieldVariant`
    metadata instead of assuming `String`.
 1. The adapter returns:

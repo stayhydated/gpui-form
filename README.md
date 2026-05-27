@@ -113,6 +113,8 @@ the shape expression directly in the attribute:
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
+- `#[gpui_form(gpui_form_component::date_picker::DatePicker)]`
+- `#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 

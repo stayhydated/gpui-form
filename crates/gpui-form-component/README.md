@@ -159,6 +159,17 @@ calendar popover. The ready-made collection date shapes use
 `gpui_component::date_picker`; use this runtime directly when the localized
 `gpui-form-component` date picker is specifically needed.
 
+For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
+use the rendered component type as the form shape:
+
+```rs
+#[gpui_form(gpui_form_component::date_picker::DatePicker)]
+pub birth_date: chrono::NaiveDate;
+
+#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]
+pub holiday_range: (chrono::NaiveDate, chrono::NaiveDate);
+```
+
 ## File Picker
 
 This crate provides a native path picker backed by the pinned GPUI git API,

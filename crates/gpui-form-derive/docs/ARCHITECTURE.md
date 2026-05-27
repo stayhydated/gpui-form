@@ -13,6 +13,7 @@ power the rest of the ecosystem.
 - `#[derive(GpuiForm)]`
 - `#[derive(ComponentShape)]`
 - `component_shape!`
+- `#[gpui_form_derive::component_value_binding]`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by `gpui-form-component` when
@@ -38,6 +39,8 @@ that crate's `derive` feature is enabled.
 - `src/derives/component_shape_state.rs`: `ComponentShape` derive expansion
 - `src/derives/component_shape.rs`: function-like component shape
   expansion for local wrappers around external component/state types
+- `src/derives/component_value_binding.rs`: attribute macro expansion that
+  rewrites backing-state value bindings for component-derived shapes
 
 ## `GpuiForm` Expansion Pipeline
 

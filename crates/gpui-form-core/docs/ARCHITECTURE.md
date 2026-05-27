@@ -5,12 +5,12 @@
 
 ## Purpose
 
-This crate exists so generated form code can share core behavior without
-pulling in runtime UI dependencies.
+This crate exists so UI-neutral helper behavior can be shared without pulling
+in runtime UI dependencies.
 
 At the moment the crate is intentionally narrow:
 
-- numeric text-entry validation for generated `number_input` fields
+- numeric text-entry validation for custom wrappers and future generated code
 
 ## Modules
 
@@ -38,11 +38,11 @@ the text shape or also verifies that the text can parse into `T`.
 
 ## Data Flow
 
-1. `gpui-form-codegen` emits `number_input` handlers that call numeric helpers
-   through `gpui_form::core::numeric::*`.
 1. The facade re-exports this crate as `gpui_form::core`.
-1. Generated number-input code uses the helpers during incremental text edits
-   before committing parsed values into the holder.
+1. Callers that need UI-neutral numeric validation can use
+   `gpui_form::core::numeric::*` or depend on `gpui-form-core` directly.
+1. Runtime component wrappers remain free to use their own validation strategy
+   when they own GPUI state and event behavior.
 
 ## Boundary
 
@@ -62,4 +62,4 @@ Update this file when:
 
 - new helper modules are added
 - numeric validation semantics change
-- generated `number_input` code starts depending on new core helpers
+- generated code or runtime wrappers start depending on new core helpers

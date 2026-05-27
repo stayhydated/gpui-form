@@ -129,7 +129,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form`
   Audience: **User-facing**
   Docs: [Architecture](crates/gpui-form/docs/ARCHITECTURE.md)
-  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, `numeric`, and `bon`. Component shape runtime contracts, component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
+  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, and `bon`; numeric helpers are available under `gpui_form::core::numeric`. Component shape runtime contracts, component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
 
 ### Public Integration Crates
 
@@ -141,7 +141,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-collection`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-collection/docs/ARCHITECTURE.md)
-  Role: collection-field runtime support (for example row state, collection editing behavior, and shared collection traits/types) used by generated forms and integration layers.
+  Role: curated component shapes and value-binding adapters for common `gpui-component` widgets used by generated forms and integration layers.
 
 - `crates/gpui-form-collection-derive`
   Audience: **Public integration**
@@ -160,7 +160,7 @@ inventory or codegen workflows change.
 
 - `crates/gpui-form-component-derive`
   Audience: **Public integration**
-  Docs: [README](crates/gpui-form-component-derive/README.md)
+  Docs: [Architecture](crates/gpui-form-component-derive/docs/ARCHITECTURE.md)
   Role: proc macros for the `InfiniteSelect` runtime surface. Most users should access this through `gpui-form` or `gpui-form-component`.
 
 - `crates/gpui-form-schema`
@@ -171,7 +171,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-derive`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-derive/docs/ARCHITECTURE.md)
-  Role: proc macros for `#[derive(GpuiForm)]`, `SelectItem`, and `ComponentShape`. Most users should depend on `gpui-form` rather than this crate directly.
+  Role: proc macros for `#[derive(GpuiForm)]`, `#[derive(ComponentShape)]`, `component_shape!`, and `component_value_binding`. Most users should depend on `gpui-form` rather than this crate directly.
 
 - `crates/gpui-form-prototyping-core`
   Audience: **Public integration**
@@ -199,9 +199,6 @@ inventory or codegen workflows change.
 
 - `examples/some-lib`
   Shared example domain types and source structs that derive `GpuiForm`.
-
-- `examples/some-lib-component-shapes`
-  Example external component shape state types and UI widgets.
 
 - `examples/some-lib-forms`
   Storybook-like GPUI example app for browsing generated forms.

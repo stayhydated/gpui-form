@@ -13,17 +13,11 @@ Source structs and enums that demonstrate the supported derive surface:
 - nested `InfiniteSelect` enums, including index-path and key-path round trips
   plus typed path-error reporting, custom persisted keys, and key-path string
   serialization
-- component shape state, local shapes, and cross-crate shapes
+- component-shape-backed collection and runtime fields
 - Koruma validation wiring
 - newtype-backed numeric validation
 - `cfg_attr`-gated derive usage
 - empty forms and date conversion
-
-## some-lib-component-shapes
-
-External component shape state and UI types used by the example forms.
-
-This crate demonstrates the cross-crate component-shape workflow.
 
 ## some-lib-forms
 
