@@ -56,7 +56,7 @@ Supported component forms:
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
 - `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
-- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]`
+- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The `gpui_form_component` shape examples require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -88,7 +88,7 @@ Behavior notes:
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
 - collection components that are enum-driven (`Select`, `Combobox`) expect enum-like
   values that can populate a `gpui_component` list widget
-- `gpui_form_component::infinite_select::InfiniteSelectField::<_>` expects the field type
+- `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the field type
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder

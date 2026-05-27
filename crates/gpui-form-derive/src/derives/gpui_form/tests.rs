@@ -951,7 +951,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component = gpui_form_component::infinite_select::InfiniteSelectField::<_>::searchable_with_max_depth(3)
+                    component = gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable_with_max_depth(3)
                 )]
                 location: crate::types::Country,
             }

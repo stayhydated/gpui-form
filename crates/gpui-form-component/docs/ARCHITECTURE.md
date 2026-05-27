@@ -45,10 +45,11 @@ Responsibilities:
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
 - own the cascading root/child `SelectState`s through `Select`
-- implement the component shape on `InfiniteSelect` itself when the
-  `component-shape` feature is enabled
+- expose `InfiniteSelect` as a `ComponentShape` with backing
+  `InfiniteSelectState` value-binding metadata when the `component-shape`
+  feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
-  `form_fields()` helpers plus `InfiniteSelectField` for form code
+  `form_fields()` helpers for form code
 - reconstruct nested enum values from stored paths
 - emit `InfiniteSelectEvent<T>` with previous/current value state, both path
   forms, and the changed depth
@@ -83,8 +84,8 @@ This subsystem wraps GPUI's native platform path prompt in a form-oriented API.
 Responsibilities:
 
 - hold selected path state in `FilePickerState`
-- expose `FilePickerState` as a `ComponentShape` with value-binding metadata
-  when this crate's `component-shape` feature is enabled
+- expose `FilePicker` as a `ComponentShape` with backing `FilePickerState`
+  value-binding metadata when this crate's `component-shape` feature is enabled
 - emit `FilePickerEvent::Change`, `Cancel`, and `Error`
 - render the control with `gpui-component` buttons, icons, theme tokens, and
   sizing helpers
@@ -101,7 +102,7 @@ Responsibilities:
 1. `gpui-form-component-derive` generates an `InfiniteSelect` impl for a user
    enum. Applications import it through `gpui-form-component` with the `derive`
    feature or directly from `gpui-form-component-derive`.
-1. `InfiniteSelect<T>` constructs the master select, derives child selects,
+1. `InfiniteSelectState<T>` constructs the master select, derives child selects,
    keeps both `InfiniteSelectPath` and `InfiniteSelectKeyPath` aligned with the
    current nested value, can snapshot the visible levels for rendering, and can
    emit ready-to-render form fields directly.
@@ -117,7 +118,8 @@ Responsibilities:
 ### Component shapes
 
 1. Users either declare a wrapper shape with `gpui_form_derive::component_shape!`
-   or derive `ComponentShape` directly on owned state.
+   or derive `ComponentShape` directly on the rendered component with
+   `state = ...`.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path
@@ -130,7 +132,7 @@ Responsibilities:
    through `ComponentStateOf`, `ComponentEventOf`,
    `seed_value_binding_state`, `form_value_change`, and `FormValueChange<T>`.
    `ComponentEventOf` resolves to the binding's associated `Event`, so
-   owned states can expose their own event enum and external wrappers can keep
+   backing states can expose their own event enum and external wrappers can keep
    their upstream event type.
 
 ### Date picker

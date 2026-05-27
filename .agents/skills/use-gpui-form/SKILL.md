@@ -103,7 +103,7 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
 - Non-optional component fields default to required holder storage; add `.requires_value(false)` when a component can safely synthesize a missing value.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on the rendered component with `state = ...`, or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
 - Use `gpui_form_derive::component_shape!` for wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; options may be separated with semicolons or commas.

@@ -57,7 +57,7 @@ because generated code references `gpui_form_runtime::shape`.
 #[gpui_form(gpui_form_component::file_picker::FilePicker)]
 #[gpui_form(gpui_form_collection::checkbox::Checkbox)]
 #[gpui_form(gpui_form_collection::switch::Switch)]
-#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]
+#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 #[gpui_form(my::Shape)]
 #[gpui_form(my::Shape.component(my::ui::Widget))]
 #[gpui_form(my::Shape.value_binding())]
@@ -102,7 +102,7 @@ Common struct attributes:
 - Use `gpui_form_component::file_picker::FilePicker` for native file/directory
   selection; enable `gpui-form-component`'s `component-shape` feature.
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
-- Use `gpui_form_component::infinite_select::InfiniteSelectField::<_>` for
+- Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
   `ComponentShape` wrapper when search or depth limits are needed.
 - Define a custom component shape around `gpui_form_component::date_picker` or
@@ -166,7 +166,7 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]
+    #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
     pub location: Country,
 }
 ```

@@ -241,7 +241,6 @@ pub fn component_suffix_from_shape(field_name: &str, shape: &str) -> Option<Stri
     let suffix_source = shape_ident
         .strip_suffix("Shape")
         .or_else(|| shape_ident.strip_suffix("State"))
-        .or_else(|| shape_ident.strip_suffix("Field"))
         .unwrap_or(shape_ident);
     component_suffix_from_suffix(field_name, suffix_source)
 }
@@ -313,7 +312,7 @@ mod tests {
     #[test]
     fn multiword_shape_name_drives_field_suffix() {
         let field = FieldVariant::new("location", "Country", false)
-            .with_shape_path("gpui_form_component::infinite_select::InfiniteSelectField<Country>");
+            .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>");
 
         assert_eq!(
             field.field_name_with_behaviour(),

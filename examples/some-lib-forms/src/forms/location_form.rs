@@ -65,10 +65,10 @@ impl LocationFormForm {
     fn on_location_infinite_select_event(
         &mut self,
         state: &Entity<
-            ComponentStateOf<gpui_form_component::infinite_select::InfiniteSelectField<Country>>,
+            ComponentStateOf<gpui_form_component::infinite_select::InfiniteSelect<Country>>,
         >,
         event: &ComponentEventOf<
-            gpui_form_component::infinite_select::InfiniteSelectField<Country>,
+            gpui_form_component::infinite_select::InfiniteSelect<Country>,
             Country,
         >,
         _window: &mut Window,
@@ -77,7 +77,7 @@ impl LocationFormForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<
-                gpui_form_component::infinite_select::InfiniteSelectField<Country>,
+                gpui_form_component::infinite_select::InfiniteSelect<Country>,
                 Country,
             >(&state, event)
         };
@@ -112,7 +112,7 @@ impl LocationFormForm {
         });
         location_infinite_select.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_component::infinite_select::InfiniteSelectField<Country>,
+                gpui_form_component::infinite_select::InfiniteSelect<Country>,
                 Country,
             >(state, Some(&current_data.location), window, cx);
         });
@@ -221,11 +221,9 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(
-                                gpui_form_component::infinite_select::InfiniteSelectField::new(
-                                    &self.fields.location_infinite_select,
-                                ),
-                            ),
+                            .child(gpui_form_component::infinite_select::InfiniteSelect::new(
+                                &self.fields.location_infinite_select,
+                            )),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(
                         cx,

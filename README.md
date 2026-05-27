@@ -115,7 +115,7 @@ the shape expression directly in the attribute:
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
 - `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
-- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]`
+- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -159,7 +159,7 @@ Common field-level helpers:
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
 
-`gpui_form_component::infinite_select::InfiniteSelectField::<_>` expects the
+`gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
 field type to derive `gpui_form_component::InfiniteSelect`, which implements
 the runtime `gpui_form_component::infinite_select::InfiniteSelectValue` trait
 for the enum tree.
@@ -168,7 +168,7 @@ The enum tree must also implement `PartialEq` because the backing
 Use `gpui-form-component` with its `derive` feature or import
 `gpui-form-component-derive` explicitly.
 Enable `gpui-form-component`'s `component-shape` feature when using
-`InfiniteSelectField::<_>` directly as a form shape.
+`InfiniteSelect::<_>` directly as a form shape.
 
 Common struct-level helpers:
 
@@ -180,16 +180,16 @@ Common struct-level helpers:
 ## Infinite Select Runtime
 
 Infinite-select shape-backed fields are backed by
-`gpui_form_component::infinite_select::InfiniteSelect`, which owns the
+`gpui_form_component::infinite_select::InfiniteSelectState`, which owns the
 root and child `SelectState`s, exposes render-ready level snapshots, and emits
 a single typed change event with the rebuilt nested value, both path forms, the
 previous paths, and the changed depth.
 
 ```rs
-use gpui_form_component::infinite_select::{InfiniteSelect, InfiniteSelectEvent};
+use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
 
 let location = cx.new(|cx| {
-    InfiniteSelect::new(Country::default(), window, cx)
+    InfiniteSelectState::new(Country::default(), window, cx)
 });
 
 cx.subscribe_in(

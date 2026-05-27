@@ -19,7 +19,7 @@ directly. Component-shape contracts live in
 
 - `derive`: re-exports `#[derive(InfiniteSelect)]`
 - `component-shape`: enables built-in `ComponentShape` impls and value-binding
-  metadata for `InfiniteSelectField`, `DatePicker`, `DateRangePicker`, and
+  metadata for `InfiniteSelect`, `DatePicker`, `DateRangePicker`, and
   `FilePicker`
 
 ## Infinite Select
@@ -54,9 +54,9 @@ Useful runtime types:
 - `InfiniteSelectKeyPath`
 - `InfiniteSelectKeyPathParseError`
 - `InfiniteSelectPathError`
+- `InfiniteSelectState<T>`
 - `InfiniteSelect<T>`
-- `InfiniteSelectField<T>`
-- `SearchableInfiniteSelect<T>`
+- `SearchableInfiniteSelectState<T>`
 - `InfiniteSelectEvent<T>`
 - `InfiniteSelectLevel<D>`
 - `InfiniteSelectSnapshot<T, D>`
@@ -71,10 +71,10 @@ Manual forms can subscribe to one runtime entity instead of rebuilding nested
 child selects themselves:
 
 ```rs
-use gpui_form_component::infinite_select::{InfiniteSelect, InfiniteSelectEvent};
+use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
 
 let location = cx.new(|cx| {
-    InfiniteSelect::new(Country::default(), window, cx)
+    InfiniteSelectState::new(Country::default(), window, cx)
 });
 
 cx.subscribe_in(
@@ -101,16 +101,16 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]
+#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 pub location: Country,
 ```
 
 Enable this crate's `component-shape` feature when using
-`InfiniteSelectField::<_>` directly as a form shape.
+`InfiniteSelect::<_>` directly as a form shape.
 
 If a form needs non-default infinite-select options such as search or a depth
 limit, define a small `ComponentShape` wrapper whose `new` function calls
-`InfiniteSelect::new_with_options(...)`.
+`InfiniteSelectState::new_with_options(...)`.
 
 Derived `InfiniteSelect` enums expose:
 

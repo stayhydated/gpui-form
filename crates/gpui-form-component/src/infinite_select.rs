@@ -913,7 +913,7 @@ where
 }
 
 /// Runtime state for a cascading infinite-select field.
-pub struct InfiniteSelect<T, D = Vec<InfiniteSelectItem<T>>>
+pub struct InfiniteSelectState<T, D = Vec<InfiniteSelectItem<T>>>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -929,9 +929,10 @@ where
 }
 
 /// Search-enabled state alias for component shapes that render searchable levels.
-pub type SearchableInfiniteSelect<T> = InfiniteSelect<T, SearchableVec<InfiniteSelectItem<T>>>;
+pub type SearchableInfiniteSelectState<T> =
+    InfiniteSelectState<T, SearchableVec<InfiniteSelectItem<T>>>;
 
-impl<T, D> Focusable for InfiniteSelect<T, D>
+impl<T, D> Focusable for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -941,7 +942,7 @@ where
     }
 }
 
-impl<T, D> EventEmitter<InfiniteSelectEvent<T>> for InfiniteSelect<T, D>
+impl<T, D> EventEmitter<InfiniteSelectEvent<T>> for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -949,7 +950,7 @@ where
 }
 
 #[bon::bon]
-impl<T, D> InfiniteSelect<T, D>
+impl<T, D> InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1242,7 +1243,7 @@ where
 }
 
 #[allow(unnameable_types)]
-impl<T, D> InfiniteSelect<T, D>
+impl<T, D> InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1250,14 +1251,16 @@ where
     /// Starts an option chain with search enabled.
     pub fn searchable(
         value: bool,
-    ) -> InfiniteSelectOptionsBuilder<T, D, infinite_select_options_builder::SetSearchable> {
+    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetSearchable>
+    {
         Self::builder().searchable(value)
     }
 
     /// Starts an option chain with a max depth.
     pub fn max_depth(
         value: usize,
-    ) -> InfiniteSelectOptionsBuilder<T, D, infinite_select_options_builder::SetMaxDepth> {
+    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetMaxDepth>
+    {
         Self::builder().max_depth(value)
     }
 }
@@ -1267,33 +1270,33 @@ where
 #[cfg_attr(
     feature = "component-shape",
     gpui_form_shape(
-        state = crate::infinite_select::InfiniteSelect<T, D>,
-        new = crate::infinite_select::InfiniteSelect::<T, D>::new_default,
+        state = crate::infinite_select::InfiniteSelectState<T, D>,
+        new = crate::infinite_select::InfiniteSelectState::<T, D>::new_default,
         field_suffix = "infinite_select"
     )
 )]
 #[derive(IntoElement)]
-pub struct InfiniteSelectField<T, D = Vec<InfiniteSelectItem<T>>>
+pub struct InfiniteSelect<T, D = Vec<InfiniteSelectItem<T>>>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    state: Entity<InfiniteSelect<T, D>>,
+    state: Entity<InfiniteSelectState<T, D>>,
 }
 
-impl<T, D> InfiniteSelectField<T, D>
+impl<T, D> InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    pub fn new(state: &Entity<InfiniteSelect<T, D>>) -> Self {
+    pub fn new(state: &Entity<InfiniteSelectState<T, D>>) -> Self {
         Self {
             state: state.clone(),
         }
     }
 }
 
-impl<T, D> RenderOnce for InfiniteSelectField<T, D>
+impl<T, D> RenderOnce for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1305,7 +1308,7 @@ where
 
 #[cfg(feature = "component-shape")]
 #[gpui_form_derive::component_value_binding]
-impl<T, D> gpui_form_runtime::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
+impl<T, D> gpui_form_runtime::shape::ComponentValueBinding<T> for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1331,7 +1334,7 @@ where
     }
 }
 
-impl<T, D> Render for InfiniteSelect<T, D>
+impl<T, D> Render for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1347,7 +1350,7 @@ fn build_child_selects<T, D>(
     max_depth: usize,
     searchable: bool,
     window: &mut Window,
-    cx: &mut Context<InfiniteSelect<T, D>>,
+    cx: &mut Context<InfiniteSelectState<T, D>>,
 ) -> Vec<Entity<SelectState<D>>>
 where
     T: InfiniteSelectValue,
