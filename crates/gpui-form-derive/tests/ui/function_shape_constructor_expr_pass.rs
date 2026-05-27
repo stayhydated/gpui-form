@@ -29,4 +29,13 @@ component_shape! {
     }
 }
 
+component_shape! {
+    pub struct CommaConfiguredExternalShape {
+        type State = ExternalState,
+        component = EmailInput,
+        value_binding = true,
+        field_suffix = "email",
+    }
+}
+
 fn main() {}

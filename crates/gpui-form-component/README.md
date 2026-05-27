@@ -237,6 +237,8 @@ closures are called with `(window, cx)`; full constructor expressions such as
 `Self::with_label(window, cx, "tags")` are emitted as written. For
 `gpui_form_derive::component_shape!`, omitting `new` calls
 `<State>::new(window, cx)`.
+`value_binding` can be written as a bare flag or as `value_binding = true`.
+The function-like macro accepts either semicolons or commas between options.
 
 This crate also exports `gpui_form_component::component_shape!` for simple
 runtime-local shapes. It is intentionally narrower than the derive crate macro,

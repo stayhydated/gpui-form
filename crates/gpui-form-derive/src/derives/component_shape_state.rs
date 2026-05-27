@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, Expr, LitStr, Path, Result, Token, parse_macro_input};
+use syn::{DeriveInput, Expr, LitBool, LitStr, Path, Result, Token, parse_macro_input};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
@@ -12,7 +12,7 @@ struct ComponentShapeMeta {
     /// field annotations do not need to repeat `component = …`.
     component: Option<Path>,
     /// Opt generated prototyping code into ComponentValueBinding by default.
-    value_binding: bool,
+    value_binding: Option<bool>,
     /// Preferred generated field/helper suffix for prototyping output.
     field_suffix: Option<LitStr>,
     /// Runtime crate path that owns `shape::ComponentShape`.
@@ -53,13 +53,15 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
                 let component = value.parse()?;
                 set_once(&mut shape.component, component, &meta, "component")
             } else if meta.path.is_ident("value_binding") {
-                if meta.input.peek(Token![=]) {
-                    return Err(meta.error("`value_binding` does not take a value"));
-                }
-                if shape.value_binding {
+                let enabled = if meta.input.peek(Token![=]) {
+                    let value = meta.value()?;
+                    value.parse::<LitBool>()?.value
+                } else {
+                    true
+                };
+                if shape.value_binding.replace(enabled).is_some() {
                     return Err(meta.error("duplicate `value_binding` option"));
                 }
-                shape.value_binding = true;
                 Ok(())
             } else if meta.path.is_ident("field_suffix") {
                 let value = meta.value()?;
@@ -100,7 +102,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     } else {
         quote! {}
     };
-    let value_binding_const = if meta.value_binding {
+    let value_binding_const = if meta.value_binding.unwrap_or(false) {
         quote! {
             const VALUE_BINDING: bool = true;
         }
@@ -273,6 +275,42 @@ mod tests {
         assert!(
             compact.contains("VALUE_BINDING:bool=true"),
             "should emit VALUE_BINDING const when value_binding is specified"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_with_value_binding_bool() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, value_binding = true)]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("VALUE_BINDING:bool=true"),
+            "should accept `value_binding = true`"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_with_disabled_value_binding_bool() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, value_binding = false)]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            !compact.contains("VALUE_BINDING"),
+            "`value_binding = false` should behave like omitted metadata: {compact}"
         );
     }
 

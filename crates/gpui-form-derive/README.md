@@ -137,9 +137,11 @@ By default, the generated implementation calls `Self::new(window, cx)`.
 called with `(window, cx)`; full constructor expressions such as
 `Self::with_label(window, cx, "tags")` are emitted as written.
 `component = ...` populates `ComponentShape::COMPONENT_PATH`.
-`value_binding` sets `ComponentShape::VALUE_BINDING = true`, so generated
-prototyping code can inherit the shape's `ComponentValueBinding<T>`
-contract without repeating `value_binding` on every field.
+`value_binding` or `value_binding = true` sets
+`ComponentShape::VALUE_BINDING = true`, so generated prototyping code can
+inherit the shape's `ComponentValueBinding<T>` contract without repeating
+`value_binding` on every field. `value_binding = false` is equivalent to
+omitting it.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
@@ -173,6 +175,8 @@ caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
 It accepts the same metadata keys as `#[derive(ComponentShape)]`, with
 `type State = ...` supplying the wrapped state type. If `new` is omitted, the
 generated implementation calls `<State>::new(window, cx)`.
+Options may be separated with semicolons or commas, and the final separator is
+optional.
 
 ## Feature Flags
 

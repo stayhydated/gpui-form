@@ -220,3 +220,7 @@ gpui_form_derive::component_shape! {
     }
 }
 ```
+
+`gpui_form_derive::component_shape!` accepts semicolons or commas between
+options. `value_binding` can be written as a bare flag or as
+`value_binding = true`; `value_binding = false` is equivalent to omitting it.

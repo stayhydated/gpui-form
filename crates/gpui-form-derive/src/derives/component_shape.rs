@@ -2,8 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, Expr, GenericParam, Generics, Ident, Path, Result, Token, Type, Visibility, braced,
-    parse_macro_input,
+    Attribute, Expr, GenericParam, Generics, Ident, LitBool, Path, Result, Token, Type, Visibility,
+    braced, parse_macro_input,
 };
 
 use super::component_shape_constructor::constructor_body_tokens;
@@ -24,7 +24,7 @@ struct ComponentShapeInput {
     state: Type,
     new: Option<Expr>,
     component: Option<Path>,
-    value_binding: bool,
+    value_binding: Option<bool>,
     field_suffix: Option<syn::LitStr>,
     shape_crate: Option<Path>,
 }
@@ -44,7 +44,7 @@ impl Parse for ComponentShapeInput {
         let mut state = None;
         let mut new = None;
         let mut component = None;
-        let mut value_binding = false;
+        let mut value_binding = None;
         let mut field_suffix = None;
         let mut shape_crate = None;
 
@@ -65,28 +65,33 @@ impl Parse for ComponentShapeInput {
                         "duplicate `type State = ...;`",
                     ));
                 }
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::new) {
                 let key = content.parse::<kw::new>()?;
                 content.parse::<Token![=]>()?;
                 if new.replace(content.parse()?).is_some() {
                     return Err(syn::Error::new_spanned(key, "duplicate `new = ...;`"));
                 }
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::component) {
                 let key = content.parse::<kw::component>()?;
                 content.parse::<Token![=]>()?;
                 if component.replace(content.parse()?).is_some() {
                     return Err(syn::Error::new_spanned(key, "duplicate `component = ...;`"));
                 }
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::value_binding) {
                 let key = content.parse::<kw::value_binding>()?;
-                if value_binding {
-                    return Err(syn::Error::new_spanned(key, "duplicate `value_binding;`"));
+                let enabled = if content.peek(Token![=]) {
+                    content.parse::<Token![=]>()?;
+                    content.parse::<LitBool>()?.value
+                } else {
+                    true
+                };
+                if value_binding.replace(enabled).is_some() {
+                    return Err(syn::Error::new_spanned(key, "duplicate `value_binding`"));
                 }
-                value_binding = true;
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::field_suffix) {
                 let key = content.parse::<kw::field_suffix>()?;
                 content.parse::<Token![=]>()?;
@@ -96,7 +101,7 @@ impl Parse for ComponentShapeInput {
                         "duplicate `field_suffix = ...;`",
                     ));
                 }
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::shape_crate) {
                 let key = content.parse::<kw::shape_crate>()?;
                 content.parse::<Token![=]>()?;
@@ -106,10 +111,10 @@ impl Parse for ComponentShapeInput {
                         "duplicate `shape_crate = ...;`",
                     ));
                 }
-                content.parse::<Token![;]>()?;
+                parse_option_separator(&content)?;
             } else {
                 return Err(content.error(
-                    "expected `type State = ...;`, `new = ...;`, `component = ...;`, `value_binding;`, `field_suffix = ...;`, or `shape_crate = ...;`",
+                    "expected `type State = ...;`, `new = ...;`, `component = ...;`, `value_binding`, `field_suffix = ...;`, or `shape_crate = ...;`",
                 ));
             }
         }
@@ -126,6 +131,22 @@ impl Parse for ComponentShapeInput {
             field_suffix,
             shape_crate,
         })
+    }
+}
+
+fn parse_option_separator(input: ParseStream<'_>) -> Result<()> {
+    if input.is_empty() {
+        return Ok(());
+    }
+
+    if input.peek(Token![;]) {
+        input.parse::<Token![;]>()?;
+        Ok(())
+    } else if input.peek(Token![,]) {
+        input.parse::<Token![,]>()?;
+        Ok(())
+    } else {
+        Err(input.error("expected `;` or `,` after component shape option"))
     }
 }
 
@@ -179,7 +200,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
         }
     });
-    let value_binding_const = value_binding.then(|| {
+    let value_binding_const = value_binding.unwrap_or(false).then(|| {
         quote! {
             const VALUE_BINDING: bool = true;
         }
@@ -333,6 +354,51 @@ mod tests {
                 "(crate::state::InputState::new(window,cx).with_label(\"email\"))(window,cx)"
             ),
             "direct constructor expressions should not receive window/cx twice: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_accepts_comma_options_and_value_binding_bool() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState,
+                new = crate::state::InputState::new,
+                component = crate::ui::Input,
+                value_binding = true,
+                field_suffix = "input",
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("VALUE_BINDING:bool=true"),
+            "macro should accept `value_binding = true`: {compact}"
+        );
+        assert!(
+            compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
+            "macro should accept comma-separated options: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_accepts_disabled_value_binding_bool() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+                value_binding = false
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            !compact.contains("VALUE_BINDING"),
+            "`value_binding = false` should behave like omitted metadata: {compact}"
         );
     }
 

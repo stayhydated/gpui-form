@@ -299,6 +299,8 @@ macro should pass `(window, cx)` for you, or use a full constructor expression
 such as `Self::with_label(window, cx, "tags")` when the expression should be
 emitted as written. If `new` is omitted, the derive calls
 `Self::new(window, cx)`.
+`value_binding` can be written as a bare flag or as `value_binding = true`;
+`value_binding = false` is equivalent to omitting it.
 
 ### 3. Declare a reusable external shape
 
@@ -325,6 +327,8 @@ It uses the same `new`, `component`, `value_binding`, `field_suffix`, and
 `shape_crate` metadata as `#[derive(ComponentShape)]`, plus `type State = ...`
 for the wrapped external state type. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`.
+Options may be separated with semicolons or commas; the final separator is
+optional.
 
 Component shapes can also opt into generated value synchronization by
 implementing `gpui_form_component::shape::ComponentValueBinding<T>` on the shape.

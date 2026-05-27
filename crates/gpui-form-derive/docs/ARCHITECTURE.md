@@ -106,7 +106,8 @@ When the `inventory` feature is enabled:
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
   `ComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `form_value_change`
+  `seed_value_binding_state` and `form_value_change`; this accepts either bare
+  `value_binding` or `value_binding = true`
 - defaults to implementing `gpui_form_component::shape::ComponentShape`
   for downstream application crates
 - optionally accepts `shape_crate = crate` for runtime crates that implement
@@ -118,6 +119,7 @@ When the `inventory` feature is enabled:
 - accepts caller generics, where clauses, and outer attributes
 - accepts the same `new`, `component`, `value_binding`, `field_suffix`, and
   `shape_crate` metadata keys as `#[derive(ComponentShape)]`
+- accepts either semicolon or comma separators between metadata entries
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
