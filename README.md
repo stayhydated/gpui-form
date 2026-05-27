@@ -336,18 +336,20 @@ pub struct ContactForm {
 `component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
-It uses the same `new`, `component`, `value_binding`, and `field_suffix`
-metadata used by component shapes, plus `type State = ...` for the wrapped
-external state type. If `new` is omitted, the macro calls
-`<State>::new(window, cx)`.
+It uses `new`, `component`, `requires_value`, and `field_suffix` metadata,
+plus `type State = ...` for the wrapped external state type. If `new` is
+omitted, the macro calls `<State>::new(window, cx)`.
 Options may be separated with semicolons or commas; the final separator is
 optional.
+The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
+impl is emitted with the shape and automatically publishes shape-level
+value-binding metadata.
 
 Component-backed fields compile against `gpui_form_runtime::shape`; add
 `gpui-form-runtime` as an explicit dependency when using custom or built-in
 component shapes.
 
-Component shapes can also opt into generated value synchronization by
+Component-derived shapes can opt into generated value synchronization by
 placing `#[gpui_form_derive::component_value_binding]` on the backing state's
 binding impl:
 
@@ -358,6 +360,22 @@ pub struct TagsInputState;
 impl gpui_form_runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
     type Event = TagsInputEvent;
     /* seed_value_binding_state and form_value_change */
+}
+```
+
+Wrapper shapes can put the binding impl directly inside `component_shape!`:
+
+```rs
+gpui_form_derive::component_shape! {
+    pub struct EmailInputShape {
+        type State = gpui_component::input::InputState;
+        component = gpui_component::input::Input;
+
+        impl gpui_form_runtime::shape::ComponentValueBinding<String> for EmailInputShape {
+            type Event = gpui_component::input::InputEvent;
+            /* seed_value_binding_state and form_value_change */
+        }
+    }
 }
 ```
 

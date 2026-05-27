@@ -68,26 +68,25 @@ gpui_form_derive::component_shape! {
         type State = CheckboxState;
         component = gpui_form_collection::checkbox::CheckboxField;
         requires_value = false;
-        value_binding;
         field_suffix = "checkbox";
-    }
-}
 
-impl ComponentValueBinding<bool> for Checkbox {
-    type Event = CheckboxEvent;
+        impl ComponentValueBinding<bool> for Checkbox {
+            type Event = CheckboxEvent;
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&bool>,
-        _window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        state.set_checked(value.copied().unwrap_or(false), cx);
-    }
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&bool>,
+                _window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                state.set_checked(value.copied().unwrap_or(false), cx);
+            }
 
-    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<bool> {
-        match event {
-            CheckboxEvent::Change(checked) => FormValueChange::Set(*checked),
+            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<bool> {
+                match event {
+                    CheckboxEvent::Change(checked) => FormValueChange::Set(*checked),
+                }
+            }
         }
     }
 }

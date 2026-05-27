@@ -105,41 +105,40 @@ gpui_form_derive::component_shape! {
         new = |window, cx| NumberInputState::new::<T>(window, cx);
         component = gpui_form_collection::number_input::NumberInputField;
         requires_value = false;
-        value_binding;
         field_suffix = "number_input";
-    }
-}
 
-impl<T> ComponentValueBinding<T> for NumberInput<T>
-where
-    T: FromStr + ToString + 'static,
-{
-    type Event = NumberInputEvent;
+        impl<T> ComponentValueBinding<T> for NumberInput<T>
+        where
+            T: FromStr + ToString + 'static,
+        {
+            type Event = NumberInputEvent;
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&T>,
-        window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        let value = value.map(ToString::to_string).unwrap_or_default();
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&T>,
+                window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                let value = value.map(ToString::to_string).unwrap_or_default();
 
-        state.input.update(cx, |state, cx| {
-            state.set_value(value.as_str(), window, cx);
-        });
-    }
+                state.input.update(cx, |state, cx| {
+                    state.set_value(value.as_str(), window, cx);
+                });
+            }
 
-    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
-        match event {
-            NumberInputEvent::Change(value) => {
-                if value.is_empty() {
-                    FormValueChange::Clear
-                } else {
-                    value
-                        .parse()
-                        .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+                match event {
+                    NumberInputEvent::Change(value) => {
+                        if value.is_empty() {
+                            FormValueChange::Clear
+                        } else {
+                            value
+                                .parse()
+                                .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                        }
+                    },
                 }
-            },
+            }
         }
     }
 }

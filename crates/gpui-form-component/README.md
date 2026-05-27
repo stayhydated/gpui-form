@@ -271,6 +271,9 @@ subscriptions, put `#[gpui_form_derive::component_value_binding]` on the
 backing state's `ComponentValueBinding<T>` impl. The attribute compiles that
 impl as `ComponentStateValueBinding<T>`, which component-derived shapes
 delegate through.
+For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
+`ComponentValueBinding<T>` impl inside the macro block to emit the impl with
+the shape and publish shape-level value-binding metadata automatically.
 
 Reusable shapes can also publish `gpui_form_runtime::shape::ComponentPrototyping`
 metadata.

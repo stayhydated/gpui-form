@@ -9,57 +9,56 @@ gpui_form_derive::component_shape! {
         new = |_window, _cx| SliderState::new();
         component = gpui_component::slider::Slider;
         requires_value = false;
-        value_binding;
         field_suffix = "slider";
-    }
-}
 
-impl ComponentValueBinding<SliderValue> for Slider {
-    type Event = SliderEvent;
+        impl ComponentValueBinding<SliderValue> for Slider {
+            type Event = SliderEvent;
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&SliderValue>,
-        window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        match value {
-            Some(value) => state.set_value(*value, window, cx),
-            None => state.set_value(0.0f32, window, cx),
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&SliderValue>,
+                window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                match value {
+                    Some(value) => state.set_value(*value, window, cx),
+                    None => state.set_value(0.0f32, window, cx),
+                }
+            }
+
+            fn form_value_change(
+                _state: &Self::State,
+                event: &Self::Event,
+            ) -> FormValueChange<SliderValue> {
+                match event {
+                    SliderEvent::Change(value) | SliderEvent::Release(value) => {
+                        FormValueChange::Set(*value)
+                    },
+                }
+            }
         }
-    }
 
-    fn form_value_change(
-        _state: &Self::State,
-        event: &Self::Event,
-    ) -> FormValueChange<SliderValue> {
-        match event {
-            SliderEvent::Change(value) | SliderEvent::Release(value) => {
-                FormValueChange::Set(*value)
-            },
-        }
-    }
-}
+        impl ComponentValueBinding<f32> for Slider {
+            type Event = SliderEvent;
 
-impl ComponentValueBinding<f32> for Slider {
-    type Event = SliderEvent;
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&f32>,
+                window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                let value = value.copied().unwrap_or(0.0);
+                state.set_value(SliderValue::from(value), window, cx);
+            }
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&f32>,
-        window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        let value = value.copied().unwrap_or(0.0);
-        state.set_value(SliderValue::from(value), window, cx);
-    }
-
-    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<f32> {
-        match event {
-            SliderEvent::Change(value) | SliderEvent::Release(value) => match value {
-                SliderValue::Single(value) => FormValueChange::Set(*value),
-                SliderValue::Range(start, _) => FormValueChange::Set(*start),
-            },
+            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<f32> {
+                match event {
+                    SliderEvent::Change(value) | SliderEvent::Release(value) => match value {
+                        SliderValue::Single(value) => FormValueChange::Set(*value),
+                        SliderValue::Range(start, _) => FormValueChange::Set(*start),
+                    },
+                }
+            }
         }
     }
 }

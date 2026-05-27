@@ -4,8 +4,8 @@ error: `value_binding` is inferred for component-derived shapes; implement the b
 14 | #[gpui_form_shape(value_binding = true)]
    |                   ^^^^^^^^^^^^^
 
-error: `value_binding` is a flag; use `value_binding` to enable it or omit it to disable it
-  --> tests/ui/component_shape_value_binding_assignment.rs:27:25
+error: expected `type State = ...;`, an `impl` item, or `new = ...`, `component = ...`, `requires_value = ...`, or `field_suffix = ...`
+  --> tests/ui/component_shape_value_binding_assignment.rs:27:9
    |
 27 |         value_binding = false;
-   |                         ^^^^^
+   |         ^^^^^^^^^^^^^

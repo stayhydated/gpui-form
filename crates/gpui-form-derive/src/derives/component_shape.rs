@@ -2,20 +2,20 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{
-    Attribute, GenericParam, Generics, Ident, LitBool, Result, Token, Type, Visibility, braced,
+    Attribute, GenericParam, Generics, Ident, ItemImpl, Result, Token, Type, Visibility, braced,
     parse_macro_input,
 };
 
 use super::component_shape_metadata::ComponentShapeMetadata;
 
-const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `requires_value = ...`, `value_binding`, or `field_suffix = ...`";
+const FUNCTION_SHAPE_OPTIONS: &str =
+    "`new = ...`, `component = ...`, `requires_value = ...`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
     syn::custom_keyword!(requires_value);
-    syn::custom_keyword!(value_binding);
 }
 
 struct ComponentShapeInput {
@@ -25,6 +25,7 @@ struct ComponentShapeInput {
     generics: Generics,
     state: Type,
     metadata: ComponentShapeMetadata,
+    impls: Vec<ItemImpl>,
 }
 
 impl Parse for ComponentShapeInput {
@@ -41,6 +42,7 @@ impl Parse for ComponentShapeInput {
 
         let mut state = None;
         let mut metadata = ComponentShapeMetadata::default();
+        let mut impls = Vec::new();
 
         while !content.is_empty() {
             if content.peek(Token![type]) {
@@ -75,25 +77,20 @@ impl Parse for ComponentShapeInput {
                 content.parse::<Token![=]>()?;
                 metadata.set_requires_value(content.parse()?, key)?;
                 parse_option_separator(&content)?;
-            } else if content.peek(kw::value_binding) {
-                let key = content.parse::<kw::value_binding>()?;
-                if content.peek(Token![=]) {
-                    content.parse::<Token![=]>()?;
-                    let value = content.parse::<LitBool>()?;
-                    return Err(ComponentShapeMetadata::reject_value_binding_assignment(
-                        value,
-                    ));
-                }
-                metadata.enable_value_binding(key)?;
-                parse_option_separator(&content)?;
             } else if content.peek(kw::field_suffix) {
                 let key = content.parse::<kw::field_suffix>()?;
                 content.parse::<Token![=]>()?;
                 metadata.set_field_suffix(content.parse()?, key)?;
                 parse_option_separator(&content)?;
+            } else if content.peek(Token![impl]) || content.peek(Token![#]) {
+                let impl_item: ItemImpl = content.parse()?;
+                if is_component_value_binding_impl(&impl_item) && !metadata.has_value_binding() {
+                    metadata.enable_value_binding(&impl_item)?;
+                }
+                impls.push(impl_item);
             } else {
                 return Err(content.error(format!(
-                    "expected `type State = ...;` or {FUNCTION_SHAPE_OPTIONS}"
+                    "expected `type State = ...;`, an `impl` item, or {FUNCTION_SHAPE_OPTIONS}"
                 )));
             }
         }
@@ -105,8 +102,17 @@ impl Parse for ComponentShapeInput {
             generics,
             state: state.ok_or_else(|| input.error("missing `type State = ...;`"))?,
             metadata,
+            impls,
         })
     }
+}
+
+fn is_component_value_binding_impl(impl_item: &ItemImpl) -> bool {
+    impl_item
+        .trait_
+        .as_ref()
+        .and_then(|(_, path, _)| path.segments.last())
+        .is_some_and(|segment| segment.ident == "ComponentValueBinding")
 }
 
 fn parse_option_separator(input: ParseStream<'_>) -> Result<()> {
@@ -157,6 +163,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
         generics,
         state,
         metadata,
+        impls,
     } = input;
 
     let phantom_type = phantom_type_tokens(&generics);
@@ -182,6 +189,8 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
 
             #metadata_impl_items
         }
+
+        #(#impls)*
     }
 }
 
@@ -209,7 +218,6 @@ mod tests {
                 type State = ::gpui_component::input::InputState;
                 new = |window, cx| ::gpui_component::input::InputState::new(window, cx);
                 component = ::gpui_component::input::Input;
-                value_binding;
                 field_suffix = "input";
             }
         })
@@ -237,10 +245,6 @@ mod tests {
         assert!(
             compact.contains("COMPONENT_PATH:Option<&'staticstr>=Some(stringify!(::gpui_component::input::Input))"),
             "macro should embed component metadata: {compact}"
-        );
-        assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "macro should emit value-binding metadata: {compact}"
         );
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
@@ -292,13 +296,12 @@ mod tests {
     }
 
     #[test]
-    fn component_shape_function_macro_accepts_comma_options_and_value_binding_flag() {
+    fn component_shape_function_macro_accepts_comma_options() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape {
                 type State = crate::state::InputState,
                 new = crate::state::InputState::new,
                 component = crate::ui::Input,
-                value_binding,
                 field_suffix = "input",
             }
         })
@@ -307,10 +310,6 @@ mod tests {
         let expanded = expand(input);
         let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "macro should accept bare `value_binding`: {compact}"
-        );
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
             "macro should accept comma-separated options: {compact}"
@@ -338,20 +337,69 @@ mod tests {
     }
 
     #[test]
-    fn component_shape_function_macro_rejects_value_binding_bool() {
+    fn component_shape_function_macro_emits_nested_value_binding_impl() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape<T>
+            where
+                T: ::std::str::FromStr + ::std::string::ToString + 'static,
+            {
+                type State = ::gpui_component::input::InputState;
+                component = ::gpui_component::input::Input;
+
+                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T>
+                where
+                    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+                {
+                    type Event = ::gpui_component::input::InputEvent;
+
+                    fn seed_value_binding_state(
+                        _state: &mut Self::State,
+                        _value: Option<&T>,
+                        _window: &mut ::gpui::Window,
+                        _cx: &mut ::gpui::Context<'_, Self::State>,
+                    ) {
+                    }
+
+                    fn form_value_change(
+                        _state: &Self::State,
+                        _event: &Self::Event,
+                    ) -> ::gpui_form_runtime::shape::FormValueChange<T> {
+                        ::gpui_form_runtime::shape::FormValueChange::Unchanged
+                    }
+                }
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("VALUE_BINDING:bool=true"),
+            "nested ComponentValueBinding impl should publish shape-level metadata: {compact}"
+        );
+        assert!(
+            compact.contains("impl<T>::gpui_form_runtime::shape::ComponentValueBinding<T>forInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
+            "macro should emit nested impl items after the shape contract: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_legacy_value_binding_metadata() {
         let err = match syn::parse2::<ComponentShapeInput>(quote! {
             pub struct InputShape {
                 type State = crate::state::InputState;
-                value_binding = false
+                value_binding;
             }
         }) {
-            Ok(_) => panic!("component_shape! should reject value_binding assignment"),
+            Ok(_) => panic!("component_shape! should reject legacy value_binding metadata"),
             Err(err) => err,
         };
 
         assert!(
-            err.to_string().contains("`value_binding` is a flag"),
-            "macro should explain the concise value_binding syntax: {err}"
+            err.to_string()
+                .contains("expected `type State = ...;`, an `impl` item"),
+            "macro should reject legacy value_binding metadata: {err}"
         );
     }
 

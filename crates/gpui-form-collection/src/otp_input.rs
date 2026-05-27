@@ -33,41 +33,40 @@ gpui_form_derive::component_shape! {
         new = |window, cx| OtpState::new(6, window, cx);
         component = gpui_form_collection::otp_input::OtpInputField;
         requires_value = false;
-        value_binding;
         field_suffix = "otp_input";
-    }
-}
 
-impl<T> ComponentValueBinding<T> for OtpInput<T>
-where
-    T: FromStr + ToString + 'static,
-{
-    type Event = InputEvent;
+        impl<T> ComponentValueBinding<T> for OtpInput<T>
+        where
+            T: FromStr + ToString + 'static,
+        {
+            type Event = InputEvent;
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&T>,
-        window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        let value = value.map(ToString::to_string).unwrap_or_default();
-        state.set_value(value, window, cx);
-    }
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&T>,
+                window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                let value = value.map(ToString::to_string).unwrap_or_default();
+                state.set_value(value, window, cx);
+            }
 
-    fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
-        match event {
-            InputEvent::Change => {
-                let value = state.value();
-                if value.is_empty() {
-                    FormValueChange::Clear
-                } else {
-                    value
-                        .as_ref()
-                        .parse::<T>()
-                        .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+            fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+                match event {
+                    InputEvent::Change => {
+                        let value = state.value();
+                        if value.is_empty() {
+                            FormValueChange::Clear
+                        } else {
+                            value
+                                .as_ref()
+                                .parse::<T>()
+                                .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                        }
+                    },
+                    _ => FormValueChange::Unchanged,
                 }
-            },
-            _ => FormValueChange::Unchanged,
+            }
         }
     }
 }

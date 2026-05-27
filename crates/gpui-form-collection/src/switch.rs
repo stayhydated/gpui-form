@@ -68,26 +68,25 @@ gpui_form_derive::component_shape! {
         type State = SwitchState;
         component = gpui_form_collection::switch::SwitchField;
         requires_value = false;
-        value_binding;
         field_suffix = "switch";
-    }
-}
 
-impl ComponentValueBinding<bool> for Switch {
-    type Event = SwitchEvent;
+        impl ComponentValueBinding<bool> for Switch {
+            type Event = SwitchEvent;
 
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&bool>,
-        _window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        state.set_checked(value.copied().unwrap_or(false), cx);
-    }
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&bool>,
+                _window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                state.set_checked(value.copied().unwrap_or(false), cx);
+            }
 
-    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<bool> {
-        match event {
-            SwitchEvent::Change(checked) => FormValueChange::Set(*checked),
+            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<bool> {
+                match event {
+                    SwitchEvent::Change(checked) => FormValueChange::Set(*checked),
+                }
+            }
         }
     }
 }

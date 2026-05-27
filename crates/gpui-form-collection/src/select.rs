@@ -20,8 +20,34 @@ gpui_form_derive::component_shape! {
         new = Self::new_default;
         component = gpui_component::select::Select;
         requires_value = false;
-        value_binding;
         field_suffix = "select";
+
+        impl<T, D> ComponentValueBinding<T> for Select<T, D>
+        where
+            T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+            D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
+        {
+            type Event = SelectEvent<D>;
+
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&T>,
+                window: &mut Window,
+                cx: &mut Context<'_, Self::State>,
+            ) {
+                match value {
+                    Some(value) => state.set_selected_value(value, window, cx),
+                    None => state.set_selected_index(None, window, cx),
+                }
+            }
+
+            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+                match event {
+                    SelectEvent::Confirm(Some(value)) => FormValueChange::Set(value.clone()),
+                    SelectEvent::Confirm(None) => FormValueChange::Clear,
+                }
+            }
+        }
     }
 }
 
@@ -90,32 +116,5 @@ where
     /// Starts an option chain with partial rendering enabled.
     pub fn partial(value: bool) -> SelectOptionsBuilder<T, D, select_options_builder::SetPartial> {
         Self::builder().partial(value)
-    }
-}
-
-impl<T, D> ComponentValueBinding<T> for Select<T, D>
-where
-    T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
-    D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
-{
-    type Event = SelectEvent<D>;
-
-    fn seed_value_binding_state(
-        state: &mut Self::State,
-        value: Option<&T>,
-        window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
-    ) {
-        match value {
-            Some(value) => state.set_selected_value(value, window, cx),
-            None => state.set_selected_index(None, window, cx),
-        }
-    }
-
-    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
-        match event {
-            SelectEvent::Confirm(Some(value)) => FormValueChange::Set(value.clone()),
-            SelectEvent::Confirm(None) => FormValueChange::Clear,
-        }
     }
 }

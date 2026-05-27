@@ -117,8 +117,15 @@ gpui_form_derive::component_shape! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         requires_value = false;
-        value_binding;
         field_suffix = "input";
+
+        impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
+        where
+            T: std::str::FromStr + ToString + 'static,
+        {
+            type Event = gpui_component::input::InputEvent;
+            /* seed_value_binding_state and form_value_change */
+        }
     }
 }
 ```
@@ -127,7 +134,8 @@ The macro accepts the same metadata as the derive form, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
-Options may be separated with semicolons or commas.
+Options may be separated with semicolons or commas. The block may also contain
+`impl` items.
 
 ## Value Binding
 
@@ -135,13 +143,13 @@ If generated forms should keep the form value and component state synchronized,
 put `#[gpui_form_derive::component_value_binding]` on a
 `gpui_form_runtime::shape::ComponentValueBinding<T>` impl for the backing state.
 The attribute compiles it as the state-level binding used by component-derived
-shapes. For wrapper shapes created by `component_shape!`, implement
-`ComponentValueBinding<T>` for the wrapper shape directly and add
-`value_binding` metadata to the wrapper.
+shapes. For wrapper shapes created by `component_shape!`, prefer putting the
+`ComponentValueBinding<T>` impl inside the macro block; nested binding impls are
+emitted with the shape and automatically publish shape-level value-binding
+metadata.
 
-Set bare `value_binding` metadata only when that binding should be reusable by
-all fields that use the shape. For one-off fields, prefer adding
-`.value_binding()` in the field shape expression.
+For one-off fields, prefer adding `.value_binding()` in the field shape
+expression instead of making the binding reusable at the shape level.
 
 ## Checks
 

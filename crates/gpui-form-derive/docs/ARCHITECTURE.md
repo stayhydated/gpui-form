@@ -123,15 +123,18 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `requires_value`, `value_binding`, and
-  `field_suffix` metadata keys
+- accepts `new`, `component`, `requires_value`, and `field_suffix` metadata
+  keys
 - accepts either semicolon or comma separators between metadata entries
+- accepts nested `impl` items, emits them after the generated `ComponentShape`
+  impl, and infers shape-level `VALUE_BINDING` when a nested impl targets
+  `ComponentValueBinding<T>`
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_runtime::shape` by default
-- leaves optional `ComponentValueBinding<T>` implementations to the
-  caller or collection crate
+- leaves optional external `ComponentValueBinding<T>` implementations to the
+  caller or collection crate when they are not nested in the macro block
 
 ## Coordination Rules
 

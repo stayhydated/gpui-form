@@ -238,5 +238,7 @@ gpui_form_derive::component_shape! {
 
 `gpui_form_derive::component_shape!` accepts semicolons or commas between
 options. Use `requires_value = false` when the reusable shape can synthesize a
-missing value, use bare `value_binding` to publish shape-level value-binding
-metadata, and omit it to leave that metadata disabled.
+missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
+the wrapper shape owns reusable synchronization; nested binding impls publish
+shape-level value-binding metadata automatically. Omit nested binding impls to
+leave that metadata disabled.

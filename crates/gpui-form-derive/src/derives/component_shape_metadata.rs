@@ -5,7 +5,7 @@ use syn::{Expr, LitBool, LitStr, Path, Result, Type};
 use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `requires_value = ...`, \
-     `value_binding`, or `field_suffix = ...`";
+     or `field_suffix = ...`";
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
@@ -75,11 +75,8 @@ impl ComponentShapeMetadata {
         Ok(())
     }
 
-    pub(super) fn reject_value_binding_assignment(value: LitBool) -> syn::Error {
-        syn::Error::new_spanned(
-            value,
-            "`value_binding` is a flag; use `value_binding` to enable it or omit it to disable it",
-        )
+    pub(super) fn has_value_binding(&self) -> bool {
+        self.value_binding
     }
 
     pub(super) fn set_field_suffix<T: quote::ToTokens>(

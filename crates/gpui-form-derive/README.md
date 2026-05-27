@@ -182,23 +182,31 @@ gpui_form_derive::component_shape! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         requires_value = false;
-        value_binding;
         field_suffix = "input";
+
+        impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
+        where
+            T: std::str::FromStr + ToString + 'static,
+        {
+            type Event = gpui_component::input::InputEvent;
+            /* seed_value_binding_state and form_value_change */
+        }
     }
 }
 ```
 
 Use this when the component and state live in another crate. The macro creates
-the local wrapper type that owns the `ComponentShape` implementation; the
-caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
-It accepts `new`, `component`, `requires_value`, `value_binding`, and
-`field_suffix` metadata, with `type State = ...` supplying the wrapped state
-type. If `new` is omitted, the generated implementation calls
-`<State>::new(window, cx)`. `requires_value = false` publishes that
-non-optional fields using this shape can store `T` directly because the
-component can synthesize a missing value.
+the local wrapper type that owns the `ComponentShape` implementation and the
+wrapper's reusable `ComponentValueBinding<T>` impls.
+It accepts `new`, `component`, `requires_value`, and `field_suffix` metadata,
+with `type State = ...` supplying the wrapped state type. If `new` is omitted,
+the generated implementation calls `<State>::new(window, cx)`.
+`requires_value = false` publishes that non-optional fields using this shape can
+store `T` directly because the component can synthesize a missing value.
 Options may be separated with semicolons or commas, and the final separator is
 optional.
+Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
+contract and automatically publish shape-level value-binding metadata.
 
 ## Feature Flags
 

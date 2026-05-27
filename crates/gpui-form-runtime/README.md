@@ -59,3 +59,6 @@ should seed a component from a form value and map component events back into the
 form value holder.
 Component-derived shapes delegate through
 `shape::ComponentStateValueBinding<T>` on their backing state.
+Wrapper shapes declared with `gpui_form_derive::component_shape!` can place the
+`ComponentValueBinding<T>` impl inside the macro block; nested binding impls
+automatically publish shape-level value-binding metadata.
