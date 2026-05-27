@@ -24,12 +24,6 @@ const FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::path("gpui_component::form::field"),
 ];
 
-#[cfg(feature = "fluent")]
-const FLUENT_FRAGMENT_IMPORTS: &[ImportItem] = &[ImportItem::aliased(
-    "es_fluent::FluentMessage",
-    Alias::Anonymous,
-)];
-
 const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui::Subscription")];
 
 struct GeneratedField<'a> {
@@ -122,8 +116,6 @@ impl<'a> FormShapeAdapter<'a> {
     pub fn required_imports(&self) -> ImportSet {
         let mut set = ImportSet::default();
         set.extend_items(FRAGMENT_IMPORTS);
-        #[cfg(feature = "fluent")]
-        set.extend_items(FLUENT_FRAGMENT_IMPORTS);
         if self
             .shape_data
             .components
@@ -286,8 +278,6 @@ impl<'a> FormShapeAdapter<'a> {
 
         let mut collected_imports = ImportSet::default();
         collected_imports.extend_items(FRAGMENT_IMPORTS);
-        #[cfg(feature = "fluent")]
-        collected_imports.extend_items(FLUENT_FRAGMENT_IMPORTS);
         if !subscription_call_items.is_empty() {
             collected_imports.extend_items(SUBSCRIPTION_IMPORTS);
         }

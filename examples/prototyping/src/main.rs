@@ -134,8 +134,8 @@ impl FormLayout for StorybookLayout {
                     div()
                         .flex()
                         .gap_2()
-                        .child(self.submit_button(cx, localize(cx, &FormAction::Submit), on_submit))
-                        .child(self.reset_button(cx, localize(cx, &FormAction::Reset)))
+                        .child(self.submit_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Submit), on_submit))
+                        .child(self.reset_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Reset)))
                 }
             }
         };
@@ -172,10 +172,6 @@ impl FormLayout for StorybookLayout {
 
             const CONTEXT: &str = #context_str;
 
-            fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-                crate::i18n::localize_message(cx, message)
-            }
-
             #[gpui_storybook::story_init]
             pub fn init(_cx: &mut App) {}
 
@@ -195,7 +191,7 @@ impl FormLayout for StorybookLayout {
 
             impl gpui_storybook::Story for #form_ident {
                 fn title(cx: &gpui::App) -> String {
-                    crate::i18n::localize_label::<#struct_name_ident>(cx)
+                    gpui_es_fluent::localize_label::<#struct_name_ident>(cx)
                 }
 
                 fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {

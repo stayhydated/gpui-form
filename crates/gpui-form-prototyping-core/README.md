@@ -45,8 +45,8 @@ shows the normal flow:
 1. run `rustfmt` over the written files before treating the scaffold as ready
 
 When the layout emits `gpui_storybook::Story`, pass the `cx: &gpui::App`
-provided by `Story::title` into the application i18n helper so generated form
-titles follow the active Storybook locale.
+provided by `Story::title` into `gpui_es_fluent::localize_label` so generated
+form titles follow the active Storybook locale.
 
 Generated infinite-select and file-picker fields use the same runtime helpers
 that hand-written forms use. Generated text inputs use the form-side
@@ -66,8 +66,8 @@ projections so the output stays readable.
 ## Feature Flags
 
 - `fluent`: use `es-fluent` keys for generated labels, descriptions, and
-  validation messages through an application helper named
-  `crate::i18n::localize(...)`
+  validation messages through a GPUI app-global localizer such as
+  `gpui_es_fluent::localize_message(...)`
 
 ## Most Users Should Use Instead
 

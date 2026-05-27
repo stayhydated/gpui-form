@@ -9,6 +9,7 @@ publish = false
 gpui-form = { features = [ "inventory" ], workspace = true }
 gpui-form-component = { workspace = true }
 gpui-form-prototyping-core = { features = [ "fluent" ], workspace = true }
+gpui-es-fluent = { workspace = true }
 heck = { workspace = true }
 inventory = { workspace = true }
 prettyplease = { workspace = true }

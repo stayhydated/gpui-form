@@ -1,4 +1,3 @@
-use es_fluent::FluentMessage as _;
 use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
 use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
@@ -15,9 +14,6 @@ use gpui_form_runtime::shape::{
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
-fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-    crate::i18n::localize_message(cx, message)
-}
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
@@ -34,7 +30,7 @@ impl Focusable for UserForm {
 }
 impl gpui_storybook::Story for UserForm {
     fn title(cx: &gpui::App) -> String {
-        crate::i18n::localize_label::<User>(cx)
+        gpui_es_fluent::localize_label::<User>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         cx.new(|cx| Self::new(window, cx))
@@ -657,8 +653,12 @@ impl UserForm {
         div()
             .flex()
             .gap_2()
-            .child(self.submit_button(cx, localize(cx, &FormAction::Submit), on_submit))
-            .child(self.reset_button(cx, localize(cx, &FormAction::Reset)))
+            .child(self.submit_button(
+                cx,
+                gpui_es_fluent::localize_message(cx, &FormAction::Submit),
+                on_submit,
+            ))
+            .child(self.reset_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Reset)))
     }
 }
 impl Render for UserForm {
@@ -678,12 +678,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Username;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Username;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -693,7 +693,9 @@ impl Render for UserForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )
@@ -724,12 +726,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Email;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Email;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -739,7 +741,9 @@ impl Render for UserForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )
@@ -768,12 +772,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Age;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Age;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -783,7 +787,9 @@ impl Render for UserForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )
@@ -812,12 +818,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Balance;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Balance;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -827,7 +833,9 @@ impl Render for UserForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )
@@ -858,12 +866,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Debt;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Debt;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -873,7 +881,9 @@ impl Render for UserForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )
@@ -902,12 +912,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Rating;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Rating;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -925,12 +935,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::AttentionLevel;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::AttentionLevel;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -948,12 +958,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::BrandColor;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::BrandColor;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -971,12 +981,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::OtpCode;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::OtpCode;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -994,12 +1004,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::UploadedFiles;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::UploadedFiles;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1017,12 +1027,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::HolidayRange;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::HolidayRange;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1040,12 +1050,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::SubscribeNewsletter;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::SubscribeNewsletter;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1063,12 +1073,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::EnableNotifications;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::EnableNotifications;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1086,12 +1096,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Preferred;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Preferred;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1109,12 +1119,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::Country;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::Country;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -1132,12 +1142,12 @@ impl Render for UserForm {
                         field()
                             .label({
                                 let message = UserLabelVariants::BirthDate;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = UserDescriptionVariants::BirthDate;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()

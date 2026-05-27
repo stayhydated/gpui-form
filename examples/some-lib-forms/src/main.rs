@@ -46,7 +46,7 @@ impl<L: Language> LocaleStore for FormLocaleStore<L> {
         cx: &mut gpui::App,
     ) -> anyhow::Result<()> {
         self.inner.set_current_locale(locale.clone(), cx)?;
-        some_lib_forms::i18n::change_locale(cx, locale.clone()).map_err(|err| {
+        gpui_es_fluent::change_locale(cx, locale.clone()).map_err(|err| {
             anyhow::anyhow!("failed to sync gpui-form locale to '{}': {err}", locale)
         })?;
         Ok(())
@@ -59,7 +59,7 @@ fn main() {
 
     app.run(move |app_cx| {
         gpui_component::init(app_cx);
-        some_lib_forms::i18n::init(app_cx, Languages::default())
+        gpui_es_fluent::replace_with_language(app_cx, Languages::default())
             .expect("failed to initialize form story i18n");
         gpui_storybook::init(app_cx, Languages::default());
         app_cx.set_global(Box::new(FormLocaleStore::<Languages>::new()) as Box<dyn LocaleStore>);

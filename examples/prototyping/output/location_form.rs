@@ -1,4 +1,3 @@
-use es_fluent::FluentMessage as _;
 use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
 use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
@@ -15,9 +14,6 @@ use gpui_form_runtime::shape::{
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::location::*;
 const CONTEXT: &str = "LocationFormForm";
-fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-    crate::i18n::localize_message(cx, message)
-}
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
@@ -34,7 +30,7 @@ impl Focusable for LocationFormForm {
 }
 impl gpui_storybook::Story for LocationFormForm {
     fn title(cx: &gpui::App) -> String {
-        crate::i18n::localize_label::<LocationForm>(cx)
+        gpui_es_fluent::localize_label::<LocationForm>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         cx.new(|cx| Self::new(window, cx))
@@ -163,8 +159,12 @@ impl LocationFormForm {
         div()
             .flex()
             .gap_2()
-            .child(self.submit_button(cx, localize(cx, &FormAction::Submit), on_submit))
-            .child(self.reset_button(cx, localize(cx, &FormAction::Reset)))
+            .child(self.submit_button(
+                cx,
+                gpui_es_fluent::localize_message(cx, &FormAction::Submit),
+                on_submit,
+            ))
+            .child(self.reset_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Reset)))
     }
 }
 impl Render for LocationFormForm {
@@ -183,12 +183,12 @@ impl Render for LocationFormForm {
                         field()
                             .label({
                                 let message = LocationFormLabelVariants::Name;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = LocationFormDescriptionVariants::Name;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()
@@ -204,12 +204,12 @@ impl Render for LocationFormForm {
                         field()
                             .label({
                                 let message = LocationFormLabelVariants::Location;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = LocationFormDescriptionVariants::Location;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 move |_, _| {
                                     div()

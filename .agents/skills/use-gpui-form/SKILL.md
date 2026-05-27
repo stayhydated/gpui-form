@@ -121,4 +121,5 @@ Common patterns:
   `file_picker`, `infinite_select`, and `otp_input`, and shapes without metadata fall back to the
   shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
+- Storybook-style GPUI scaffolds that localize generated labels or messages should call `gpui_es_fluent::localize_label` and `gpui_es_fluent::localize_message` with the active `gpui::App` context.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

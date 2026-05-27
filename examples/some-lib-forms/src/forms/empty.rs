@@ -1,4 +1,3 @@
-use es_fluent::FluentMessage as _;
 use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
 use gpui::{InteractiveElement, ParentElement as _, Styled, div};
@@ -10,9 +9,6 @@ use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use some_lib::structs::empty::*;
 const CONTEXT: &str = "EmptyForm";
-fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-    crate::i18n::localize_message(cx, message)
-}
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
@@ -27,7 +23,7 @@ impl Focusable for EmptyForm {
 }
 impl gpui_storybook::Story for EmptyForm {
     fn title(cx: &gpui::App) -> String {
-        crate::i18n::localize_label::<Empty>(cx)
+        gpui_es_fluent::localize_label::<Empty>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         cx.new(|cx| Self::new(window, cx))

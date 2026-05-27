@@ -1,4 +1,3 @@
-use es_fluent::FluentMessage as _;
 use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
 use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
@@ -15,9 +14,6 @@ use gpui_form_runtime::shape::{
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
 const CONTEXT: &str = "ItemForm";
-fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-    crate::i18n::localize_message(cx, message)
-}
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
@@ -34,7 +30,7 @@ impl Focusable for ItemForm {
 }
 impl gpui_storybook::Story for ItemForm {
     fn title(cx: &gpui::App) -> String {
-        crate::i18n::localize_label::<Item>(cx)
+        gpui_es_fluent::localize_label::<Item>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
         cx.new(|cx| Self::new(window, cx))
@@ -122,8 +118,12 @@ impl ItemForm {
         div()
             .flex()
             .gap_2()
-            .child(self.submit_button(cx, localize(cx, &FormAction::Submit), on_submit))
-            .child(self.reset_button(cx, localize(cx, &FormAction::Reset)))
+            .child(self.submit_button(
+                cx,
+                gpui_es_fluent::localize_message(cx, &FormAction::Submit),
+                on_submit,
+            ))
+            .child(self.reset_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Reset)))
     }
 }
 impl Render for ItemForm {
@@ -143,12 +143,12 @@ impl Render for ItemForm {
                         field()
                             .label({
                                 let message = ItemLabelVariants::Index;
-                                localize(cx, &message)
+                                gpui_es_fluent::localize_message(cx, &message)
                             })
                             .description_fn({
                                 let description = {
                                     let message = ItemDescriptionVariants::Index;
-                                    localize(cx, &message)
+                                    gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
                                     validation_errors.as_ref().and_then(|e| {
@@ -158,7 +158,9 @@ impl Render for ItemForm {
                                         } else {
                                             Some(
                                                 errs.iter()
-                                                    .map(|v| localize(cx, v))
+                                                    .map(|v| {
+                                                        gpui_es_fluent::localize_message(cx, v)
+                                                    })
                                                     .collect::<Vec<_>>()
                                                     .join("\n"),
                                             )

@@ -59,6 +59,7 @@ cargo run -p prototyping
 
 ## i18n
 
-Shared localization assets used by the example crates. Story apps own a small
-`i18n` helper around `EmbeddedI18n`; generated/story rendering calls that helper
-to pass localized strings explicitly.
+Shared localization assets used by the example crates. The example crates keep
+small `i18n` modules for embedded asset registration and startup, while GPUI
+story rendering calls `gpui_es_fluent` app-global helpers for localized labels
+and messages.
