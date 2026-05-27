@@ -1270,8 +1270,8 @@ where
 #[cfg_attr(
     feature = "component-shape",
     gpui_form_shape(
-        state = crate::infinite_select::InfiniteSelectState<T, D>,
-        new = crate::infinite_select::InfiniteSelectState::<T, D>::new_default,
+        state = InfiniteSelectState<T, D>,
+        new = InfiniteSelectState::<T, D>::new_default,
         requires_value = false,
         field_suffix = "infinite_select"
     )

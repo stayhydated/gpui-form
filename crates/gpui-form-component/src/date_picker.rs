@@ -392,7 +392,7 @@ impl Render for DateRangePickerState {
 #[cfg_attr(
     feature = "component-shape",
     gpui_form_shape(
-        state = crate::date_picker::DatePickerState,
+        state = DatePickerState,
         field_suffix = "date_picker"
     )
 )]
@@ -414,7 +414,7 @@ pub struct DatePicker {
 #[cfg_attr(
     feature = "component-shape",
     gpui_form_shape(
-        state = crate::date_picker::DateRangePickerState,
+        state = DateRangePickerState,
         field_suffix = "date_range_picker"
     )
 )]

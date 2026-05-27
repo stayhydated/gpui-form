@@ -128,26 +128,30 @@ with separate backing state. Crates that use this derive need an explicit
 `gpui-form-runtime` dependency.
 
 ```rs
+use crate::state::{TagsState, build};
 use gpui_form_derive::ComponentShape;
 
 #[derive(IntoElement, ComponentShape)]
 #[gpui_form_shape(
-    state = crate::state::TagsState,
-    new = crate::state::build,
+    state = TagsState,
+    new = build,
     field_suffix = "input"
 )]
 pub struct TagsInput {
-    state: gpui::Entity<crate::state::TagsState>,
+    state: gpui::Entity<TagsState>,
 }
 ```
 
 `state = ...` supplies `ComponentShape::State`. If `component = ...` is omitted,
 `ComponentShape::COMPONENT_PATH` defaults to the derived type's module path.
 By default, the generated implementation calls `<State>::new(window, cx)`.
-`new = ...` accepts a constructor expression. Function paths and closures are
-called with `(window, cx)`; full constructor expressions such as
-`crate::state::TagsState::with_label(window, cx, "tags")` are emitted as
-written.
+`state` and `new` use normal Rust path resolution, so short in-scope names are
+fine. `new = ...` accepts a constructor expression. Function paths and closures
+are called with `(window, cx)`; full constructor expressions such as
+`TagsState::with_label(window, cx, "tags")` are emitted as written.
+The `component = ...` option also publishes `COMPONENT_PATH` metadata for
+generated/prototyping render code, so prefer a path that remains valid from the
+consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 Component-derived shapes always publish `VALUE_BINDING = true` and delegate
 `ComponentValueBinding<T>` through the backing state's
 `ComponentStateValueBinding<T>` implementation.

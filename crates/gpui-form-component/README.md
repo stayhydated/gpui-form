@@ -246,24 +246,31 @@ gpui_form_derive::component_shape! {
 Or derive the same contract directly on an owned rendered component:
 
 ```rs
+use crate::state::{TagsState, build};
+
 #[derive(gpui_form_derive::ComponentShape)]
 #[gpui_form_shape(
-    state = crate::state::TagsState,
-    new = crate::state::build,
+    state = TagsState,
+    new = build,
     requires_value = false,
     field_suffix = "input"
 )]
 pub struct TagsInput {
-    state: gpui::Entity<crate::state::TagsState>,
+    state: gpui::Entity<TagsState>,
 }
 ```
 
-In both forms, `new` accepts a constructor expression. Function paths and
-closures are called with `(window, cx)`; full constructor expressions such as
-`crate::state::TagsState::with_label(window, cx, "tags")` are emitted as written. For
+`state` and `new` use normal Rust path resolution, so short in-scope names are
+fine. In both forms, `new` accepts a constructor expression. Function paths and
+closures are called with
+`(window, cx)`; full constructor expressions such as
+`TagsState::with_label(window, cx, "tags")` are emitted as written. For
 `gpui_form_derive::component_shape!`, omitting `new` calls
 `<State>::new(window, cx)`. For `#[derive(ComponentShape)]`, `state = ...` is
 required and omitting `new` also calls `<State>::new(window, cx)`.
+The `component = ...` option also publishes `COMPONENT_PATH` metadata for
+generated/prototyping render code, so prefer a path that remains valid from the
+consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The function-like macro accepts either semicolons or commas between options.
 
 For component shapes that should participate in generated prototyping
