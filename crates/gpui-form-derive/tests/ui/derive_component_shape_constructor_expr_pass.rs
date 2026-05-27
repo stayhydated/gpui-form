@@ -4,20 +4,23 @@ struct TagsInput;
 
 #[derive(ComponentShape)]
 #[gpui_form_shape(
-    new = |window, cx| Self::with_label(window, cx, "tags"),
+    state = TagsState,
+    new = |window, cx| TagsState::with_label(window, cx, "tags"),
     component = TagsInput,
-    value_binding,
     field_suffix = "tags"
 )]
-struct TagsState;
+struct TagsInputShape;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(new = DirectTagsState::with_label(window, cx, "direct"))]
-struct DirectTagsState;
+#[gpui_form_shape(
+    state = DirectTagsState,
+    new = DirectTagsState::with_label(window, cx, "direct")
+)]
+struct DirectTagsInput;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(new = BoolBindingTagsState::new, value_binding)]
-struct BoolBindingTagsState;
+#[gpui_form_shape(state = BoolBindingTagsState, new = BoolBindingTagsState::new)]
+struct BoolBindingTagsInput;
 
 impl TagsState {
     fn with_label(
@@ -29,6 +32,8 @@ impl TagsState {
     }
 }
 
+struct TagsState;
+
 impl DirectTagsState {
     fn with_label(
         _window: &mut gpui::Window,
@@ -39,10 +44,14 @@ impl DirectTagsState {
     }
 }
 
+struct DirectTagsState;
+
 impl BoolBindingTagsState {
     fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
         Self
     }
 }
+
+struct BoolBindingTagsState;
 
 fn main() {}

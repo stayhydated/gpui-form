@@ -913,16 +913,6 @@ where
 }
 
 /// Runtime state for a cascading infinite-select field.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
-#[cfg_attr(
-    feature = "component-shape",
-    gpui_form_shape(
-        new = Self::new_default,
-        component = gpui_form_component::infinite_select::InfiniteSelectField,
-        value_binding,
-        field_suffix = "infinite_select"
-    )
-)]
 pub struct InfiniteSelect<T, D = Vec<InfiniteSelectItem<T>>>
 where
     T: InfiniteSelectValue,
@@ -1273,6 +1263,15 @@ where
 }
 
 /// Render wrapper used by generated form code for infinite-select fields.
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_form_shape(
+        state = crate::infinite_select::InfiniteSelect<T, D>,
+        new = crate::infinite_select::InfiniteSelect::<T, D>::new_default,
+        field_suffix = "infinite_select"
+    )
+)]
 #[derive(IntoElement)]
 pub struct InfiniteSelectField<T, D = Vec<InfiniteSelectItem<T>>>
 where
@@ -1305,6 +1304,7 @@ where
 }
 
 #[cfg(feature = "component-shape")]
+#[gpui_form_derive::component_value_binding]
 impl<T, D> gpui_form_runtime::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,

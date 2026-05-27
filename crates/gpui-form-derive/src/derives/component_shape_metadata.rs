@@ -1,15 +1,17 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Expr, LitBool, LitStr, Path, Result};
+use syn::{Expr, LitBool, LitStr, Path, Result, Type};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str =
-    "`new = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
+    "`new = ...`, `state = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
     new: Option<Expr>,
+    /// Optional backing state type when deriving on a render component.
+    state: Option<Type>,
     /// Optional UI component type path.
     /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
     /// field annotations do not need to repeat `component = ...`.
@@ -25,12 +27,24 @@ impl ComponentShapeMetadata {
         set_once(&mut self.new, new, span, "new")
     }
 
+    pub(super) fn set_state<T: quote::ToTokens>(&mut self, state: Type, span: T) -> Result<()> {
+        set_once(&mut self.state, state, span, "state")
+    }
+
+    pub(super) fn state(&self) -> Option<&Type> {
+        self.state.as_ref()
+    }
+
     pub(super) fn set_component<T: quote::ToTokens>(
         &mut self,
         component: Path,
         span: T,
     ) -> Result<()> {
         set_once(&mut self.component, component, span, "component")
+    }
+
+    pub(super) fn has_component(&self) -> bool {
+        self.component.is_some()
     }
 
     pub(super) fn enable_value_binding<T: quote::ToTokens>(&mut self, span: T) -> Result<()> {

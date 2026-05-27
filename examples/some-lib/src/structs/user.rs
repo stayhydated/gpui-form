@@ -76,7 +76,7 @@ pub struct User {
     #[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
     pub otp_code: String,
 
-    #[gpui_form(component = gpui_form_component::file_picker::FilePickerState)]
+    #[gpui_form(component = gpui_form_component::file_picker::FilePicker)]
     pub uploaded_files: Vec<std::path::PathBuf>,
 
     #[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]

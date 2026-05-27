@@ -6,7 +6,10 @@ use syn::{
     parse_macro_input,
 };
 
-use super::component_shape_metadata::{ComponentShapeMetadata, SHAPE_METADATA_OPTIONS};
+use super::component_shape_metadata::ComponentShapeMetadata;
+
+const FUNCTION_SHAPE_OPTIONS: &str =
+    "`new = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
@@ -85,7 +88,7 @@ impl Parse for ComponentShapeInput {
                 parse_option_separator(&content)?;
             } else {
                 return Err(content.error(format!(
-                    "expected `type State = ...;` or {SHAPE_METADATA_OPTIONS}"
+                    "expected `type State = ...;` or {FUNCTION_SHAPE_OPTIONS}"
                 )));
             }
         }

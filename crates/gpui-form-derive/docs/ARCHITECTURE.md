@@ -105,15 +105,17 @@ When the `inventory` feature is enabled:
 
 ### `ComponentShape`
 
-- emits a `ComponentShape` impl directly for a state type
-- defaults constructor wiring to `Self::new(window, cx)`
+- emits a `ComponentShape` impl for a rendered component when `state = ...`
+  supplies separate backing state
+- defaults constructor wiring to `<State>::new(window, cx)`
 - accepts a constructor expression for `new = ...`; paths and closures receive
   `(window, cx)`, while direct constructor expressions are emitted as written
 - optionally stores a component path for prototyping output
-- optionally sets shape-level `VALUE_BINDING` metadata for
-  `ComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `form_value_change`; this is enabled with the
-  bare `value_binding` flag and disabled by omitting it
+- sets shape-level `VALUE_BINDING` metadata for `ComponentValueBinding<T>`
+  prototyping hooks, including `seed_value_binding_state` and
+  `form_value_change`
+- emits component-derived `ComponentValueBinding<T>` delegation through the
+  backing state's `ComponentStateValueBinding<T>` implementation
 - defaults to implementing `gpui_form_runtime::shape::ComponentShape`
   for downstream application crates
 
@@ -121,8 +123,7 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts the same `new`, `component`, `value_binding`, and `field_suffix`
-  metadata keys as `#[derive(ComponentShape)]`
+- accepts `new`, `component`, `value_binding`, and `field_suffix` metadata keys
 - accepts either semicolon or comma separators between metadata entries
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement

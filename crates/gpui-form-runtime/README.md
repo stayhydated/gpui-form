@@ -20,14 +20,17 @@ The derive macro stores `Entity<<Shape as ComponentShape>::State>` in generated
 form fields and calls `ComponentShape::new(window, cx)` from the generated
 component constructor.
 
-For owned component state, derive the impl:
+For owned components, derive on the rendered component and supply `state = ...`;
+generated forms store the backing state entity:
 
 ```rust
 use gpui_form_derive::ComponentShape;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(field_suffix = "input")]
-pub struct EmailInputState;
+#[gpui_form_shape(state = EmailInputState, field_suffix = "input")]
+pub struct EmailInput {
+    state: gpui::Entity<EmailInputState>,
+}
 ```
 
 For wrapper shapes around state from another crate, use the proc macro:
@@ -47,3 +50,5 @@ gpui_form_derive::component_shape! {
 Implement `shape::ComponentValueBinding<T>` when generated prototyping code
 should seed a component from a form value and map component events back into the
 form value holder.
+Component-derived shapes delegate through
+`shape::ComponentStateValueBinding<T>` on their backing state.

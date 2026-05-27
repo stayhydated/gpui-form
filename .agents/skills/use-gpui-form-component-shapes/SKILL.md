@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form-component-shapes
-description: "Use when Codex needs to add, review, or refactor gpui-form component shape wiring, especially deciding whether owned component state should derive gpui_form_derive::ComponentShape or external component/state pairs should use the function-like gpui_form_derive::component_shape! macro."
+description: "Use when Codex needs to add, review, or refactor gpui-form component shape wiring, especially deciding whether an owned rendered component should derive gpui_form_derive::ComponentShape or external component/state pairs should use the function-like gpui_form_derive::component_shape! macro."
 ---
 
 # Use GPUI Form Component Shapes
@@ -19,10 +19,11 @@ repository instructions.
 
 ## Decision Rule
 
-First classify the component state type:
+First classify the component ownership:
 
-- Owned component state: when the app or integration crate owns the state type,
-  derive `gpui_form_derive::ComponentShape` directly on that state type.
+- Owned rendered component: when the app or integration crate owns the rendered
+  component and backing state, derive `gpui_form_derive::ComponentShape` on the
+  rendered component with `state = ...`.
 - External component/state pair: when the state type or UI component lives in
   another crate, declare a local wrapper shape with the function-like
   `gpui_form_derive::component_shape!` proc macro. This avoids orphan-rule
@@ -35,43 +36,44 @@ If a prompt says "functional macro" or "functional! macro", interpret that as
 the function-like `gpui_form_derive::component_shape!` proc macro unless the
 codebase has a different local macro with that exact name.
 
-## Owned State Pattern
+## Owned Component Pattern
 
-Use `#[derive(ComponentShape)]` when the state type is local:
+Use `#[derive(ComponentShape)]` when the rendered component type is local:
 
 ```rust
 use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, ComponentShape)]
-#[gpui_form_shape(
-    component = crate::widgets::TagsInput,
-    field_suffix = "input"
-)]
+#[derive(ComponentShape)]
+#[gpui_form_shape(state = TagsInputState, field_suffix = "input")]
+pub struct TagsInput {
+    state: gpui::Entity<TagsInputState>,
+}
+
 pub struct TagsInputState;
 ```
 
-Use the state type itself as the field shape:
+Use the rendered component type as the field shape:
 
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(TagsInputState)]
+    #[gpui_form(TagsInput)]
     pub tags: Option<Vec<String>>,
 }
 ```
 
 Metadata rules:
 
-- Omit `new` when the state has `Self::new(window, cx)`.
+- `state = ...` is required.
+- Omit `new` when the state has `State::new(window, cx)`.
 - Use `new = some_function` or `new = |window, cx| ...` when the macro should
   pass `(window, cx)` for you.
 - Use a full constructor expression such as
   `new = Self::with_mode(window, cx, Mode::Compact)` when the expression should
   be emitted as written.
-- Add `component = ...` when generated metadata should know the render
-  component path.
-- Add bare `value_binding` only when the shape publishes a reusable
-  `ComponentValueBinding<T>` contract.
+- Add `component = ...` only when generated metadata should use a render
+  component path different from the derived type.
+- Component-derived shapes publish value-binding metadata automatically.
 - Add `field_suffix = "..."` when prototyping output should use a stable
   generated field/helper suffix.
 
@@ -125,9 +127,12 @@ Options may be separated with semicolons or commas.
 ## Value Binding
 
 If generated forms should keep the form value and component state synchronized,
-implement `gpui_form_runtime::shape::ComponentValueBinding<T>` for the shape.
-For owned states, the shape is the state type itself. For external states, the
-shape is the local wrapper created by `component_shape!`.
+put `#[gpui_form_derive::component_value_binding]` on a
+`gpui_form_runtime::shape::ComponentValueBinding<T>` impl for the backing state.
+The attribute compiles it as the state-level binding used by component-derived
+shapes. For wrapper shapes created by `component_shape!`, implement
+`ComponentValueBinding<T>` for the wrapper shape directly and add
+`value_binding` metadata to the wrapper.
 
 Set bare `value_binding` metadata only when that binding should be reusable by
 all fields that use the shape. For one-off fields, prefer adding

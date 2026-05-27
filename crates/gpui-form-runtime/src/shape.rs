@@ -6,8 +6,8 @@
 //! - `FormComponents` constructor function body
 //!
 //! Prefer using `gpui_form_derive::component_shape!` for reusable or generic
-//! wrapper shapes, and `#[derive(gpui_form_derive::ComponentShape)]` for owned
-//! state types.
+//! wrapper shapes, and `#[derive(gpui_form_derive::ComponentShape)]` on owned
+//! rendered component types with explicit `state = ...` metadata.
 
 /// Shape contract for user-defined components.
 ///
@@ -122,16 +122,28 @@ where
     fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T>;
 }
 
-/// Marker contract for components that own their emitted event enum.
+/// Value-binding contract implemented by backing component state.
 ///
-/// External component wrappers can use an upstream event enum as
-/// [`ComponentValueBinding::Event`]. Owned components can implement this
-/// marker to document that the event enum is part of their own public runtime
-/// surface.
-pub trait OwnedComponentValueBinding<T>: ComponentValueBinding<T>
-where
-    Self::State: gpui::EventEmitter<Self::Event>,
-{
+/// Component-owned shapes can implement [`ComponentValueBinding`] by delegating
+/// to this state-level contract, keeping render element types separate from
+/// their GPUI entity state.
+pub trait ComponentStateValueBinding<T>: gpui::EventEmitter<Self::Event> {
+    /// Event emitted by the backing component state.
+    type Event: 'static;
+
+    /// Seed component state from the current form value.
+    fn seed_value_binding_state(
+        _state: &mut Self,
+        _value: Option<&T>,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<'_, Self>,
+    ) where
+        Self: Sized,
+    {
+    }
+
+    /// Convert an emitted component event into a form value change.
+    fn form_value_change(state: &Self, event: &Self::Event) -> FormValueChange<T>;
 }
 
 /// State type for a component shape.

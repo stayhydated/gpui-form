@@ -20,9 +20,7 @@ use jiff::civil::Date as JiffDate;
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
 #[cfg(feature = "component-shape")]
-use gpui_form_runtime::shape::{
-    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
-};
+use gpui_form_runtime::shape::FormValueChange;
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -46,15 +44,6 @@ pub enum DateRangePickerEvent {
 }
 
 /// Use to store the state of the date picker.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
-#[cfg_attr(
-    feature = "component-shape",
-    gpui_form_shape(
-        component = gpui_form_component::date_picker::DatePicker,
-        value_binding,
-        field_suffix = "date_picker"
-    )
-)]
 pub struct DatePickerState {
     focus_handle: FocusHandle,
     date: Option<JiffDate>,
@@ -66,6 +55,7 @@ pub struct DatePickerState {
 }
 
 #[cfg(feature = "component-shape")]
+#[gpui_form_derive::component_value_binding]
 impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
     type Event = DatePickerEvent;
 
@@ -91,9 +81,6 @@ impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
     }
 }
 
-#[cfg(feature = "component-shape")]
-impl OwnedComponentValueBinding<chrono::NaiveDate> for DatePickerState {}
-
 impl Focusable for DatePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
@@ -103,15 +90,6 @@ impl Focusable for DatePickerState {
 impl EventEmitter<DatePickerEvent> for DatePickerState {}
 
 /// Use to store the state of the date range picker.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
-#[cfg_attr(
-    feature = "component-shape",
-    gpui_form_shape(
-        component = gpui_form_component::date_picker::DateRangePicker,
-        value_binding,
-        field_suffix = "date_range_picker"
-    )
-)]
 pub struct DateRangePickerState {
     focus_handle: FocusHandle,
     start_date: Option<JiffDate>,
@@ -124,6 +102,7 @@ pub struct DateRangePickerState {
 }
 
 #[cfg(feature = "component-shape")]
+#[gpui_form_derive::component_value_binding]
 impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {
     type Event = DateRangePickerEvent;
 
@@ -154,9 +133,6 @@ impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRange
         }
     }
 }
-
-#[cfg(feature = "component-shape")]
-impl OwnedComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {}
 
 impl Focusable for DateRangePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {
@@ -412,6 +388,14 @@ impl Render for DateRangePickerState {
 }
 
 /// A localized date picker element.
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_form_shape(
+        state = crate::date_picker::DatePickerState,
+        field_suffix = "date_picker"
+    )
+)]
 #[derive(IntoElement)]
 pub struct DatePicker {
     id: ElementId,
@@ -426,6 +410,14 @@ pub struct DatePicker {
 }
 
 /// A localized date range picker element.
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_form_shape(
+        state = crate::date_picker::DateRangePickerState,
+        field_suffix = "date_range_picker"
+    )
+)]
 #[derive(IntoElement)]
 pub struct DateRangePicker {
     id: ElementId,

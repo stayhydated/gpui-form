@@ -8,9 +8,7 @@ use gpui_component::input::{
     InputEvent, InputState, NumberInput as GpuiNumberInput,
     NumberInputEvent as GpuiNumberInputEvent, StepAction,
 };
-use gpui_form_runtime::shape::{
-    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
-};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(Clone, Debug)]
 pub enum NumberInputEvent {
@@ -144,5 +142,3 @@ where
         }
     }
 }
-
-impl<T> OwnedComponentValueBinding<T> for NumberInput<T> where T: FromStr + ToString + 'static {}

@@ -1,8 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::switch::Switch as GpuiSwitch;
-use gpui_form_runtime::shape::{
-    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
-};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SwitchEvent {
@@ -92,5 +90,3 @@ impl ComponentValueBinding<bool> for Switch {
         }
     }
 }
-
-impl OwnedComponentValueBinding<bool> for Switch {}

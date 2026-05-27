@@ -55,8 +55,8 @@ Supported component forms:
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
-- `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
-- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
+- `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
+- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]`
 
 The `gpui_form_component` shape examples require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -88,7 +88,7 @@ Behavior notes:
 - reusable gpui-component-backed shapes live in `gpui-form-collection`
 - collection components that are enum-driven (`Select`, `Combobox`) expect enum-like
   values that can populate a `gpui_component` list widget
-- `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the field type
+- `gpui_form_component::infinite_select::InfiniteSelectField::<_>` expects the field type
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
@@ -123,34 +123,48 @@ Behavior notes:
 
 ## `#[derive(ComponentShape)]`
 
-Implements `gpui_form_runtime::shape::ComponentShape` directly for a state type.
-Crates that use this derive need an explicit `gpui-form-runtime` dependency.
+Implements `gpui_form_runtime::shape::ComponentShape` for a rendered component
+with separate backing state. Crates that use this derive need an explicit
+`gpui-form-runtime` dependency.
 
 ```rs
 use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, ComponentShape)]
+#[derive(IntoElement, ComponentShape)]
 #[gpui_form_shape(
+    state = crate::state::TagsState,
     new = crate::state::build,
-    component = crate::ui::TagsInput,
-    value_binding,
     field_suffix = "input"
 )]
-pub struct TagsState;
+pub struct TagsInput {
+    state: gpui::Entity<crate::state::TagsState>,
+}
 ```
 
-By default, the generated implementation calls `Self::new(window, cx)`.
+`state = ...` supplies `ComponentShape::State`. If `component = ...` is omitted,
+`ComponentShape::COMPONENT_PATH` defaults to the derived type's module path.
+By default, the generated implementation calls `<State>::new(window, cx)`.
 `new = ...` accepts a constructor expression. Function paths and closures are
 called with `(window, cx)`; full constructor expressions such as
-`Self::with_label(window, cx, "tags")` are emitted as written.
-`component = ...` populates `ComponentShape::COMPONENT_PATH`.
-`value_binding` is a bare flag that sets `ComponentShape::VALUE_BINDING = true`,
-so generated prototyping code can inherit the shape's
-`ComponentValueBinding<T>` contract without repeating `value_binding` on every
-field. Omit the flag when the shape should not publish value-binding metadata.
+`crate::state::TagsState::with_label(window, cx, "tags")` are emitted as
+written.
+Component-derived shapes always publish `VALUE_BINDING = true` and delegate
+`ComponentValueBinding<T>` through the backing state's
+`ComponentStateValueBinding<T>` implementation.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
+
+Use `#[component_value_binding]` on the backing state's binding impl when the
+component-derived shape should delegate value binding to that state:
+
+```rs
+#[gpui_form_derive::component_value_binding]
+impl gpui_form_runtime::shape::ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
+    type Event = FilePickerEvent;
+    /* seed_value_binding_state and form_value_change */
+}
+```
 
 ## `component_shape!`
 
@@ -176,9 +190,9 @@ gpui_form_derive::component_shape! {
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation; the
 caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
-It accepts the same metadata keys as `#[derive(ComponentShape)]`, with
-`type State = ...` supplying the wrapped state type. If `new` is omitted, the
-generated implementation calls `<State>::new(window, cx)`.
+It accepts `new`, `component`, `value_binding`, and `field_suffix` metadata,
+with `type State = ...` supplying the wrapped state type. If `new` is omitted,
+the generated implementation calls `<State>::new(window, cx)`.
 Options may be separated with semicolons or commas, and the final separator is
 optional.
 

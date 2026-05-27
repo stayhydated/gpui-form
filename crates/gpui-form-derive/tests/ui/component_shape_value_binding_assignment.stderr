@@ -1,8 +1,8 @@
-error: `value_binding` is a flag; use `value_binding` to enable it or omit it to disable it
-  --> tests/ui/component_shape_value_binding_assignment.rs:14:35
+error: `value_binding` is inferred for component-derived shapes; implement the backing state's binding with `#[gpui_form_derive::component_value_binding]`
+  --> tests/ui/component_shape_value_binding_assignment.rs:14:19
    |
 14 | #[gpui_form_shape(value_binding = true)]
-   |                                   ^^^^
+   |                   ^^^^^^^^^^^^^
 
 error: `value_binding` is a flag; use `value_binding` to enable it or omit it to disable it
   --> tests/ui/component_shape_value_binding_assignment.rs:27:25

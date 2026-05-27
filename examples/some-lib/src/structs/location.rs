@@ -152,7 +152,8 @@ pub struct LocationForm {
 
     /// Location selection using cascading selects
     #[gpui_form(
-        component = gpui_form_component::infinite_select::InfiniteSelect::<_>.requires_value(false)
+        component = gpui_form_component::infinite_select::InfiniteSelectField::<_>
+            .requires_value(false)
     )]
     pub location: Country,
 }

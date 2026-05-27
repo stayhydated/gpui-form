@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, LitBool, Result, Token, parse_macro_input};
+use syn::{DeriveInput, Result, parse_macro_input};
 
 use super::component_shape_metadata::{ComponentShapeMetadata, SHAPE_METADATA_OPTIONS};
 
@@ -16,19 +16,20 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let new = value.parse()?;
                 shape.set_new(new, &meta.path)
+            } else if meta.path.is_ident("state") {
+                let value = meta.value()?;
+                let state = value.parse()?;
+                shape.set_state(state, &meta.path)
             } else if meta.path.is_ident("component") {
                 let value = meta.value()?;
                 let component = value.parse()?;
                 shape.set_component(component, &meta.path)
             } else if meta.path.is_ident("value_binding") {
-                if meta.input.peek(Token![=]) {
-                    let value = meta.value()?;
-                    let value = value.parse::<LitBool>()?;
-                    return Err(ComponentShapeMetadata::reject_value_binding_assignment(
-                        value,
-                    ));
-                }
-                shape.enable_value_binding(&meta.path)
+                Err(meta.error(
+                    "`value_binding` is inferred for component-derived shapes; \
+                     implement the backing state's binding with \
+                     `#[gpui_form_derive::component_value_binding]`",
+                ))
             } else if meta.path.is_ident("field_suffix") {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
@@ -47,14 +48,44 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
 fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
-    let constructor_body = meta.constructor_body_or(quote! { Self::new(window, cx) });
+    let state = meta.state().cloned().ok_or_else(|| {
+        syn::Error::new_spanned(
+            ident,
+            "`#[derive(ComponentShape)]` requires `#[gpui_form_shape(state = ...)]`; \
+             use `gpui_form_derive::component_shape!` for wrapper shapes",
+        )
+    })?;
+    let default_constructor = quote! { <#state>::new(window, cx) };
+    let constructor_body = meta.constructor_body_or(default_constructor);
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let metadata_consts = meta.const_tokens(&runtime_crate);
+    let inferred_component_const = if !meta.has_component() {
+        Some(quote! {
+            const COMPONENT_PATH: Option<&'static str> =
+                Some(concat!(module_path!(), "::", stringify!(#ident)));
+        })
+    } else {
+        None
+    };
+    let inferred_value_binding_const = quote! {
+        const VALUE_BINDING: bool = true;
+    };
+    let mut binding_generics = input.generics.clone();
+    binding_generics
+        .params
+        .push(syn::parse_quote!(__GpuiFormValueBindingValue));
+    binding_generics
+        .make_where_clause()
+        .predicates
+        .push(syn::parse_quote! {
+            #state: #runtime_crate::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>
+        });
+    let (binding_impl_generics, _, binding_where_clause) = binding_generics.split_for_impl();
 
     Ok(quote! {
         impl #impl_generics #runtime_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
-            type State = Self;
+            type State = #state;
 
             fn new(
                 window: &mut ::gpui::Window,
@@ -64,6 +95,38 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             }
 
             #metadata_consts
+            #inferred_component_const
+            #inferred_value_binding_const
+        }
+
+        impl #binding_impl_generics #runtime_crate::shape::ComponentValueBinding<__GpuiFormValueBindingValue>
+            for #ident #ty_generics
+            #binding_where_clause
+        {
+            type Event =
+                <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                    __GpuiFormValueBindingValue
+                >>::Event;
+
+            fn seed_value_binding_state(
+                state: &mut Self::State,
+                value: Option<&__GpuiFormValueBindingValue>,
+                window: &mut ::gpui::Window,
+                cx: &mut ::gpui::Context<'_, Self::State>,
+            ) {
+                <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                    __GpuiFormValueBindingValue
+                >>::seed_value_binding_state(state, value, window, cx);
+            }
+
+            fn form_value_change(
+                state: &Self::State,
+                event: &Self::Event,
+            ) -> #runtime_crate::shape::FormValueChange<__GpuiFormValueBindingValue> {
+                <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                    __GpuiFormValueBindingValue
+                >>::form_value_change(state, event)
+            }
         }
     })
 }
@@ -87,23 +150,19 @@ mod tests {
     }
 
     #[test]
-    fn test_component_shape_default_new_path() {
+    fn test_component_shape_requires_state() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            struct TagsState;
+            struct TagsInput;
         })
         .unwrap();
 
-        let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
+        let err = expand(input).unwrap_err();
 
         assert!(
-            compact.contains("impl::gpui_form_runtime::shape::ComponentShapeforTagsState"),
-            "should implement ComponentShape for derived type"
-        );
-        assert!(
-            compact.contains("Self::new(window,cx)"),
-            "should default to Self::new constructor"
+            err.to_string()
+                .contains("requires `#[gpui_form_shape(state = ...)]`"),
+            "derive should require explicit backing state: {err}"
         );
     }
 
@@ -111,8 +170,8 @@ mod tests {
     fn test_component_shape_explicit_new_path() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = crate::state::build)]
-            struct TagsState;
+            #[gpui_form_shape(state = crate::state::TagsState, new = crate::state::build)]
+            struct TagsInput;
         })
         .unwrap();
 
@@ -124,8 +183,8 @@ mod tests {
             "should use explicit new path from attribute"
         );
         assert!(
-            !compact.contains("COMPONENT_PATH"),
-            "should not emit COMPONENT_PATH when component is not specified"
+            compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
+            "component path should be inferred when component is not specified"
         );
     }
 
@@ -133,8 +192,12 @@ mod tests {
     fn test_component_shape_with_component_path() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, component = crate::ui::TagsInput)]
-            struct TagsState;
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                new = crate::state::TagsState::new,
+                component = crate::ui::TagsInput
+            )]
+            struct TagsInput;
         })
         .unwrap();
 
@@ -155,8 +218,11 @@ mod tests {
     fn test_component_shape_with_constructor_expression() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = |window, cx| Self::with_mode(window, cx, Mode::Tags))]
-            struct TagsState;
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                new = |window, cx| crate::state::TagsState::with_mode(window, cx, Mode::Tags)
+            )]
+            struct TagsInput;
         })
         .unwrap();
 
@@ -164,7 +230,9 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("(|window,cx|Self::with_mode(window,cx,Mode::Tags))(window,cx)"),
+            compact.contains(
+                "(|window,cx|crate::state::TagsState::with_mode(window,cx,Mode::Tags))(window,cx)"
+            ),
             "should allow derive constructors to be full expressions"
         );
     }
@@ -173,8 +241,11 @@ mod tests {
     fn test_component_shape_with_direct_constructor_call() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::with_mode(window, cx, Mode::Tags))]
-            struct TagsState;
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                new = crate::state::TagsState::with_mode(window, cx, Mode::Tags)
+            )]
+            struct TagsInput;
         })
         .unwrap();
 
@@ -182,30 +253,30 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("Self::with_mode(window,cx,Mode::Tags)"),
+            compact.contains("crate::state::TagsState::with_mode(window,cx,Mode::Tags)"),
             "direct constructor calls should be emitted as written: {compact}"
         );
         assert!(
-            !compact.contains("(Self::with_mode(window,cx,Mode::Tags))(window,cx)"),
+            !compact
+                .contains("(crate::state::TagsState::with_mode(window,cx,Mode::Tags))(window,cx)"),
             "direct constructor calls should not receive window/cx twice: {compact}"
         );
     }
 
     #[test]
-    fn test_component_shape_with_value_binding() {
+    fn test_component_shape_rejects_value_binding_flag() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, value_binding)]
-            struct TagsState;
+            #[gpui_form_shape(state = crate::state::TagsState, value_binding)]
+            struct TagsInput;
         })
         .unwrap();
 
-        let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
+        let err = expand(input).unwrap_err();
 
         assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "should emit VALUE_BINDING const when value_binding is specified"
+            err.to_string().contains("`value_binding` is inferred"),
+            "derive should reject legacy value_binding metadata: {err}"
         );
     }
 
@@ -213,16 +284,16 @@ mod tests {
     fn test_component_shape_rejects_value_binding_bool() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, value_binding = true)]
-            struct TagsState;
+            #[gpui_form_shape(state = crate::state::TagsState, value_binding = true)]
+            struct TagsInput;
         })
         .unwrap();
 
         let err = expand(input).unwrap_err();
 
         assert!(
-            err.to_string().contains("`value_binding` is a flag"),
-            "should explain the concise value_binding syntax: {err}"
+            err.to_string().contains("`value_binding` is inferred"),
+            "derive should reject legacy value_binding assignment: {err}"
         );
     }
 
@@ -230,16 +301,16 @@ mod tests {
     fn test_component_shape_rejects_disabled_value_binding_bool() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, value_binding = false)]
-            struct TagsState;
+            #[gpui_form_shape(state = crate::state::TagsState, value_binding = false)]
+            struct TagsInput;
         })
         .unwrap();
 
         let err = expand(input).unwrap_err();
 
         assert!(
-            err.to_string().contains("`value_binding` is a flag"),
-            "should explain that disabling is done by omitting the flag: {err}"
+            err.to_string().contains("`value_binding` is inferred"),
+            "derive should reject disabled value_binding assignment: {err}"
         );
     }
 
@@ -247,8 +318,8 @@ mod tests {
     fn test_component_shape_with_field_suffix() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, field_suffix = "tags")]
-            struct TagsState;
+            #[gpui_form_shape(state = crate::state::TagsState, field_suffix = "tags")]
+            struct TagsInput;
         })
         .unwrap();
 
@@ -262,11 +333,51 @@ mod tests {
     }
 
     #[test]
+    fn test_component_shape_derive_on_component_with_state() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::TagsState, field_suffix = "tags")]
+            struct TagsInput;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("typeState=crate::state::TagsState"),
+            "component derive should store the declared backing state: {compact}"
+        );
+        assert!(
+            compact.contains("<crate::state::TagsState>::new(window,cx)"),
+            "component derive should default construction to State::new: {compact}"
+        );
+        assert!(
+            compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
+            "component derive should infer the UI component path: {compact}"
+        );
+        assert!(
+            compact.contains("VALUE_BINDING:bool=true"),
+            "component derive should opt into value binding by default: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "ComponentValueBinding<__GpuiFormValueBindingValue>forTagsInputwherecrate::state::TagsState:::gpui_form_runtime::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>"
+            ),
+            "component derive should delegate value binding through the backing state: {compact}"
+        );
+    }
+
+    #[test]
     fn test_component_shape_rejects_duplicate_options() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, new = crate::state::build)]
-            struct TagsState;
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                new = crate::state::TagsState::new,
+                new = crate::state::build
+            )]
+            struct TagsInput;
         })
         .unwrap();
 

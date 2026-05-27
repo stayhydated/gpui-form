@@ -114,8 +114,8 @@ the shape expression directly in the attribute:
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
-- `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
-- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
+- `#[gpui_form(gpui_form_component::file_picker::FilePicker)]`
+- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -158,7 +158,7 @@ Common field-level helpers:
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
 
-`gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
+`gpui_form_component::infinite_select::InfiniteSelectField::<_>` expects the
 field type to derive `gpui_form_component::InfiniteSelect`, which implements
 the runtime `gpui_form_component::infinite_select::InfiniteSelectValue` trait
 for the enum tree.
@@ -167,7 +167,7 @@ The enum tree must also implement `PartialEq` because the backing
 Use `gpui-form-component` with its `derive` feature or import
 `gpui-form-component-derive` explicitly.
 Enable `gpui-form-component`'s `component-shape` feature when using
-`InfiniteSelect::<_>` directly as a form shape.
+`InfiniteSelectField::<_>` directly as a form shape.
 
 Common struct-level helpers:
 
@@ -286,33 +286,32 @@ pub struct Account {
 The `_` generic is resolved to the field's form-side type, including any
 `#[gpui_form(type = ...)]` override.
 
-### 2. Derive directly on an owned state type
+### 2. Derive on an owned component
 
 ```rs
 use gpui_form::GpuiForm;
 use gpui_form_derive::ComponentShape;
 
-#[derive(Clone, Debug, ComponentShape)]
-#[gpui_form_shape(
-    component = TagsInput,
-    field_suffix = "input"
-)]
+#[derive(ComponentShape)]
+#[gpui_form_shape(state = TagsInputState, field_suffix = "input")]
+pub struct TagsInput {
+    state: gpui::Entity<TagsInputState>,
+}
+
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(TagsInputState)]
+    #[gpui_form(TagsInput)]
     pub tags: Option<Vec<String>>,
 }
 ```
 
 `new` accepts a constructor expression. Use a function path or closure when the
 macro should pass `(window, cx)` for you, or use a full constructor expression
-such as `Self::with_label(window, cx, "tags")` when the expression should be
-emitted as written. If `new` is omitted, the derive calls
-`Self::new(window, cx)`.
-`value_binding` is a bare flag; omit it when the shape should not publish
-shape-level value-binding metadata.
+such as `TagsInputState::with_label(window, cx, "tags")` when the expression
+should be emitted as written. If `new` is omitted, the derive calls
+`<State>::new(window, cx)`.
 
 ### 3. Declare a reusable external shape
 
@@ -336,8 +335,8 @@ pub struct ContactForm {
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 It uses the same `new`, `component`, `value_binding`, and `field_suffix`
-metadata as `#[derive(ComponentShape)]`, plus `type State = ...` for the
-wrapped external state type. If `new` is omitted, the macro calls
+metadata used by component shapes, plus `type State = ...` for the wrapped
+external state type. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`.
 Options may be separated with semicolons or commas; the final separator is
 optional.
@@ -347,29 +346,18 @@ Component-backed fields compile against `gpui_form_runtime::shape`; add
 component shapes.
 
 Component shapes can also opt into generated value synchronization by
-implementing `gpui_form_runtime::shape::ComponentValueBinding<T>` on the shape.
-For one-off fields, use `.value_binding()` in the field's component expression.
-For a reusable component, put bare `value_binding` metadata on the shape:
+placing `#[gpui_form_derive::component_value_binding]` on the backing state's
+binding impl:
 
 ```rs
-use gpui_form_derive::ComponentShape;
-
-#[derive(Clone, Debug, ComponentShape)]
-#[gpui_form_shape(
-    component = TagsInput,
-    value_binding,
-    field_suffix = "input"
-)]
 pub struct TagsInputState;
-```
 
-The binding's associated `Event` type is the actual event emitted by the
-component state. External component wrappers, such as `gpui-component` inputs,
-can use the upstream event enum and map it into `FormValueChange<T>` with
-`form_value_change`. Components that own their state can expose their own event
-enum, such as `CheckboxEvent`, and mark the shape with
-`OwnedComponentValueBinding<T>`. The binding remains application-owned;
-`gpui-form` only calls `seed_value_binding_state` and `form_value_change`.
+#[gpui_form_derive::component_value_binding]
+impl gpui_form_runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
+    type Event = TagsInputEvent;
+    /* seed_value_binding_state and form_value_change */
+}
+```
 
 Shape contracts and value-binding helpers are available from
 `gpui_form_runtime::shape`. Concrete runtime widgets are available from
@@ -406,7 +394,8 @@ FilePicker::new(&picker)
 ```
 
 Enable `gpui-form-component`'s `component-shape` feature when using
-`FilePickerState` directly in `#[gpui_form(...)]`.
+`FilePicker` directly in `#[gpui_form(...)]`; the shape stores
+`FilePickerState` as its backing entity state.
 
 ## Date Conversion
 

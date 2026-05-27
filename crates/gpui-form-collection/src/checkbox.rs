@@ -1,8 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form_runtime::shape::{
-    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
-};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CheckboxEvent {
@@ -92,5 +90,3 @@ impl ComponentValueBinding<bool> for Checkbox {
         }
     }
 }
-
-impl OwnedComponentValueBinding<bool> for Checkbox {}

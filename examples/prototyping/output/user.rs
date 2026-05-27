@@ -248,9 +248,9 @@ impl UserForm {
     }
     fn on_uploaded_files_file_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_component::file_picker::FilePickerState>>,
+        state: &Entity<ComponentStateOf<gpui_form_component::file_picker::FilePicker>>,
         event: &ComponentEventOf<
-            gpui_form_component::file_picker::FilePickerState,
+            gpui_form_component::file_picker::FilePicker,
             Vec<std::path::PathBuf>,
         >,
         _window: &mut Window,
@@ -258,10 +258,9 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
-                gpui_form_component::file_picker::FilePickerState,
-                Vec<std::path::PathBuf>,
-            >(&state, event)
+            form_value_change::<gpui_form_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
+                &state, event,
+            )
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -558,7 +557,7 @@ impl UserForm {
         });
         uploaded_files_file_picker.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_component::file_picker::FilePickerState,
+                gpui_form_component::file_picker::FilePicker,
                 Vec<std::path::PathBuf>,
             >(state, current_data.uploaded_files.as_ref(), window, cx);
         });

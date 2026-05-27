@@ -16,8 +16,9 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 
 ## Boundaries
 
-`gpui-form-runtime` may depend on `gpui` because `ComponentShape::new` and
-`ComponentValueBinding` use `Window`, `Context`, and `EventEmitter`.
+`gpui-form-runtime` may depend on `gpui` because `ComponentShape::new`,
+`ComponentValueBinding`, and `ComponentStateValueBinding` use `Window`,
+`Context`, and `EventEmitter`.
 
 It should not depend on:
 

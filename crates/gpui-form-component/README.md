@@ -12,15 +12,15 @@ directly. Component-shape contracts live in
 - `date_picker`: localized runtime state and element wrappers for calendar
   date input
 - `file_picker`: native GPUI path selection rendered with `gpui-component`
-  controls, plus a derive-backed `FilePickerState` form shape when the
+  controls, plus a derive-backed `FilePicker` form shape when the
   `component-shape` feature is enabled
 
 ## Feature Flags
 
 - `derive`: re-exports `#[derive(InfiniteSelect)]`
 - `component-shape`: enables built-in `ComponentShape` impls and value-binding
-  metadata for `InfiniteSelect`, `DatePickerState`, `DateRangePickerState`, and
-  `FilePickerState`
+  metadata for `InfiniteSelectField`, `DatePicker`, `DateRangePicker`, and
+  `FilePicker`
 
 ## Infinite Select
 
@@ -101,12 +101,12 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(gpui_form_component::infinite_select::InfiniteSelectField::<_>)]
 pub location: Country,
 ```
 
-Enable this crate's `component-shape` feature when using `InfiniteSelect::<_>`
-directly as a form shape.
+Enable this crate's `component-shape` feature when using
+`InfiniteSelectField::<_>` directly as a form shape.
 
 If a form needs non-default infinite-select options such as search or a depth
 limit, define a small `ComponentShape` wrapper whose `new` function calls
@@ -196,10 +196,10 @@ the dialog should select directories instead of files. Multiple selection is
 available through `FilePicker::multiple(true)`.
 
 For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
-use the state type as the form shape:
+use the element type as the form shape:
 
 ```rs
-#[gpui_form(gpui_form_component::file_picker::FilePickerState)]
+#[gpui_form(gpui_form_component::file_picker::FilePicker)]
 pub uploaded_files: Vec<std::path::PathBuf>;
 ```
 
@@ -220,8 +220,8 @@ cargo run -p gpui-form-component-story
 
 `gpui_form_runtime::shape::ComponentShape` is the contract used by
 `#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`. This crate's
-`component-shape` feature implements that contract for its built-in component
-state types.
+`component-shape` feature implements that contract for its built-in rendered
+component types.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -243,38 +243,33 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-Or derive the same contract directly on a state type:
+Or derive the same contract directly on an owned rendered component:
 
 ```rs
 #[derive(gpui_form_derive::ComponentShape)]
 #[gpui_form_shape(
+    state = crate::state::TagsState,
     new = crate::state::build,
-    component = crate::ui::TagsInput,
-    value_binding,
     field_suffix = "input"
 )]
-pub struct TagsState;
+pub struct TagsInput {
+    state: gpui::Entity<crate::state::TagsState>,
+}
 ```
 
 In both forms, `new` accepts a constructor expression. Function paths and
 closures are called with `(window, cx)`; full constructor expressions such as
-`Self::with_label(window, cx, "tags")` are emitted as written. For
+`crate::state::TagsState::with_label(window, cx, "tags")` are emitted as written. For
 `gpui_form_derive::component_shape!`, omitting `new` calls
-`<State>::new(window, cx)`.
-`value_binding` is a bare flag; omit it when the shape should not publish
-shape-level value-binding metadata.
+`<State>::new(window, cx)`. For `#[derive(ComponentShape)]`, `state = ...` is
+required and omitting `new` also calls `<State>::new(window, cx)`.
 The function-like macro accepts either semicolons or commas between options.
 
 For component shapes that should participate in generated prototyping
-subscriptions, implement `gpui_form_runtime::shape::ComponentValueBinding<T>`
-for the same shape and either set `value_binding` on the shape metadata or add
-`.value_binding()` to the field's shape expression for a single field. The
-binding seeds state from the current form value and maps component events to
-`FormValueChange<T>`. The binding's associated `Event` type is the actual event
-enum emitted by the state. Components that own their state can expose their own
-event enum and mark the shape with
-`gpui_form_runtime::shape::OwnedComponentValueBinding<T>`; external wrappers
-keep their upstream event type and convert it in `form_value_change`.
+subscriptions, put `#[gpui_form_derive::component_value_binding]` on the
+backing state's `ComponentValueBinding<T>` impl. The attribute compiles that
+impl as `ComponentStateValueBinding<T>`, which component-derived shapes
+delegate through.
 
 Reusable shapes can also publish `gpui_form_runtime::shape::ComponentPrototyping`
 metadata.
