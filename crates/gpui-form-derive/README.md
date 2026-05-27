@@ -98,7 +98,7 @@ Behavior notes:
 - `.requires_value(false)` keeps a non-optional component field as `T` when the
   component can safely synthesize a value
 - `.value_binding()` records that the component shape implements
-  `gpui_form_component::shape::ComponentValueBinding<T>` for generated
+  `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
   `seed_value_binding_state` and maps component events to `FormValueChange<T>`
 - `type`/`from`/`into` let the generated holder edit a type that differs from
@@ -123,7 +123,8 @@ Behavior notes:
 
 ## `#[derive(ComponentShape)]`
 
-Implements `gpui_form_component::shape::ComponentShape` directly for a state type.
+Implements `gpui_form_runtime::shape::ComponentShape` directly for a state type.
+Crates that use this derive need an explicit `gpui-form-runtime` dependency.
 
 ```rs
 use gpui_form_derive::ComponentShape;
@@ -150,8 +151,6 @@ field. Omit the flag when the shape should not publish value-binding metadata.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
-`shape_crate = ...` overrides the runtime crate path when a crate needs to
-target its own local `shape::ComponentShape` module.
 
 ## `component_shape!`
 
@@ -193,7 +192,9 @@ optional.
 - [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
   `#[derive(SelectItem)]` when using derives directly
 - [`gpui-form-component`](../gpui-form-component/README.md) for runtime helpers,
-  component shape contracts, and `#[derive(InfiniteSelect)]` with its `derive`
-  feature
+  built-in component shape implementations, and `#[derive(InfiniteSelect)]`
+  with its `derive` feature
+- [`gpui-form-runtime`](../gpui-form-runtime/README.md) for component shape
+  contracts and value-binding helpers
 - [`gpui-form-schema`](../gpui-form-schema/README.md) when you need metadata
   rather than derives

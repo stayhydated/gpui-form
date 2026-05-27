@@ -20,7 +20,9 @@ use jiff::civil::Date as JiffDate;
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
 #[cfg(feature = "component-shape")]
-use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
+use gpui_form_runtime::shape::{
+    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
+};
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -50,8 +52,7 @@ pub enum DateRangePickerEvent {
     gpui_form_shape(
         component = gpui_form_component::date_picker::DatePicker,
         value_binding,
-        field_suffix = "date_picker",
-        shape_crate = crate
+        field_suffix = "date_picker"
     )
 )]
 pub struct DatePickerState {
@@ -108,8 +109,7 @@ impl EventEmitter<DatePickerEvent> for DatePickerState {}
     gpui_form_shape(
         component = gpui_form_component::date_picker::DateRangePicker,
         value_binding,
-        field_suffix = "date_range_picker",
-        shape_crate = crate
+        field_suffix = "date_range_picker"
     )
 )]
 pub struct DateRangePickerState {

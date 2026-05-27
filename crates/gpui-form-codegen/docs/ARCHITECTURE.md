@@ -59,6 +59,9 @@ The shape layout emits two things:
 - a `FormComponents` constructor that delegates to
   `<Shape as ComponentShape>::new(window, cx)`
 
+Emitted runtime paths target `gpui_form_runtime::shape`; downstream crates that
+use component-backed fields must depend on `gpui-form-runtime` explicitly.
+
 Generated identifiers use an explicit field-level `field_suffix` first, then
 the resolved component shape's final segment. The shape-name fallback strips
 `Shape` or `State`, removes a duplicate field prefix, and falls back to `shape`

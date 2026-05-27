@@ -99,8 +99,8 @@ When adding or changing a reusable component shape:
 1. implement or derive `ComponentShape` for the shape
 1. publish shape-level metadata such as `COMPONENT_PATH`, `VALUE_BINDING`, and
    `PROTOTYPING.field_suffix` when generators need it
-1. update `gpui-form-component` or the owning runtime crate if runtime support
-   is required
+1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
+   crate if runtime support is required
 
 ## When To Update This Document
 

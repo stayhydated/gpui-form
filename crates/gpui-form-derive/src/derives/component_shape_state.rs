@@ -33,10 +33,6 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
                 shape.set_field_suffix(field_suffix, &meta.path)
-            } else if meta.path.is_ident("shape_crate") {
-                let value = meta.value()?;
-                let shape_crate = value.parse()?;
-                shape.set_shape_crate(shape_crate, &meta.path)
             } else {
                 Err(meta.error(format!(
                     "unsupported `gpui_form_shape` option; expected {SHAPE_METADATA_OPTIONS}",
@@ -52,12 +48,12 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
     let constructor_body = meta.constructor_body_or(quote! { Self::new(window, cx) });
-    let shape_crate = meta.shape_crate_path();
+    let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let metadata_consts = meta.const_tokens(&shape_crate);
+    let metadata_consts = meta.const_tokens(&runtime_crate);
 
     Ok(quote! {
-        impl #impl_generics #shape_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics #runtime_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
             type State = Self;
 
             fn new(
@@ -102,7 +98,7 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("impl::gpui_form_component::shape::ComponentShapeforTagsState"),
+            compact.contains("impl::gpui_form_runtime::shape::ComponentShapeforTagsState"),
             "should implement ComponentShape for derived type"
         );
         assert!(
@@ -262,24 +258,6 @@ mod tests {
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"tags\")"),
             "should emit prototyping field suffix metadata"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_with_shape_crate_path() {
-        let input: DeriveInput = syn::parse2(quote! {
-            #[derive(ComponentShape)]
-            #[gpui_form_shape(new = Self::new, shape_crate = crate)]
-            struct TagsState;
-        })
-        .unwrap();
-
-        let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("implcrate::shape::ComponentShapeforTagsState"),
-            "should allow runtime crates to implement their local shape trait path"
         );
     }
 

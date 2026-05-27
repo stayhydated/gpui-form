@@ -114,22 +114,20 @@ When the `inventory` feature is enabled:
   `ComponentValueBinding<T>` prototyping hooks, including
   `seed_value_binding_state` and `form_value_change`; this is enabled with the
   bare `value_binding` flag and disabled by omitting it
-- defaults to implementing `gpui_form_component::shape::ComponentShape`
+- defaults to implementing `gpui_form_runtime::shape::ComponentShape`
   for downstream application crates
-- optionally accepts `shape_crate = crate` for runtime crates that implement
-  their local `shape::ComponentShape` path directly
 
 ### `component_shape!`
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts the same `new`, `component`, `value_binding`, `field_suffix`, and
-  `shape_crate` metadata keys as `#[derive(ComponentShape)]`
+- accepts the same `new`, `component`, `value_binding`, and `field_suffix`
+  metadata keys as `#[derive(ComponentShape)]`
 - accepts either semicolon or comma separators between metadata entries
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
-- emits the implementation against `gpui_form_component::shape` by default
+- emits the implementation against `gpui_form_runtime::shape` by default
 - leaves optional `ComponentValueBinding<T>` implementations to the
   caller or collection crate
 

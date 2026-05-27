@@ -100,7 +100,7 @@ All component fields are shape-backed:
   `ComponentValueBinding<T>` hook that maps component events to
   `FormValueChange<T>`
 - value-bound component subscriptions use runtime projection aliases and helper
-  functions from `gpui_form_component::shape` inline for value-binding state
+  functions from `gpui_form_runtime::shape` inline for value-binding state
   seeding and event conversion; owned components expose their own event enum,
   while external wrappers keep their upstream event type
 

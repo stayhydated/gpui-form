@@ -1,6 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::switch::Switch as GpuiSwitch;
-use gpui_form_component::shape::{
+use gpui_form_runtime::shape::{
     ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
 };
 

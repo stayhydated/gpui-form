@@ -3,8 +3,8 @@
 GPUI-facing runtime helpers for the `gpui-form` ecosystem.
 
 Applications that use these runtime helpers should depend on this crate
-directly. `gpui-form` does not re-export the component runtime or its derive
-macros.
+directly. Component-shape contracts live in
+[`gpui-form-runtime`](../gpui-form-runtime/README.md).
 
 ## What It Provides
 
@@ -14,7 +14,6 @@ macros.
 - `file_picker`: native GPUI path selection rendered with `gpui-component`
   controls, plus a derive-backed `FilePickerState` form shape when the
   `component-shape` feature is enabled
-- `shape`: the runtime contract for user-defined component state
 
 ## Feature Flags
 
@@ -219,8 +218,10 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`shape::ComponentShape` is the contract used by
-`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`.
+`gpui_form_runtime::shape::ComponentShape` is the contract used by
+`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`. This crate's
+`component-shape` feature implements that contract for its built-in component
+state types.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -264,35 +265,33 @@ closures are called with `(window, cx)`; full constructor expressions such as
 shape-level value-binding metadata.
 The function-like macro accepts either semicolons or commas between options.
 
-This crate also exports `gpui_form_component::component_shape!` for simple
-runtime-local shapes. It is intentionally narrower than the derive crate macro,
-so reusable shapes should generally use `gpui_form_derive::component_shape!`.
-
 For component shapes that should participate in generated prototyping
-subscriptions, implement `shape::ComponentValueBinding<T>` for the same
-shape and either set `value_binding` on the shape metadata or add
+subscriptions, implement `gpui_form_runtime::shape::ComponentValueBinding<T>`
+for the same shape and either set `value_binding` on the shape metadata or add
 `.value_binding()` to the field's shape expression for a single field. The
-binding seeds state from the current form value and maps component events
-to `FormValueChange<T>`. The binding's associated `Event` type is the actual
-event enum emitted by the state. Components that own their state can expose
-their own event enum and mark the shape with
-`shape::OwnedComponentValueBinding<T>`; external wrappers keep their
-upstream event type and convert it in `form_value_change`.
+binding seeds state from the current form value and maps component events to
+`FormValueChange<T>`. The binding's associated `Event` type is the actual event
+enum emitted by the state. Components that own their state can expose their own
+event enum and mark the shape with
+`gpui_form_runtime::shape::OwnedComponentValueBinding<T>`; external wrappers
+keep their upstream event type and convert it in `form_value_change`.
 
-Reusable shapes can also publish `shape::ComponentPrototyping` metadata.
+Reusable shapes can also publish `gpui_form_runtime::shape::ComponentPrototyping`
+metadata.
 Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`,
-the runtime `component_shape!` helper, or `#[gpui_form_shape(...)]` so
-prototyping generators can emit names such as `email_input` without deriving
-that suffix from the shape type. Generated value-binding scaffolds can use
-`ComponentStateOf`,
-`ComponentEventOf`, `seed_value_binding_state`, and `form_value_change` to
-avoid repeating associated-type projections at every call site.
+or `#[gpui_form_shape(...)]` so prototyping generators can emit names such as
+`email_input` without deriving that suffix from the shape type. Generated
+value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
+`seed_value_binding_state`, and `form_value_change` to avoid repeating
+associated-type projections at every call site.
 
 ## Most Users Should Use Instead
 
 - [`gpui-form`](../gpui-form/README.md) for the `GpuiForm` facade
 - [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) when
   you want only the `InfiniteSelect` derive plus this runtime layer
+- [`gpui-form-runtime`](../gpui-form-runtime/README.md) for component shape
+  contracts and value-binding helpers
 - [`gpui-component`](https://github.com/longbridge/gpui-component) for the
   upstream date-picker widget and other base components
 - [`gpui-form-schema`](../gpui-form-schema/README.md) for metadata and inventory

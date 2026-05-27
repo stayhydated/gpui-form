@@ -1,6 +1,6 @@
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form_component::shape::{
+use gpui_form_runtime::shape::{
     ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
 };
 

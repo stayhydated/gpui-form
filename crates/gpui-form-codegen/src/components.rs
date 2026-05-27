@@ -37,7 +37,7 @@ pub struct ComponentMethod {
 
 #[derive(Clone, Debug)]
 pub struct ShapeOptions {
-    /// Path to a type implementing `gpui_form_component::shape::ComponentShape`.
+    /// Path to a type implementing `gpui_form_runtime::shape::ComponentShape`.
     pub shape: syn::Path,
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
@@ -140,7 +140,7 @@ impl ShapeOptions {
         let shape = self.runtime_shape(field_type);
 
         quote! {
-            <#shape as ::gpui_form_component::shape::ComponentShape>::new(window, cx)
+            <#shape as ::gpui_form_runtime::shape::ComponentShape>::new(window, cx)
         }
     }
 
@@ -149,7 +149,7 @@ impl ShapeOptions {
 
         Some(quote! {
             {
-                fn __gpui_form_assert_component_shape<Shape: ::gpui_form_component::shape::ComponentShape>() {}
+                fn __gpui_form_assert_component_shape<Shape: ::gpui_form_runtime::shape::ComponentShape>() {}
                 __gpui_form_assert_component_shape::<#shape>();
             }
         })
@@ -439,7 +439,7 @@ impl Components {
         } else {
             Some(quote! {
                 .with_component_path_opt(
-                    <#shape as ::gpui_form_component::shape::ComponentShape>::COMPONENT_PATH
+                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::COMPONENT_PATH
                 )
             })
         }
@@ -466,7 +466,7 @@ impl Components {
             None => {
                 quote! {
                     .with_value_binding(
-                        <#shape as ::gpui_form_component::shape::ComponentShape>::VALUE_BINDING
+                        <#shape as ::gpui_form_runtime::shape::ComponentShape>::VALUE_BINDING
                     )
                 }
             },
@@ -486,7 +486,7 @@ impl Components {
 
             Some(quote! {
                 .with_prototyping_field_suffix(
-                    <#shape as ::gpui_form_component::shape::ComponentShape>::PROTOTYPING
+                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING
                         .field_suffix
                 )
             })

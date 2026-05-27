@@ -21,7 +21,9 @@ use gpui_component::{
 
 use crate::i18n::FilePickerText;
 #[cfg(feature = "component-shape")]
-use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
+use gpui_form_runtime::shape::{
+    ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
+};
 
 /// Which path kinds a [`FilePicker`] should ask GPUI to select.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -91,8 +93,7 @@ pub enum FilePickerEvent {
     gpui_form_shape(
         component = gpui_form_component::file_picker::FilePicker,
         value_binding,
-        field_suffix = "file_picker",
-        shape_crate = crate
+        field_suffix = "file_picker"
     )
 )]
 pub struct FilePickerState {

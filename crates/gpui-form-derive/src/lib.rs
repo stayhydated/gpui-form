@@ -22,8 +22,8 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
 /// `#[gpui_form_shape(new = path::to::constructor)]`, a closure, or a direct
 /// constructor expression such as `Self::new(window, cx).with_options()`.
 ///
-/// Supports `new = ...`, `component = ...`, bare `value_binding`,
-/// `field_suffix = ...`, and `shape_crate = ...`.
+/// Supports `new = ...`, `component = ...`, bare `value_binding`, and
+/// `field_suffix = ...`.
 #[proc_macro_derive(ComponentShape, attributes(gpui_form_shape))]
 #[proc_macro_error]
 pub fn derive_component_shape(input: TokenStream) -> TokenStream {
@@ -35,7 +35,7 @@ pub fn derive_component_shape(input: TokenStream) -> TokenStream {
 ///
 /// This is the external-item counterpart to `#[derive(ComponentShape)]`: the
 /// generated shape type is local to the caller, so it can implement
-/// `gpui_form_component::shape::ComponentShape` even when the UI
+/// `gpui_form_runtime::shape::ComponentShape` even when the UI
 /// component and state live in another crate. If `new` is omitted, the
 /// generated implementation calls `<State>::new(window, cx)`.
 #[proc_macro]

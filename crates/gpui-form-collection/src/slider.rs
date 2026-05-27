@@ -1,6 +1,6 @@
 use gpui::{Context, Window};
 use gpui_component::slider::{SliderEvent, SliderState, SliderValue};
-use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::slider::Slider` backed by `SliderState`.
@@ -33,7 +33,9 @@ impl ComponentValueBinding<SliderValue> for Slider {
         event: &Self::Event,
     ) -> FormValueChange<SliderValue> {
         match event {
-            SliderEvent::Change(value) | SliderEvent::Release(value) => FormValueChange::Set(*value),
+            SliderEvent::Change(value) | SliderEvent::Release(value) => {
+                FormValueChange::Set(*value)
+            },
         }
     }
 }

@@ -11,6 +11,7 @@ members = [
   "crates/gpui-form-component-story",
   "crates/gpui-form-schema",
   "crates/gpui-form-derive",
+  "crates/gpui-form-runtime",
   "crates/gpui-form-prototyping-core",
   "examples/some-lib",
   "examples/some-lib-forms",
@@ -51,6 +52,7 @@ gpui-form-component-story = { path = "crates/gpui-form-component-story", version
 gpui-form-core = { path = "crates/gpui-form-core", version = "0.5.1" }
 gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
 gpui-storybook = { path = "../gpui-storybook/crates/gpui-storybook" }
 gpui-storybook-core = { path = "../gpui-storybook/crates/gpui-storybook-core" }

@@ -17,6 +17,7 @@ gpui-form-component = { features = [ "component-shape", "derive" ], workspace = 
 gpui-form = { features = [ "derive" ], workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-collection-derive = { workspace = true }
+gpui-form-runtime = { workspace = true }
 koruma = { features = [ "fluent" ], workspace = true }
 koruma-collection = { features = [ "rust_decimal", "email", "fluent" ], workspace = true }
 rust_decimal = { workspace = true }

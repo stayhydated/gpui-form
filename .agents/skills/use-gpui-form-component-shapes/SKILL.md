@@ -9,6 +9,8 @@ description: "Use when Codex needs to add, review, or refactor gpui-form compone
 
 Use this skill for user-facing app or integration code that wires custom
 components into `#[derive(GpuiForm)]` through `ComponentShape`.
+Ensure the consuming crate depends on `gpui-form-runtime`, because generated
+code references `gpui_form_runtime::shape`.
 
 Do not use it as guidance for changing the proc macro implementation itself.
 For derive or macro internals, inspect `crates/gpui-form-derive`,
@@ -123,7 +125,7 @@ Options may be separated with semicolons or commas.
 ## Value Binding
 
 If generated forms should keep the form value and component state synchronized,
-implement `gpui_form_component::shape::ComponentValueBinding<T>` for the shape.
+implement `gpui_form_runtime::shape::ComponentValueBinding<T>` for the shape.
 For owned states, the shape is the state type itself. For external states, the
 shape is the local wrapper created by `component_shape!`.
 

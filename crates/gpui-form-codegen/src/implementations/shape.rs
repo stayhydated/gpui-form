@@ -19,7 +19,7 @@ impl super::ComponentLayout for ShapeComponent {
         let shape = options.runtime_shape(r#type);
 
         let state_type = quote! {
-            <#shape as ::gpui_form_component::shape::ComponentShape>::State
+            <#shape as ::gpui_form_runtime::shape::ComponentShape>::State
         };
         let constructor_tokens = options.constructor_tokens(r#type);
 

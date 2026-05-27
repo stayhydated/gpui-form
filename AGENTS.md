@@ -129,7 +129,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form`
   Audience: **User-facing**
   Docs: [Architecture](crates/gpui-form/docs/ARCHITECTURE.md)
-  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, `numeric`, and `bon`. Component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
+  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, `numeric`, and `bon`. Component shape runtime contracts, component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
 
 ### Public Integration Crates
 
@@ -148,10 +148,15 @@ inventory or codegen workflows change.
   Docs: [Architecture](crates/gpui-form-collection-derive/docs/ARCHITECTURE.md)
   Role: proc macros for collection runtime integration and derive-time helpers that pair with `gpui-form-collection`.
 
+- `crates/gpui-form-runtime`
+  Audience: **Public integration**
+  Docs: [Architecture](crates/gpui-form-runtime/docs/ARCHITECTURE.md)
+  Role: GPUI-facing runtime contracts referenced by generated form code, including `ComponentShape` and value-binding helpers. Users add this explicitly when they use component-backed fields or custom component shapes.
+
 - `crates/gpui-form-component`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-component/docs/ARCHITECTURE.md)
-  Role: GPUI-facing runtime implementations for infinite select, date picker, file picker, and component shape helpers. Users import this crate explicitly when they need component runtime APIs.
+  Role: GPUI-facing runtime implementations for infinite select, date picker, and file picker. Users import this crate explicitly when they need concrete component runtime APIs.
 
 - `crates/gpui-form-component-derive`
   Audience: **Public integration**

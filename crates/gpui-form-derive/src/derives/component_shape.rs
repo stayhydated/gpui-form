@@ -12,7 +12,6 @@ mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
-    syn::custom_keyword!(shape_crate);
     syn::custom_keyword!(value_binding);
 }
 
@@ -84,11 +83,6 @@ impl Parse for ComponentShapeInput {
                 content.parse::<Token![=]>()?;
                 metadata.set_field_suffix(content.parse()?, key)?;
                 parse_option_separator(&content)?;
-            } else if content.peek(kw::shape_crate) {
-                let key = content.parse::<kw::shape_crate>()?;
-                content.parse::<Token![=]>()?;
-                metadata.set_shape_crate(content.parse()?, key)?;
-                parse_option_separator(&content)?;
             } else {
                 return Err(content.error(format!(
                     "expected `type State = ...;` or {SHAPE_METADATA_OPTIONS}"
@@ -159,16 +153,16 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
 
     let phantom_type = phantom_type_tokens(&generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let shape_crate = metadata.shape_crate_path();
+    let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
-    let metadata_consts = metadata.const_tokens(&shape_crate);
+    let metadata_consts = metadata.const_tokens(&runtime_crate);
     quote! {
         #(#attrs)*
         #vis struct #ident #generics(
             ::core::marker::PhantomData<fn() -> #phantom_type>
         ) #where_clause;
 
-        impl #impl_generics #shape_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
+        impl #impl_generics #runtime_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
             type State = #state;
 
             fn new(
@@ -221,7 +215,7 @@ mod tests {
             "generic shape type should carry PhantomData for external component wrappers: {compact}"
         );
         assert!(
-            compact.contains("impl<T>::gpui_form_component::shape::ComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
+            compact.contains("impl<T>::gpui_form_runtime::shape::ComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
             "macro should implement the shape contract with caller generics and where clause: {compact}"
         );
         assert!(
@@ -239,26 +233,6 @@ mod tests {
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
             "macro should emit prototyping field suffix metadata: {compact}"
-        );
-    }
-
-    #[test]
-    fn component_shape_function_macro_accepts_shape_crate_path() {
-        let input: ComponentShapeInput = syn::parse2(quote! {
-            pub struct LocalInputShape {
-                type State = crate::state::InputState;
-                new = crate::state::InputState::new;
-                shape_crate = crate;
-            }
-        })
-        .unwrap();
-
-        let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("implcrate::shape::ComponentShapeforLocalInputShape"),
-            "macro should allow runtime crates to target their local shape trait path: {compact}"
         );
     }
 

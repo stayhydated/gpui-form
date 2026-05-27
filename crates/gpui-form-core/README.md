@@ -40,5 +40,7 @@ assert!(!validate_unsigned_numeric::<u32>("-1", true));
 ## Most Users Should Use Instead
 
 - [`gpui-form`](../gpui-form/README.md) for normal application development
+- [`gpui-form-runtime`](../gpui-form-runtime/README.md) when you need the
+  component shape runtime contracts
 - [`gpui-form-component`](../gpui-form-component/README.md) when you need the
   GPUI runtime helpers

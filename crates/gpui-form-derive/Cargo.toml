@@ -37,6 +37,7 @@ gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { default-features = false, path = "../gpui-form" }
 gpui-form-component = { workspace = true }
+gpui-form-runtime = { workspace = true }
 insta = { workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }

@@ -920,8 +920,7 @@ where
         new = Self::new_default,
         component = gpui_form_component::infinite_select::InfiniteSelectField,
         value_binding,
-        field_suffix = "infinite_select",
-        shape_crate = crate
+        field_suffix = "infinite_select"
     )
 )]
 pub struct InfiniteSelect<T, D = Vec<InfiniteSelectItem<T>>>
@@ -1306,7 +1305,7 @@ where
 }
 
 #[cfg(feature = "component-shape")]
-impl<T, D> crate::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
+impl<T, D> gpui_form_runtime::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1327,8 +1326,8 @@ where
     fn form_value_change(
         _state: &Self::State,
         event: &Self::Event,
-    ) -> crate::shape::FormValueChange<T> {
-        crate::shape::FormValueChange::Set(event.value().clone())
+    ) -> gpui_form_runtime::shape::FormValueChange<T> {
+        gpui_form_runtime::shape::FormValueChange::Set(event.value().clone())
     }
 }
 

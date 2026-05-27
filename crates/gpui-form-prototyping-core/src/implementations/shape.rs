@@ -17,11 +17,11 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
     fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
         if field.value_binding {
             vec![
-                ImportItem::path("gpui_form_component::shape::ComponentEventOf"),
-                ImportItem::path("gpui_form_component::shape::ComponentStateOf"),
-                ImportItem::path("gpui_form_component::shape::FormValueChange"),
-                ImportItem::path("gpui_form_component::shape::form_value_change"),
-                ImportItem::path("gpui_form_component::shape::seed_value_binding_state"),
+                ImportItem::path("gpui_form_runtime::shape::ComponentEventOf"),
+                ImportItem::path("gpui_form_runtime::shape::ComponentStateOf"),
+                ImportItem::path("gpui_form_runtime::shape::FormValueChange"),
+                ImportItem::path("gpui_form_runtime::shape::form_value_change"),
+                ImportItem::path("gpui_form_runtime::shape::seed_value_binding_state"),
             ]
         } else {
             Vec::new()

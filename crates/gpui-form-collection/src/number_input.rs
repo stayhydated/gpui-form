@@ -5,10 +5,10 @@ use gpui::{
     Window,
 };
 use gpui_component::input::{
-    InputEvent, InputState, NumberInput as GpuiNumberInput, NumberInputEvent as GpuiNumberInputEvent,
-    StepAction,
+    InputEvent, InputState, NumberInput as GpuiNumberInput,
+    NumberInputEvent as GpuiNumberInputEvent, StepAction,
 };
-use gpui_form_component::shape::{
+use gpui_form_runtime::shape::{
     ComponentValueBinding, FormValueChange, OwnedComponentValueBinding,
 };
 
@@ -28,54 +28,45 @@ impl NumberInputState {
     where
         T: FromStr + ToString + 'static,
     {
-        let input = cx.new(|cx| {
-            InputState::new(window, cx).validate(|value, _| value.parse::<T>().is_ok())
-        });
+        let input = cx
+            .new(|cx| InputState::new(window, cx).validate(|value, _| value.parse::<T>().is_ok()));
 
         let mut subscriptions = Vec::new();
 
-        subscriptions.push(cx.subscribe_in(
-            &input,
-            window,
-            {
-                let input = input.clone();
-                move |_this, _, event, _window, cx| {
-                    if let InputEvent::Change = event {
-                        cx.emit(NumberInputEvent::Change(input.read(cx).value().to_string()));
-                    }
+        subscriptions.push(cx.subscribe_in(&input, window, {
+            let input = input.clone();
+            move |_this, _, event, _window, cx| {
+                if let InputEvent::Change = event {
+                    cx.emit(NumberInputEvent::Change(input.read(cx).value().to_string()));
                 }
-            },
-        ));
+            }
+        }));
 
-        subscriptions.push(cx.subscribe_in(
-            &input,
-            window,
-            {
-                let input = input.clone();
-                move |_this, _, event, window, cx| {
-                    let value = match event {
-                        GpuiNumberInputEvent::Step(step) => match step {
-                            StepAction::Decrement => {
-                                let value = input.read(cx).value().parse::<f64>().unwrap_or(0.0) - 1.;
-                                Some(value.to_string())
-                            },
-                            StepAction::Increment => {
-                                let value = input.read(cx).value().parse::<f64>().unwrap_or(0.0) + 1.;
-                                Some(value.to_string())
-                            },
+        subscriptions.push(cx.subscribe_in(&input, window, {
+            let input = input.clone();
+            move |_this, _, event, window, cx| {
+                let value = match event {
+                    GpuiNumberInputEvent::Step(step) => match step {
+                        StepAction::Decrement => {
+                            let value = input.read(cx).value().parse::<f64>().unwrap_or(0.0) - 1.;
+                            Some(value.to_string())
                         },
-                    };
+                        StepAction::Increment => {
+                            let value = input.read(cx).value().parse::<f64>().unwrap_or(0.0) + 1.;
+                            Some(value.to_string())
+                        },
+                    },
+                };
 
-                    if let Some(value) = value {
-                        input.update(cx, |state, cx| {
-                            state.set_value(value.as_str(), window, cx);
-                        });
+                if let Some(value) = value {
+                    input.update(cx, |state, cx| {
+                        state.set_value(value.as_str(), window, cx);
+                    });
 
-                        cx.emit(NumberInputEvent::Change(input.read(cx).value().to_string()));
-                    }
+                    cx.emit(NumberInputEvent::Change(input.read(cx).value().to_string()));
                 }
-            },
-        ));
+            }
+        }));
 
         Self {
             input,
@@ -139,18 +130,17 @@ where
         });
     }
 
-    fn form_value_change(
-        _state: &Self::State,
-        event: &Self::Event,
-    ) -> FormValueChange<T> {
+    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
         match event {
             NumberInputEvent::Change(value) => {
                 if value.is_empty() {
                     FormValueChange::Clear
                 } else {
-                    value.parse().map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                    value
+                        .parse()
+                        .map_or(FormValueChange::Unchanged, FormValueChange::Set)
                 }
-            }
+            },
         }
     }
 }

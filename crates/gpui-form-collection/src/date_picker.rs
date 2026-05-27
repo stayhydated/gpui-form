@@ -4,7 +4,7 @@ use gpui_component::{
     calendar::Date,
     date_picker::{DatePickerEvent, DatePickerState},
 };
-use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::date_picker::DatePicker`.

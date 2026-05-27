@@ -1,11 +1,11 @@
 use gpui::{Context, Window};
 use gpui_component::{
+    IndexPath,
     combobox::{ComboboxEvent, ComboboxState},
     searchable_list::SearchableListDelegate,
     select::SelectItem,
-    IndexPath,
 };
-use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
 gpui_form_derive::component_shape! {
@@ -86,10 +86,7 @@ where
         state.set_selected_indices(selected_indices, window, cx);
     }
 
-    fn form_value_change(
-        _state: &Self::State,
-        event: &Self::Event,
-    ) -> FormValueChange<Vec<T>> {
+    fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<Vec<T>> {
         match event {
             ComboboxEvent::Change(values) | ComboboxEvent::Confirm(values) => {
                 if values.is_empty() {
@@ -97,7 +94,7 @@ where
                 } else {
                     FormValueChange::Set(values.clone())
                 }
-            }
+            },
         }
     }
 }

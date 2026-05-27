@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use gpui::{App, Context, Entity, IntoElement, RenderOnce, Window};
 use gpui_component::input::{InputEvent, OtpInput as GpuiOtpInput, OtpState};
-use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(IntoElement)]
 pub struct OtpInputField {
@@ -65,7 +65,7 @@ where
                         .parse::<T>()
                         .map_or(FormValueChange::Unchanged, FormValueChange::Set)
                 }
-            }
+            },
             _ => FormValueChange::Unchanged,
         }
     }

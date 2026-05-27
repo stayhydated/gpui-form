@@ -18,6 +18,7 @@ gpui-es-fluent = { workspace = true }
 gpui-form = { workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { workspace = true }
+gpui-form-runtime = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
 gpui-storybook-core = { workspace = true }
 gpui_platform = { workspace = true }

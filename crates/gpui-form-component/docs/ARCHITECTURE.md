@@ -2,8 +2,9 @@
 
 `gpui-form-component` is the GPUI runtime layer for the workspace.
 
-It owns the runtime contracts and helper types that generated forms reference
-once macro expansion is complete.
+It owns concrete reusable GPUI component helpers. The component-shape contract
+that generated forms reference after macro expansion lives in
+`gpui-form-runtime`.
 
 ## Purpose
 
@@ -13,12 +14,10 @@ schema metadata:
 - localized date-picker runtime state
 - native file-picker runtime state over GPUI path prompts
 - cascading select runtime helpers for nested enums
-- the runtime contract for component shape state
 
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/shape.rs`: `ComponentShape` and `component_shape!`
 - `src/infinite_select.rs`: `InfiniteSelect`, `InfiniteSelectItem`,
   `InfiniteSelectPath`, `Select`, and path reconstruction helpers
 - `src/date_picker.rs`: runtime state and element wrapper for localized date
@@ -31,24 +30,6 @@ schema metadata:
   caller-owned localizers
 
 ## Subsystem Boundaries
-
-### `shape`
-
-`ComponentShape` is the contract targeted by field shape expressions such as
-`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`.
-
-Responsibilities:
-
-- define the state type that generated forms store in `FormFields`
-- define how that state type is constructed
-- optionally carry a UI component path for prototyping output
-- optionally carry prototyping preferences such as the generated field/helper
-  suffix
-- optionally implement `ComponentValueBinding<T>` so generated
-  prototyping code can seed state and map component events back into
-  `FormValueChange<T>`
-  through helper aliases/functions instead of exposing associated-type
-  projections at every generated call site
 
 ### `infinite_select`
 
@@ -135,9 +116,7 @@ Responsibilities:
 ### Component shapes
 
 1. Users either declare a wrapper shape with `gpui_form_derive::component_shape!`
-   or derive `ComponentShape` directly on owned state. The runtime module also
-   keeps a deliberately narrow `component_shape!` helper for simple local
-   runtime shapes; reusable or generic shapes should use the derive crate macro.
+   or derive `ComponentShape` directly on owned state.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path
@@ -216,7 +195,8 @@ When adding a new reusable component shape that needs runtime state:
 1. expose it through `ComponentShape` or a helper macro/derive
 1. publish shape metadata such as `COMPONENT_PATH`, `VALUE_BINDING`, and
    `PROTOTYPING.field_suffix` when generated scaffolds need it
-1. update user-facing docs so applications import the runtime crate explicitly
+1. update user-facing docs so applications import `gpui-form-runtime`
+   explicitly when generated code references shape helpers
 
 ## When To Update This Document
 

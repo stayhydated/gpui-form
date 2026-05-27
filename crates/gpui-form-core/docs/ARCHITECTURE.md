@@ -53,8 +53,8 @@ This crate should remain:
 - small enough that lower layers can depend on it without dragging in runtime
   dependencies
 
-If logic needs GPUI state, subscriptions, or component types, it belongs in
-`gpui-form-component` instead.
+If logic needs GPUI state contracts, subscriptions, or component types, it
+belongs in `gpui-form-runtime` or `gpui-form-component` instead.
 
 ## When To Update This Document
 

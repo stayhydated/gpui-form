@@ -12,7 +12,8 @@ versions to the version guidance for the `gpui-form` version in use.
 gpui = { git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
 gpui-form = "*"
-gpui-form-component = { version = "*", features = ["derive"] }
+gpui-form-runtime = "*"
+gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
 gpui-form-derive = "*"
@@ -31,12 +32,15 @@ use gpui_form_derive::ComponentShape;
 
 Useful runtime/helper paths:
 
-- `gpui_form_component::shape`
+- `gpui_form_runtime::shape`
 - `gpui_form_component::date_picker`
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
 - `gpui_form_derive::component_shape!`
+
+Component-backed fields require `gpui-form-runtime` as an explicit dependency
+because generated code references `gpui_form_runtime::shape`.
 
 ## Supported Component Syntax
 
@@ -96,7 +100,8 @@ Common struct attributes:
 - Use `gpui_form_collection::date_picker::DatePicker` for single-date editing.
 - Use `gpui_form_collection::date_picker::DateRangePicker` for date-range editing.
 - Use `gpui_form_component::file_picker::FilePickerState` for native
-  file/directory selection; enable `gpui-form-component`'s `derive` feature.
+  file/directory selection; enable `gpui-form-component`'s `component-shape`
+  feature.
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use a custom

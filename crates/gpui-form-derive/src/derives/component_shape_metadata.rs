@@ -5,7 +5,7 @@ use syn::{Expr, LitBool, LitStr, Path, Result};
 use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str =
-    "`new = ...`, `component = ...`, `value_binding`, `field_suffix = ...`, or `shape_crate = ...`";
+    "`new = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
@@ -18,12 +18,6 @@ pub(super) struct ComponentShapeMetadata {
     value_binding: bool,
     /// Preferred generated field/helper suffix for prototyping output.
     field_suffix: Option<LitStr>,
-    /// Runtime crate path that owns `shape::ComponentShape`.
-    ///
-    /// This defaults to the explicit `gpui_form_component` runtime crate for
-    /// downstream users.
-    /// Runtime crates that own a state type can set `shape_crate = crate`.
-    shape_crate: Option<Path>,
 }
 
 impl ComponentShapeMetadata {
@@ -66,18 +60,8 @@ impl ComponentShapeMetadata {
         set_once(&mut self.field_suffix, field_suffix, span, "field_suffix")
     }
 
-    pub(super) fn set_shape_crate<T: quote::ToTokens>(
-        &mut self,
-        shape_crate: Path,
-        span: T,
-    ) -> Result<()> {
-        set_once(&mut self.shape_crate, shape_crate, span, "shape_crate")
-    }
-
-    pub(super) fn shape_crate_path(&self) -> Path {
-        self.shape_crate
-            .clone()
-            .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component))
+    pub(super) fn runtime_crate_path() -> Path {
+        syn::parse_quote!(::gpui_form_runtime)
     }
 
     pub(super) fn constructor_body_or(&self, default_body: TokenStream) -> TokenStream {
@@ -87,7 +71,7 @@ impl ComponentShapeMetadata {
             .unwrap_or(default_body)
     }
 
-    pub(super) fn const_tokens(&self, shape_crate: &Path) -> TokenStream {
+    pub(super) fn const_tokens(&self, runtime_crate: &Path) -> TokenStream {
         let component_path_const = self.component.as_ref().map(|component| {
             quote! {
                 const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
@@ -100,8 +84,8 @@ impl ComponentShapeMetadata {
         });
         let prototyping_const = self.field_suffix.as_ref().map(|field_suffix| {
             quote! {
-                const PROTOTYPING: #shape_crate::shape::ComponentPrototyping =
-                    #shape_crate::shape::ComponentPrototyping::new()
+                const PROTOTYPING: #runtime_crate::shape::ComponentPrototyping =
+                    #runtime_crate::shape::ComponentPrototyping::new()
                         .field_suffix(#field_suffix);
             }
         });

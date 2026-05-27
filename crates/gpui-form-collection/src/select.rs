@@ -3,7 +3,7 @@ use gpui_component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
 gpui_form_derive::component_shape! {

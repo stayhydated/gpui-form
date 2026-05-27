@@ -476,7 +476,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form_component::shape::ComponentShape>::State"
+                "<crate::NumericShape<rust_decimal::Decimal>as::gpui_form_runtime::shape::ComponentShape>::State"
             ),
             "Component shape `_` should resolve to the override type in state metadata"
         );
@@ -667,14 +667,14 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubbio_input:::gpui::Entity<")
                 && compact.contains(
-                    "<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::State"
+                    "<crate::shapes::BioInputShapeas::gpui_form_runtime::shape::ComponentShape>::State"
                 ),
             "Component shape field should use the shape-derived suffix and shape state type"
         );
 
         assert!(
             compact.contains(
-                "<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::new(window,cx)"
+                "<crate::shapes::BioInputShapeas::gpui_form_runtime::shape::ComponentShape>::new(window,cx)"
             ),
             "Component shape constructor should delegate to shape::new"
         );
@@ -698,7 +698,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(<crate::shapes::BioInputShapeas::gpui_form_component::shape::ComponentShape>::PROTOTYPING.field_suffix)"
+                "with_prototyping_field_suffix(<crate::shapes::BioInputShapeas::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix)"
             ),
             "FieldVariant should inherit component shape prototyping metadata: {compact}"
         );
@@ -901,7 +901,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_component::shape::ComponentShape>::State"
+                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_runtime::shape::ComponentShape>::State"
             ),
             "component shape `_` should be resolved to the field type in FormFields: {compact}"
         );

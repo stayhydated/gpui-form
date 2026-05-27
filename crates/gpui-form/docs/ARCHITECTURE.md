@@ -25,10 +25,10 @@ This crate exists to:
 - `bon` as `gpui_form::bon`
 
 `gpui-form` does not re-export `gpui-form-component`,
-`gpui-form-collection`, `gpui-form-component-derive`, or
+`gpui-form-runtime`, `gpui-form-collection`, `gpui-form-component-derive`, or
 `gpui-form-collection-derive`. Application crates that use component runtime
-helpers, collection shapes, `InfiniteSelect`, or `SelectItem` depend on and
-import those crates explicitly.
+contracts, component helpers, collection shapes, `InfiniteSelect`, or
+`SelectItem` depend on and import those crates explicitly.
 
 ## Feature Flags
 
@@ -48,7 +48,7 @@ import those crates explicitly.
 - `bon` because generated value holders with skipped fields derive
   `::gpui_form::bon::Builder`
 
-Component runtime contracts live in `gpui-form-component`. Curated component
+Component runtime contracts live in `gpui-form-runtime`. Curated component
 shapes live in `gpui-form-collection`. Their derive crates remain separate so
 users opt into those component APIs explicitly.
 
@@ -62,10 +62,10 @@ users opt into those component APIs explicitly.
 1. Generated value-holder code references `gpui_form::core` and
    `gpui_form::bon` where needed.
 1. Generated component field code references
-   `gpui_form_component::shape` when a field uses a component shape
+   `gpui_form_runtime::shape` when a field uses a component shape
    expression, such as `#[gpui_form(Shape)]` or `component = Shape`.
-   Users of component-backed fields must depend on `gpui-form-component`
-   explicitly.
+   Users of component-backed fields must depend on `gpui-form-runtime`
+   explicitly, plus any crate that owns the concrete shape type.
 
 ### Prototyping flow
 
@@ -80,7 +80,8 @@ users opt into those component APIs explicitly.
 
 - `gpui_form::bon` remains public because generated value holders use it.
 - Numeric helpers live under `gpui_form::core::numeric`.
-- Component module paths such as `shape`, `date_picker`, `file_picker`, and
+- Shape contract paths belong to `gpui-form-runtime`, not this facade.
+- Component module paths such as `date_picker`, `file_picker`, and
   `infinite_select` belong to `gpui-form-component`, not this facade.
 
 ## When To Update This Document

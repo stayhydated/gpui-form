@@ -46,7 +46,7 @@ uses the default `Vec<T>` delegate. If an application needs search or other
 select-specific configuration, define a small `ComponentShape` wrapper whose
 `new` function configures the underlying `SelectState`.
 
-Collection components implement `gpui_form_component::shape::ComponentShape`
+Collection components implement `gpui_form_runtime::shape::ComponentShape`
 and add value adapters where the component can synchronize form state
 generically. They also publish prototyping field suffix metadata, so generated
 scaffolds use names such as `code_input`, `country_select`,
