@@ -8,7 +8,6 @@ use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
 gpui_form_derive::component_shape! {
     pub struct FilePicker {
         type State = FilePickerState;
-        new = FilePickerState::new;
         component = gpui_form_component::file_picker::FilePicker;
         value_binding;
         field_suffix = "file_picker";

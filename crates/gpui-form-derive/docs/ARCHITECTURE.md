@@ -32,6 +32,9 @@ that crate's `derive` feature is enabled.
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
+- `src/derives/component_shape_metadata.rs`: shared `ComponentShape` metadata
+  parsing state and emitted associated-const helpers for shape declaration
+  macros
 - `src/derives/component_shape_state.rs`: `ComponentShape` derive expansion
 - `src/derives/component_shape.rs`: function-like component shape
   expansion for local wrappers around external component/state types
@@ -106,8 +109,8 @@ When the `inventory` feature is enabled:
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
   `ComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `form_value_change`; this accepts either bare
-  `value_binding` or `value_binding = true`
+  `seed_value_binding_state` and `form_value_change`; this is enabled with the
+  bare `value_binding` flag and disabled by omitting it
 - defaults to implementing `gpui_form_component::shape::ComponentShape`
   for downstream application crates
 - optionally accepts `shape_crate = crate` for runtime crates that implement

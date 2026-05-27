@@ -6,7 +6,6 @@ gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::color_picker::ColorPicker` backed by `ColorPickerState`.
     pub struct ColorPicker {
         type State = ColorPickerState;
-        new = ColorPickerState::new;
         component = gpui_component::color_picker::ColorPicker;
         value_binding;
         field_suffix = "color_picker";

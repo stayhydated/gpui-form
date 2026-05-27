@@ -1,43 +1,11 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, Expr, LitBool, LitStr, Path, Result, Token, parse_macro_input};
+use syn::{DeriveInput, LitBool, Result, Token, parse_macro_input};
 
-use super::component_shape_constructor::constructor_body_tokens;
+use super::component_shape_metadata::{ComponentShapeMetadata, SHAPE_METADATA_OPTIONS};
 
-#[derive(Debug, Default)]
-struct ComponentShapeMeta {
-    new: Option<Expr>,
-    /// Optional UI component type path.
-    /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
-    /// field annotations do not need to repeat `component = …`.
-    component: Option<Path>,
-    /// Opt generated prototyping code into ComponentValueBinding by default.
-    value_binding: Option<bool>,
-    /// Preferred generated field/helper suffix for prototyping output.
-    field_suffix: Option<LitStr>,
-    /// Runtime crate path that owns `shape::ComponentShape`.
-    ///
-    /// This defaults to the explicit `gpui_form_component` runtime crate for
-    /// downstream users.
-    /// Runtime crates that own a state type can set `shape_crate = crate`.
-    shape_crate: Option<Path>,
-}
-
-fn set_once<T>(
-    slot: &mut Option<T>,
-    value: T,
-    meta: &syn::meta::ParseNestedMeta<'_>,
-    option: &str,
-) -> Result<()> {
-    if slot.replace(value).is_some() {
-        return Err(meta.error(format!("duplicate `{option}` option")));
-    }
-
-    Ok(())
-}
-
-fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
-    let mut shape = ComponentShapeMeta::default();
+fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
+    let mut shape = ComponentShapeMetadata::default();
 
     for attr in attrs
         .iter()
@@ -47,34 +15,32 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
             if meta.path.is_ident("new") {
                 let value = meta.value()?;
                 let new = value.parse()?;
-                set_once(&mut shape.new, new, &meta, "new")
+                shape.set_new(new, &meta.path)
             } else if meta.path.is_ident("component") {
                 let value = meta.value()?;
                 let component = value.parse()?;
-                set_once(&mut shape.component, component, &meta, "component")
+                shape.set_component(component, &meta.path)
             } else if meta.path.is_ident("value_binding") {
-                let enabled = if meta.input.peek(Token![=]) {
+                if meta.input.peek(Token![=]) {
                     let value = meta.value()?;
-                    value.parse::<LitBool>()?.value
-                } else {
-                    true
-                };
-                if shape.value_binding.replace(enabled).is_some() {
-                    return Err(meta.error("duplicate `value_binding` option"));
+                    let value = value.parse::<LitBool>()?;
+                    return Err(ComponentShapeMetadata::reject_value_binding_assignment(
+                        value,
+                    ));
                 }
-                Ok(())
+                shape.enable_value_binding(&meta.path)
             } else if meta.path.is_ident("field_suffix") {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
-                set_once(&mut shape.field_suffix, field_suffix, &meta, "field_suffix")
+                shape.set_field_suffix(field_suffix, &meta.path)
             } else if meta.path.is_ident("shape_crate") {
                 let value = meta.value()?;
                 let shape_crate = value.parse()?;
-                set_once(&mut shape.shape_crate, shape_crate, &meta, "shape_crate")
+                shape.set_shape_crate(shape_crate, &meta.path)
             } else {
-                Err(meta.error(
-                    "unsupported `gpui_form_shape` option; expected `new`, `component`, `value_binding`, `field_suffix`, or `shape_crate`",
-                ))
+                Err(meta.error(format!(
+                    "unsupported `gpui_form_shape` option; expected {SHAPE_METADATA_OPTIONS}",
+                )))
             }
         })?;
     }
@@ -85,39 +51,10 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
 fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
-    let constructor_body = meta
-        .new
-        .as_ref()
-        .map(constructor_body_tokens)
-        .unwrap_or_else(|| quote! { Self::new(window, cx) });
-    let shape_crate = meta
-        .shape_crate
-        .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
+    let constructor_body = meta.constructor_body_or(quote! { Self::new(window, cx) });
+    let shape_crate = meta.shape_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-
-    let component_path_const = if let Some(comp) = meta.component {
-        quote! {
-            const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#comp));
-        }
-    } else {
-        quote! {}
-    };
-    let value_binding_const = if meta.value_binding.unwrap_or(false) {
-        quote! {
-            const VALUE_BINDING: bool = true;
-        }
-    } else {
-        quote! {}
-    };
-    let prototyping_const = if let Some(field_suffix) = meta.field_suffix {
-        quote! {
-            const PROTOTYPING: #shape_crate::shape::ComponentPrototyping =
-                #shape_crate::shape::ComponentPrototyping::new()
-                    .field_suffix(#field_suffix);
-        }
-    } else {
-        quote! {}
-    };
+    let metadata_consts = meta.const_tokens(&shape_crate);
 
     Ok(quote! {
         impl #impl_generics #shape_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
@@ -130,9 +67,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
                 #constructor_body
             }
 
-            #component_path_const
-            #value_binding_const
-            #prototyping_const
+            #metadata_consts
         }
     })
 }
@@ -279,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn test_component_shape_with_value_binding_bool() {
+    fn test_component_shape_rejects_value_binding_bool() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
             #[gpui_form_shape(new = Self::new, value_binding = true)]
@@ -287,17 +222,16 @@ mod tests {
         })
         .unwrap();
 
-        let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
+        let err = expand(input).unwrap_err();
 
         assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "should accept `value_binding = true`"
+            err.to_string().contains("`value_binding` is a flag"),
+            "should explain the concise value_binding syntax: {err}"
         );
     }
 
     #[test]
-    fn test_component_shape_with_disabled_value_binding_bool() {
+    fn test_component_shape_rejects_disabled_value_binding_bool() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
             #[gpui_form_shape(new = Self::new, value_binding = false)]
@@ -305,12 +239,11 @@ mod tests {
         })
         .unwrap();
 
-        let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
+        let err = expand(input).unwrap_err();
 
         assert!(
-            !compact.contains("VALUE_BINDING"),
-            "`value_binding = false` should behave like omitted metadata: {compact}"
+            err.to_string().contains("`value_binding` is a flag"),
+            "should explain that disabling is done by omitting the flag: {err}"
         );
     }
 

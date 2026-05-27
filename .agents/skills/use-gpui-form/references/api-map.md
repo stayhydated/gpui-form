@@ -197,7 +197,7 @@ use gpui_form::GpuiForm;
 use gpui_form_derive::ComponentShape;
 
 #[derive(Clone, Debug, ComponentShape)]
-#[gpui_form_shape(new = Self::new, component = TagsInput)]
+#[gpui_form_shape(component = TagsInput)]
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
@@ -215,12 +215,11 @@ Or declare a reusable shape:
 gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
-        new = gpui_component::input::InputState::new;
         component = gpui_component::input::Input;
     }
 }
 ```
 
 `gpui_form_derive::component_shape!` accepts semicolons or commas between
-options. `value_binding` can be written as a bare flag or as
-`value_binding = true`; `value_binding = false` is equivalent to omitting it.
+options. Use bare `value_binding` to publish shape-level value-binding metadata;
+omit it to leave that metadata disabled.

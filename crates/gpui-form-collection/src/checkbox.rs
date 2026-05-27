@@ -68,7 +68,6 @@ gpui_form_derive::component_shape! {
     /// Form component for a value-bound `gpui_component::checkbox::Checkbox`.
     pub struct Checkbox {
         type State = CheckboxState;
-        new = CheckboxState::new;
         component = gpui_form_collection::checkbox::CheckboxField;
         value_binding;
         field_suffix = "checkbox";

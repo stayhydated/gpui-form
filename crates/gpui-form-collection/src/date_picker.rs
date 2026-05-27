@@ -10,7 +10,6 @@ gpui_form_derive::component_shape! {
     /// Form component for a `gpui_form_component::date_picker::DatePicker`.
     pub struct DatePicker {
         type State = DatePickerState;
-        new = |window, cx| DatePickerState::new(window, cx);
         component = gpui_form_component::date_picker::DatePicker;
         value_binding;
         field_suffix = "date_picker";
@@ -51,7 +50,6 @@ gpui_form_derive::component_shape! {
     /// Form component for a `gpui_form_component::date_picker::DateRangePicker`.
     pub struct DateRangePicker {
         type State = DateRangePickerState;
-        new = |window, cx| DateRangePickerState::new(window, cx);
         component = gpui_form_component::date_picker::DateRangePicker;
         value_binding;
         field_suffix = "date_range_picker";

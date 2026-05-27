@@ -16,7 +16,7 @@ struct TagsState;
 struct DirectTagsState;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(new = BoolBindingTagsState::new, value_binding = true)]
+#[gpui_form_shape(new = BoolBindingTagsState::new, value_binding)]
 struct BoolBindingTagsState;
 
 impl TagsState {

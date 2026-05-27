@@ -282,7 +282,6 @@ use gpui_form_derive::ComponentShape;
 
 #[derive(Clone, Debug, ComponentShape)]
 #[gpui_form_shape(
-    new = Self::new,
     component = TagsInput,
     field_suffix = "input"
 )]
@@ -300,8 +299,8 @@ macro should pass `(window, cx)` for you, or use a full constructor expression
 such as `Self::with_label(window, cx, "tags")` when the expression should be
 emitted as written. If `new` is omitted, the derive calls
 `Self::new(window, cx)`.
-`value_binding` can be written as a bare flag or as `value_binding = true`;
-`value_binding = false` is equivalent to omitting it.
+`value_binding` is a bare flag; omit it when the shape should not publish
+shape-level value-binding metadata.
 
 ### 3. Declare a reusable external shape
 
@@ -333,15 +332,14 @@ optional.
 
 Component shapes can also opt into generated value synchronization by
 implementing `gpui_form_component::shape::ComponentValueBinding<T>` on the shape.
-For one-off fields, add `value_binding` to the component shape options. For a
-reusable component, put that metadata on the shape:
+For one-off fields, use `.value_binding()` in the field's component expression.
+For a reusable component, put bare `value_binding` metadata on the shape:
 
 ```rs
 use gpui_form_derive::ComponentShape;
 
 #[derive(Clone, Debug, ComponentShape)]
 #[gpui_form_shape(
-    new = Self::new,
     component = TagsInput,
     value_binding,
     field_suffix = "input"

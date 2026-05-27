@@ -33,7 +33,7 @@ component_shape! {
     pub struct CommaConfiguredExternalShape {
         type State = ExternalState,
         component = EmailInput,
-        value_binding = true,
+        value_binding,
         field_suffix = "email",
     }
 }

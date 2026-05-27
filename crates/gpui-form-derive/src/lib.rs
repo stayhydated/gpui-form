@@ -22,7 +22,7 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
 /// `#[gpui_form_shape(new = path::to::constructor)]`, a closure, or a direct
 /// constructor expression such as `Self::new(window, cx).with_options()`.
 ///
-/// Supports `new = ...`, `component = ...`, `value_binding`,
+/// Supports `new = ...`, `component = ...`, bare `value_binding`,
 /// `field_suffix = ...`, and `shape_crate = ...`.
 #[proc_macro_derive(ComponentShape, attributes(gpui_form_shape))]
 #[proc_macro_error]

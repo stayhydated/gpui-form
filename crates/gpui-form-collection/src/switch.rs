@@ -68,7 +68,6 @@ gpui_form_derive::component_shape! {
     /// Form component for a value-bound `gpui_component::switch::Switch`.
     pub struct Switch {
         type State = SwitchState;
-        new = SwitchState::new;
         component = gpui_form_collection::switch::SwitchField;
         value_binding;
         field_suffix = "switch";
