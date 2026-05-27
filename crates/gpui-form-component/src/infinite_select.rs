@@ -913,9 +913,9 @@ where
 }
 
 /// Runtime state for a cascading infinite-select field.
-#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
-    feature = "derive",
+    feature = "component-shape",
     gpui_form_shape(
         new = Self::new_default,
         component = gpui_form_component::infinite_select::InfiniteSelectField,
@@ -1305,7 +1305,7 @@ where
     }
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl<T, D> crate::shape::ComponentValueBinding<T> for InfiniteSelect<T, D>
 where
     T: InfiniteSelectValue,

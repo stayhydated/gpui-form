@@ -13,7 +13,7 @@ es-fluent = { features = [ "derive" ], workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
-gpui-form-component = { features = [ "derive" ], workspace = true }
+gpui-form-component = { features = [ "component-shape", "derive" ], workspace = true }
 gpui-form = { features = [ "derive" ], workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-collection-derive = { workspace = true }

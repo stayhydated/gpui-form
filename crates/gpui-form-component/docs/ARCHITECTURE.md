@@ -64,8 +64,8 @@ Responsibilities:
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
 - own the cascading root/child `SelectState`s through `Select`
-- implement the component shape on `Select` itself when the
-  `derive` feature is enabled
+- implement the component shape on `InfiniteSelect` itself when the
+  `component-shape` feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
   `form_fields()` helpers plus `InfiniteSelectField` for form code
 - reconstruct nested enum values from stored paths
@@ -84,7 +84,7 @@ Responsibilities:
 - hold selected date state in `DatePickerState`
 - hold selected manual date-range state in `DateRangePickerState`
 - expose both state types as `ComponentShape`s with value-binding metadata when
-  this crate's `derive` feature is enabled
+  this crate's `component-shape` feature is enabled
 - emit `DatePickerEvent::Change(Option<jiff::civil::Date>)`
 - emit `DateRangePickerEvent::Change(Option<jiff::civil::Date>, Option<jiff::civil::Date>)`
 - format display text with locale-aware ICU4X/Jiff formatting
@@ -102,7 +102,7 @@ Responsibilities:
 
 - hold selected path state in `FilePickerState`
 - expose `FilePickerState` as a `ComponentShape` with value-binding metadata
-  when this crate's `derive` feature is enabled
+  when this crate's `component-shape` feature is enabled
 - emit `FilePickerEvent::Change`, `Cancel`, and `Error`
 - render the control with `gpui-component` buttons, icons, theme tokens, and
   sizing helpers
@@ -155,7 +155,7 @@ Responsibilities:
 
 ### Date picker
 
-1. With the `derive` feature enabled, `#[derive(ComponentShape)]` makes
+1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
    `DatePickerState` and `DateRangePickerState` usable directly in
    `#[gpui_form(...)]`.
 1. Runtime date selection emits `DatePickerEvent::Change`.
@@ -173,7 +173,7 @@ Responsibilities:
    state asynchronously when the platform dialog returns.
 1. Subscribers receive changed path lists, cancellation, or platform-dialog
    errors through `FilePickerEvent`.
-1. With the `derive` feature enabled, `#[derive(ComponentShape)]` makes
+1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
    `FilePickerState` usable directly in `#[gpui_form(...)]`; its value binding
    maps `Change` events to `Vec<std::path::PathBuf>`.
 

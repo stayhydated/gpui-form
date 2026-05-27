@@ -58,6 +58,11 @@ Supported component forms:
 - `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
+The `gpui_form_component` shape examples require that crate's
+`component-shape` feature. Infinite-select field types also need the
+`InfiniteSelect` derive, available through `gpui-form-component`'s `derive`
+feature or by depending on `gpui-form-component-derive` directly.
+
 The explicit key-value form remains available, for example
 `#[gpui_form(component = my::Shape)]`. Both forms parse the expression as
 attribute metadata; generated runtime construction delegates to

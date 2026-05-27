@@ -19,7 +19,7 @@ use jiff::civil::Date as JiffDate;
 
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
 
 /// Localized date display widths for the runtime date picker.
@@ -44,9 +44,9 @@ pub enum DateRangePickerEvent {
 }
 
 /// Use to store the state of the date picker.
-#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
-    feature = "derive",
+    feature = "component-shape",
     gpui_form_shape(
         component = gpui_form_component::date_picker::DatePicker,
         value_binding,
@@ -64,7 +64,7 @@ pub struct DatePickerState {
     _subscriptions: Vec<Subscription>,
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
     type Event = DatePickerEvent;
 
@@ -90,7 +90,7 @@ impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
     }
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl OwnedComponentValueBinding<chrono::NaiveDate> for DatePickerState {}
 
 impl Focusable for DatePickerState {
@@ -102,9 +102,9 @@ impl Focusable for DatePickerState {
 impl EventEmitter<DatePickerEvent> for DatePickerState {}
 
 /// Use to store the state of the date range picker.
-#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
-    feature = "derive",
+    feature = "component-shape",
     gpui_form_shape(
         component = gpui_form_component::date_picker::DateRangePicker,
         value_binding,
@@ -123,7 +123,7 @@ pub struct DateRangePickerState {
     _subscriptions: Vec<Subscription>,
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {
     type Event = DateRangePickerEvent;
 
@@ -155,7 +155,7 @@ impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRange
     }
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl OwnedComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {}
 
 impl Focusable for DateRangePickerState {
@@ -848,7 +848,7 @@ fn jiff_date_from_chrono(date: NaiveDate) -> Option<JiffDate> {
     JiffDate::new(year, month, day).ok()
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 fn jiff_date_range_from_chrono(
     start: JiffDate,
     end: JiffDate,

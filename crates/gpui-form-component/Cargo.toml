@@ -13,7 +13,8 @@ readme = "README.md"
 
 [features]
 default = [  ]
-derive = [ "dep:gpui-form-component-derive", "dep:gpui-form-derive" ]
+component-shape = [ "dep:gpui-form-derive" ]
+derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]
 bon = { workspace = true }

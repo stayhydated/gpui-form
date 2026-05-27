@@ -13,8 +13,15 @@ macros.
   date input
 - `file_picker`: native GPUI path selection rendered with `gpui-component`
   controls, plus a derive-backed `FilePickerState` form shape when the
-  `derive` feature is enabled
+  `component-shape` feature is enabled
 - `shape`: the runtime contract for user-defined component state
+
+## Feature Flags
+
+- `derive`: re-exports `#[derive(InfiniteSelect)]`
+- `component-shape`: enables built-in `ComponentShape` impls and value-binding
+  metadata for `InfiniteSelect`, `DatePickerState`, `DateRangePickerState`, and
+  `FilePickerState`
 
 ## Infinite Select
 
@@ -98,6 +105,9 @@ For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 pub location: Country,
 ```
+
+Enable this crate's `component-shape` feature when using `InfiniteSelect::<_>`
+directly as a form shape.
 
 If a form needs non-default infinite-select options such as search or a depth
 limit, define a small `ComponentShape` wrapper whose `new` function calls
@@ -186,8 +196,8 @@ Use `FilePicker::directories()` or `FilePicker::files_or_directories()` when
 the dialog should select directories instead of files. Multiple selection is
 available through `FilePicker::multiple(true)`.
 
-For `#[derive(GpuiForm)]`, enable this crate's `derive` feature and use the
-state type as the form shape:
+For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
+use the state type as the form shape:
 
 ```rs
 #[gpui_form(gpui_form_component::file_picker::FilePickerState)]

@@ -47,7 +47,8 @@ helpers and component-specific derives explicitly:
 7. Use paths such as `gpui_form_component::file_picker` and
    `gpui_form_component::infinite_select` for helper state.
    Use `gpui_form_component::file_picker::FilePickerState` as a ready-made
-   form shape when `gpui-form-component` has its `derive` feature enabled.
+   form shape when `gpui-form-component` has its `component-shape` feature
+   enabled.
    Directly-reusable collection shapes are also available as
    `gpui_form_collection::date_picker::DatePicker`,
    `gpui_form_collection::date_picker::DateRangePicker`,
@@ -100,7 +101,7 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` or a dedicated `ComponentShape` wrapper for custom search/depth options.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
 - Non-optional component fields default to required holder storage; add `.requires_value(false)` when a component can safely synthesize a missing value.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on a state type or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
 - Prefer `gpui_form_derive::component_shape!` over the runtime helper for reusable or generic wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; options may be separated with semicolons or commas.

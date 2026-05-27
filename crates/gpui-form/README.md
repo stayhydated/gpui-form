@@ -31,9 +31,9 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", branch 
 
 gpui-form = "*"
 
-# Optional: runtime component contracts/helpers, file-picker form shape,
+# Optional: runtime component contracts/helpers, built-in component shapes,
 # and the InfiniteSelect derive
-gpui-form-component = { version = "*", features = ["derive"] }
+gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 
 # Optional: ready-made component shapes and select derive support
 gpui-form-collection = "*"
@@ -114,6 +114,11 @@ the shape expression directly in the attribute:
 - `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
+The `gpui_form_component` shape entries above require that crate's
+`component-shape` feature. Infinite-select field types also need the
+`InfiniteSelect` derive, available through the same crate's `derive` feature or
+by depending on `gpui-form-component-derive` directly.
+
 The explicit key-value form remains available, for example
 `#[gpui_form(component = my::Shape)]`. Both forms parse the expression as
 attribute metadata; generated runtime construction delegates to
@@ -158,6 +163,8 @@ The enum tree must also implement `PartialEq` because the backing
 `gpui-component` select compares selected values.
 Use `gpui-form-component` with its `derive` feature or import
 `gpui-form-component-derive` explicitly.
+Enable `gpui-form-component`'s `component-shape` feature when using
+`InfiniteSelect::<_>` directly as a form shape.
 
 Common struct-level helpers:
 
@@ -388,6 +395,9 @@ FilePicker::new(&picker)
     .prompt("Choose a file")
     .cleanable(true);
 ```
+
+Enable `gpui-form-component`'s `component-shape` feature when using
+`FilePickerState` directly in `#[gpui_form(...)]`.
 
 ## Date Conversion
 

@@ -20,7 +20,7 @@ use gpui_component::{
 };
 
 use crate::i18n::FilePickerText;
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
 
 /// Which path kinds a [`FilePicker`] should ask GPUI to select.
@@ -85,9 +85,9 @@ pub enum FilePickerEvent {
 }
 
 /// State for a native file picker control.
-#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
-    feature = "derive",
+    feature = "component-shape",
     gpui_form_shape(
         component = gpui_form_component::file_picker::FilePicker,
         value_binding,
@@ -101,7 +101,7 @@ pub struct FilePickerState {
     last_error: Option<SharedString>,
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
     type Event = FilePickerEvent;
 
@@ -128,7 +128,7 @@ impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
     }
 }
 
-#[cfg(feature = "derive")]
+#[cfg(feature = "component-shape")]
 impl OwnedComponentValueBinding<Vec<PathBuf>> for FilePickerState {}
 
 impl Focusable for FilePickerState {
