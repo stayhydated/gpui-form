@@ -7,7 +7,7 @@ use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
 gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::input::Input` backed by `InputState`.
     ///
-    /// Use `Input::<_>` in `#[gpui_form(component = ...)]` so the derive
+    /// Use `Input::<_>` in `#[gpui_form(...)]` so the derive
     /// resolves `_` to the field's form-side type.
     pub struct Input<T = String>
     where

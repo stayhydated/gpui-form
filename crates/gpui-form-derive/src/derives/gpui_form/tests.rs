@@ -735,6 +735,73 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn test_component_shorthand_generates_shape_fields() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(gpui_form_collection::input::Input::<_>, default = "test@example.com")]
+                email: String,
+
+                #[gpui_form(gpui_form_collection::switch::Switch.requires_value(false))]
+                enabled: bool,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("pubemail_input:::gpui::Entity<"),
+            "positional component syntax should generate a shape-backed field: {compact}"
+        );
+        assert!(
+            compact.contains("Into::into(\"test@example.com\")"),
+            "positional component syntax should compose with key-value field helpers"
+        );
+        assert!(
+            compact.contains("pubenabled:bool"),
+            "positional component metadata methods should still affect holder optionality"
+        );
+        assert!(
+            compact.contains("with_requires_value(false)"),
+            "positional component metadata methods should be stored in shape metadata"
+        );
+    }
+
+    #[test]
+    fn test_component_shorthand_rejects_duplicate_component_expression() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(gpui_form_collection::input::Input::<_>, component = crate::Input)]
+                email: String,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("multiplecomponentexpressionswereprovided"),
+            "duplicate component syntax should produce an actionable error: {compact}"
+        );
+    }
+
+    #[test]
     fn test_field_variant_metadata_records_form_value_holder_conversion_shape() {
         let tokens = quote! {
             #[derive(GpuiForm)]

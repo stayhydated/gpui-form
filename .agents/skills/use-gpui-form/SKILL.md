@@ -36,11 +36,14 @@ helpers and component-specific derives explicitly:
 5. Use generated types named from the source struct, such as
    `UserProfileFormFields`, `UserProfileFormComponents`, and
    `UserProfileFormValueHolder`.
-6. Use `#[gpui_form(default = ...)]` for initial form values,
+6. Put the component shape directly in `#[gpui_form(...)]`, use
+   `#[gpui_form(default = ...)]` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
-   `#[gpui_form(type = ..., from = ..., into = ..., component = ...)]` when the
-   UI edits a form-side type that differs from the model field. Text input
-   prototyping parses non-`String` form-side types with `FromStr`.
+   `#[gpui_form(Shape, type = ..., from = ..., into = ...)]` when the
+   UI edits a form-side type that differs from the model field. The explicit
+   `component = ...` key remains available when it reads better in a multi-line
+   attribute. Text input prototyping parses non-`String` form-side types with
+   `FromStr`.
 7. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
@@ -80,14 +83,14 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::select::Select::<_>.requires_value(false),
+        gpui_form_collection::select::Select::<_>.requires_value(false),
         default = Country::France
     )]
     pub country: Country,
@@ -97,11 +100,11 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `component = gpui_form_component::infinite_select::InfiniteSelect::<_>` or a dedicated `ComponentShape` wrapper for custom search/depth options.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree, then use `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` or a dedicated `ComponentShape` wrapper for custom search/depth options.
 - Non-optional component fields default to required holder storage; add `.requires_value(false)` when a component can safely synthesize a missing value.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on a state type or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
 - Prefer `gpui_form_derive::component_shape!` over the runtime helper for reusable or generic wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; options may be separated with semicolons or commas.
-- For value-bound component shapes, implement `gpui_form_component::shape::ComponentValueBinding<T>` on the shape and either add bare `value_binding` metadata to the shape declaration or use `.value_binding()` in the `component = Shape` expression when the shape does not already publish `VALUE_BINDING`; the trait's associated `Event` is the actual emitted event enum, external wrappers map upstream events to `FormValueChange<T>`, and owned states can mark the shape with `OwnedComponentValueBinding<T>`.
+- For value-bound component shapes, implement `gpui_form_component::shape::ComponentValueBinding<T>` on the shape and either add bare `value_binding` metadata to the shape declaration or use `.value_binding()` in the field shape expression when the shape does not already publish `VALUE_BINDING`; the trait's associated `Event` is the actual emitted event enum, external wrappers map upstream events to `FormValueChange<T>`, and owned states can mark the shape with `OwnedComponentValueBinding<T>`.
 - Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection components already publish suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`, `file_picker`, and
   `otp_input`, and shapes without metadata fall back to the shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.

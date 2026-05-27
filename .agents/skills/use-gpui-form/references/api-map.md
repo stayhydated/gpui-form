@@ -41,24 +41,25 @@ Useful runtime/helper paths:
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(component = gpui_form_collection::input::Input::<_>)]
-#[gpui_form(component = gpui_form_collection::select::Select::<_>)]
-#[gpui_form(component = gpui_form_collection::combobox::Combobox::<_>)]
-#[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]
-#[gpui_form(component = gpui_form_collection::slider::Slider)]
-#[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]
-#[gpui_form(component = gpui_form_collection::date_picker::DatePicker)]
-#[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
-#[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]
-#[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
-#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
-#[gpui_form(component = gpui_form_collection::switch::Switch)]
-#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(gpui_form_collection::input::Input::<_>)]
+#[gpui_form(gpui_form_collection::select::Select::<_>)]
+#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]
+#[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]
+#[gpui_form(gpui_form_collection::slider::Slider)]
+#[gpui_form(gpui_form_collection::color_picker::ColorPicker)]
+#[gpui_form(gpui_form_collection::date_picker::DatePicker)]
+#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]
+#[gpui_form(gpui_form_collection::file_picker::FilePicker)]
+#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]
+#[gpui_form(gpui_form_collection::checkbox::Checkbox)]
+#[gpui_form(gpui_form_collection::switch::Switch)]
+#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(my::Shape)]
+#[gpui_form(my::Shape.component(my::ui::Widget))]
+#[gpui_form(my::Shape.value_binding())]
+#[gpui_form(my::Shape.field_suffix("input"))]
+#[gpui_form(my::Shape.requires_value(false))]
 #[gpui_form(component = my::Shape)]
-#[gpui_form(component = my::Shape.component(my::ui::Widget))]
-#[gpui_form(component = my::Shape.value_binding())]
-#[gpui_form(component = my::Shape.field_suffix("input"))]
-#[gpui_form(component = my::Shape.requires_value(false))]
 ```
 
 Common field attributes:
@@ -102,7 +103,7 @@ Common struct attributes:
   `ComponentShape` wrapper when search or depth limits are needed.
 - Use a component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` when a form field needs those runtimes.
-- Use `component = my::Shape` when the app owns the state/widget contract.
+- Use `#[gpui_form(my::Shape)]` when the app owns the state/widget contract.
 - Treat the component expression and chained generic metadata methods as derive
   metadata; runtime construction still uses `ComponentShape::new`.
 - Non-optional component fields default to required holder storage; add
@@ -160,7 +161,7 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+    #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
     pub location: Country,
 }
 ```
@@ -176,10 +177,10 @@ model stores:
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
+        crate::DatePickerShape,
         type = chrono::NaiveDate,
         from = to_form_date,
-        into = to_model_timestamp,
-        component = crate::DatePickerShape
+        into = to_model_timestamp
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -202,7 +203,7 @@ pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(component = TagsInputState)]
+    #[gpui_form(TagsInputState)]
     pub tags: Option<Vec<String>>,
 }
 ```

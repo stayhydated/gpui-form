@@ -45,6 +45,9 @@ that crate's `derive` feature is enabled.
 1. Flatten `cfg_attr` wrappers so downstream parsing sees effective
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
+   Field-level component shapes may be written as a positional expression
+   (`#[gpui_form(my::Shape)]`) or as `component = my::Shape`; the parser rejects
+   duplicate component expressions before codegen.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.

@@ -7,7 +7,7 @@ layer used by `gpui-form-derive`.
 
 This crate exists to:
 
-1. parse `component = Shape` expressions into a typed internal model
+1. parse component shape expressions into a typed internal model
 1. emit generated `FormFields` and `FormComponents` tokens from a
    `ComponentShape`
 1. emit schema metadata aligned with the same component-shape contract
@@ -25,13 +25,14 @@ crate.
 
 ## Parse-Time Component Model
 
-`components.rs` accepts component shape annotations:
+`components.rs` models component shape expressions accepted by the derive:
 
-- `component = my::Shape`
-- `component = my::Shape.component(my::Widget)`
-- `component = my::Shape.value_binding()`
-- `component = my::Shape.field_suffix("input")`
-- `component = my::Shape.requires_value(false)`
+- `#[gpui_form(my::Shape)]`
+- `#[gpui_form(my::Shape.component(my::Widget))]`
+- `#[gpui_form(my::Shape.value_binding())]`
+- `#[gpui_form(my::Shape.field_suffix("input"))]`
+- `#[gpui_form(my::Shape.requires_value(false))]`
+- `#[gpui_form(component = my::Shape)]`
 
 Important parse-time responsibilities:
 - expression syntax uses a shape path plus optional generic component metadata

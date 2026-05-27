@@ -25,17 +25,19 @@ pub trait ComponentShape {
     /// When set here – via `gpui_form_derive::component_shape!`,
     /// [`component_shape!`], or `#[gpui_form_shape(component = …)]` – the
     /// prototyping code generator can emit `Component::new(&entity)` without
-    /// requiring `component = …` to be repeated on every field annotation.
+    /// requiring component UI metadata to be repeated on every field
+    /// annotation.
     ///
-    /// A `component = …` on the field attribute always takes precedence.
+    /// A `.component(…)` override on the field shape expression always takes
+    /// precedence.
     const COMPONENT_PATH: Option<&'static str> = None;
 
     /// Whether generated prototyping code should wire this component shape
     /// through [`ComponentValueBinding`] by default.
     ///
-    /// Field-level `component = Shape.value_binding()` still opts in
-    /// explicitly. This shape-level flag is useful when the component's derive
-    /// or reusable shape owns the metadata and each field should inherit it.
+    /// Field-level `Shape.value_binding()` still opts in explicitly. This
+    /// shape-level flag is useful when the component's derive or reusable
+    /// shape owns the metadata and each field should inherit it.
     const VALUE_BINDING: bool = false;
 
     /// Metadata used by prototyping generators.
@@ -100,7 +102,7 @@ impl<T> FormValueChange<T> {
 /// Implement this alongside [`ComponentShape`] when generated
 /// prototyping code should seed the component from the form value holder and
 /// subscribe to component events. The form derive opts into this path either
-/// with `component = Shape.value_binding()` or by inheriting
+/// with `Shape.value_binding()` or by inheriting
 /// [`ComponentShape::VALUE_BINDING`] from the shape.
 pub trait ComponentValueBinding<T>: ComponentShape
 where

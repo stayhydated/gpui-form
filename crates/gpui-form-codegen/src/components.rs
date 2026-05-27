@@ -98,8 +98,9 @@ impl ShapeOptions {
             },
             _ => {
                 return Err(DarlingError::custom(format!(
-                    "unknown component metadata `{method}`; supported methods are \
-                     `value_binding`, `component`, `field_suffix`, and `requires_value`"
+                    "unknown component metadata `{method}`; supported generic methods are \
+                     `value_binding`, `component`, `field_suffix`, and `requires_value`; \
+                     put component-specific options in a dedicated ComponentShape wrapper"
                 ))
                 .with_span(method));
             },

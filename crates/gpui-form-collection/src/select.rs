@@ -37,7 +37,7 @@ where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
-    /// Starts a bon-style `#[gpui_form(component = ...)]` option chain.
+    /// Starts a bon-style option chain for `#[gpui_form(...)]`.
     #[builder(start_fn = builder, finish_fn = build)]
     pub fn options(
         #[builder(default)] searchable: bool,

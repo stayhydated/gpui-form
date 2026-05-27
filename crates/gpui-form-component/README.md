@@ -92,7 +92,7 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 pub location: Country,
 ```
 
@@ -197,7 +197,7 @@ cargo run -p gpui-form-component-story
 ## Component Shapes
 
 `shape::ComponentShape` is the contract used by
-`#[gpui_form(component = Shape)]`.
+`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -248,7 +248,7 @@ so reusable shapes should generally use `gpui_form_derive::component_shape!`.
 For component shapes that should participate in generated prototyping
 subscriptions, implement `shape::ComponentValueBinding<T>` for the same
 shape and either set `value_binding` on the shape metadata or add
-`.value_binding()` to the `component = Shape` expression for a single field. The
+`.value_binding()` to the field's shape expression for a single field. The
 binding seeds state from the current form value and maps component events
 to `FormValueChange<T>`. The binding's associated `Event` type is the actual
 event enum emitted by the state. Components that own their state can expose

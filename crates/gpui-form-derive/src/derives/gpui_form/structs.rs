@@ -210,19 +210,16 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
     match expr {
         Expr::Assign(ExprAssign { left, right, .. }) => parse_assignment(field, *left, *right),
         Expr::Path(path) => parse_path_keyword(field, path),
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => Err(
-            DarlingError::custom("component(...) syntax was removed; use `component = ...`")
-                .with_span(&call),
-        ),
+        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
+            Err(DarlingError::custom(
+                "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
+                 `component = my::Shape`",
+            )
+            .with_span(&call))
+        },
         _ => {
-            if field.component.is_some() {
-                return Err(DarlingError::custom(
-                    "expected a valid `gpui_form` key-value pair or one component expression",
-                ));
-            }
-
-            field.component = Some(Components::from_expr(&expr)?);
-            Ok(())
+            let component = Components::from_expr(&expr)?;
+            set_component(field, component, &expr)
         },
     }
 }
@@ -248,8 +245,8 @@ fn parse_meta_name_value(
             Ok(())
         },
         "component" => {
-            field.component = Some(parse_component_expr(rhs)?);
-            Ok(())
+            let component = parse_component_expr(rhs)?;
+            set_component(field, component, &name_value.path)
         },
         "default" => {
             field.default = Some(DefaultExpr::from_expr(&rhs)?);
@@ -283,8 +280,8 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
             Ok(())
         },
         "component" => {
-            field.component = Some(parse_component_expr(rhs)?);
-            Ok(())
+            let component = parse_component_expr(rhs)?;
+            set_component(field, component, &lhs)
         },
         "default" => {
             field.default = Some(DefaultExpr::from_expr(&rhs)?);
@@ -303,7 +300,8 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
 fn parse_meta_list(_field: &mut ComponentField, list: MetaList) -> darling::Result<()> {
     if list.path.is_ident("component") {
         return Err(DarlingError::custom(
-            "component(...) syntax was removed; use `component = ...`",
+            "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
+             `component = my::Shape`",
         )
         .with_span(&list.path));
     }
@@ -335,7 +333,7 @@ fn parse_meta_path_keyword(field: &mut ComponentField, path: syn::Path) -> darli
 
     if key == "component" {
         return Err(DarlingError::custom(
-            "`component` must include a value, for example `component = ...`",
+            "`component` must include a value, for example `component = my::Shape`",
         ));
     }
 
@@ -364,7 +362,7 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
 
     if key == "component" {
         return Err(DarlingError::custom(
-            "`component` must include a value, for example `component = ...`",
+            "`component` must include a value, for example `component = my::Shape`",
         ));
     }
 
@@ -372,25 +370,40 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
 }
 
 fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling::Result<()> {
-    if field.component.is_some() {
-        return Err(DarlingError::custom(
-            "multiple component expressions were provided",
-        ));
-    }
-
-    field.component = Some(Components::from_expr(&expr)?);
-    Ok(())
+    let component = Components::from_expr(&expr)?;
+    set_component(field, component, &expr)
 }
 
 fn parse_component_expr(expr: Expr) -> darling::Result<Components> {
     let expr = unwrap_grouped_expr(expr);
     match expr {
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => Err(
-            DarlingError::custom("component(...) syntax was removed; use `component = ...`")
-                .with_span(&call),
-        ),
+        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
+            Err(DarlingError::custom(
+                "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
+                 `component = my::Shape`",
+            )
+            .with_span(&call))
+        },
         _ => Components::from_expr(&expr),
     }
+}
+
+fn set_component<T: syn::spanned::Spanned>(
+    field: &mut ComponentField,
+    component: Components,
+    span: &T,
+) -> darling::Result<()> {
+    if field.component.is_some() {
+        return Err(DarlingError::custom(
+            "multiple component expressions were provided; keep a single shape \
+             expression, such as `#[gpui_form(my::Shape)]` or \
+             `#[gpui_form(component = my::Shape)]`",
+        )
+        .with_span(span));
+    }
+
+    field.component = Some(component);
+    Ok(())
 }
 
 fn parse_bool_expr(expr: &Expr) -> darling::Result<bool> {

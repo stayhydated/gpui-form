@@ -34,8 +34,8 @@ schema metadata:
 
 ### `shape`
 
-`ComponentShape` is the contract targeted by `component = Shape`
-expressions.
+`ComponentShape` is the contract targeted by field shape expressions such as
+`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`.
 
 Responsibilities:
 

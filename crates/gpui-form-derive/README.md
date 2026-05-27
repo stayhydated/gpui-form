@@ -29,39 +29,40 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     pub username: Option<String>,
 
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     pub age: Option<u32>,
 }
 ```
 
 Supported component forms:
 
-- `#[gpui_form(component = my::Shape)]`
-- `#[gpui_form(component = my::Shape.component(my::ui::Widget))]`
-- `#[gpui_form(component = my::Shape.value_binding())]`
-- `#[gpui_form(component = my::Shape.field_suffix("input"))]`
-- `#[gpui_form(component = my::Shape.requires_value(false))]`
-- `#[gpui_form(component = gpui_form_collection::input::Input::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::select::Select::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::combobox::Combobox::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]`
-- `#[gpui_form(component = gpui_form_collection::switch::Switch)]`
-- `#[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]`
-- `#[gpui_form(component = gpui_form_collection::slider::Slider)]`
-- `#[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]`
-- `#[gpui_form(component = gpui_form_collection::date_picker::DatePicker)]`
-- `#[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]`
-- `#[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]`
-- `#[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]`
-- `#[gpui_form(component = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
+- `#[gpui_form(my::Shape)]`
+- `#[gpui_form(my::Shape.component(my::ui::Widget))]`
+- `#[gpui_form(my::Shape.value_binding())]`
+- `#[gpui_form(my::Shape.field_suffix("input"))]`
+- `#[gpui_form(my::Shape.requires_value(false))]`
+- `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
+- `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
+- `#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]`
+- `#[gpui_form(gpui_form_collection::checkbox::Checkbox)]`
+- `#[gpui_form(gpui_form_collection::switch::Switch)]`
+- `#[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]`
+- `#[gpui_form(gpui_form_collection::slider::Slider)]`
+- `#[gpui_form(gpui_form_collection::color_picker::ColorPicker)]`
+- `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
+- `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
+- `#[gpui_form(gpui_form_collection::file_picker::FilePicker)]`
+- `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
+- `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
-The expression is parsed as attribute metadata; generated runtime construction
-delegates to `ComponentShape::new`. `gpui-form` treats every component as a
-custom shape contract and does not inspect the shape path for built-in
-component categories.
+The explicit key-value form remains available, for example
+`#[gpui_form(component = my::Shape)]`. Both forms parse the expression as
+attribute metadata; generated runtime construction delegates to
+`ComponentShape::new`. `gpui-form` treats every component as a custom shape
+contract and does not inspect the shape path for built-in component categories.
 
 Supporting field attributes:
 

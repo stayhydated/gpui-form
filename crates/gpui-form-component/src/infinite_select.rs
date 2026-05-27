@@ -965,7 +965,7 @@ where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    /// Starts a bon-style `#[gpui_form(component = ...)]` option chain.
+    /// Starts a bon-style option chain for `#[gpui_form(...)]`.
     #[builder(start_fn = builder, finish_fn = build)]
     pub fn options(
         #[builder(default)] searchable: bool,
