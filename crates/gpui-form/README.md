@@ -280,7 +280,11 @@ use gpui_form::GpuiForm;
 use gpui_form_derive::ComponentShape;
 
 #[derive(Clone, Debug, ComponentShape)]
-#[gpui_form_shape(new = Self::new, component = TagsInput, field_suffix = "input")]
+#[gpui_form_shape(
+    new = Self::new,
+    component = TagsInput,
+    field_suffix = "input"
+)]
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
@@ -289,6 +293,11 @@ pub struct PostEditor {
     pub tags: Option<Vec<String>>,
 }
 ```
+
+`new` accepts a constructor expression, so use a function path when the state
+already has the right `fn(&mut Window, &mut Context<'_, State>) -> State`
+signature or a closure when the shape needs to bake in local options. If `new`
+is omitted, the derive calls `Self::new(window, cx)`.
 
 ### 3. Declare a reusable external shape
 
@@ -312,6 +321,9 @@ pub struct ContactForm {
 `component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
+It uses the same `new`, `component`, `value_binding`, `field_suffix`, and
+`shape_crate` metadata as `#[derive(ComponentShape)]`, plus `type State = ...`
+for the wrapped external state type.
 
 Component shapes can also opt into generated value synchronization by
 implementing `gpui_form_component::shape::ComponentValueBinding<T>` on the shape.

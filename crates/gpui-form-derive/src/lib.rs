@@ -19,10 +19,11 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
 /// Derive macro for component shape metadata.
 ///
 /// By default it calls `Self::new(window, cx)`. Override the constructor with:
-/// `#[gpui_form_shape(new = path::to::constructor)]`.
+/// `#[gpui_form_shape(new = path::to::constructor)]` or a constructor
+/// expression such as a closure.
 ///
-/// Supports `new = ...`, `component = ...`, `value_binding`, and
-/// `field_suffix = ...`.
+/// Supports `new = ...`, `component = ...`, `value_binding`,
+/// `field_suffix = ...`, and `shape_crate = ...`.
 #[proc_macro_derive(ComponentShape, attributes(gpui_form_shape))]
 #[proc_macro_error]
 pub fn derive_component_shape(input: TokenStream) -> TokenStream {

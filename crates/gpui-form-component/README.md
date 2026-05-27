@@ -204,20 +204,21 @@ For common external widgets, prefer the reusable shapes in
 shape when the application owns the component or when a collection shape is not
 specific enough.
 
-You can declare a reusable shape with the helper macro:
+You can declare a reusable wrapper shape with the `gpui-form-derive`
+function-like macro:
 
 ```rs
-gpui_form_component::component_shape!(
-    pub EmailInputShape,
-    state = gpui_component::input::InputState,
-    new = gpui_component::input::InputState::new,
-    component = gpui_component::input::Input,
-    field_suffix = "input",
-);
+gpui_form_derive::component_shape! {
+    pub struct EmailInputShape {
+        type State = gpui_component::input::InputState;
+        new = gpui_component::input::InputState::new;
+        component = gpui_component::input::Input;
+        field_suffix = "input";
+    }
+}
 ```
 
-Or, with `gpui-form-derive`, implement the same contract directly on a state
-type:
+Or derive the same contract directly on a state type:
 
 ```rs
 #[derive(gpui_form_derive::ComponentShape)]
@@ -229,6 +230,10 @@ type:
 )]
 pub struct TagsState;
 ```
+
+In both forms, `new` accepts a constructor expression and is called with
+`(window, cx)`. Use a function path for a state constructor with the exact
+signature, or a closure when the shape needs to capture fixed options.
 
 For component shapes that should participate in generated prototyping
 subscriptions, implement `shape::ComponentValueBinding<T>` for the same
@@ -242,10 +247,11 @@ their own event enum and mark the shape with
 upstream event type and convert it in `form_value_change`.
 
 Reusable shapes can also publish `shape::ComponentPrototyping` metadata.
-Set `field_suffix = "..."` through `component_shape!` or
-`#[gpui_form_shape(...)]` so prototyping generators can emit names such as
-`email_input` without deriving that suffix from the shape type. Generated
-value-binding scaffolds can use `ComponentStateOf`,
+Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`,
+the runtime `component_shape!` helper, or `#[gpui_form_shape(...)]` so
+prototyping generators can emit names such as `email_input` without deriving
+that suffix from the shape type. Generated value-binding scaffolds can use
+`ComponentStateOf`,
 `ComponentEventOf`, `seed_value_binding_state`, and `form_value_change` to
 avoid repeating associated-type projections at every call site.
 

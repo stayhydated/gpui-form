@@ -133,6 +133,8 @@ pub struct TagsState;
 ```
 
 By default, the generated implementation calls `Self::new(window, cx)`.
+`new = ...` accepts a constructor expression, including a function path or
+closure, and the generated implementation calls it with `(window, cx)`.
 `component = ...` populates `ComponentShape::COMPONENT_PATH`.
 `value_binding` sets `ComponentShape::VALUE_BINDING = true`, so generated
 prototyping code can inherit the shape's `ComponentValueBinding<T>`
@@ -140,6 +142,8 @@ contract without repeating `value_binding` on every field.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
+`shape_crate = ...` overrides the runtime crate path when a crate needs to
+target its own local `shape::ComponentShape` module.
 
 ## `component_shape!`
 
@@ -165,6 +169,8 @@ gpui_form_derive::component_shape! {
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation; the
 caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
+It accepts the same metadata keys as `#[derive(ComponentShape)]`, with
+`type State = ...` supplying the wrapped state type.
 
 ## Feature Flags
 

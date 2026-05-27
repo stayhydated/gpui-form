@@ -36,7 +36,7 @@ Useful runtime/helper paths:
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
-- `gpui_form_component::component_shape!`
+- `gpui_form_derive::component_shape!`
 
 ## Supported Component Syntax
 
@@ -207,13 +207,16 @@ pub struct PostEditor {
 }
 ```
 
+`new` accepts a constructor path or closure and is called with `(window, cx)`.
+
 Or declare a reusable shape:
 
 ```rust
-gpui_form_component::component_shape!(
-    pub EmailInputShape,
-    state = gpui_component::input::InputState,
-    new = gpui_component::input::InputState::new,
-    component = gpui_component::input::Input,
-);
+gpui_form_derive::component_shape! {
+    pub struct EmailInputShape {
+        type State = gpui_component::input::InputState;
+        new = gpui_component::input::InputState::new;
+        component = gpui_component::input::Input;
+    }
+}
 ```

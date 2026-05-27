@@ -1,41 +1,87 @@
-use darling::{FromAttributes, util::Flag};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, Path, parse_macro_input};
+use syn::{DeriveInput, Expr, LitStr, Path, Result, Token, parse_macro_input};
 
-#[derive(Debug, Default, FromAttributes)]
-#[darling(attributes(gpui_form_shape))]
+#[derive(Debug, Default)]
 struct ComponentShapeMeta {
-    #[darling(default)]
-    new: Option<Path>,
+    new: Option<Expr>,
     /// Optional UI component type path.
     /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
     /// field annotations do not need to repeat `component = …`.
-    #[darling(default)]
     component: Option<Path>,
     /// Opt generated prototyping code into ComponentValueBinding by default.
-    #[darling(default)]
-    value_binding: Flag,
+    value_binding: bool,
     /// Preferred generated field/helper suffix for prototyping output.
-    #[darling(default)]
-    field_suffix: Option<String>,
+    field_suffix: Option<LitStr>,
     /// Runtime crate path that owns `shape::ComponentShape`.
     ///
     /// This defaults to the explicit `gpui_form_component` runtime crate for
     /// downstream users.
     /// Runtime crates that own a state type can set `shape_crate = crate`.
-    #[darling(default)]
     shape_crate: Option<Path>,
 }
 
-fn parse_meta(attrs: &[syn::Attribute]) -> darling::Result<ComponentShapeMeta> {
-    ComponentShapeMeta::from_attributes(attrs)
+fn set_once<T>(
+    slot: &mut Option<T>,
+    value: T,
+    meta: &syn::meta::ParseNestedMeta<'_>,
+    option: &str,
+) -> Result<()> {
+    if slot.replace(value).is_some() {
+        return Err(meta.error(format!("duplicate `{option}` option")));
+    }
+
+    Ok(())
 }
 
-fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
+fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
+    let mut shape = ComponentShapeMeta::default();
+
+    for attr in attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("gpui_form_shape"))
+    {
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("new") {
+                let value = meta.value()?;
+                let new = value.parse()?;
+                set_once(&mut shape.new, new, &meta, "new")
+            } else if meta.path.is_ident("component") {
+                let value = meta.value()?;
+                let component = value.parse()?;
+                set_once(&mut shape.component, component, &meta, "component")
+            } else if meta.path.is_ident("value_binding") {
+                if meta.input.peek(Token![=]) {
+                    return Err(meta.error("`value_binding` does not take a value"));
+                }
+                if shape.value_binding {
+                    return Err(meta.error("duplicate `value_binding` option"));
+                }
+                shape.value_binding = true;
+                Ok(())
+            } else if meta.path.is_ident("field_suffix") {
+                let value = meta.value()?;
+                let field_suffix = value.parse()?;
+                set_once(&mut shape.field_suffix, field_suffix, &meta, "field_suffix")
+            } else if meta.path.is_ident("shape_crate") {
+                let value = meta.value()?;
+                let shape_crate = value.parse()?;
+                set_once(&mut shape.shape_crate, shape_crate, &meta, "shape_crate")
+            } else {
+                Err(meta.error(
+                    "unsupported `gpui_form_shape` option; expected `new`, `component`, `value_binding`, `field_suffix`, or `shape_crate`",
+                ))
+            }
+        })?;
+    }
+
+    Ok(shape)
+}
+
+fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
-    let new_path = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
+    let new_expr = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
     let shape_crate = meta
         .shape_crate
         .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
@@ -48,7 +94,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
     } else {
         quote! {}
     };
-    let value_binding_const = if meta.value_binding.is_present() {
+    let value_binding_const = if meta.value_binding {
         quote! {
             const VALUE_BINDING: bool = true;
         }
@@ -56,7 +102,6 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
         quote! {}
     };
     let prototyping_const = if let Some(field_suffix) = meta.field_suffix {
-        let field_suffix = syn::LitStr::new(&field_suffix, proc_macro2::Span::call_site());
         quote! {
             const PROTOTYPING: #shape_crate::shape::ComponentPrototyping =
                 #shape_crate::shape::ComponentPrototyping::new()
@@ -74,7 +119,7 @@ fn expand(input: DeriveInput) -> darling::Result<TokenStream> {
                 window: &mut ::gpui::Window,
                 cx: &mut ::gpui::Context<'_, Self::State>,
             ) -> Self::State {
-                #new_path(window, cx)
+                (#new_expr)(window, cx)
             }
 
             #component_path_const
@@ -88,7 +133,7 @@ pub fn from(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match expand(input) {
         Ok(tokens) => tokens.into(),
-        Err(err) => err.write_errors().into(),
+        Err(err) => err.to_compile_error().into(),
     }
 }
 
@@ -118,7 +163,7 @@ mod tests {
             "should implement ComponentShape for derived type"
         );
         assert!(
-            compact.contains("Self::new(window,cx)"),
+            compact.contains("(Self::new)(window,cx)"),
             "should default to Self::new constructor"
         );
     }
@@ -136,7 +181,7 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("crate::state::build(window,cx)"),
+            compact.contains("(crate::state::build)(window,cx)"),
             "should use explicit new path from attribute"
         );
         assert!(
@@ -164,6 +209,24 @@ mod tests {
         assert!(
             compact.contains("crate::ui::TagsInput"),
             "should embed the component path as a string"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_with_constructor_expression() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = |window, cx| Self::with_mode(window, cx, Mode::Tags))]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("(|window,cx|Self::with_mode(window,cx,Mode::Tags))(window,cx)"),
+            "should allow derive constructors to be full expressions"
         );
     }
 
@@ -218,6 +281,23 @@ mod tests {
         assert!(
             compact.contains("implcrate::shape::ComponentShapeforTagsState"),
             "should allow runtime crates to implement their local shape trait path"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_rejects_duplicate_options() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::new, new = crate::state::build)]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let err = expand(input).unwrap_err();
+
+        assert!(
+            err.to_string().contains("duplicate `new` option"),
+            "should report the duplicated option name: {err}"
         );
     }
 }

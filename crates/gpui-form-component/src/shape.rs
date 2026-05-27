@@ -5,8 +5,10 @@
 //! - `FormFields` entity state type
 //! - `FormComponents` constructor function body
 //!
-//! Prefer using [`component_shape!`] or `#[derive(gpui_form_derive::ComponentShape)]`
-//! to define shape types.
+//! Prefer using `gpui_form_derive::component_shape!` for reusable wrapper
+//! shapes or `#[derive(gpui_form_derive::ComponentShape)]` for owned state
+//! types. This module also exports [`component_shape!`] for simple
+//! runtime-local shapes.
 
 /// Shape contract for user-defined components.
 ///
@@ -20,10 +22,10 @@ pub trait ComponentShape {
 
     /// Optional path to the UI component type (e.g. `"TagsInput"`).
     ///
-    /// When set here – via [`component_shape!`] `component = …` or
-    /// `#[gpui_form_shape(component = …)]` – the prototyping code generator
-    /// can emit `Component::new(&entity)` without requiring `component = …`
-    /// to be repeated on every field annotation.
+    /// When set here – via `gpui_form_derive::component_shape!`,
+    /// [`component_shape!`], or `#[gpui_form_shape(component = …)]` – the
+    /// prototyping code generator can emit `Component::new(&entity)` without
+    /// requiring `component = …` to be repeated on every field annotation.
     ///
     /// A `component = …` on the field attribute always takes precedence.
     const COMPONENT_PATH: Option<&'static str> = None;
