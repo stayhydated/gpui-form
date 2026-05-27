@@ -61,10 +61,10 @@ The fallback suffix strips shape/state wrappers and removes duplicated
 field-name prefixes before falling back to `"shape"`. Explicit prototyping
 suffix metadata is normalized against the field name the same way.
 
-`requires_value` is emitted by `gpui-form-codegen` from the generic
-shape-contract policy. Non-optional shape-backed fields require a value by
-default; field syntax can opt out with `.requires_value(false)` when the
-component can safely synthesize a missing value.
+`requires_value` is emitted by `gpui-form-codegen` from
+`<Shape as ComponentShape>::REQUIRES_VALUE`. Non-optional shape-backed fields
+inherit the reusable shape's policy, so components that can synthesize missing
+values define that once on the shape.
 
 ## Data Flow
 

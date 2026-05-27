@@ -93,7 +93,7 @@ pub struct UserProfile {
     pub age: Option<u32>,
 
     #[gpui_form(
-        gpui_form_collection::select::Select::<_>.requires_value(false),
+        gpui_form_collection::select::Select::<_>,
         default = Country::France
     )]
     pub country: Country,
@@ -104,9 +104,10 @@ Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
-- Non-optional component fields default to required holder storage; add `.requires_value(false)` when a component can safely synthesize a missing value.
+- Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`.
+- Put `requires_value = false` on reusable wrapper or owned component shapes that can synthesize missing values; consuming field attributes do not accept `.requires_value(...)`.
 - For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on the rendered component with `state = ...`, or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
-- Use `gpui_form_derive::component_shape!` for wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; options may be separated with semicolons or commas.
+- Use `gpui_form_derive::component_shape!` for wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; add `requires_value = false` when the wrapper can synthesize missing values; options may be separated with semicolons or commas.
 - For component-derived shapes, put `#[gpui_form_derive::component_value_binding]` on the backing state's `ComponentValueBinding<T>` impl so the component shape can delegate through `ComponentStateValueBinding<T>`. Wrapper shapes from `component_shape!` can still implement `ComponentValueBinding<T>` directly and use bare `value_binding` metadata.
 - Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection and component-owned shapes already publish suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, and `otp_input`, and shapes without metadata fall back to the

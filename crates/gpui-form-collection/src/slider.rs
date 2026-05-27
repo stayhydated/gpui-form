@@ -8,6 +8,7 @@ gpui_form_derive::component_shape! {
         type State = SliderState;
         new = |_window, _cx| SliderState::new();
         component = gpui_component::slider::Slider;
+        requires_value = false;
         value_binding;
         field_suffix = "slider";
     }

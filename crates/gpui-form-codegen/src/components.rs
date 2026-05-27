@@ -26,7 +26,34 @@ impl<T: ComponentOption> FieldInformation<T> {
 pub struct GeneratedFieldLayout {
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
-    pub requires_value: bool,
+    pub required_value: RequiredValue,
+}
+
+#[derive(Clone, Debug)]
+pub enum RequiredValue {
+    Explicit(bool),
+    Shape(syn::Path),
+}
+
+impl RequiredValue {
+    pub fn explicit(value: bool) -> Self {
+        Self::Explicit(value)
+    }
+
+    pub fn shape(shape: syn::Path) -> Self {
+        Self::Shape(shape)
+    }
+
+    pub fn metadata_tokens(&self) -> TokenStream {
+        match self {
+            Self::Explicit(value) => quote! { #value },
+            Self::Shape(shape) => {
+                quote! {
+                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE
+                }
+            },
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -42,11 +69,6 @@ pub struct ShapeOptions {
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<syn::Path>,
-    /// Whether non-optional source fields should reject a missing holder value.
-    /// Shape-backed fields default to requiring a value; use
-    /// `.requires_value(false)` on the component expression for value-bearing
-    /// components that can safely synthesize a missing value.
-    pub requires_value: bool,
     /// Whether prototyping code should wire this component through
     /// `ComponentValueBinding`.
     pub value_binding: Option<bool>,
@@ -61,7 +83,6 @@ impl ShapeOptions {
         Self {
             shape,
             component: None,
-            requires_value: true,
             value_binding: None,
             field_suffix: None,
         }
@@ -93,14 +114,11 @@ impl ShapeOptions {
             "field_suffix" => {
                 self.field_suffix = Some(expect_string_arg(method, args)?);
             },
-            "requires_value" => {
-                self.requires_value = expect_bool_arg(method, args)?;
-            },
             _ => {
                 return Err(DarlingError::custom(format!(
                     "unknown component metadata `{method}`; supported generic methods are \
-                     `value_binding`, `component`, `field_suffix`, and `requires_value`; \
-                     put component-specific options in a dedicated ComponentShape wrapper"
+                     `value_binding`, `component`, and `field_suffix`; put component-specific \
+                     options in a dedicated ComponentShape wrapper"
                 ))
                 .with_span(method));
             },
@@ -153,6 +171,10 @@ impl ShapeOptions {
                 __gpui_form_assert_component_shape::<#shape>();
             }
         })
+    }
+
+    pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
+        RequiredValue::shape(self.resolved_shape(field_type))
     }
 }
 
@@ -395,9 +417,9 @@ impl FromMeta for Components {
 }
 
 impl Components {
-    pub fn requires_value(&self) -> bool {
+    pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         match self {
-            Self::Shape(options) => options.requires_value,
+            Self::Shape(options) => options.required_value(field_type),
         }
     }
 
@@ -413,8 +435,11 @@ impl Components {
         match self {
             Self::Shape(options) => {
                 let options = options.clone().with_field_type(&field_type);
-                let component =
-                    ShapeComponent(FieldInformation::new(options, field_name, field_type));
+                let component = ShapeComponent(FieldInformation::new(
+                    options,
+                    field_name,
+                    field_type.clone(),
+                ));
                 component.field_tokens(
                     &mut field_structure_tokens,
                     &mut field_base_declarations_tokens,
@@ -425,7 +450,7 @@ impl Components {
         GeneratedFieldLayout {
             field_structure_tokens,
             field_base_declarations_tokens,
-            requires_value: self.requires_value(),
+            required_value: self.required_value(&field_type),
         }
     }
 

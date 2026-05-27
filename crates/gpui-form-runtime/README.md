@@ -18,7 +18,9 @@ gpui-form-derive = "*"
 `shape::ComponentShape` is the runtime trait implemented by component shapes.
 The derive macro stores `Entity<<Shape as ComponentShape>::State>` in generated
 form fields and calls `ComponentShape::new(window, cx)` from the generated
-component constructor.
+component constructor. Shapes also publish a `RequiredValuePolicy`, which lets
+generated value holders inherit whether a non-optional field should use direct
+`T` storage or missing-aware `Option<T>` storage.
 
 For owned components, derive on the rendered component and supply `state = ...`;
 generated forms store the backing state entity:
@@ -27,7 +29,11 @@ generated forms store the backing state entity:
 use gpui_form_derive::ComponentShape;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(state = EmailInputState, field_suffix = "input")]
+#[gpui_form_shape(
+    state = EmailInputState,
+    requires_value = false,
+    field_suffix = "input"
+)]
 pub struct EmailInput {
     state: gpui::Entity<EmailInputState>,
 }
@@ -40,6 +46,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
+        requires_value = false;
         field_suffix = "input";
     }
 }

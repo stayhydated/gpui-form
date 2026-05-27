@@ -1,4 +1,5 @@
 use darling::FromDeriveInput as _;
+use gpui_form_codegen::components::RequiredValue;
 use itertools::Itertools as _;
 use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
 use proc_macro2::TokenStream;
@@ -140,17 +141,17 @@ pub fn expand_gpui_form(
             .map(generate_component_field)
             .collect();
 
-    let (field_structure_tokens, field_base_declarations_tokens, requires_value_map): (
+    let (field_structure_tokens, field_base_declarations_tokens, required_value_map): (
         Vec<TokenStream>,
         Vec<TokenStream>,
-        HashMap<String, bool>,
+        HashMap<String, RequiredValue>,
     ) = component_field_pairs
         .into_iter()
         .map(|content| {
             (
                 content.field_structure_tokens,
                 content.field_base_declarations_tokens,
-                content.requires_value,
+                content.required_value,
             )
         })
         .multiunzip();
@@ -160,13 +161,14 @@ pub fn expand_gpui_form(
         let field_name = field.ident.clone().unwrap();
         let field_name_str = field_name.to_string();
         let (was_optional, inner_type) = extract_option_inner_type(&field.ty);
-        let component_requires_value = !field.skip()
-            && field.component.is_some()
-            && requires_value_map
+        let required_value = if !field.skip() && field.component.is_some() && !was_optional {
+            required_value_map
                 .get(&field_name_str)
-                .copied()
-                .unwrap_or(false);
-        let requires_value = component_requires_value && !was_optional;
+                .cloned()
+                .unwrap_or_else(|| RequiredValue::explicit(false))
+        } else {
+            RequiredValue::explicit(false)
+        };
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info
             .map(|info| info.validation.clone())
@@ -177,7 +179,7 @@ pub fn expand_gpui_form(
             original_type: field.ty.clone(),
             inner_type,
             was_optional,
-            requires_value,
+            required_value,
             validation,
             default_expr,
             override_type: field.r#type.as_ref().map(|ty| ty.0.clone()),
@@ -189,7 +191,7 @@ pub fn expand_gpui_form(
 
     let has_fields_needing_required = field_optionality.iter().any(|f| {
         !f.skip
-            && f.requires_value
+            && matches!(f.required_value, RequiredValue::Explicit(true))
             && !f.was_optional
             && !f.validation.is_newtype
             && !f.validation.is_nested
@@ -228,11 +230,16 @@ pub fn expand_gpui_form(
                     .as_ref()
                     .map(|ty| extract_option_inner_type(&ty.0).1)
                     .unwrap_or_else(|| original_inner_type.clone());
-                let component_requires_value = requires_value_map
+                let component_required_value = required_value_map
                     .get(&field_name_str)
-                    .copied()
-                    .unwrap_or(false);
-                let requires_value = !was_optional && component_requires_value;
+                    .cloned()
+                    .unwrap_or_else(|| RequiredValue::explicit(false));
+                let required_value = if was_optional {
+                    RequiredValue::explicit(false)
+                } else {
+                    component_required_value
+                };
+                let requires_value_tokens = required_value.metadata_tokens();
 
                 let is_optional = was_optional;
                 let field_type_str = base_type.to_token_stream().to_string();
@@ -272,7 +279,7 @@ pub fn expand_gpui_form(
                         #is_optional
                     )
                     .with_source_value_type(#source_value_type_str)
-                    .with_requires_value(#requires_value)
+                    .with_requires_value(#requires_value_tokens)
                     .with_conversions(#from_expr_tokens, #into_expr_tokens)
                     .with_validations(&[
                         #( #validation_literals ),*

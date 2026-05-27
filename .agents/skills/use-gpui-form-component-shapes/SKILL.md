@@ -73,6 +73,8 @@ Metadata rules:
   be emitted as written.
 - Add `component = ...` only when generated metadata should use a render
   component path different from the derived type.
+- Add `requires_value = false` when the component can synthesize a missing value
+  and non-optional fields should use direct `T` value-holder storage by default.
 - Component-derived shapes publish value-binding metadata automatically.
 - Add `field_suffix = "..."` when prototyping output should use a stable
   generated field/helper suffix.
@@ -114,14 +116,17 @@ gpui_form_derive::component_shape! {
         new = |window, cx| gpui_component::input::InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
+        requires_value = false;
         value_binding;
         field_suffix = "input";
     }
 }
 ```
 
-The macro accepts the same metadata as the derive form, plus
-`type State = ...`. If `new` is omitted, it calls `<State>::new(window, cx)`.
+The macro accepts the same metadata as the derive form, plus `type State = ...`.
+If `new` is omitted, it calls `<State>::new(window, cx)`. Use
+`requires_value = false` on reusable wrappers that can seed or synthesize a
+missing value; consuming field attributes do not accept `.requires_value(...)`.
 Options may be separated with semicolons or commas.
 
 ## Value Binding

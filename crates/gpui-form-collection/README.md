@@ -48,8 +48,11 @@ select-specific configuration, define a small `ComponentShape` wrapper whose
 
 Collection components implement `gpui_form_runtime::shape::ComponentShape`
 and add value adapters where the component can synchronize form state
-generically. They also publish prototyping field suffix metadata, so generated
-scaffolds use names such as `code_input`, `country_select`,
-`theme_combobox`, `notifications_switch`, `age_number_input`, `volume_slider`,
-`theme_color_picker`, `birth_date_picker`, `holiday_date_range_picker`, and
-`otp_code_otp_input` without relying on shape-name fallbacks.
+generically. Components that synthesize a missing value, such as input, select,
+checkbox, switch, number input, slider, and OTP input, publish direct `T`
+value-holder storage as their default required-value policy. They also publish
+prototyping field suffix metadata, so generated scaffolds use names such as
+`code_input`, `country_select`, `theme_combobox`, `notifications_switch`,
+`age_number_input`, `volume_slider`, `theme_color_picker`,
+`birth_date_picker`, `holiday_date_range_picker`, and `otp_code_otp_input`
+without relying on shape-name fallbacks.

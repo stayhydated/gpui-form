@@ -1,6 +1,7 @@
 use crate::derives::gpui_form::structs::ComponentField;
 use crate::derives::gpui_form::structs::ComponentFieldContent;
 use crate::derives::gpui_form::utils::extract_option_inner_type;
+use gpui_form_codegen::components::RequiredValue;
 
 fn extract_default_expr(field: &ComponentField) -> Option<syn::Expr> {
     field.default.as_ref().map(|expr| expr.0.clone())
@@ -15,7 +16,7 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
         return ComponentFieldContent {
             field_structure_tokens: proc_macro2::TokenStream::new(),
             field_base_declarations_tokens: proc_macro2::TokenStream::new(),
-            requires_value: (field_name, false),
+            required_value: (field_name, RequiredValue::explicit(false)),
         };
     };
 
@@ -28,6 +29,6 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
     ComponentFieldContent {
         field_structure_tokens: layout.field_structure_tokens,
         field_base_declarations_tokens: layout.field_base_declarations_tokens,
-        requires_value: (field_name, layout.requires_value),
+        required_value: (field_name, layout.required_value),
     }
 }

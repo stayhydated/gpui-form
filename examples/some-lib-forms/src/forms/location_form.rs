@@ -54,11 +54,9 @@ impl LocationFormForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.name = Some(value);
+                self.current_data.name = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.name = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -105,7 +103,7 @@ impl LocationFormForm {
         name_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
-                current_data.name.as_ref(),
+                Some(&current_data.name),
                 window,
                 cx,
             );

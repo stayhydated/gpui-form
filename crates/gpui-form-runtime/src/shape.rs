@@ -16,6 +16,10 @@ pub trait ComponentShape {
     /// Backing gpui component state type.
     type State: 'static;
 
+    /// Shape-owned policy for whether non-optional source fields keep a
+    /// missing-value state in the generated value holder.
+    type RequiredValuePolicy: ComponentRequiredValuePolicy;
+
     /// Build the component state.
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State;
 
@@ -38,12 +42,205 @@ pub trait ComponentShape {
     /// shape owns the metadata and each field should inherit it.
     const VALUE_BINDING: bool = false;
 
+    /// Whether this shape's default value-holder policy requires a present value.
+    const REQUIRES_VALUE: bool =
+        <Self::RequiredValuePolicy as ComponentRequiredValuePolicy>::REQUIRES_VALUE;
+
     /// Metadata used by prototyping generators.
     ///
     /// This is intentionally separate from runtime construction so reusable
     /// component crates can describe generated-code preferences once, and
     /// downstream fields can inherit those preferences.
     const PROTOTYPING: ComponentPrototyping = ComponentPrototyping::new();
+}
+
+/// Marker trait for a component shape's generated value-holder storage policy.
+pub trait ComponentRequiredValuePolicy {
+    /// Whether a missing generated value-holder value is invalid by default.
+    const REQUIRES_VALUE: bool;
+}
+
+/// Store non-optional source fields as `Option<T>` and treat `None` as missing.
+pub struct RequireValue;
+
+impl ComponentRequiredValuePolicy for RequireValue {
+    const REQUIRES_VALUE: bool = true;
+}
+
+/// Store non-optional source fields directly as `T`.
+pub struct AllowMissingValue;
+
+impl ComponentRequiredValuePolicy for AllowMissingValue {
+    const REQUIRES_VALUE: bool = false;
+}
+
+/// Storage behavior used by generated form value holders.
+///
+/// This lets `#[derive(GpuiForm)]` defer the `T` vs `Option<T>` choice to the
+/// component shape that owns the policy while still emitting concrete holder
+/// conversion code.
+pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
+    /// Concrete generated value-holder field storage.
+    type Storage;
+
+    /// Construct a missing/default value-holder field.
+    fn default_storage() -> Self::Storage
+    where
+        T: Default;
+
+    /// Construct storage from a present form value.
+    fn present(value: T) -> Self::Storage;
+
+    /// Construct storage from a present form value, allowing `RequireValue` to
+    /// encode a value equal to the declared default as missing.
+    fn present_unless_default(value: T, default: T) -> Self::Storage
+    where
+        T: PartialEq;
+
+    /// Convert storage into an output value, using `missing` only for policies
+    /// that can represent missing values.
+    fn map_into_value<Output, Present, Missing>(
+        storage: Self::Storage,
+        present: Present,
+        missing: Missing,
+    ) -> Output
+    where
+        Present: FnOnce(T) -> Output,
+        Missing: FnOnce() -> Output;
+
+    /// Fallible variant of [`ValueHolderStorage::map_into_value`].
+    fn try_map_into_value<Output, Error, Present>(
+        storage: Self::Storage,
+        present: Present,
+        missing: Error,
+    ) -> Result<Output, Error>
+    where
+        Present: FnOnce(T) -> Output;
+
+    /// Clone and map a present value, returning `None` only for policies that
+    /// can represent missing values.
+    fn map_present_cloned<Output, Present>(
+        storage: &Self::Storage,
+        present: Present,
+    ) -> Option<Output>
+    where
+        T: Clone,
+        Present: FnOnce(T) -> Output;
+}
+
+impl<T> ValueHolderStorage<T> for RequireValue {
+    type Storage = Option<T>;
+
+    fn default_storage() -> Self::Storage
+    where
+        T: Default,
+    {
+        None
+    }
+
+    fn present(value: T) -> Self::Storage {
+        Some(value)
+    }
+
+    fn present_unless_default(value: T, default: T) -> Self::Storage
+    where
+        T: PartialEq,
+    {
+        if value == default { None } else { Some(value) }
+    }
+
+    fn map_into_value<Output, Present, Missing>(
+        storage: Self::Storage,
+        present: Present,
+        missing: Missing,
+    ) -> Output
+    where
+        Present: FnOnce(T) -> Output,
+        Missing: FnOnce() -> Output,
+    {
+        match storage {
+            Some(value) => present(value),
+            None => missing(),
+        }
+    }
+
+    fn try_map_into_value<Output, Error, Present>(
+        storage: Self::Storage,
+        present: Present,
+        missing: Error,
+    ) -> Result<Output, Error>
+    where
+        Present: FnOnce(T) -> Output,
+    {
+        storage.map(present).ok_or(missing)
+    }
+
+    fn map_present_cloned<Output, Present>(
+        storage: &Self::Storage,
+        present: Present,
+    ) -> Option<Output>
+    where
+        T: Clone,
+        Present: FnOnce(T) -> Output,
+    {
+        storage.clone().map(present)
+    }
+}
+
+impl<T> ValueHolderStorage<T> for AllowMissingValue {
+    type Storage = T;
+
+    fn default_storage() -> Self::Storage
+    where
+        T: Default,
+    {
+        T::default()
+    }
+
+    fn present(value: T) -> Self::Storage {
+        value
+    }
+
+    fn present_unless_default(value: T, _default: T) -> Self::Storage
+    where
+        T: PartialEq,
+    {
+        value
+    }
+
+    fn map_into_value<Output, Present, Missing>(
+        storage: Self::Storage,
+        present: Present,
+        _missing: Missing,
+    ) -> Output
+    where
+        Present: FnOnce(T) -> Output,
+        Missing: FnOnce() -> Output,
+    {
+        present(storage)
+    }
+
+    fn try_map_into_value<Output, Error, Present>(
+        storage: Self::Storage,
+        present: Present,
+        _missing: Error,
+    ) -> Result<Output, Error>
+    where
+        Present: FnOnce(T) -> Output,
+    {
+        Ok(present(storage))
+    }
+
+    fn map_present_cloned<Output, Present>(
+        storage: &Self::Storage,
+        present: Present,
+    ) -> Option<Output>
+    where
+        T: Clone,
+        Present: FnOnce(T) -> Output,
+    {
+        Some(present(storage.clone()))
+    }
 }
 
 /// Shape-owned metadata for prototyping generators.

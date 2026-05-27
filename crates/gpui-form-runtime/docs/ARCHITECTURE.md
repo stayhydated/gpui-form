@@ -11,8 +11,9 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/shape.rs`: `ComponentShape`, value-binding contracts, and
-  generated-code helper aliases/functions
+- `src/shape.rs`: `ComponentShape`, required-value policy markers,
+  value-holder storage helpers, value-binding contracts, and generated-code
+  helper aliases/functions
 
 ## Boundaries
 

@@ -250,6 +250,7 @@ Or derive the same contract directly on an owned rendered component:
 #[gpui_form_shape(
     state = crate::state::TagsState,
     new = crate::state::build,
+    requires_value = false,
     field_suffix = "input"
 )]
 pub struct TagsInput {
@@ -279,6 +280,11 @@ or `#[gpui_form_shape(...)]` so prototyping generators can emit names such as
 value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
 `seed_value_binding_state`, and `form_value_change` to avoid repeating
 associated-type projections at every call site.
+
+Set `requires_value = false` on a reusable shape when the component can
+synthesize a missing value. Generated forms then inherit direct `T` holder
+storage from the shape; consuming field attributes do not accept a
+required-value override.
 
 ## Most Users Should Use Instead
 

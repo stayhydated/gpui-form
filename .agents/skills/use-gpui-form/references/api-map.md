@@ -62,7 +62,6 @@ because generated code references `gpui_form_runtime::shape`.
 #[gpui_form(my::Shape.component(my::ui::Widget))]
 #[gpui_form(my::Shape.value_binding())]
 #[gpui_form(my::Shape.field_suffix("input"))]
-#[gpui_form(my::Shape.requires_value(false))]
 #[gpui_form(component = my::Shape)]
 ```
 
@@ -111,9 +110,10 @@ Common struct attributes:
 - Use `#[gpui_form(my::Shape)]` when the app owns the state/widget contract.
 - Treat the component expression and chained generic metadata methods as derive
   metadata; runtime construction still uses `ComponentShape::new`.
-- Non-optional component fields default to required holder storage; add
-  `.requires_value(false)` when a component can safely synthesize a missing
-  value.
+- Component shapes own the default required-value policy for non-optional
+  fields. Put `requires_value = false` on the reusable shape definition when it
+  can synthesize missing values; field attributes do not accept
+  `.requires_value(...)`.
 
 ## Generated Names
 
@@ -203,7 +203,11 @@ use gpui_form::GpuiForm;
 use gpui_form_derive::ComponentShape;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(state = TagsInputState, field_suffix = "input")]
+#[gpui_form_shape(
+    state = TagsInputState,
+    requires_value = false,
+    field_suffix = "input"
+)]
 pub struct TagsInput {
     state: gpui::Entity<TagsInputState>,
 }
@@ -227,10 +231,12 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
+        requires_value = false;
     }
 }
 ```
 
 `gpui_form_derive::component_shape!` accepts semicolons or commas between
-options. Use bare `value_binding` to publish shape-level value-binding metadata;
-omit it to leave that metadata disabled.
+options. Use `requires_value = false` when the reusable shape can synthesize a
+missing value, use bare `value_binding` to publish shape-level value-binding
+metadata, and omit it to leave that metadata disabled.

@@ -32,6 +32,7 @@ gpui_form_derive::component_shape! {
         type State = OtpState;
         new = |window, cx| OtpState::new(6, window, cx);
         component = gpui_form_collection::otp_input::OtpInputField;
+        requires_value = false;
         value_binding;
         field_suffix = "otp_input";
     }

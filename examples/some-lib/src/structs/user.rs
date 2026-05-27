@@ -67,7 +67,7 @@ pub struct User {
     #[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]
     pub rating: Option<u32>,
 
-    #[gpui_form(component = gpui_form_collection::slider::Slider.requires_value(false))]
+    #[gpui_form(component = gpui_form_collection::slider::Slider)]
     pub attention_level: f32,
 
     #[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]
@@ -82,13 +82,13 @@ pub struct User {
     #[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
     pub holiday_range: Option<(chrono::NaiveDate, chrono::NaiveDate)>,
 
-    #[gpui_form(component = gpui_form_collection::switch::Switch.requires_value(false))]
+    #[gpui_form(component = gpui_form_collection::switch::Switch)]
     pub subscribe_newsletter: bool,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox.requires_value(false))]
+    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
     pub enable_notifications: bool,
 
-    #[gpui_form(component = gpui_form_collection::select::Select::<_>.requires_value(false))]
+    #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(

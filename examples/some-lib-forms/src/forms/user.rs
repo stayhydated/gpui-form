@@ -54,11 +54,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.username = Some(value);
+                self.current_data.username = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.username = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -75,11 +73,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.email = Some(value);
+                self.current_data.email = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.email = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -123,11 +119,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.balance = Some(value);
+                self.current_data.balance = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.balance = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -150,11 +144,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.debt = Some(value);
+                self.current_data.debt = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.debt = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -238,11 +230,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.otp_code = Some(value);
+                self.current_data.otp_code = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.otp_code = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -264,11 +254,9 @@ impl UserForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.uploaded_files = Some(value);
+                self.current_data.uploaded_files = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.uploaded_files = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -490,7 +478,7 @@ impl UserForm {
         username_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
-                current_data.username.as_ref(),
+                Some(&current_data.username),
                 window,
                 cx,
             );
@@ -498,7 +486,7 @@ impl UserForm {
         email_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
-                current_data.email.as_ref(),
+                Some(&current_data.email),
                 window,
                 cx,
             );
@@ -515,13 +503,13 @@ impl UserForm {
             seed_value_binding_state::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            >(state, current_data.balance.as_ref(), window, cx);
+            >(state, Some(&current_data.balance), window, cx);
         });
         debt_input.update(cx, |state, cx| {
             seed_value_binding_state::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            >(state, current_data.debt.as_ref(), window, cx);
+            >(state, Some(&current_data.debt), window, cx);
         });
         rating_number_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::number_input::NumberInput<u32>, u32>(
@@ -550,7 +538,7 @@ impl UserForm {
         otp_code_otp_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::otp_input::OtpInput<String>, String>(
                 state,
-                current_data.otp_code.as_ref(),
+                Some(&current_data.otp_code),
                 window,
                 cx,
             );
@@ -559,7 +547,7 @@ impl UserForm {
             seed_value_binding_state::<
                 gpui_form_component::file_picker::FilePicker,
                 Vec<std::path::PathBuf>,
-            >(state, current_data.uploaded_files.as_ref(), window, cx);
+            >(state, Some(&current_data.uploaded_files), window, cx);
         });
         holiday_range_date_range_picker.update(cx, |state, cx| {
             seed_value_binding_state::<
@@ -990,35 +978,12 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::OtpCode;
                                     localize(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.otp_code().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| localize(cx, v))
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
-                                };
-                                let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
                                         .flex()
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
                                 }
                             })
                             .child(gpui_form_collection::otp_input::OtpInputField::new(
@@ -1036,35 +1001,12 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::UploadedFiles;
                                     localize(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.uploaded_files().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| localize(cx, v))
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
-                                };
-                                let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
                                         .flex()
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
                                 }
                             })
                             .child(gpui_form_component::file_picker::FilePicker::new(

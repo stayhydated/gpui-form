@@ -19,6 +19,7 @@ gpui_form_derive::component_shape! {
         type State = SelectState<D>;
         new = Self::new_default;
         component = gpui_component::select::Select;
+        requires_value = false;
         value_binding;
         field_suffix = "select";
     }

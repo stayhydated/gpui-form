@@ -18,6 +18,9 @@ this crate owns reusable component types for common `gpui-component` widgets.
 - Collection components publish `ComponentShape::PROTOTYPING.field_suffix`
   values so prototyping output can use stable widget-role names without
   rediscovering the same suffixes from type names.
+- Collection components that can synthesize missing values publish
+  `RequiredValuePolicy = AllowMissingValue` so consuming form fields inherit
+  direct `T` value-holder storage.
 - Application crates may define their own component shape types directly when this
   collection is not the right owner.
 

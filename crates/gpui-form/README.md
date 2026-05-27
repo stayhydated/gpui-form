@@ -76,12 +76,12 @@ pub struct UserProfile {
     pub age: Option<u32>,
 
     #[gpui_form(
-        gpui_form_collection::select::Select::<_>.requires_value(false),
+        gpui_form_collection::select::Select::<_>,
         default = Country::France
     )]
     pub country: Country,
 
-    #[gpui_form(gpui_form_collection::checkbox::Checkbox.requires_value(false))]
+    #[gpui_form(gpui_form_collection::checkbox::Checkbox)]
     pub subscribe: bool,
 }
 ```
@@ -102,7 +102,6 @@ the shape expression directly in the attribute:
 - `#[gpui_form(my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(my::Shape.value_binding())]`
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
-- `#[gpui_form(my::Shape.requires_value(false))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
 - `#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]`
@@ -128,11 +127,13 @@ attribute metadata; generated runtime construction delegates to
 `ComponentShape::new`. `gpui-form` treats every component as a custom shape
 contract and does not inspect the shape path for built-in component categories.
 
-Non-optional component fields default to required holder storage, so the
-generated value holder stores `Option<T>` and conversion back to the source
-model fails when the field is missing. Use `.requires_value(false)` for
-components that can safely synthesize a value, such as boolean toggles or
-selects with a meaningful default.
+Component shapes own the default required-value policy for non-optional fields.
+Shapes that can safely synthesize a missing value, such as the built-in inputs,
+selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
+generated value-holder storage as `T`. Shapes that require a present value use
+`Option<T>` storage and conversion back to the source model fails when the value
+is missing. Define this behavior on the reusable component shape with
+`requires_value = false`.
 
 Common field-level helpers:
 

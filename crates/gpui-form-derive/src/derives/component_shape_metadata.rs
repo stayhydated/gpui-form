@@ -4,8 +4,8 @@ use syn::{Expr, LitBool, LitStr, Path, Result, Type};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
-pub(super) const SHAPE_METADATA_OPTIONS: &str =
-    "`new = ...`, `state = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
+pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `requires_value = ...`, \
+     `value_binding`, or `field_suffix = ...`";
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
@@ -16,6 +16,9 @@ pub(super) struct ComponentShapeMetadata {
     /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
     /// field annotations do not need to repeat `component = ...`.
     component: Option<Path>,
+    /// Whether non-optional source fields should keep a missing-value state in
+    /// generated form value holders.
+    requires_value: Option<LitBool>,
     /// Opt generated prototyping code into ComponentValueBinding by default.
     value_binding: bool,
     /// Preferred generated field/helper suffix for prototyping output.
@@ -45,6 +48,19 @@ impl ComponentShapeMetadata {
 
     pub(super) fn has_component(&self) -> bool {
         self.component.is_some()
+    }
+
+    pub(super) fn set_requires_value<T: quote::ToTokens>(
+        &mut self,
+        requires_value: LitBool,
+        span: T,
+    ) -> Result<()> {
+        set_once(
+            &mut self.requires_value,
+            requires_value,
+            span,
+            "requires_value",
+        )
     }
 
     pub(super) fn enable_value_binding<T: quote::ToTokens>(&mut self, span: T) -> Result<()> {
@@ -85,7 +101,20 @@ impl ComponentShapeMetadata {
             .unwrap_or(default_body)
     }
 
-    pub(super) fn const_tokens(&self, runtime_crate: &Path) -> TokenStream {
+    pub(super) fn impl_items_tokens(&self, runtime_crate: &Path) -> TokenStream {
+        let required_value_policy = if self
+            .requires_value
+            .as_ref()
+            .map(syn::LitBool::value)
+            .unwrap_or(true)
+        {
+            quote! { #runtime_crate::shape::RequireValue }
+        } else {
+            quote! { #runtime_crate::shape::AllowMissingValue }
+        };
+        let required_value_policy_assoc = quote! {
+            type RequiredValuePolicy = #required_value_policy;
+        };
         let component_path_const = self.component.as_ref().map(|component| {
             quote! {
                 const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
@@ -105,6 +134,7 @@ impl ComponentShapeMetadata {
         });
 
         quote! {
+            #required_value_policy_assoc
             #component_path_const
             #value_binding_const
             #prototyping_const

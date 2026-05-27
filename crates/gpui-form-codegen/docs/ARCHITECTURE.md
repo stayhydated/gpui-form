@@ -31,7 +31,6 @@ crate.
 - `#[gpui_form(my::Shape.component(my::Widget))]`
 - `#[gpui_form(my::Shape.value_binding())]`
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
-- `#[gpui_form(my::Shape.requires_value(false))]`
 - `#[gpui_form(component = my::Shape)]`
 
 Important parse-time responsibilities:
@@ -40,9 +39,8 @@ Important parse-time responsibilities:
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- non-optional shape-backed fields require a holder value by default
-- `requires_value(false)` records a field-level override for components that can
-  safely synthesize a missing value
+- non-optional shape-backed fields inherit the shape's required-value policy by
+  default
 - `value_binding()` records that generated prototyping code should use
   `ComponentValueBinding`
 - `field_suffix("...")` records a field-level prototyping name override

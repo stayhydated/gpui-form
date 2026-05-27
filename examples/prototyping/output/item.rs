@@ -54,11 +54,9 @@ impl ItemForm {
         };
         match form_change {
             FormValueChange::Set(value) => {
-                self.current_data.index = Some(value);
+                self.current_data.index = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.index = None;
-            },
+            FormValueChange::Clear => {},
             FormValueChange::Unchanged => {},
         }
     }
@@ -70,7 +68,7 @@ impl ItemForm {
         index_input.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<Age>, Age>(
                 state,
-                current_data.index.as_ref(),
+                Some(&current_data.index),
                 window,
                 cx,
             );

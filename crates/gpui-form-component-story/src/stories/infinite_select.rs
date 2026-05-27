@@ -8,13 +8,13 @@ use gpui_component::form::v_form;
 
 use gpui_form_component::InfiniteSelect;
 use gpui_form_component::infinite_select::{
-    InfiniteSelect as InfiniteSelectComponent, InfiniteSelectEvent, InfiniteSelectItem,
-    InfiniteSelectValue as _, build_from_key_path, build_from_path, to_select_items,
+    InfiniteSelectEvent, InfiniteSelectItem, InfiniteSelectState, InfiniteSelectValue as _,
+    build_from_key_path, build_from_path, to_select_items,
 };
 
 use super::common::story_panel;
 
-type DeploymentSelectState = InfiniteSelectComponent<DeploymentTarget>;
+type DeploymentSelectState = InfiniteSelectState<DeploymentTarget>;
 
 fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
     crate::i18n::localize_message(cx, message)
@@ -126,7 +126,7 @@ impl Focusable for InfiniteSelectStory {
 impl InfiniteSelectStory {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let selection = DeploymentTarget::default();
-        let select_state = cx.new(|cx| InfiniteSelectComponent::new(selection.clone(), window, cx));
+        let select_state = cx.new(|cx| InfiniteSelectState::new(selection.clone(), window, cx));
         let subscription = cx.subscribe_in(&select_state, window, Self::on_select_change);
 
         Self {

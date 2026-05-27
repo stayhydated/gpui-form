@@ -242,6 +242,7 @@ impl Render for FilePickerState {
     feature = "component-shape",
     gpui_form_shape(
         state = crate::file_picker::FilePickerState,
+        requires_value = false,
         field_suffix = "file_picker"
     )
 )]

@@ -24,6 +24,10 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let component = value.parse()?;
                 shape.set_component(component, &meta.path)
+            } else if meta.path.is_ident("requires_value") {
+                let value = meta.value()?;
+                let requires_value = value.parse()?;
+                shape.set_requires_value(requires_value, &meta.path)
             } else if meta.path.is_ident("value_binding") {
                 Err(meta.error(
                     "`value_binding` is inferred for component-derived shapes; \
@@ -59,7 +63,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let constructor_body = meta.constructor_body_or(default_constructor);
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let metadata_consts = meta.const_tokens(&runtime_crate);
+    let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
     let inferred_component_const = if !meta.has_component() {
         Some(quote! {
             const COMPONENT_PATH: Option<&'static str> =
@@ -94,7 +98,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
                 #constructor_body
             }
 
-            #metadata_consts
+            #metadata_impl_items
             #inferred_component_const
             #inferred_value_binding_const
         }
@@ -329,6 +333,25 @@ mod tests {
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"tags\")"),
             "should emit prototyping field suffix metadata"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_with_required_value_policy() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::SwitchState, requires_value = false)]
+            struct SwitchInput;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact
+                .contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::AllowMissingValue"),
+            "should emit shape-owned required-value policy"
         );
     }
 

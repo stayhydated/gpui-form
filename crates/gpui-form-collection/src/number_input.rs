@@ -104,6 +104,7 @@ gpui_form_derive::component_shape! {
         type State = NumberInputState;
         new = |window, cx| NumberInputState::new::<T>(window, cx);
         component = gpui_form_collection::number_input::NumberInputField;
+        requires_value = false;
         value_binding;
         field_suffix = "number_input";
     }

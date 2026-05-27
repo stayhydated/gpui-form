@@ -8,13 +8,13 @@ use syn::{
 
 use super::component_shape_metadata::ComponentShapeMetadata;
 
-const FUNCTION_SHAPE_OPTIONS: &str =
-    "`new = ...`, `component = ...`, `value_binding`, or `field_suffix = ...`";
+const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `requires_value = ...`, `value_binding`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
+    syn::custom_keyword!(requires_value);
     syn::custom_keyword!(value_binding);
 }
 
@@ -69,6 +69,11 @@ impl Parse for ComponentShapeInput {
                 let key = content.parse::<kw::component>()?;
                 content.parse::<Token![=]>()?;
                 metadata.set_component(content.parse()?, key)?;
+                parse_option_separator(&content)?;
+            } else if content.peek(kw::requires_value) {
+                let key = content.parse::<kw::requires_value>()?;
+                content.parse::<Token![=]>()?;
+                metadata.set_requires_value(content.parse()?, key)?;
                 parse_option_separator(&content)?;
             } else if content.peek(kw::value_binding) {
                 let key = content.parse::<kw::value_binding>()?;
@@ -158,7 +163,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
-    let metadata_consts = metadata.const_tokens(&runtime_crate);
+    let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
     quote! {
         #(#attrs)*
         #vis struct #ident #generics(
@@ -175,7 +180,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
                 #constructor_body
             }
 
-            #metadata_consts
+            #metadata_impl_items
         }
     }
 }
@@ -224,6 +229,10 @@ mod tests {
         assert!(
             compact.contains("typeState=::gpui_component::input::InputState"),
             "macro should emit the configured state type: {compact}"
+        );
+        assert!(
+            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue"),
+            "macro should default required-value policy to RequireValue: {compact}"
         );
         assert!(
             compact.contains("COMPONENT_PATH:Option<&'staticstr>=Some(stringify!(::gpui_component::input::Input))"),
@@ -305,6 +314,26 @@ mod tests {
         assert!(
             compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
             "macro should accept comma-separated options: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_accepts_required_value_policy() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct SwitchShape {
+                type State = crate::state::SwitchState;
+                requires_value = false;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact
+                .contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::AllowMissingValue"),
+            "macro should emit shape-owned missing-value policy: {compact}"
         );
     }
 

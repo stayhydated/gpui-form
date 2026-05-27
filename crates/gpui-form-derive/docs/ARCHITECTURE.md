@@ -123,7 +123,8 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `value_binding`, and `field_suffix` metadata keys
+- accepts `new`, `component`, `requires_value`, `value_binding`, and
+  `field_suffix` metadata keys
 - accepts either semicolon or comma separators between metadata entries
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement

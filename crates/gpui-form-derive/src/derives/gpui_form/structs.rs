@@ -1,5 +1,5 @@
 use darling::{Error as DarlingError, FromField, FromMeta, ast::NestedMeta};
-use gpui_form_codegen::components::Components;
+use gpui_form_codegen::components::{Components, RequiredValue};
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
 use syn::{
@@ -71,7 +71,7 @@ pub struct FieldOptionality {
     #[allow(dead_code)]
     pub inner_type: Type,
     pub was_optional: bool,
-    pub requires_value: bool,
+    pub required_value: RequiredValue,
     pub validation: ValidationInfo,
     pub default_expr: Option<Expr>,
     pub override_type: Option<Type>,
@@ -87,7 +87,10 @@ impl FieldOptionality {
     /// - Must be present in the source struct
     /// - Are not nested structs (nested fields have their own validation)
     pub fn needs_required_validation(&self) -> bool {
-        !self.skip && self.requires_value && !self.was_optional && !self.validation.is_nested
+        !self.skip
+            && matches!(self.required_value, RequiredValue::Explicit(true))
+            && !self.was_optional
+            && !self.validation.is_nested
     }
 }
 
@@ -466,7 +469,7 @@ pub struct ComponentStruct {
 pub struct ComponentFieldContent {
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
-    pub requires_value: (String, bool),
+    pub required_value: (String, RequiredValue),
 }
 
 pub struct GpuiFormOptions {

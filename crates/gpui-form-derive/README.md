@@ -43,7 +43,6 @@ Supported component forms:
 - `#[gpui_form(my::Shape.component(my::ui::Widget))]`
 - `#[gpui_form(my::Shape.value_binding())]`
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
-- `#[gpui_form(my::Shape.requires_value(false))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
 - `#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]`
@@ -92,11 +91,12 @@ Behavior notes:
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
-- non-optional component fields default to required holder storage, so the
-  generated value holder stores `Option<T>` and conversion back to the source
-  model fails when the field is missing
-- `.requires_value(false)` keeps a non-optional component field as `T` when the
-  component can safely synthesize a value
+- component shapes own the default required-value policy for non-optional
+  fields; shapes that can synthesize a missing value keep generated value-holder
+  storage as `T`, while required shapes use `Option<T>` and fail conversion when
+  missing
+- set `requires_value = false` on the reusable shape definition when the
+  component can synthesize missing values
 - `.value_binding()` records that the component shape implements
   `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
@@ -181,6 +181,7 @@ gpui_form_derive::component_shape! {
         new = |window, cx| gpui_component::input::InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
+        requires_value = false;
         value_binding;
         field_suffix = "input";
     }
@@ -190,9 +191,12 @@ gpui_form_derive::component_shape! {
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation; the
 caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
-It accepts `new`, `component`, `value_binding`, and `field_suffix` metadata,
-with `type State = ...` supplying the wrapped state type. If `new` is omitted,
-the generated implementation calls `<State>::new(window, cx)`.
+It accepts `new`, `component`, `requires_value`, `value_binding`, and
+`field_suffix` metadata, with `type State = ...` supplying the wrapped state
+type. If `new` is omitted, the generated implementation calls
+`<State>::new(window, cx)`. `requires_value = false` publishes that
+non-optional fields using this shape can store `T` directly because the
+component can synthesize a missing value.
 Options may be separated with semicolons or commas, and the final separator is
 optional.
 

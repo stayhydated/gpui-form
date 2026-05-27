@@ -376,7 +376,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_gpui_form_emits_required_validation_as_builder_chain() {
+    fn test_gpui_form_inherits_required_policy_without_field_override() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
@@ -397,10 +397,14 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains(&compact_tokens(
-                "koruma_collection::general::RequiredValidation::<Option<_>>::builder()"
-            )),
-            "Generated value holder should emit synthetic required validation as a builder chain: {compact}"
+            compact.contains(
+                "with_requires_value(<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+            ),
+            "FieldVariant should inherit required-value policy from the shape: {compact}"
+        );
+        assert!(
+            !compact.contains("RequiredValidation"),
+            "shape-inherited requiredness should not depend on a field-level required override: {compact}"
         );
     }
 
@@ -742,7 +746,7 @@ mod gpui_form_tests {
                 #[gpui_form(gpui_form_collection::input::Input::<_>, default = "test@example.com")]
                 email: String,
 
-                #[gpui_form(gpui_form_collection::switch::Switch.requires_value(false))]
+                #[gpui_form(gpui_form_collection::switch::Switch)]
                 enabled: bool,
             }
         };
@@ -766,12 +770,14 @@ mod gpui_form_tests {
             "positional component syntax should compose with key-value field helpers"
         );
         assert!(
-            compact.contains("pubenabled:bool"),
-            "positional component metadata methods should still affect holder optionality"
+            compact.contains("pubenabled:"),
+            "positional component syntax should generate a value-holder field: {compact}"
         );
         assert!(
-            compact.contains("with_requires_value(false)"),
-            "positional component metadata methods should be stored in shape metadata"
+            compact.contains(
+                "with_requires_value(<gpui_form_collection::switch::Switchas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+            ),
+            "positional component syntax should inherit required-value metadata from the shape"
         );
     }
 
@@ -836,8 +842,10 @@ mod gpui_form_tests {
             "FieldVariant should store the source model value type: {compact}"
         );
         assert!(
-            compact.contains("with_requires_value(true)"),
-            "FieldVariant should store generated required-value policy: {compact}"
+            compact.contains(
+                "with_requires_value(<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+            ),
+            "FieldVariant should inherit generated required-value policy from the shape: {compact}"
         );
         assert!(
             compact.contains("with_conversions(Some(\"crate::types::AccountCode::new\"),Some(\"crate::types::AccountCode::into_string\"))"),
@@ -846,7 +854,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_component_shape_requires_value_false_override() {
+    fn test_component_shape_rejects_field_required_value_override() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -866,16 +874,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubenabled:bool"),
-            "requires_value(false) should keep value holder field non-optional"
-        );
-        assert!(
-            !compact.contains("pubenabled:Option<bool>"),
-            "requires_value(false) should avoid wrapping in Option"
-        );
-        assert!(
-            compact.contains("with_requires_value(false)"),
-            "generic shape required-value policy should be stored as metadata: {compact}"
+            compact.contains("unknowncomponentmetadata`requires_value`"),
+            "field-level requires_value override should be rejected: {compact}"
         );
     }
 
