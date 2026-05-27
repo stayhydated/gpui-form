@@ -55,7 +55,6 @@ gpui_form_derive::component_shape! {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SelectOptions {
     pub searchable: bool,
-    pub partial: bool,
 }
 
 #[bon::bon]
@@ -66,14 +65,8 @@ where
 {
     /// Starts a bon-style option chain for `#[gpui_form(...)]`.
     #[builder(start_fn = builder, finish_fn = build)]
-    pub fn options(
-        #[builder(default)] searchable: bool,
-        #[builder(default)] partial: bool,
-    ) -> SelectOptions {
-        SelectOptions {
-            searchable,
-            partial,
-        }
+    pub fn options(#[builder(default)] searchable: bool) -> SelectOptions {
+        SelectOptions { searchable }
     }
 
     pub fn new_default(
@@ -111,10 +104,5 @@ where
         value: bool,
     ) -> SelectOptionsBuilder<T, D, select_options_builder::SetSearchable> {
         Self::builder().searchable(value)
-    }
-
-    /// Starts an option chain with partial rendering enabled.
-    pub fn partial(value: bool) -> SelectOptionsBuilder<T, D, select_options_builder::SetPartial> {
-        Self::builder().partial(value)
     }
 }
