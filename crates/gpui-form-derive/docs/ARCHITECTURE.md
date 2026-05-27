@@ -101,8 +101,8 @@ When the `inventory` feature is enabled:
 
 - emits a `ComponentShape` impl directly for a state type
 - defaults constructor wiring to `Self::new(window, cx)`
-- accepts a constructor expression for `new = ...`, matching the
-  function-like macro constructor model
+- accepts a constructor expression for `new = ...`; paths and closures receive
+  `(window, cx)`, while direct constructor expressions are emitted as written
 - optionally stores a component path for prototyping output
 - optionally sets shape-level `VALUE_BINDING` metadata for
   `ComponentValueBinding<T>` prototyping hooks, including
@@ -118,6 +118,7 @@ When the `inventory` feature is enabled:
 - accepts caller generics, where clauses, and outer attributes
 - accepts the same `new`, `component`, `value_binding`, `field_suffix`, and
   `shape_crate` metadata keys as `#[derive(ComponentShape)]`
+- defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_component::shape` by default

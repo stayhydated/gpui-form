@@ -2,6 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Expr, LitStr, Path, Result, Token, parse_macro_input};
 
+use super::component_shape_constructor::constructor_body_tokens;
+
 #[derive(Debug, Default)]
 struct ComponentShapeMeta {
     new: Option<Expr>,
@@ -81,7 +83,11 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMeta> {
 fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
     let meta = parse_meta(&input.attrs)?;
-    let new_expr = meta.new.unwrap_or_else(|| syn::parse_quote!(Self::new));
+    let constructor_body = meta
+        .new
+        .as_ref()
+        .map(constructor_body_tokens)
+        .unwrap_or_else(|| quote! { Self::new(window, cx) });
     let shape_crate = meta
         .shape_crate
         .unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
@@ -119,7 +125,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
                 window: &mut ::gpui::Window,
                 cx: &mut ::gpui::Context<'_, Self::State>,
             ) -> Self::State {
-                (#new_expr)(window, cx)
+                #constructor_body
             }
 
             #component_path_const
@@ -163,7 +169,7 @@ mod tests {
             "should implement ComponentShape for derived type"
         );
         assert!(
-            compact.contains("(Self::new)(window,cx)"),
+            compact.contains("Self::new(window,cx)"),
             "should default to Self::new constructor"
         );
     }
@@ -227,6 +233,28 @@ mod tests {
         assert!(
             compact.contains("(|window,cx|Self::with_mode(window,cx,Mode::Tags))(window,cx)"),
             "should allow derive constructors to be full expressions"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_with_direct_constructor_call() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(new = Self::with_mode(window, cx, Mode::Tags))]
+            struct TagsState;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("Self::with_mode(window,cx,Mode::Tags)"),
+            "direct constructor calls should be emitted as written: {compact}"
+        );
+        assert!(
+            !compact.contains("(Self::with_mode(window,cx,Mode::Tags))(window,cx)"),
+            "direct constructor calls should not receive window/cx twice: {compact}"
         );
     }
 

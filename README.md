@@ -295,10 +295,11 @@ pub struct PostEditor {
 }
 ```
 
-`new` accepts a constructor expression, so use a function path when the state
-already has the right `fn(&mut Window, &mut Context<'_, State>) -> State`
-signature or a closure when the shape needs to bake in local options. If `new`
-is omitted, the derive calls `Self::new(window, cx)`.
+`new` accepts a constructor expression. Use a function path or closure when the
+macro should pass `(window, cx)` for you, or use a full constructor expression
+such as `Self::with_label(window, cx, "tags")` when the expression should be
+emitted as written. If `new` is omitted, the derive calls
+`Self::new(window, cx)`.
 
 ### 3. Declare a reusable external shape
 
@@ -306,7 +307,6 @@ is omitted, the derive calls `Self::new(window, cx)`.
 gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
-        new = gpui_component::input::InputState::new;
         component = gpui_component::input::Input;
         field_suffix = "input";
     }
@@ -324,7 +324,8 @@ can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 It uses the same `new`, `component`, `value_binding`, `field_suffix`, and
 `shape_crate` metadata as `#[derive(ComponentShape)]`, plus `type State = ...`
-for the wrapped external state type.
+for the wrapped external state type. If `new` is omitted, the macro calls
+`<State>::new(window, cx)`.
 
 Component shapes can also opt into generated value synchronization by
 implementing `gpui_form_component::shape::ComponentValueBinding<T>` on the shape.

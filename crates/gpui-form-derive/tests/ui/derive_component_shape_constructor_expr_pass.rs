@@ -11,7 +11,21 @@ struct TagsInput;
 )]
 struct TagsState;
 
+#[derive(ComponentShape)]
+#[gpui_form_shape(new = DirectTagsState::with_label(window, cx, "direct"))]
+struct DirectTagsState;
+
 impl TagsState {
+    fn with_label(
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<'_, Self>,
+        _label: &'static str,
+    ) -> Self {
+        Self
+    }
+}
+
+impl DirectTagsState {
     fn with_label(
         _window: &mut gpui::Window,
         _cx: &mut gpui::Context<'_, Self>,

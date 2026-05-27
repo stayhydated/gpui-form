@@ -133,8 +133,9 @@ pub struct TagsState;
 ```
 
 By default, the generated implementation calls `Self::new(window, cx)`.
-`new = ...` accepts a constructor expression, including a function path or
-closure, and the generated implementation calls it with `(window, cx)`.
+`new = ...` accepts a constructor expression. Function paths and closures are
+called with `(window, cx)`; full constructor expressions such as
+`Self::with_label(window, cx, "tags")` are emitted as written.
 `component = ...` populates `ComponentShape::COMPONENT_PATH`.
 `value_binding` sets `ComponentShape::VALUE_BINDING = true`, so generated
 prototyping code can inherit the shape's `ComponentValueBinding<T>`
@@ -170,7 +171,8 @@ Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation; the
 caller can still add a `ComponentValueBinding<T>` impl on that wrapper.
 It accepts the same metadata keys as `#[derive(ComponentShape)]`, with
-`type State = ...` supplying the wrapped state type.
+`type State = ...` supplying the wrapped state type. If `new` is omitted, the
+generated implementation calls `<State>::new(window, cx)`.
 
 ## Feature Flags
 

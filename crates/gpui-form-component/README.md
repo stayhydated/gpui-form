@@ -205,13 +205,14 @@ shape when the application owns the component or when a collection shape is not
 specific enough.
 
 You can declare a reusable wrapper shape with the `gpui-form-derive`
-function-like macro:
+function-like macro. Prefer this form for reusable or generic shapes; it
+supports generics, where clauses, outer attributes, and order-independent
+metadata.
 
 ```rs
 gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
-        new = gpui_component::input::InputState::new;
         component = gpui_component::input::Input;
         field_suffix = "input";
     }
@@ -231,9 +232,15 @@ Or derive the same contract directly on a state type:
 pub struct TagsState;
 ```
 
-In both forms, `new` accepts a constructor expression and is called with
-`(window, cx)`. Use a function path for a state constructor with the exact
-signature, or a closure when the shape needs to capture fixed options.
+In both forms, `new` accepts a constructor expression. Function paths and
+closures are called with `(window, cx)`; full constructor expressions such as
+`Self::with_label(window, cx, "tags")` are emitted as written. For
+`gpui_form_derive::component_shape!`, omitting `new` calls
+`<State>::new(window, cx)`.
+
+This crate also exports `gpui_form_component::component_shape!` for simple
+runtime-local shapes. It is intentionally narrower than the derive crate macro,
+so reusable shapes should generally use `gpui_form_derive::component_shape!`.
 
 For component shapes that should participate in generated prototyping
 subscriptions, implement `shape::ComponentValueBinding<T>` for the same

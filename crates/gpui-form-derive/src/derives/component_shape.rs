@@ -6,6 +6,8 @@ use syn::{
     parse_macro_input,
 };
 
+use super::component_shape_constructor::constructor_body_tokens;
+
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
@@ -20,7 +22,7 @@ struct ComponentShapeInput {
     ident: Ident,
     generics: Generics,
     state: Type,
-    new: Expr,
+    new: Option<Expr>,
     component: Option<Path>,
     value_binding: bool,
     field_suffix: Option<syn::LitStr>,
@@ -118,7 +120,7 @@ impl Parse for ComponentShapeInput {
             ident,
             generics,
             state: state.ok_or_else(|| input.error("missing `type State = ...;`"))?,
-            new: new.ok_or_else(|| input.error("missing `new = ...;`"))?,
+            new,
             component,
             value_binding,
             field_suffix,
@@ -168,6 +170,10 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let phantom_type = phantom_type_tokens(&generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let shape_crate = shape_crate.unwrap_or_else(|| syn::parse_quote!(::gpui_form_component));
+    let constructor_body = new
+        .as_ref()
+        .map(constructor_body_tokens)
+        .unwrap_or_else(|| quote! { <#state>::new(window, cx) });
     let component_path_const = component.map(|component| {
         quote! {
             const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
@@ -198,7 +204,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
                 window: &mut ::gpui::Window,
                 cx: &mut ::gpui::Context<'_, Self::State>,
             ) -> Self::State {
-                (#new)(window, cx)
+                #constructor_body
             }
 
             #component_path_const
@@ -284,6 +290,49 @@ mod tests {
         assert!(
             compact.contains("implcrate::shape::ComponentShapeforLocalInputShape"),
             "macro should allow runtime crates to target their local shape trait path: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_defaults_to_state_new() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct LocalInputShape {
+                type State = crate::state::InputState;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("<crate::state::InputState>::new(window,cx)"),
+            "macro should default omitted constructors to State::new: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_accepts_direct_constructor_call() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct LocalInputShape {
+                type State = crate::state::InputState;
+                new = crate::state::InputState::new(window, cx).with_label("email");
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("crate::state::InputState::new(window,cx).with_label(\"email\")"),
+            "direct constructor expressions should be emitted as written: {compact}"
+        );
+        assert!(
+            !compact.contains(
+                "(crate::state::InputState::new(window,cx).with_label(\"email\"))(window,cx)"
+            ),
+            "direct constructor expressions should not receive window/cx twice: {compact}"
         );
     }
 

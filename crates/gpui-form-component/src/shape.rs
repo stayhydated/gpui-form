@@ -5,9 +5,9 @@
 //! - `FormFields` entity state type
 //! - `FormComponents` constructor function body
 //!
-//! Prefer using `gpui_form_derive::component_shape!` for reusable wrapper
-//! shapes or `#[derive(gpui_form_derive::ComponentShape)]` for owned state
-//! types. This module also exports [`component_shape!`] for simple
+//! Prefer using `gpui_form_derive::component_shape!` for reusable or generic
+//! wrapper shapes, and `#[derive(gpui_form_derive::ComponentShape)]` for owned
+//! state types. This module also exports [`component_shape!`] for simple
 //! runtime-local shapes.
 
 /// Shape contract for user-defined components.
@@ -168,6 +168,10 @@ where
 }
 
 /// Define a component shape with minimal boilerplate.
+///
+/// Prefer `gpui_form_derive::component_shape!` for reusable or generic shapes.
+/// This macro is intentionally narrow and is kept for simple runtime-local
+/// wrappers.
 ///
 /// # Example
 ///

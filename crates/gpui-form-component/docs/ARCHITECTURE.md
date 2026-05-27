@@ -132,7 +132,8 @@ Responsibilities:
 
 1. Users either declare a wrapper shape with `gpui_form_derive::component_shape!`
    or derive `ComponentShape` directly on owned state. The runtime module also
-   keeps a simple `component_shape!` helper for local runtime shapes.
+   keeps a deliberately narrow `component_shape!` helper for simple local
+   runtime shapes; reusable or generic shapes should use the derive crate macro.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component path
