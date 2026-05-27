@@ -12,8 +12,8 @@ repository.workspace = true
 readme = "README.md"
 
 [features]
-default = [  ]
 component-shape = [ "dep:gpui-form-derive", "dep:gpui-form-runtime" ]
+default = [  ]
 derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]

@@ -13,9 +13,9 @@ readme = "README.md"
 
 [dependencies]
 bon = { workspace = true }
+chrono = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
-chrono = { workspace = true }
 gpui-form-derive = { workspace = true }
 gpui-form-runtime = { workspace = true }
 strum = { workspace = true }

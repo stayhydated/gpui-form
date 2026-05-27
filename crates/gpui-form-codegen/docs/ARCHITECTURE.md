@@ -34,6 +34,7 @@ crate.
 - `#[gpui_form(component = my::Shape)]`
 
 Important parse-time responsibilities:
+
 - expression syntax uses a shape path plus optional generic component metadata
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
