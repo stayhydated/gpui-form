@@ -12,6 +12,11 @@ components into `#[derive(GpuiForm)]` through `ComponentShape`.
 Ensure the consuming crate depends on `gpui-form-runtime`, because generated
 code references `gpui_form_runtime::shape`.
 
+Use `use-gpui-form` for ordinary forms built from existing built-in,
+collection, or component-owned shapes. Use this skill when the work crosses
+into custom shape ownership, wrapper shape declaration, constructor metadata,
+or reusable value-binding behavior.
+
 Do not use it as guidance for changing the proc macro implementation itself.
 For derive or macro internals, inspect `crates/gpui-form-derive`,
 `crates/gpui-form-codegen`, the relevant `docs/ARCHITECTURE.md`, and

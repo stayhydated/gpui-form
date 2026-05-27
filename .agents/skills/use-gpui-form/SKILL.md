@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Use when Codex needs to build user-facing application forms with gpui-form, including adding #[derive(GpuiForm)] to app structs, choosing gpui_form component attributes, using generated form fields/components/value holders, wiring SelectItem or InfiniteSelect enums, and adding component shapes."
+description: "Use when Codex needs to build user-facing application forms with gpui-form, including adding #[derive(GpuiForm)] to app structs, choosing existing gpui_form component shapes, using generated form fields/components/value holders, and wiring SelectItem or InfiniteSelect enums."
 ---
 
 # Use GPUI Form
@@ -10,7 +10,12 @@ description: "Use when Codex needs to build user-facing application forms with g
 Treat this skill as a hosted public-usage guide for `gpui-form` consumers. Use
 it only for user-facing application workflows: deriving forms on app models,
 choosing component attributes, using generated form state, wiring select and
-infinite-select enums, and adding app-owned component shapes.
+infinite-select enums, and applying existing built-in, collection, or
+component-owned shapes.
+
+For custom app-owned components, external state wrappers, reusable
+`ComponentShape` implementations, or shape-level value bindings, use
+`use-gpui-form-component-shapes`.
 
 Do not use this skill as a contributor guide for `gpui-form` repository
 internals. For build, test, format, lint, maintenance, release, or architecture
@@ -63,6 +68,8 @@ helpers and component-specific derives explicitly:
    `gpui_form_collection::slider::Slider`,
    `gpui_form_collection::color_picker::ColorPicker`, and
    `gpui_form_collection::otp_input::OtpInput::<_>`.
+   If the app needs to create a new reusable component shape or wrap an
+   external component/state pair, switch to `use-gpui-form-component-shapes`.
 
 ## Reference Selection
 
@@ -107,13 +114,10 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly, or use a dedicated `ComponentShape` wrapper for custom search/depth options.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly.
 - Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required.
-- Put `requires_value = false` on reusable wrapper or owned component shapes that can synthesize missing values; consuming field attributes do not accept `.requires_value(...)`.
-- For app-owned widgets, derive `ComponentShape` from `gpui-form-derive` on the rendered component with `state = ...`, or declare a reusable wrapper shape with `gpui_form_derive::component_shape!`.
-- Use `gpui_form_derive::component_shape!` for wrapper shapes. Its `new` metadata can be omitted when the wrapped state has `State::new(window, cx)`, can be a function path or closure that receives `(window, cx)`, or can be a full constructor expression such as `State::new(window, cx).with_mode(...)`; add `requires_value = false` when the wrapper can synthesize missing values; options may be separated with semicolons or commas.
-- For component-derived shapes, put `#[gpui_form_derive::component_value_binding]` on the backing state's `ComponentValueBinding<T>` impl so the component shape can delegate through `ComponentStateValueBinding<T>`. Wrapper shapes from `component_shape!` put reusable `ComponentValueBinding<T>` impls inside the macro block; nested binding impls publish shape-level value-binding metadata automatically.
-- Let reusable component shapes publish prototyping names with `field_suffix = "..."` when they will feed prototyping output; collection and component-owned shapes already publish suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
+- For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
+- Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`, and shapes without metadata fall back to the
   shape-name heuristic.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
