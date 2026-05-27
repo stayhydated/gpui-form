@@ -20,6 +20,8 @@ use gpui_component::{
 };
 
 use crate::i18n::FilePickerText;
+#[cfg(feature = "derive")]
+use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
 
 /// Which path kinds a [`FilePicker`] should ask GPUI to select.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -83,11 +85,51 @@ pub enum FilePickerEvent {
 }
 
 /// State for a native file picker control.
+#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "derive",
+    gpui_form_shape(
+        component = gpui_form_component::file_picker::FilePicker,
+        value_binding,
+        field_suffix = "file_picker",
+        shape_crate = crate
+    )
+)]
 pub struct FilePickerState {
     focus_handle: FocusHandle,
     paths: Vec<PathBuf>,
     last_error: Option<SharedString>,
 }
+
+#[cfg(feature = "derive")]
+impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
+    type Event = FilePickerEvent;
+
+    fn seed_value_binding_state(
+        state: &mut Self::State,
+        value: Option<&Vec<PathBuf>>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self::State>,
+    ) {
+        match value {
+            Some(value) => state.set_paths(value.clone(), window, cx),
+            None => state.clear_paths(window, cx),
+        }
+    }
+
+    fn form_value_change(
+        _state: &Self::State,
+        event: &Self::Event,
+    ) -> FormValueChange<Vec<PathBuf>> {
+        match event {
+            FilePickerEvent::Change(paths) => FormValueChange::Set(paths.clone()),
+            _ => FormValueChange::Unchanged,
+        }
+    }
+}
+
+#[cfg(feature = "derive")]
+impl OwnedComponentValueBinding<Vec<PathBuf>> for FilePickerState {}
 
 impl Focusable for FilePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {

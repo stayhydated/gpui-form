@@ -2989,7 +2989,6 @@ dependencies = [
  "gpui-component",
  "gpui-form-component",
  "gpui-form-derive",
- "jiff",
  "strum 0.28.0",
 ]
 

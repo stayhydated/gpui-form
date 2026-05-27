@@ -1,16 +1,16 @@
 use chrono::NaiveDate;
-use chrono::Datelike;
 use gpui::{Context, Window};
-use gpui_form_component::date_picker::{
-    parse_form_date, DatePickerEvent, DatePickerState, DateRangePickerEvent, DateRangePickerState,
+use gpui_component::{
+    calendar::Date,
+    date_picker::{DatePickerEvent, DatePickerState},
 };
 use gpui_form_component::shape::{ComponentValueBinding, FormValueChange};
 
 gpui_form_derive::component_shape! {
-    /// Form component for a `gpui_form_component::date_picker::DatePicker`.
+    /// Form component for a `gpui_component::date_picker::DatePicker`.
     pub struct DatePicker {
         type State = DatePickerState;
-        component = gpui_form_component::date_picker::DatePicker;
+        component = gpui_component::date_picker::DatePicker;
         value_binding;
         field_suffix = "date_picker";
     }
@@ -25,39 +25,31 @@ impl ComponentValueBinding<NaiveDate> for DatePicker {
         window: &mut Window,
         cx: &mut Context<'_, Self::State>,
     ) {
-        state.set_date(value.and_then(|value| jiff_date_from_chrono(*value)), window, cx);
+        state.set_date(Date::Single(value.copied()), window, cx);
     }
 
     fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<NaiveDate> {
         match event {
-            DatePickerEvent::Change(Some(date)) => {
-                date.to_string().parse::<NaiveDate>()
-                    .map_or(FormValueChange::Unchanged, FormValueChange::Set)
-            }
-            DatePickerEvent::Change(None) => FormValueChange::Clear,
+            DatePickerEvent::Change(Date::Single(Some(date))) => FormValueChange::Set(*date),
+            DatePickerEvent::Change(Date::Single(None)) => FormValueChange::Clear,
+            DatePickerEvent::Change(Date::Range(_, _)) => FormValueChange::Unchanged,
         }
     }
 }
 
-fn jiff_date_from_chrono(date: NaiveDate) -> Option<jiff::civil::Date> {
-    let year = i16::try_from(date.year()).ok()?;
-    let month = i8::try_from(date.month()).ok()?;
-    let day = i8::try_from(date.day()).ok()?;
-    jiff::civil::Date::new(year, month, day).ok()
-}
-
 gpui_form_derive::component_shape! {
-    /// Form component for a `gpui_form_component::date_picker::DateRangePicker`.
+    /// Form component for a range-mode `gpui_component::date_picker::DatePicker`.
     pub struct DateRangePicker {
-        type State = DateRangePickerState;
-        component = gpui_form_component::date_picker::DateRangePicker;
+        type State = DatePickerState;
+        new = DatePickerState::range;
+        component = gpui_component::date_picker::DatePicker;
         value_binding;
         field_suffix = "date_range_picker";
     }
 }
 
 impl ComponentValueBinding<(NaiveDate, NaiveDate)> for DateRangePicker {
-    type Event = DateRangePickerEvent;
+    type Event = DatePickerEvent;
 
     fn seed_value_binding_state(
         state: &mut Self::State,
@@ -65,12 +57,11 @@ impl ComponentValueBinding<(NaiveDate, NaiveDate)> for DateRangePicker {
         window: &mut Window,
         cx: &mut Context<'_, Self::State>,
     ) {
-        state.set_range(
-            value.and_then(|(start, _)| jiff_date_from_chrono(*start)),
-            value.and_then(|(_, end)| jiff_date_from_chrono(*end)),
-            window,
-            cx,
-        );
+        let date = match value {
+            Some((start, end)) => Date::Range(Some(*start), Some(*end)),
+            None => Date::Range(None, None),
+        };
+        state.set_date(date, window, cx);
     }
 
     fn form_value_change(
@@ -78,21 +69,11 @@ impl ComponentValueBinding<(NaiveDate, NaiveDate)> for DateRangePicker {
         event: &Self::Event,
     ) -> FormValueChange<(NaiveDate, NaiveDate)> {
         match event {
-            DateRangePickerEvent::Change(Some(start), Some(end)) => {
-                jiff_date_range_from_chrono(start, end).map_or(FormValueChange::Unchanged, |value| {
-                    FormValueChange::Set(value)
-                })
-            }
-            DateRangePickerEvent::Change(_, _) => FormValueChange::Clear,
+            DatePickerEvent::Change(Date::Range(Some(start), Some(end))) => {
+                FormValueChange::Set((*start, *end))
+            },
+            DatePickerEvent::Change(Date::Range(_, _)) => FormValueChange::Clear,
+            DatePickerEvent::Change(Date::Single(_)) => FormValueChange::Unchanged,
         }
     }
-}
-
-fn jiff_date_range_from_chrono(
-    start: &jiff::civil::Date,
-    end: &jiff::civil::Date,
-) -> Option<(NaiveDate, NaiveDate)> {
-    let start = parse_form_date(start.clone())?;
-    let end = parse_form_date(end.clone())?;
-    Some((start, end))
 }

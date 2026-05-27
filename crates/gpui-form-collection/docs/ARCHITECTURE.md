@@ -47,16 +47,13 @@ this crate owns reusable component types for common `gpui-component` widgets.
   `gpui_component::slider::SliderState` and `SliderEvent`.
 - `color_picker::ColorPicker`: value-bound color picker backed by
   `gpui_component::color_picker::ColorPickerState`.
-- `date_picker::DatePicker`: date picker wrapper backed by
-  `gpui_form_component::date_picker::DatePickerState`; `DatePickerEvent::Change`
+- `date_picker::DatePicker`: value-bound date picker backed by
+  `gpui_component::date_picker::DatePickerState`; `DatePickerEvent::Change`
   events map clear and selected dates to `chrono::NaiveDate` form values.
-- `date_picker::DateRangePicker`: date range picker wrapper backed by
-  `gpui_form_component::date_picker::DateRangePickerState`; `Change` events map
+- `date_picker::DateRangePicker`: range-mode wrapper backed by
+  `gpui_component::date_picker::DatePickerState::range`; `Change` events map
   clear and selected ranges to `(chrono::NaiveDate, chrono::NaiveDate)` form
   values.
-- `file_picker::FilePicker`: path picker wrapper backed by
-  `gpui_form_component::file_picker::FilePickerState` and mapping `Change`
-  updates to `Vec<std::path::PathBuf>`.
 - `otp_input::OtpInput<T>`: OTP input wrapper backed by
   `gpui_component::input::OtpState`; `InputEvent::Change` maps to parsed value
   updates.

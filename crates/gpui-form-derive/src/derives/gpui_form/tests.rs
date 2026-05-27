@@ -413,7 +413,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    component = crate::DatePickerShape
+                    component = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
             }
@@ -495,7 +495,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    component = crate::DatePickerShape
+                    component = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -546,7 +546,7 @@ mod gpui_form_tests {
                 #[gpui_form(
                     type = chrono::NaiveDate,
                     into = |dt| to_model(dt),
-                    component = crate::DatePickerShape
+                    component = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
 

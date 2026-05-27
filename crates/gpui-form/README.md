@@ -31,7 +31,8 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", branch 
 
 gpui-form = "*"
 
-# Optional: runtime component contracts/helpers and the InfiniteSelect derive
+# Optional: runtime component contracts/helpers, file-picker form shape,
+# and the InfiniteSelect derive
 gpui-form-component = { version = "*", features = ["derive"] }
 
 # Optional: ready-made component shapes and select derive support
@@ -109,8 +110,8 @@ the shape expression directly in the attribute:
 - `#[gpui_form(gpui_form_collection::color_picker::ColorPicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
-- `#[gpui_form(gpui_form_collection::file_picker::FilePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
+- `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The explicit key-value form remains available, for example
@@ -397,7 +398,7 @@ field by combining `type`, `from`, and `into`:
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        crate::DatePickerShape,
+        gpui_form_collection::date_picker::DatePicker,
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp
@@ -408,14 +409,9 @@ pub struct User {
 
 This pattern is useful when the model stores a domain-specific timestamp type
 but the UI should edit a calendar date.
-The default empty placeholder is plain English fallback copy; pass
-`DatePicker::placeholder(...)` when a form needs localized or custom copy. The
-selected-date label and calendar popover use ICU4X for localized month names,
-weekday headers, day/year labels, and locale-specific week starts. Manual
-runtime code can use `DateRangePicker` and `DateRangePickerState` for range
-selection. To use this runtime from `GpuiForm`, define an application or
-collection shape that implements
-`gpui_form_component::shape::ComponentShape`.
+The collection `DatePicker` and `DateRangePicker` shapes use the upstream
+`gpui_component::date_picker::DatePicker` runtime. Range fields use
+`gpui_component::date_picker::DatePickerState::range` under the hood.
 
 ## Prototyping
 

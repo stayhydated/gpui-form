@@ -76,7 +76,7 @@ pub struct User {
     #[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
     pub otp_code: String,
 
-    #[gpui_form(component = gpui_form_collection::file_picker::FilePicker)]
+    #[gpui_form(component = gpui_form_component::file_picker::FilePickerState)]
     pub uploaded_files: Vec<std::path::PathBuf>,
 
     #[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
@@ -101,7 +101,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component = gpui_form_component::date_picker::DatePickerShape
+        component = gpui_form_collection::date_picker::DatePicker
     )]
     pub birth_date: Option<Timestamp>,
 

@@ -9,8 +9,11 @@ macros.
 ## What It Provides
 
 - `infinite_select`: runtime traits and helpers for cascading enum selects
-- `date_picker`: localized runtime state and element wrapper for calendar date input
-- `file_picker`: native GPUI path selection rendered with `gpui-component` controls
+- `date_picker`: localized runtime state and element wrappers for calendar
+  date input
+- `file_picker`: native GPUI path selection rendered with `gpui-component`
+  controls, plus a derive-backed `FilePickerState` form shape when the
+  `derive` feature is enabled
 - `shape`: the runtime contract for user-defined component state
 
 ## Infinite Select
@@ -102,7 +105,7 @@ limit, define a small `ComponentShape` wrapper whose `new` function calls
 
 Derived `InfiniteSelect` enums expose:
 
-- `PartialEq` compatibility with the backing `gpui-component` select value
+- `PartialEq` alignment with the backing `gpui-component` select value
   comparison
 - `variant_label()` for user-facing option titles
 - `#[fluent_kv(keys = ["label", "description"], keys_this)]` to emit
@@ -136,14 +139,16 @@ use gpui_form_component::date_picker::{
 };
 ```
 
-Component shapes can store `Entity<DatePickerState>`, render `DatePicker`,
-and convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
+Component shapes can store `Entity<DatePickerState>`, render `DatePicker`, and
+convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
 The selected-date label and embedded calendar popover share the same display
 locale: ICU4X formats month names, weekday headers, day/year labels, and the
 locale-specific first day of the week.
 Manual forms can use `DateRangePickerState`, `DateRangePicker`, and
 `DateRangePickerEvent` when they need range selection over the same localized
-calendar popover.
+calendar popover. The ready-made collection date shapes use
+`gpui_component::date_picker`; use this runtime directly when the localized
+`gpui-form-component` date picker is specifically needed.
 
 ## File Picker
 
@@ -180,6 +185,14 @@ FilePicker::new(&picker)
 Use `FilePicker::directories()` or `FilePicker::files_or_directories()` when
 the dialog should select directories instead of files. Multiple selection is
 available through `FilePicker::multiple(true)`.
+
+For `#[derive(GpuiForm)]`, enable this crate's `derive` feature and use the
+state type as the form shape:
+
+```rs
+#[gpui_form(gpui_form_component::file_picker::FilePickerState)]
+pub uploaded_files: Vec<std::path::PathBuf>;
+```
 
 ## Component Stories
 

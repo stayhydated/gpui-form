@@ -54,8 +54,8 @@ Supported component forms:
 - `#[gpui_form(gpui_form_collection::color_picker::ColorPicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DatePicker)]`
 - `#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]`
-- `#[gpui_form(gpui_form_collection::file_picker::FilePicker)]`
 - `#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]`
+- `#[gpui_form(gpui_form_component::file_picker::FilePickerState)]`
 - `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
 
 The explicit key-value form remains available, for example

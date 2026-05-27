@@ -5,7 +5,7 @@ Use this reference for application code that consumes `gpui-form`.
 ## Install Shape
 
 Use `gpui-form` as the public entry point. Match `gpui` and `gpui-component`
-versions to the compatibility guidance for the `gpui-form` version in use.
+versions to the version guidance for the `gpui-form` version in use.
 
 ```toml
 [dependencies]
@@ -49,8 +49,8 @@ Useful runtime/helper paths:
 #[gpui_form(gpui_form_collection::color_picker::ColorPicker)]
 #[gpui_form(gpui_form_collection::date_picker::DatePicker)]
 #[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]
-#[gpui_form(gpui_form_collection::file_picker::FilePicker)]
 #[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]
+#[gpui_form(gpui_form_component::file_picker::FilePickerState)]
 #[gpui_form(gpui_form_collection::checkbox::Checkbox)]
 #[gpui_form(gpui_form_collection::switch::Switch)]
 #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
@@ -95,14 +95,15 @@ Common struct attributes:
 - Use `gpui_form_collection::color_picker::ColorPicker` for color selection.
 - Use `gpui_form_collection::date_picker::DatePicker` for single-date editing.
 - Use `gpui_form_collection::date_picker::DateRangePicker` for date-range editing.
-- Use `gpui_form_collection::file_picker::FilePicker` for native file/directory
-  selection.
+- Use `gpui_form_component::file_picker::FilePickerState` for native
+  file/directory selection; enable `gpui-form-component`'s `derive` feature.
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
   `ComponentShape` wrapper when search or depth limits are needed.
-- Use a component shape around `gpui_form_component::date_picker` or
-  `gpui_form_component::file_picker` when a form field needs those runtimes.
+- Define a custom component shape around `gpui_form_component::date_picker` or
+  `gpui_form_component::file_picker` only when the ready-made shape needs
+  non-default runtime construction or rendering metadata.
 - Use `#[gpui_form(my::Shape)]` when the app owns the state/widget contract.
 - Treat the component expression and chained generic metadata methods as derive
   metadata; runtime construction still uses `ComponentShape::new`.
@@ -177,7 +178,7 @@ model stores:
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        crate::DatePickerShape,
+        gpui_form_collection::date_picker::DatePicker,
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp

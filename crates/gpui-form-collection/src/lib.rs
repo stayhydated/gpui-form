@@ -9,5 +9,4 @@ pub mod otp_input;
 pub mod slider;
 pub mod select;
 pub mod color_picker;
-pub mod file_picker;
 pub mod switch;

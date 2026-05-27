@@ -248,9 +248,9 @@ impl UserForm {
     }
     fn on_uploaded_files_file_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::file_picker::FilePicker>>,
+        state: &Entity<ComponentStateOf<gpui_form_component::file_picker::FilePickerState>>,
         event: &ComponentEventOf<
-            gpui_form_collection::file_picker::FilePicker,
+            gpui_form_component::file_picker::FilePickerState,
             Vec<std::path::PathBuf>,
         >,
         _window: &mut Window,
@@ -259,7 +259,7 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<
-                gpui_form_collection::file_picker::FilePicker,
+                gpui_form_component::file_picker::FilePickerState,
                 Vec<std::path::PathBuf>,
             >(&state, event)
         };
@@ -388,17 +388,14 @@ impl UserForm {
     }
     fn on_birth_date_date_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_component::date_picker::DatePickerShape>>,
-        event: &ComponentEventOf<
-            gpui_form_component::date_picker::DatePickerShape,
-            chrono::NaiveDate,
-        >,
+        state: &Entity<ComponentStateOf<gpui_form_collection::date_picker::DatePicker>>,
+        event: &ComponentEventOf<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_component::date_picker::DatePickerShape, chrono::NaiveDate>(
+            form_value_change::<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>(
                 &state, event,
             )
         };
@@ -561,7 +558,7 @@ impl UserForm {
         });
         uploaded_files_file_picker.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_collection::file_picker::FilePicker,
+                gpui_form_component::file_picker::FilePickerState,
                 Vec<std::path::PathBuf>,
             >(state, current_data.uploaded_files.as_ref(), window, cx);
         });
@@ -601,7 +598,7 @@ impl UserForm {
         });
         birth_date_date_picker.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_component::date_picker::DatePickerShape,
+                gpui_form_collection::date_picker::DatePicker,
                 chrono::NaiveDate,
             >(state, current_data.birth_date.as_ref(), window, cx);
         });
@@ -1094,7 +1091,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_component::date_picker::DateRangePicker::new(
+                            .child(gpui_component::date_picker::DatePicker::new(
                                 &self.fields.holiday_range_date_range_picker,
                             )),
                     )
@@ -1209,7 +1206,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_component::date_picker::DatePicker::new(
+                            .child(gpui_component::date_picker::DatePicker::new(
                                 &self.fields.birth_date_date_picker,
                             )),
                     )

@@ -19,7 +19,8 @@ use jiff::civil::Date as JiffDate;
 
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
-use crate::shape::{ComponentValueBinding, FormValueChange};
+#[cfg(feature = "derive")]
+use crate::shape::{ComponentValueBinding, FormValueChange, OwnedComponentValueBinding};
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -43,6 +44,16 @@ pub enum DateRangePickerEvent {
 }
 
 /// Use to store the state of the date picker.
+#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "derive",
+    gpui_form_shape(
+        component = gpui_form_component::date_picker::DatePicker,
+        value_binding,
+        field_suffix = "date_picker",
+        shape_crate = crate
+    )
+)]
 pub struct DatePickerState {
     focus_handle: FocusHandle,
     date: Option<JiffDate>,
@@ -53,17 +64,8 @@ pub struct DatePickerState {
     _subscriptions: Vec<Subscription>,
 }
 
-// Form shape for a date picker backed by `DatePickerState`.
-crate::component_shape!(
-    pub DatePickerShape,
-    state = DatePickerState,
-    new = DatePickerState::new,
-    component = gpui_form_component::date_picker::DatePicker,
-    value_binding,
-    field_suffix = "date_picker",
-);
-
-impl ComponentValueBinding<chrono::NaiveDate> for DatePickerShape {
+#[cfg(feature = "derive")]
+impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
     type Event = DatePickerEvent;
 
     fn seed_value_binding_state(
@@ -88,6 +90,9 @@ impl ComponentValueBinding<chrono::NaiveDate> for DatePickerShape {
     }
 }
 
+#[cfg(feature = "derive")]
+impl OwnedComponentValueBinding<chrono::NaiveDate> for DatePickerState {}
+
 impl Focusable for DatePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
@@ -97,6 +102,16 @@ impl Focusable for DatePickerState {
 impl EventEmitter<DatePickerEvent> for DatePickerState {}
 
 /// Use to store the state of the date range picker.
+#[cfg_attr(feature = "derive", derive(gpui_form_derive::ComponentShape))]
+#[cfg_attr(
+    feature = "derive",
+    gpui_form_shape(
+        component = gpui_form_component::date_picker::DateRangePicker,
+        value_binding,
+        field_suffix = "date_range_picker",
+        shape_crate = crate
+    )
+)]
 pub struct DateRangePickerState {
     focus_handle: FocusHandle,
     start_date: Option<JiffDate>,
@@ -107,6 +122,41 @@ pub struct DateRangePickerState {
     display_style: DateDisplayStyle,
     _subscriptions: Vec<Subscription>,
 }
+
+#[cfg(feature = "derive")]
+impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {
+    type Event = DateRangePickerEvent;
+
+    fn seed_value_binding_state(
+        state: &mut Self::State,
+        value: Option<&(chrono::NaiveDate, chrono::NaiveDate)>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self::State>,
+    ) {
+        state.set_range(
+            value.and_then(|(start, _)| jiff_date_from_chrono(*start)),
+            value.and_then(|(_, end)| jiff_date_from_chrono(*end)),
+            window,
+            cx,
+        );
+    }
+
+    fn form_value_change(
+        _state: &Self::State,
+        event: &Self::Event,
+    ) -> FormValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
+        match event {
+            DateRangePickerEvent::Change(Some(start), Some(end)) => {
+                jiff_date_range_from_chrono(*start, *end)
+                    .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+            },
+            DateRangePickerEvent::Change(_, _) => FormValueChange::Clear,
+        }
+    }
+}
+
+#[cfg(feature = "derive")]
+impl OwnedComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {}
 
 impl Focusable for DateRangePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {
@@ -796,6 +846,14 @@ fn jiff_date_from_chrono(date: NaiveDate) -> Option<JiffDate> {
     let month = i8::try_from(date.month()).ok()?;
     let day = i8::try_from(date.day()).ok()?;
     JiffDate::new(year, month, day).ok()
+}
+
+#[cfg(feature = "derive")]
+fn jiff_date_range_from_chrono(
+    start: JiffDate,
+    end: JiffDate,
+) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
+    Some((parse_form_date(start)?, parse_form_date(end)?))
 }
 
 fn active_locale() -> Locale {

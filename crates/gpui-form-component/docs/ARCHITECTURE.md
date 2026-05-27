@@ -83,6 +83,8 @@ Responsibilities:
 
 - hold selected date state in `DatePickerState`
 - hold selected manual date-range state in `DateRangePickerState`
+- expose both state types as `ComponentShape`s with value-binding metadata when
+  this crate's `derive` feature is enabled
 - emit `DatePickerEvent::Change(Option<jiff::civil::Date>)`
 - emit `DateRangePickerEvent::Change(Option<jiff::civil::Date>, Option<jiff::civil::Date>)`
 - format display text with locale-aware ICU4X/Jiff formatting
@@ -99,6 +101,8 @@ This subsystem wraps GPUI's native platform path prompt in a form-oriented API.
 Responsibilities:
 
 - hold selected path state in `FilePickerState`
+- expose `FilePickerState` as a `ComponentShape` with value-binding metadata
+  when this crate's `derive` feature is enabled
 - emit `FilePickerEvent::Change`, `Cancel`, and `Error`
 - render the control with `gpui-component` buttons, icons, theme tokens, and
   sizing helpers
@@ -151,11 +155,13 @@ Responsibilities:
 
 ### Date picker
 
-1. Component shapes can store `Entity<DatePickerState>` in `FormFields`.
+1. With the `derive` feature enabled, `#[derive(ComponentShape)]` makes
+   `DatePickerState` and `DateRangePickerState` usable directly in
+   `#[gpui_form(...)]`.
 1. Runtime date selection emits `DatePickerEvent::Change`.
-1. Shape-owned value adapters can convert the `jiff::civil::Date` into the
-   holder field type with `parse_form_date` and any `type`/`into` conversion
-   hooks.
+1. Shape-owned value adapters convert selected `jiff::civil::Date` values into
+   `chrono::NaiveDate` holder field values, with any `type`/`into` conversion
+   hooks handled by the generated form value holder.
 1. Manual range-picking UI can store `Entity<DateRangePickerState>`, render
    `DateRangePicker`, and subscribe to `DateRangePickerEvent::Change`.
 
@@ -167,6 +173,9 @@ Responsibilities:
    state asynchronously when the platform dialog returns.
 1. Subscribers receive changed path lists, cancellation, or platform-dialog
    errors through `FilePickerEvent`.
+1. With the `derive` feature enabled, `#[derive(ComponentShape)]` makes
+   `FilePickerState` usable directly in `#[gpui_form(...)]`; its value binding
+   maps `Change` events to `Vec<std::path::PathBuf>`.
 
 ### Built-in text
 
