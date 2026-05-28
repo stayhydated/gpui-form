@@ -46,13 +46,15 @@ impl ItemForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<Age>, Age>(&state, event)
+            form_value_change::<gpui_form_collection::input::Input<Age>, Age>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.index = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.index = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }

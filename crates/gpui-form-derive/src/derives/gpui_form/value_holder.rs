@@ -419,12 +419,13 @@ fn generate_from_wrapped_field(field: &FieldOptionality) -> TokenStream {
                         )
                 }
             } else {
+                let field_name_str = field_name.to_string();
                 quote! {
                     #field_name: <<#shape as ::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicy
                         as ::gpui_form_runtime::shape::ValueHolderStorage<#base_type>>::map_into_value(
                             from.#field_name,
                             |value| #converted,
-                            || ::core::default::Default::default()
+                            || panic!("Missing required value for field '{}'", #field_name_str)
                         )
                 }
             }
@@ -703,13 +704,7 @@ pub fn generate_value_holder(
     let mut from_where_clause = holder_where_clause.clone();
     let mut new_predicates: Vec<syn::WherePredicate> = Vec::new();
     for f in fields {
-        if !f.skip
-            && !f.was_optional
-            && matches!(
-                field_storage(f),
-                FieldStorage::RequiredValue | FieldStorage::ShapePolicy(_)
-            )
-        {
+        if !f.skip && !f.was_optional && matches!(field_storage(f), FieldStorage::RequiredValue) {
             let original_type = &f.original_type;
             new_predicates.push(syn::parse_quote!(#original_type: ::core::default::Default));
         }

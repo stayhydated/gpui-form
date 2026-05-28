@@ -155,16 +155,46 @@ impl FormLayout for StorybookLayout {
             }
         };
 
+        let disableable_import = if *is_empty {
+            quote! {}
+        } else {
+            quote! { use gpui_component::Disableable as _; }
+        };
+
         let form_action_import = if *is_empty {
             quote! {}
         } else {
             quote! { use some_lib::structs::form_action::FormAction; }
         };
 
+        let form_fields_struct_field = if *is_empty {
+            quote! { _fields: #form_fields_ident, }
+        } else {
+            quote! { fields: #form_fields_ident, }
+        };
+
+        let fields_init = if *is_empty {
+            quote! { _fields: #form_fields_ident, }
+        } else {
+            fields_init.clone()
+        };
+
+        let new_window_arg = if *is_empty {
+            quote! { _window }
+        } else {
+            quote! { window }
+        };
+
+        let render_cx_arg = if *is_empty {
+            quote! { _cx }
+        } else {
+            quote! { cx }
+        };
+
         syn::parse2(quote! {
             #imports
             use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-            use gpui_component::Disableable as _;
+            #disableable_import
             use gpui_component::separator::Separator;
             use gpui_component::form::v_form;
             use gpui_component::v_flex;
@@ -178,7 +208,7 @@ impl FormLayout for StorybookLayout {
             #[gpui_storybook::story]
             pub struct #form_ident {
                 #current_data_field
-                fields: #form_fields_ident,
+                #form_fields_struct_field
                 focus_handle: FocusHandle,
                 #subscriptions_field
             }
@@ -202,7 +232,7 @@ impl FormLayout for StorybookLayout {
             impl #form_ident {
                 #event_handlers
 
-                fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+                fn new(#new_window_arg: &mut Window, cx: &mut Context<Self>) -> Self {
                     #current_data_let
 
                     #component_creations
@@ -223,7 +253,7 @@ impl FormLayout for StorybookLayout {
             }
 
             impl Render for #form_ident {
-                fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                fn render(&mut self, _: &mut Window, #render_cx_arg: &mut Context<Self>) -> impl IntoElement {
 #validation_binding
                     v_flex()
                         .key_context(CONTEXT)

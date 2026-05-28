@@ -808,6 +808,64 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn test_gpui_form_rejects_duplicate_field_options() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(type = String, type = std::string::String)]
+                name: String,
+
+                #[gpui_form(skip, skip = true)]
+                hidden: bool,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("duplicate`type`option")
+                && compact.contains("removetheduplicate`type`entry"),
+            "duplicate type should produce an actionable error: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_component_value_binding_assertion_is_generated_for_opt_in_field() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component = crate::Input.value_binding())]
+                name: String,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains(
+                "::gpui_form_runtime::shape::assert_component_value_binding::<crate::Input,String>()"
+            ),
+            "value_binding() should emit a derive-time ComponentValueBinding assertion through the runtime helper: {compact}"
+        );
+    }
+
+    #[test]
     fn test_field_variant_metadata_records_form_value_holder_conversion_shape() {
         let tokens = quote! {
             #[derive(GpuiForm)]

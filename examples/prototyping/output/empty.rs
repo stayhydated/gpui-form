@@ -1,9 +1,5 @@
-use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-use gpui::{InteractiveElement, ParentElement as _, Styled, div};
-use gpui_component::ActiveTheme as _;
-use gpui_component::Disableable as _;
-use gpui_component::form::field;
+use gpui::{InteractiveElement, ParentElement as _, Styled};
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
@@ -13,7 +9,7 @@ const CONTEXT: &str = "EmptyForm";
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
 pub struct EmptyForm {
-    fields: EmptyFormFields,
+    _fields: EmptyFormFields,
     focus_handle: FocusHandle,
 }
 impl Focusable for EmptyForm {
@@ -30,15 +26,15 @@ impl gpui_storybook::Story for EmptyForm {
     }
 }
 impl EmptyForm {
-    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
-            fields: EmptyFormFields,
+            _fields: EmptyFormFields,
             focus_handle: cx.focus_handle(),
         }
     }
 }
 impl Render for EmptyForm {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         v_flex()
             .key_context(CONTEXT)
             .id("empty-form")

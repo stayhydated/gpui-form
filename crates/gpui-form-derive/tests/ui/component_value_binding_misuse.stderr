@@ -1,0 +1,23 @@
+error: `component_value_binding` does not take options
+ --> tests/ui/component_value_binding_misuse.rs:7:27
+  |
+7 | #[component_value_binding(option)]
+  |                           ^^^^^^
+
+error: `component_value_binding` must be applied to an impl block for `ComponentValueBinding<T>`
+  --> tests/ui/component_value_binding_misuse.rs:20:1
+   |
+20 | impl State {}
+   | ^^^^^^^^^^^^^
+
+error: `component_value_binding` must wrap `ComponentValueBinding<T>`
+  --> tests/ui/component_value_binding_misuse.rs:23:16
+   |
+23 | impl std::fmt::Debug for State {
+   |                ^^^^^
+
+error: expected `ComponentValueBinding<T>`
+  --> tests/ui/component_value_binding_misuse.rs:30:32
+   |
+30 | impl gpui_form_runtime::shape::ComponentValueBinding for State {
+   |                                ^^^^^^^^^^^^^^^^^^^^^

@@ -1,4 +1,4 @@
-use es_fluent::{EsFluent, FluentLabel, FluentLocalizer, FluentLocalizerExt, FluentMessage};
+use es_fluent::{EsFluent, FluentLabel, FluentLocalizer, FluentLocalizerExt as _, FluentMessage};
 use es_fluent_manager_embedded as i18n_manager;
 
 es_fluent_manager_embedded::define_i18n_module!();

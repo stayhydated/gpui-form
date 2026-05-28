@@ -18,10 +18,16 @@ const FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::path("gpui::InteractiveElement"),
     ImportItem::aliased("gpui::ParentElement", Alias::Anonymous),
     ImportItem::path("gpui::Styled"),
+];
+
+const FIELD_FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::path("gpui::div"),
+    ImportItem::path("gpui_component::form::field"),
+];
+
+const VALIDATION_FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::aliased("gpui::prelude::FluentBuilder", Alias::Anonymous),
     ImportItem::aliased("gpui_component::ActiveTheme", Alias::Anonymous),
-    ImportItem::path("gpui_component::form::field"),
 ];
 
 const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui::Subscription")];
@@ -116,6 +122,12 @@ impl<'a> FormShapeAdapter<'a> {
     pub fn required_imports(&self) -> ImportSet {
         let mut set = ImportSet::default();
         set.extend_items(FRAGMENT_IMPORTS);
+        if !self.shape_data.components.is_empty() {
+            set.extend_items(FIELD_FRAGMENT_IMPORTS);
+        }
+        if self.shape_data.has_validations() {
+            set.extend_items(VALIDATION_FRAGMENT_IMPORTS);
+        }
         if self
             .shape_data
             .components
@@ -278,6 +290,12 @@ impl<'a> FormShapeAdapter<'a> {
 
         let mut collected_imports = ImportSet::default();
         collected_imports.extend_items(FRAGMENT_IMPORTS);
+        if !data.components.is_empty() {
+            collected_imports.extend_items(FIELD_FRAGMENT_IMPORTS);
+        }
+        if data.has_validations() {
+            collected_imports.extend_items(VALIDATION_FRAGMENT_IMPORTS);
+        }
         if !subscription_call_items.is_empty() {
             collected_imports.extend_items(SUBSCRIPTION_IMPORTS);
         }

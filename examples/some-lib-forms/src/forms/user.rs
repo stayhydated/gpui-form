@@ -46,13 +46,15 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
+            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.username = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.username = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -65,13 +67,15 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
+            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.email = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.email = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -84,7 +88,7 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<u32>, u32>(&state, event)
+            form_value_change::<gpui_form_collection::input::Input<u32>, u32>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -111,13 +115,15 @@ impl UserForm {
             form_value_change::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            >(&state, event)
+            >(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.balance = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.balance = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -136,13 +142,15 @@ impl UserForm {
             form_value_change::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
-            >(&state, event)
+            >(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.debt = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.debt = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -156,7 +164,7 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_collection::number_input::NumberInput<u32>, u32>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {
@@ -178,13 +186,15 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::slider::Slider, f32>(&state, event)
+            form_value_change::<gpui_form_collection::slider::Slider, f32>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.attention_level = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.attention_level = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -198,7 +208,7 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {
@@ -221,14 +231,16 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_collection::otp_input::OtpInput<String>, String>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.otp_code = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.otp_code = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -245,14 +257,16 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.uploaded_files = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.uploaded_files = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -271,7 +285,7 @@ impl UserForm {
             form_value_change::<
                 gpui_form_collection::date_picker::DateRangePicker,
                 (chrono::NaiveDate, chrono::NaiveDate),
-            >(&state, event)
+            >(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
@@ -292,13 +306,15 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::switch::Switch, bool>(&state, event)
+            form_value_change::<gpui_form_collection::switch::Switch, bool>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.subscribe_newsletter = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.subscribe_newsletter = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -311,13 +327,15 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::checkbox::Checkbox, bool>(&state, event)
+            form_value_change::<gpui_form_collection::checkbox::Checkbox, bool>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.enable_notifications = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.enable_notifications = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -336,13 +354,15 @@ impl UserForm {
             form_value_change::<
                 gpui_form_collection::select::Select<PreferredLanguage>,
                 PreferredLanguage,
-            >(&state, event)
+            >(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.preferred = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.preferred = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -356,7 +376,7 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {
@@ -379,7 +399,7 @@ impl UserForm {
         let form_change = {
             let state = state.read(_cx);
             form_value_change::<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>(
-                &state, event,
+                state, event,
             )
         };
         match form_change {

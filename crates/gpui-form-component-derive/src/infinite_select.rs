@@ -196,17 +196,11 @@ pub fn from(input: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error().into(),
     };
 
-    let type_label_impl = if fluent_kv.uses_type_label() {
-        quote! { stringify!(#enum_ident).into() }
-    } else {
-        quote! { stringify!(#enum_ident).into() }
-    };
+    let _type_label_uses_fluent = fluent_kv.uses_type_label();
+    let type_label_impl = quote! { stringify!(#enum_ident).into() };
 
-    let type_description_impl = if fluent_kv.uses_type_description() {
-        quote! { stringify!(#enum_ident).into() }
-    } else {
-        quote! { stringify!(#enum_ident).into() }
-    };
+    let _type_description_uses_fluent = fluent_kv.uses_type_description();
+    let type_description_impl = quote! { stringify!(#enum_ident).into() };
 
     let variants: Result<Vec<VariantInfo>, syn::Error> = match &args.data {
         darling::ast::Data::Enum(variants) => variants
@@ -321,14 +315,8 @@ pub fn from(input: TokenStream) -> TokenStream {
         .iter()
         .map(|variant| {
             let pattern = variant.ignore_pattern();
-
-            if fluent_kv.has_label {
-                let fallback = variant.ident.to_string();
-                quote! { #pattern => #fallback.into(), }
-            } else {
-                let label = variant.ident.to_string();
-                quote! { #pattern => #label.into(), }
-            }
+            let label = variant.ident.to_string();
+            quote! { #pattern => #label.into(), }
         })
         .collect();
 

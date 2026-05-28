@@ -1,0 +1,33 @@
+error[E0277]: the trait bound `MissingBindingShape: ComponentValueBinding<std::string::String>` is not satisfied
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:40:17
+   |
+40 |     #[gpui_form(MissingBindingShape.value_binding())]
+   |                 ^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `ComponentValueBinding<std::string::String>` is not implemented for `MissingBindingShape`
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:14:1
+   |
+14 | struct MissingBindingShape;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: the trait bound `InheritedBindingShape: ComponentValueBinding<std::string::String>` is not satisfied
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:46:17
+   |
+46 |     #[gpui_form(InheritedBindingShape)]
+   |                 ^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `ComponentValueBinding<std::string::String>` is not implemented for `InheritedBindingShape`
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:25:1
+   |
+25 | struct InheritedBindingShape;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: the trait `__GpuiFormAssertInheritedValueBinding<Shape, Value>` is implemented for `__GpuiFormValueBindingEnabled<true>`
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:46:17
+   |
+46 |     #[gpui_form(InheritedBindingShape)]
+   |                 ^^^^^^^^^^^^^^^^^^^^^
+note: required for `__GpuiFormValueBindingEnabled<true>` to implement `__GpuiFormAssertInheritedValueBinding<InheritedBindingShape, std::string::String>`
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:46:17
+   |
+46 |     #[gpui_form(InheritedBindingShape)]
+   |                 ^^^^^^^^^^^^^^^^^^^^^

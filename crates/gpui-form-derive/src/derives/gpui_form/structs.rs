@@ -4,7 +4,7 @@ use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
 use syn::{
     Expr, ExprAssign, ExprGroup, ExprParen, ExprPath, Ident, Lit, Meta, MetaList, Type, TypePath,
-    parse::{Parse, ParseStream, Parser as _, discouraged::Speculative},
+    parse::{Parse, ParseStream, Parser as _, discouraged::Speculative as _},
     punctuated::Punctuated,
 };
 
@@ -122,11 +122,11 @@ enum GpuiFormArg {
 impl Parse for GpuiFormArg {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         let fork = input.fork();
-        if let Ok(meta) = fork.parse::<NestedMeta>() {
-            if fork.is_empty() || fork.peek(syn::Token![,]) {
-                input.advance_to(&fork);
-                return Ok(Self::Meta(meta));
-            }
+        if let Ok(meta) = fork.parse::<NestedMeta>()
+            && (fork.is_empty() || fork.peek(syn::Token![,]))
+        {
+            input.advance_to(&fork);
+            return Ok(Self::Meta(meta));
         }
 
         let expr = input.parse::<Expr>()?;
@@ -144,6 +144,7 @@ pub struct ComponentField {
     pub component: Option<Components>,
     pub default: Option<DefaultExpr>,
     pub skip: bool,
+    skip_seen: bool,
 }
 
 impl ComponentField {
@@ -163,6 +164,7 @@ impl FromField for ComponentField {
             component: None,
             default: None,
             skip: false,
+            skip_seen: false,
         };
 
         for attr in &field.attrs {
@@ -236,15 +238,20 @@ fn parse_meta_name_value(
 
     match key.as_str() {
         "type" => {
-            field.r#type = Some(TypeOverride::from_expr(&rhs)?);
+            set_once(
+                &mut field.r#type,
+                TypeOverride::from_expr(&rhs)?,
+                "type",
+                &name_value.path,
+            )?;
             Ok(())
         },
         "into" => {
-            field.into = Some(rhs);
+            set_once(&mut field.into, rhs, "into", &name_value.path)?;
             Ok(())
         },
         "from" => {
-            field.from = Some(rhs);
+            set_once(&mut field.from, rhs, "from", &name_value.path)?;
             Ok(())
         },
         "component" => {
@@ -252,11 +259,16 @@ fn parse_meta_name_value(
             set_component(field, component, &name_value.path)
         },
         "default" => {
-            field.default = Some(DefaultExpr::from_expr(&rhs)?);
+            set_once(
+                &mut field.default,
+                DefaultExpr::from_expr(&rhs)?,
+                "default",
+                &name_value.path,
+            )?;
             Ok(())
         },
         "skip" => {
-            field.skip = parse_bool_expr(&rhs)?;
+            set_skip(field, parse_bool_expr(&rhs)?, &name_value.path)?;
             Ok(())
         },
         _ => Err(
@@ -271,15 +283,20 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
 
     match key.as_str() {
         "type" => {
-            field.r#type = Some(TypeOverride::from_expr(&rhs)?);
+            set_once(
+                &mut field.r#type,
+                TypeOverride::from_expr(&rhs)?,
+                "type",
+                &lhs,
+            )?;
             Ok(())
         },
         "into" => {
-            field.into = Some(rhs);
+            set_once(&mut field.into, rhs, "into", &lhs)?;
             Ok(())
         },
         "from" => {
-            field.from = Some(rhs);
+            set_once(&mut field.from, rhs, "from", &lhs)?;
             Ok(())
         },
         "component" => {
@@ -287,11 +304,16 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
             set_component(field, component, &lhs)
         },
         "default" => {
-            field.default = Some(DefaultExpr::from_expr(&rhs)?);
+            set_once(
+                &mut field.default,
+                DefaultExpr::from_expr(&rhs)?,
+                "default",
+                &lhs,
+            )?;
             Ok(())
         },
         "skip" => {
-            field.skip = parse_bool_expr(&rhs)?;
+            set_skip(field, parse_bool_expr(&rhs)?, &lhs)?;
             Ok(())
         },
         _ => Err(
@@ -330,7 +352,7 @@ fn parse_meta_path_keyword(field: &mut ComponentField, path: syn::Path) -> darli
 
     let key = ident.to_string();
     if key == "skip" {
-        field.skip = true;
+        set_skip(field, true, &path)?;
         return Ok(());
     }
 
@@ -359,7 +381,7 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
     };
 
     if key == "skip" {
-        field.skip = true;
+        set_skip(field, true, &path)?;
         return Ok(());
     }
 
@@ -409,11 +431,45 @@ fn set_component<T: syn::spanned::Spanned>(
     Ok(())
 }
 
+fn set_once<T, S: syn::spanned::Spanned>(
+    slot: &mut Option<T>,
+    value: T,
+    key: &str,
+    span: &S,
+) -> darling::Result<()> {
+    if slot.is_some() {
+        return Err(DarlingError::custom(format!(
+            "duplicate `{key}` option in `gpui_form` field attribute; remove the duplicate `{key}` entry"
+        ))
+        .with_span(span));
+    }
+
+    *slot = Some(value);
+    Ok(())
+}
+
+fn set_skip<S: syn::spanned::Spanned>(
+    field: &mut ComponentField,
+    value: bool,
+    span: &S,
+) -> darling::Result<()> {
+    if field.skip_seen {
+        return Err(DarlingError::custom(
+            "duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry",
+        )
+        .with_span(span));
+    }
+
+    field.skip = value;
+    field.skip_seen = true;
+    Ok(())
+}
+
 fn parse_bool_expr(expr: &Expr) -> darling::Result<bool> {
-    if let Expr::Lit(expr_lit) = expr {
-        if let syn::Lit::Bool(value) = &expr_lit.lit {
-            return Ok(value.value);
-        }
+    if let Expr::Lit(expr_lit) = expr
+        && let syn::Lit::Bool(value) = &expr_lit.lit
+    {
+        return Ok(value.value);
     }
 
     Err(DarlingError::unexpected_expr_type(expr))

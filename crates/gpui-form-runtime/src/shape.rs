@@ -84,9 +84,7 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
     type Storage;
 
     /// Construct a missing/default value-holder field.
-    fn default_storage() -> Self::Storage
-    where
-        T: Default;
+    fn default_storage() -> Self::Storage;
 
     /// Construct storage from a present form value.
     fn present(value: T) -> Self::Storage;
@@ -131,10 +129,7 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
 impl<T> ValueHolderStorage<T> for RequireValue {
     type Storage = Option<T>;
 
-    fn default_storage() -> Self::Storage
-    where
-        T: Default,
-    {
+    fn default_storage() -> Self::Storage {
         None
     }
 
@@ -187,13 +182,10 @@ impl<T> ValueHolderStorage<T> for RequireValue {
     }
 }
 
-impl<T> ValueHolderStorage<T> for AllowMissingValue {
+impl<T: Default> ValueHolderStorage<T> for AllowMissingValue {
     type Storage = T;
 
-    fn default_storage() -> Self::Storage
-    where
-        T: Default,
-    {
+    fn default_storage() -> Self::Storage {
         T::default()
     }
 
@@ -317,6 +309,18 @@ where
 
     /// Convert an emitted component event into a form value change.
     fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T>;
+}
+
+/// Assert that a shape supports value binding for a form value type.
+///
+/// Generated form code uses this helper to keep missing binding diagnostics
+/// anchored to the field attribute while reporting the public
+/// [`ComponentValueBinding`] contract.
+pub fn assert_component_value_binding<Shape, Value>()
+where
+    Shape: ComponentValueBinding<Value>,
+    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
+{
 }
 
 /// Value-binding contract implemented by backing component state.

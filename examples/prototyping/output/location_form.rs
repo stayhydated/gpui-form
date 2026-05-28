@@ -1,7 +1,5 @@
-use gpui::prelude::FluentBuilder as _;
 use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
 use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
-use gpui_component::ActiveTheme as _;
 use gpui_component::Disableable as _;
 use gpui_component::form::field;
 use gpui_component::form::v_form;
@@ -46,13 +44,15 @@ impl LocationFormForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(&state, event)
+            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.name = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.name = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }
@@ -73,13 +73,15 @@ impl LocationFormForm {
             form_value_change::<
                 gpui_form_component::infinite_select::InfiniteSelect<Country>,
                 Country,
-            >(&state, event)
+            >(state, event)
         };
         match form_change {
             FormValueChange::Set(value) => {
                 self.current_data.location = value;
             },
-            FormValueChange::Clear => {},
+            FormValueChange::Clear => {
+                self.current_data.location = ::core::default::Default::default();
+            },
             FormValueChange::Unchanged => {},
         }
     }

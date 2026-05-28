@@ -1,0 +1,17 @@
+error: duplicate `value_binding` component metadata method; remove the duplicate `.value_binding(...)` call
+ --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:5:48
+  |
+5 |     #[gpui_form(DemoShape.value_binding(false).value_binding())]
+  |                                                ^^^^^^^^^^^^^
+
+error: duplicate `component` component metadata method; remove the duplicate `.component(...)` call
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:11:52
+   |
+11 |     #[gpui_form(DemoShape.component(crate::Widget).component(crate::OtherWidget))]
+   |                                                    ^^^^^^^^^
+
+error: duplicate `field_suffix` component metadata method; remove the duplicate `.field_suffix(...)` call
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:17:49
+   |
+17 |     #[gpui_form(DemoShape.field_suffix("input").field_suffix("field"))]
+   |                                                 ^^^^^^^^^^^^

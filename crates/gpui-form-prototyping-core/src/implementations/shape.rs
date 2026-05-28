@@ -108,7 +108,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let clear_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = None; }
         } else {
-            quote! {}
+            quote! { self.current_data.#field_name_ident = ::core::default::Default::default(); }
         };
 
         let handler = quote! {
@@ -122,7 +122,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
                 let form_change = {
                     let state = state.read(_cx);
                     form_value_change::<#shape, #field_type>(
-                        &state,
+                        state,
                         event,
                     )
                 };
@@ -283,6 +283,29 @@ mod tests {
                 "seed_value_binding_state::<crate::shapes::CountryShape,CountryCode>(state,current_data.country.as_ref(),window,cx,)"
             ),
             "component value binding should seed state from current_data: {compact_init}"
+        );
+    }
+
+    #[test]
+    fn shape_generator_clear_resets_direct_value_storage() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("code", "String", false)
+            .with_requires_value(false)
+            .with_shape_path("gpui_form_collection::otp_input::OtpInput<String>")
+            .with_value_binding(true)];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound direct-storage fields should generate subscriptions");
+        let compact_handler = compact(&generated.handlers[0].to_string());
+
+        assert!(
+            compact_handler.contains(
+                "FormValueChange::Clear=>{self.current_data.code=::core::default::Default::default();}"
+            ),
+            "clear should reset direct-storage value-bound fields: {compact_handler}"
         );
     }
 

@@ -304,14 +304,14 @@ pub fn expand_gpui_form(
             }
 
             let component_def = field.component.as_ref()?;
-            let (_was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
+            let (was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
             let base_type = field
                 .r#type
                 .as_ref()
                 .map(|ty| extract_option_inner_type(&ty.0).1)
                 .unwrap_or(original_inner_type);
 
-            component_def.type_check_tokens(&base_type)
+            component_def.type_check_tokens(&base_type, !was_optional)
         })
         .collect();
 

@@ -1,6 +1,7 @@
 use darling::{Error as DarlingError, FromMeta};
-use proc_macro2::TokenStream;
-use quote::{ToTokens as _, quote};
+use proc_macro2::{Span, TokenStream};
+use quote::{ToTokens as _, quote, quote_spanned};
+use syn::spanned::Spanned as _;
 use syn::{Expr, Lit, Path};
 
 use crate::implementations::ComponentLayout as _;
@@ -74,10 +75,12 @@ pub struct ShapeOptions {
     pub value_binding: Option<bool>,
     /// Optional explicit generated field/helper suffix.
     pub field_suffix: Option<String>,
+    span: Span,
 }
 
 impl ShapeOptions {
     fn from_shape(shape: Path) -> Self {
+        let span = shape.span();
         let shape = normalize_shape_path(shape);
 
         Self {
@@ -85,6 +88,7 @@ impl ShapeOptions {
             component: None,
             value_binding: None,
             field_suffix: None,
+            span,
         }
     }
 
@@ -106,13 +110,21 @@ impl ShapeOptions {
     ) -> darling::Result<()> {
         match method.to_string().as_str() {
             "value_binding" => {
-                self.value_binding = Some(expect_optional_bool_arg(method, args)?);
+                set_metadata_once(
+                    &mut self.value_binding,
+                    expect_optional_bool_arg(method, args)?,
+                    method,
+                )?;
             },
             "component" => {
-                self.component = Some(expect_path_arg(method, args)?);
+                set_metadata_once(&mut self.component, expect_path_arg(method, args)?, method)?;
             },
             "field_suffix" => {
-                self.field_suffix = Some(expect_string_arg(method, args)?);
+                set_metadata_once(
+                    &mut self.field_suffix,
+                    expect_string_arg(method, args)?,
+                    method,
+                )?;
             },
             _ => {
                 return Err(DarlingError::custom(format!(
@@ -162,13 +174,78 @@ impl ShapeOptions {
         }
     }
 
-    pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+    pub fn type_check_tokens(
+        &self,
+        field_type: &syn::Type,
+        check_value_holder_storage: bool,
+    ) -> Option<TokenStream> {
         let shape = self.resolved_shape(field_type);
+        let span = self.span;
+        let value_binding_assertion = match self.value_binding {
+            Some(true) => quote_spanned! {span=>
+                {
+                    ::gpui_form_runtime::shape::assert_component_value_binding::<#shape, #field_type>();
+                }
+            },
+            Some(false) => quote! {},
+            None => quote_spanned! {span=>
+                {
+                    struct __GpuiFormValueBindingEnabled<const ENABLED: bool>;
 
-        Some(quote! {
+                    trait __GpuiFormAssertInheritedValueBinding<Shape, Value> {
+                        fn check();
+                    }
+
+                    impl<Shape, Value> __GpuiFormAssertInheritedValueBinding<Shape, Value>
+                        for __GpuiFormValueBindingEnabled<false>
+                    where
+                        Shape: ::gpui_form_runtime::shape::ComponentShape,
+                    {
+                        fn check() {}
+                    }
+
+                    impl<Shape, Value> __GpuiFormAssertInheritedValueBinding<Shape, Value>
+                        for __GpuiFormValueBindingEnabled<true>
+                    where
+                        Shape: ::gpui_form_runtime::shape::ComponentValueBinding<Value>,
+                        ::gpui_form_runtime::shape::ComponentStateOf<Shape>:
+                            ::gpui::EventEmitter<
+                                ::gpui_form_runtime::shape::ComponentEventOf<Shape, Value>
+                            >,
+                    {
+                        fn check() {}
+                    }
+
+                    <__GpuiFormValueBindingEnabled<
+                        { <#shape as ::gpui_form_runtime::shape::ComponentShape>::VALUE_BINDING }
+                    > as __GpuiFormAssertInheritedValueBinding<#shape, #field_type>>::check();
+                }
+            },
+        };
+        let value_holder_storage_assertion = if check_value_holder_storage {
+            quote_spanned! {span=>
+                {
+                    fn __gpui_form_assert_value_holder_storage<Policy, Value>()
+                    where
+                        Policy: ::gpui_form_runtime::shape::ValueHolderStorage<Value>,
+                    {}
+
+                    __gpui_form_assert_value_holder_storage::<
+                        <#shape as ::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicy,
+                        #field_type,
+                    >();
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        Some(quote_spanned! {span=>
             {
                 fn __gpui_form_assert_component_shape<Shape: ::gpui_form_runtime::shape::ComponentShape>() {}
                 __gpui_form_assert_component_shape::<#shape>();
+                #value_binding_assertion
+                #value_holder_storage_assertion
             }
         })
     }
@@ -322,6 +399,22 @@ fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Stri
         },
         _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
     }
+}
+
+fn set_metadata_once<T>(
+    slot: &mut Option<T>,
+    value: T,
+    method: &syn::Ident,
+) -> darling::Result<()> {
+    if slot.is_some() {
+        return Err(DarlingError::custom(format!(
+            "duplicate `{method}` component metadata method; remove the duplicate `.{method}(...)` call"
+        ))
+        .with_span(method));
+    }
+
+    *slot = Some(value);
+    Ok(())
 }
 
 fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Type {
@@ -518,9 +611,15 @@ impl Components {
         }
     }
 
-    pub fn type_check_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+    pub fn type_check_tokens(
+        &self,
+        field_type: &syn::Type,
+        check_value_holder_storage: bool,
+    ) -> Option<TokenStream> {
         match self {
-            Self::Shape(options) => options.type_check_tokens(field_type),
+            Self::Shape(options) => {
+                options.type_check_tokens(field_type, check_value_holder_storage)
+            },
         }
     }
 }
