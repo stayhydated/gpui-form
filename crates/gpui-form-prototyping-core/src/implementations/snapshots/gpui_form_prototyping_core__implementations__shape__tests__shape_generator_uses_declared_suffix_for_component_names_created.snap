@@ -1,0 +1,7 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: pretty_tokens(created)
+---
+fn __snapshot() {
+    let country_select = cx.new(|cx| DemoFormComponents::country_select(window, cx));
+}

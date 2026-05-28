@@ -18,6 +18,10 @@ proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { features = [ "full", "parsing" ], workspace = true }
 
+[dev-dependencies]
+insta = { workspace = true }
+prettyplease = { workspace = true }
+
 [features]
 default = [  ]
 fluent = [  ]

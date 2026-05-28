@@ -203,6 +203,12 @@ mod tests {
         tokens.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    fn pretty_tokens(tokens: proc_macro2::TokenStream) -> String {
+        syn::parse2::<syn::File>(tokens.clone())
+            .map(|file| prettyplease::unparse(&file))
+            .unwrap_or_else(|_| tokens.to_string())
+    }
+
     #[test]
     fn component_shape_function_macro_emits_contract_impl() {
         let input: ComponentShapeInput = syn::parse2(quote! {
@@ -219,32 +225,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("pubstructInputShape<T>(::core::marker::PhantomData<fn()->(T)>)"),
-            "generic shape type should carry PhantomData for external component wrappers: {compact}"
-        );
-        assert!(
-            compact.contains("impl<T>::gpui_form_runtime::shape::ComponentShapeforInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
-            "macro should implement the shape contract with caller generics and where clause: {compact}"
-        );
-        assert!(
-            compact.contains("typeState=::gpui_component::input::InputState"),
-            "macro should emit the configured state type: {compact}"
-        );
-        assert!(
-            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue"),
-            "macro should default required-value policy to RequireValue: {compact}"
-        );
-        assert!(
-            compact.contains("COMPONENT_TYPE:Option<&'staticstr>=Some(stringify!(::gpui_component::input::Input))"),
-            "macro should embed component metadata: {compact}"
-        );
-        assert!(
-            compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
-            "macro should emit prototyping field suffix metadata: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -257,12 +239,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("<crate::state::InputState>::new(window,cx)"),
-            "macro should default omitted constructors to State::new: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -278,10 +256,7 @@ mod tests {
         let expanded = expand(input);
         let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("crate::state::InputState::new(window,cx).with_label(\"email\")"),
-            "direct constructor expressions should be emitted as written: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
         assert!(
             !compact.contains(
                 "(crate::state::InputState::new(window,cx).with_label(\"email\"))(window,cx)"
@@ -301,13 +276,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact
-                .contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::AllowMissingValue"),
-            "macro should emit shape-owned missing-value policy: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -346,16 +316,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "nested ComponentValueBinding impl should publish shape-level metadata: {compact}"
-        );
-        assert!(
-            compact.contains("impl<T>::gpui_form_runtime::shape::ComponentValueBinding<T>forInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
-            "macro should emit nested impl items after the shape contract: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]

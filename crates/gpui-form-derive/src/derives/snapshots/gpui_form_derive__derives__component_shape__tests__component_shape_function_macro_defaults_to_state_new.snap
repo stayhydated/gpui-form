@@ -1,0 +1,16 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape.rs
+expression: pretty_tokens(expanded)
+---
+pub struct LocalInputShape(::core::marker::PhantomData<fn() -> ()>);
+impl ::gpui_form_runtime::shape::ComponentShape for LocalInputShape {
+    type State = crate::state::InputState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        <crate::state::InputState>::new(window, cx)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+}

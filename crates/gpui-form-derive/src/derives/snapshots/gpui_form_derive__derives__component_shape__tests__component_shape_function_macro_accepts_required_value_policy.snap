@@ -1,0 +1,16 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape.rs
+expression: pretty_tokens(expanded)
+---
+pub struct SwitchShape(::core::marker::PhantomData<fn() -> ()>);
+impl ::gpui_form_runtime::shape::ComponentShape for SwitchShape {
+    type State = crate::state::SwitchState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        <crate::state::SwitchState>::new(window, cx)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::AllowMissingValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+}

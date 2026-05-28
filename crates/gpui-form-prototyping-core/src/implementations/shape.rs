@@ -182,6 +182,7 @@ mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
     use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+    use quote::quote;
 
     const SHAPE_FIELDS: [FieldVariant; 1] = [FieldVariant::new("tags", "Vec<String>", false)];
     const DEMO_SHAPE: GpuiFormShape =
@@ -191,6 +192,55 @@ mod tests {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    fn pretty_tokens(tokens: proc_macro2::TokenStream) -> String {
+        if let Ok(file) = syn::parse2::<syn::File>(tokens.clone()) {
+            return prettyplease::unparse(&file);
+        }
+
+        if let Ok(stmt) = syn::parse2::<syn::Stmt>(tokens.clone()) {
+            if let Some(pretty) = pretty_file(quote! {
+                fn __snapshot() {
+                    #stmt
+                }
+            }) {
+                return pretty;
+            }
+        }
+
+        let raw = tokens.to_string();
+        let trimmed = raw.trim();
+
+        if trimmed.ends_with(',') {
+            if let Some(pretty) = pretty_file(quote! {
+                fn __snapshot() {
+                    let _ = __Snapshot {
+                        #tokens
+                    };
+                }
+            }) {
+                return pretty;
+            }
+        }
+
+        if trimmed.starts_with('.') {
+            if let Some(pretty) = pretty_file(quote! {
+                fn __snapshot() {
+                    __snapshot #tokens;
+                }
+            }) {
+                return pretty;
+            }
+        }
+
+        raw
+    }
+
+    fn pretty_file(tokens: proc_macro2::TokenStream) -> Option<String> {
+        syn::parse2::<syn::File>(tokens)
+            .map(|file| prettyplease::unparse(&file))
+            .ok()
+    }
+
     #[test]
     fn shape_generator_initializes_state_entity() {
         let generator = ShapeCodeGenerator;
@@ -198,13 +248,8 @@ mod tests {
         let tokens = generator
             .generate_cx_new_call(&field, &DEMO_SHAPE)
             .expect("shape-backed fields should generate cx.new initialization");
-        let compact = compact(&tokens.to_string());
 
-        assert!(
-            compact
-                .contains("lettags_shape=cx.new(|cx|DemoFormComponents::tags_shape(window,cx));"),
-            "cx initialization should call generated FormComponents constructor for shape-backed field"
-        );
+        insta::assert_snapshot!(pretty_tokens(tokens));
     }
 
     #[test]
@@ -214,12 +259,8 @@ mod tests {
         let tokens = generator
             .generate_field_initializers(&field, &DEMO_SHAPE)
             .expect("shape-backed fields should be included in FormFields initializer");
-        let compact = compact(&tokens.to_string());
 
-        assert!(
-            compact.contains("tags_shape,"),
-            "field initializer should include component state entity"
-        );
+        insta::assert_snapshot!(pretty_tokens(tokens));
     }
 
     #[test]
@@ -232,12 +273,8 @@ mod tests {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS_WITH_COMPONENT[0]).unwrap();
         let tokens = generator.generate_render_child(&field, &SHAPE);
-        let compact = compact(&tokens.to_string());
 
-        assert!(
-            compact.contains("<TagsInput>::new(&self.fields.tags_shape)"),
-            "render should emit <Component>::new(&entity): got {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(tokens));
     }
 
     #[test]
@@ -253,36 +290,26 @@ mod tests {
         let generated = generator
             .generate_subscription(&field, &SHAPE)
             .expect("value-bound shape-backed fields should generate subscriptions");
-        let compact_handler = compact(&generated.handlers[0].to_string());
 
         assert!(
             generated.calls.len() == 1 && generated.handlers.len() == 1,
             "value-bound shape-backed fields should generate a subscription call and handler"
         );
-        assert!(
-            compact_handler.contains("fnon_country_shape_event")
-                && compact_handler
-                    .contains("state:&Entity<ComponentStateOf<crate::shapes::CountryShape>>")
-                && compact_handler
-                    .contains("event:&ComponentEventOf<crate::shapes::CountryShape,CountryCode>")
-                && compact_handler
-                    .contains("form_value_change::<crate::shapes::CountryShape,CountryCode>"),
-            "component event handler should use runtime helper aliases inline: {compact_handler}"
+        insta::assert_snapshot!(
+            "shape_generator_wires_shape_value_binding_call",
+            pretty_tokens(generated.calls[0].clone())
         );
-        assert!(
-            compact_handler.contains("self.current_data.country=Some(value);"),
-            "optional component value binding should assign Some(value): {compact_handler}"
+        insta::assert_snapshot!(
+            "shape_generator_wires_shape_value_binding_handler",
+            pretty_tokens(generated.handlers[0].clone())
         );
 
         let init = generator
             .generate_post_subscription_initialization(&field, &SHAPE)
             .expect("value-bound shape-backed fields should seed state");
-        let compact_init = compact(&init.to_string());
-        assert!(
-            compact_init.contains(
-                "seed_value_binding_state::<crate::shapes::CountryShape,CountryCode>(state,current_data.country.as_ref(),window,cx,)"
-            ),
-            "component value binding should seed state from current_data: {compact_init}"
+        insta::assert_snapshot!(
+            "shape_generator_wires_shape_value_binding_seed",
+            pretty_tokens(init)
         );
     }
 
@@ -299,14 +326,8 @@ mod tests {
         let generated = generator
             .generate_subscription(&field, &SHAPE)
             .expect("value-bound direct-storage fields should generate subscriptions");
-        let compact_handler = compact(&generated.handlers[0].to_string());
 
-        assert!(
-            compact_handler.contains(
-                "FormValueChange::Clear=>{self.current_data.code=::core::default::Default::default();}"
-            ),
-            "clear should reset direct-storage value-bound fields: {compact_handler}"
-        );
+        insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
     }
 
     #[test]
@@ -328,6 +349,14 @@ mod tests {
         let compact_created = compact(&created.to_string());
         let compact_handler = compact(&generated.handlers[0].to_string());
 
+        insta::assert_snapshot!(
+            "shape_generator_uses_declared_suffix_for_component_names_created",
+            pretty_tokens(created)
+        );
+        insta::assert_snapshot!(
+            "shape_generator_uses_declared_suffix_for_component_names_handler",
+            pretty_tokens(generated.handlers[0].clone())
+        );
         assert!(
             compact_created.contains("letcountry_select=cx.new"),
             "declared prototyping suffixes should drive generated field suffixes: {compact_created}"
@@ -348,13 +377,7 @@ mod tests {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let tokens = generator.generate_render_child(&field, &SHAPE);
-        let compact = compact(&tokens.to_string());
 
-        assert!(
-            compact.contains(
-                "<gpui_component::combobox::Combobox<_>>::new(&self.fields.tags_combobox)"
-            ),
-            "generic component types should be rendered with qualified type syntax: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(tokens));
     }
 }

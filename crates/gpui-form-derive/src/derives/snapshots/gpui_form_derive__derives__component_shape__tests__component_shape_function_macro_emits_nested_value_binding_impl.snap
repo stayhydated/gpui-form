@@ -1,0 +1,45 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape.rs
+expression: pretty_tokens(expanded)
+---
+pub struct InputShape<T>(
+    ::core::marker::PhantomData<fn() -> (T)>,
+)
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static;
+impl<T> ::gpui_form_runtime::shape::ComponentShape for InputShape<T>
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+{
+    type State = ::gpui_component::input::InputState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        <::gpui_component::input::InputState>::new(window, cx)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::InheritedComponentValueBinding;
+    const COMPONENT_TYPE: Option<&'static str> = Some(
+        stringify!(::gpui_component::input::Input),
+    );
+    const VALUE_BINDING: bool = true;
+}
+impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T>
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+{
+    type Event = ::gpui_component::input::InputEvent;
+    fn seed_value_binding_state(
+        _state: &mut Self::State,
+        _value: Option<&T>,
+        _window: &mut ::gpui::Window,
+        _cx: &mut ::gpui::Context<'_, Self::State>,
+    ) {}
+    fn form_value_change(
+        _state: &Self::State,
+        _event: &Self::Event,
+    ) -> ::gpui_form_runtime::shape::FormValueChange<T> {
+        ::gpui_form_runtime::shape::FormValueChange::Unchanged
+    }
+}

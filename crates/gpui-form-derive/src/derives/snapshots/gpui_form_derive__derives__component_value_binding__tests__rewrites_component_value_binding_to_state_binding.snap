@@ -1,0 +1,14 @@
+---
+source: crates/gpui-form-derive/src/derives/component_value_binding.rs
+expression: pretty_tokens(expanded)
+---
+impl ::gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>>
+for FilePickerState {
+    type Event = FilePickerEvent;
+    fn form_value_change(
+        _state: &Self,
+        _event: &Self::Event,
+    ) -> gpui_form_runtime::shape::FormValueChange<Vec<PathBuf>> {
+        gpui_form_runtime::shape::FormValueChange::Unchanged
+    }
+}

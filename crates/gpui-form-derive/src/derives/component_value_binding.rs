@@ -137,8 +137,10 @@ mod tests {
     use quote::quote;
     use syn::ItemImpl;
 
-    fn compact_tokens(tokens: &str) -> String {
-        tokens.chars().filter(|c| !c.is_whitespace()).collect()
+    fn pretty_tokens(tokens: proc_macro2::TokenStream) -> String {
+        syn::parse2::<syn::File>(tokens.clone())
+            .map(|file| prettyplease::unparse(&file))
+            .unwrap_or_else(|_| tokens.to_string())
     }
 
     #[test]
@@ -158,15 +160,7 @@ mod tests {
         .unwrap();
 
         let expanded = expand(item).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("ComponentStateValueBinding<Vec<PathBuf>>forFilePickerState"),
-            "attribute should rewrite the trait path: {compact}"
-        );
-        assert!(
-            compact.contains("_state:&Self"),
-            "attribute should rewrite state references to the state type: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 }

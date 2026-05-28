@@ -1,0 +1,52 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape_state.rs
+expression: pretty_tokens(expanded)
+---
+impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
+    type State = crate::state::TagsState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        <crate::state::TagsState>::new(window, cx)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::InheritedComponentValueBinding;
+    const VALUE_BINDING: bool = true;
+    const PROTOTYPING: ::gpui_form_runtime::shape::ComponentPrototyping = ::gpui_form_runtime::shape::ComponentPrototyping::new()
+        .field_suffix("tags");
+    const COMPONENT_TYPE: Option<&'static str> = Some(
+        concat!(module_path!(), "::", stringify!(TagsInput)),
+    );
+}
+impl<
+    __GpuiFormValueBindingValue,
+> ::gpui_form_runtime::shape::ComponentValueBinding<__GpuiFormValueBindingValue>
+for TagsInput
+where
+    crate::state::TagsState: ::gpui_form_runtime::shape::ComponentStateValueBinding<
+        __GpuiFormValueBindingValue,
+    >,
+{
+    type Event = <crate::state::TagsState as ::gpui_form_runtime::shape::ComponentStateValueBinding<
+        __GpuiFormValueBindingValue,
+    >>::Event;
+    fn seed_value_binding_state(
+        state: &mut Self::State,
+        value: Option<&__GpuiFormValueBindingValue>,
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) {
+        <crate::state::TagsState as ::gpui_form_runtime::shape::ComponentStateValueBinding<
+            __GpuiFormValueBindingValue,
+        >>::seed_value_binding_state(state, value, window, cx);
+    }
+    fn form_value_change(
+        state: &Self::State,
+        event: &Self::Event,
+    ) -> ::gpui_form_runtime::shape::FormValueChange<__GpuiFormValueBindingValue> {
+        <crate::state::TagsState as ::gpui_form_runtime::shape::ComponentStateValueBinding<
+            __GpuiFormValueBindingValue,
+        >>::form_value_change(state, event)
+    }
+}

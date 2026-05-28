@@ -1,0 +1,18 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape_state.rs
+expression: pretty_tokens(expanded)
+---
+impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
+    type State = crate::state::TagsState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        crate::state::TagsState::with_mode(window, cx, Mode::Tags)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+    const COMPONENT_TYPE: Option<&'static str> = Some(
+        concat!(module_path!(), "::", stringify!(TagsInput)),
+    );
+}

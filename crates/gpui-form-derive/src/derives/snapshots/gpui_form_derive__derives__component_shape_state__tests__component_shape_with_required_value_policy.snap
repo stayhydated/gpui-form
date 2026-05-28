@@ -1,0 +1,18 @@
+---
+source: crates/gpui-form-derive/src/derives/component_shape_state.rs
+expression: pretty_tokens(expanded)
+---
+impl ::gpui_form_runtime::shape::ComponentShape for SwitchInput {
+    type State = crate::state::SwitchState;
+    fn new(
+        window: &mut ::gpui::Window,
+        cx: &mut ::gpui::Context<'_, Self::State>,
+    ) -> Self::State {
+        <crate::state::SwitchState>::new(window, cx)
+    }
+    type RequiredValuePolicy = ::gpui_form_runtime::shape::AllowMissingValue;
+    type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+    const COMPONENT_TYPE: Option<&'static str> = Some(
+        concat!(module_path!(), "::", stringify!(SwitchInput)),
+    );
+}

@@ -24,13 +24,13 @@ impl ComponentShape for RequiredShape {
     }
 }
 
-#[derive(Clone, Debug, GpuiForm, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct RequiredDemo {
     #[gpui_form(RequiredShape)]
     value: NonDefault,
 }
 
-#[derive(Clone, Debug, GpuiForm, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DefaultedDemo {
     #[gpui_form(RequiredShape, default = NonDefault("fallback".to_string()))]
     value: NonDefault,

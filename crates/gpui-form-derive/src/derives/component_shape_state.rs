@@ -165,6 +165,12 @@ mod tests {
         tokens.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    fn pretty_tokens(tokens: proc_macro2::TokenStream) -> String {
+        syn::parse2::<syn::File>(tokens.clone())
+            .map(|file| prettyplease::unparse(&file))
+            .unwrap_or_else(|_| tokens.to_string())
+    }
+
     #[test]
     fn test_component_shape_requires_state() {
         let input: DeriveInput = syn::parse2(quote! {
@@ -192,16 +198,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("(crate::state::build)(window,cx)"),
-            "should use explicit new path from attribute"
-        );
-        assert!(
-            compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
-            "component type should be inferred when component is not specified"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -218,16 +216,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("COMPONENT_TYPE"),
-            "should emit COMPONENT_TYPE const when component is specified"
-        );
-        assert!(
-            compact.contains("crate::ui::TagsInput"),
-            "should embed the component type as a string"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -243,14 +233,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains(
-                "(|window,cx|crate::state::TagsState::with_mode(window,cx,Mode::Tags))(window,cx)"
-            ),
-            "should allow derive constructors to be full expressions"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -268,10 +252,7 @@ mod tests {
         let expanded = expand(input).unwrap();
         let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("crate::state::TagsState::with_mode(window,cx,Mode::Tags)"),
-            "direct constructor calls should be emitted as written: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
         assert!(
             !compact
                 .contains("(crate::state::TagsState::with_mode(window,cx,Mode::Tags))(window,cx)"),
@@ -289,12 +270,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("ComponentPrototyping::new().field_suffix(\"tags\")"),
-            "should emit prototyping field suffix metadata"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -307,13 +284,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact
-                .contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::AllowMissingValue"),
-            "should emit shape-owned required-value policy"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -328,18 +300,7 @@ mod tests {
         let expanded = expand(input).unwrap();
         let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("typeState=crate::state::TagsState"),
-            "component derive should store the declared backing state: {compact}"
-        );
-        assert!(
-            compact.contains("<crate::state::TagsState>::new(window,cx)"),
-            "component derive should default construction to State::new: {compact}"
-        );
-        assert!(
-            compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
-            "component derive should infer the UI component type: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
         assert!(
             !compact.contains("VALUE_BINDING:bool=true"),
             "component derive should not opt into value binding without explicit metadata: {compact}"
@@ -360,12 +321,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("concat!(module_path!(),\"::\",stringify!(Picker<_,_>))"),
-            "generic component derives should infer render component type arguments: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
@@ -378,18 +335,8 @@ mod tests {
         .unwrap();
 
         let expanded = expand(input).unwrap();
-        let compact = compact_tokens(&expanded.to_string());
 
-        assert!(
-            compact.contains("VALUE_BINDING:bool=true"),
-            "explicit value_binding should publish inherited binding metadata: {compact}"
-        );
-        assert!(
-            compact.contains(
-                "ComponentValueBinding<__GpuiFormValueBindingValue>forTagsInputwherecrate::state::TagsState:::gpui_form_runtime::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>"
-            ),
-            "explicit value_binding should delegate through the backing state: {compact}"
-        );
+        insta::assert_snapshot!(pretty_tokens(expanded));
     }
 
     #[test]
