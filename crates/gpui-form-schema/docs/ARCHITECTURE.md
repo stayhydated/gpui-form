@@ -50,16 +50,14 @@ Important fields:
 - `from_expr`
 - `into_expr`
 - `shape_path`
-- `component_path`
+- `component_type`
 - `value_binding`
 - `prototyping_field_suffix`
 
 `FieldVariant::field_name_with_behaviour()` derives the generated component
-field name from `prototyping_field_suffix` or `shape_path` when
-available. Inventory consumers use this as their generated-code naming policy.
-The fallback suffix strips shape/state wrappers and removes duplicated
-field-name prefixes before falling back to `"shape"`. Explicit prototyping
-suffix metadata is normalized against the field name the same way.
+field name from precomputed `prototyping_field_suffix` metadata. Inventory
+consumers use this as their generated-code naming policy. The suffix is
+normalized against the field name before falling back to `"shape"`.
 
 `requires_value` is emitted by `gpui-form-codegen` from
 `<Shape as ComponentShape>::REQUIRES_VALUE`. Non-optional shape-backed fields
@@ -97,7 +95,7 @@ This crate should not own:
 When adding or changing a reusable component shape:
 
 1. implement or derive `ComponentShape` for the shape
-1. publish shape-level metadata such as `COMPONENT_PATH`, `VALUE_BINDING`, and
+1. publish shape-level metadata such as `COMPONENT_TYPE`, `VALUE_BINDING`, and
    `PROTOTYPING.field_suffix` when generators need it
 1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
    crate if runtime support is required

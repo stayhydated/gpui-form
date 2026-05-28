@@ -238,7 +238,7 @@ mod tests {
             "macro should default required-value policy to RequireValue: {compact}"
         );
         assert!(
-            compact.contains("COMPONENT_PATH:Option<&'staticstr>=Some(stringify!(::gpui_component::input::Input))"),
+            compact.contains("COMPONENT_TYPE:Option<&'staticstr>=Some(stringify!(::gpui_component::input::Input))"),
             "macro should embed component metadata: {compact}"
         );
         assert!(

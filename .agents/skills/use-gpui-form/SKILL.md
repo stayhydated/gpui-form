@@ -63,7 +63,7 @@ helpers and component-specific derives explicitly:
    Directly-reusable collection shapes are also available as
    `gpui_form_collection::date_picker::DatePicker`,
    `gpui_form_collection::date_picker::DateRangePicker`,
-   `gpui_form_collection::combobox::Combobox::<_>`,
+   `gpui_form_collection::combobox::Combobox::<Item>`,
    `gpui_form_collection::number_input::NumberInput::<_>`,
    `gpui_form_collection::slider::Slider`,
    `gpui_form_collection::color_picker::ColorPicker`, and
@@ -118,8 +118,9 @@ Common patterns:
 - Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
-  `file_picker`, `infinite_select`, and `otp_input`, and shapes without metadata fall back to the
-  shape-name heuristic.
+  `file_picker`, `infinite_select`, and `otp_input`. Generated form identifiers use field-level
+  `.field_suffix(...)` first, then the explicit component type or shape type name; inventory
+  scaffolds use shape-level prototyping suffix metadata and otherwise fall back to `shape`.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Storybook-style GPUI scaffolds that localize generated labels or messages should call `gpui_es_fluent::localize_label` and `gpui_es_fluent::localize_message` with the active `gpui::App` context.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

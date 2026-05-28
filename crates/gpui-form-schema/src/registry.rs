@@ -87,9 +87,9 @@ pub struct FieldVariant {
     /// Shape type path implementing
     /// `gpui_form_runtime::shape::ComponentShape`.
     pub shape_path: Option<&'static str>,
-    /// UI component type path (e.g. "TagsInput").
-    /// Used by the prototyping code generator to emit `Component::new(&entity)`.
-    pub component_path: Option<&'static str>,
+    /// UI component type (e.g. "TagsInput" or "Combobox<_>").
+    /// Used by the prototyping code generator to emit `<Component>::new(&entity)`.
+    pub component_type: Option<&'static str>,
     /// Whether the component shape opted into
     /// `gpui_form_runtime::shape::ComponentValueBinding` generation.
     pub value_binding: bool,
@@ -111,7 +111,7 @@ impl FieldVariant {
             from_expr: None,
             into_expr: None,
             shape_path: None,
-            component_path: None,
+            component_type: None,
             value_binding: false,
             prototyping_field_suffix: None,
         }
@@ -146,19 +146,19 @@ impl FieldVariant {
         self
     }
 
-    /// Attach a UI component path to this field metadata.
-    pub const fn with_component_path(mut self, component: &'static str) -> Self {
-        self.component_path = Some(component);
+    /// Attach a UI component type to this field metadata.
+    pub const fn with_component_type(mut self, component: &'static str) -> Self {
+        self.component_type = Some(component);
         self
     }
 
-    /// Attach an optional UI component path to this field metadata.
+    /// Attach an optional UI component type to this field metadata.
     ///
-    /// Used when the component path may come from the shape's
-    /// `ComponentShape::COMPONENT_PATH` constant rather than an explicit
+    /// Used when the component type may come from the shape's
+    /// `ComponentShape::COMPONENT_TYPE` constant rather than an explicit
     /// field attribute value.
-    pub const fn with_component_path_opt(mut self, component: Option<&'static str>) -> Self {
-        self.component_path = component;
+    pub const fn with_component_type_opt(mut self, component: Option<&'static str>) -> Self {
+        self.component_type = component;
         self
     }
 
@@ -193,10 +193,6 @@ impl FieldVariant {
     pub fn component_suffix(&self) -> String {
         self.prototyping_field_suffix
             .and_then(|suffix| component_suffix_from_suffix(self.field_name, suffix))
-            .or_else(|| {
-                self.shape_path
-                    .and_then(|shape| component_suffix_from_shape(self.field_name, shape))
-            })
             .filter(|suffix| !suffix.is_empty())
             .unwrap_or_else(|| "shape".to_string())
     }
@@ -225,26 +221,6 @@ impl FieldVariant {
     }
 }
 
-pub fn component_suffix_from_shape(field_name: &str, shape: &str) -> Option<String> {
-    let compact_shape = shape
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .collect::<String>();
-    let path_without_generics = compact_shape
-        .split('<')
-        .next()
-        .filter(|path| !path.is_empty())?;
-    let shape_ident = path_without_generics
-        .rsplit("::")
-        .next()
-        .map(|ident| ident.trim_start_matches("r#"))?;
-    let suffix_source = shape_ident
-        .strip_suffix("Shape")
-        .or_else(|| shape_ident.strip_suffix("State"))
-        .unwrap_or(shape_ident);
-    component_suffix_from_suffix(field_name, suffix_source)
-}
-
 pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
     let mut suffix = suffix.to_snake_case();
     let field_name = field_name.to_snake_case();
@@ -266,16 +242,16 @@ mod tests {
     use super::FieldVariant;
 
     #[test]
-    fn shape_name_drives_field_suffix() {
+    fn shape_name_without_prototyping_suffix_falls_back_to_shape() {
         let field = FieldVariant::new("country", "Country", false)
             .with_shape_path("crate::fields::CountrySelectShape");
 
-        assert_eq!(field.field_name_with_behaviour(), "country_select");
-        assert_eq!(field.kebab_id(), "country-select");
+        assert_eq!(field.field_name_with_behaviour(), "country_shape");
+        assert_eq!(field.kebab_id(), "country-shape");
     }
 
     #[test]
-    fn prototyping_suffix_overrides_shape_heuristic() {
+    fn prototyping_suffix_drives_component_suffix() {
         let field = FieldVariant::new("country", "Country", false)
             .with_shape_path("crate::fields::CountrySelectorState")
             .with_prototyping_field_suffix(Some("select"));
@@ -298,26 +274,23 @@ mod tests {
             .with_shape_path("crate::fields::TagsInputShape")
             .with_prototyping_field_suffix(Some("tags"));
 
-        assert_eq!(field.field_name_with_behaviour(), "tags_input");
+        assert_eq!(field.field_name_with_behaviour(), "tags_shape");
     }
 
     #[test]
-    fn duplicate_field_prefix_is_removed_from_shape_suffix() {
+    fn shape_path_does_not_drive_field_suffix() {
         let field = FieldVariant::new("email", "String", false)
             .with_shape_path("crate::fields::EmailInputShape");
 
-        assert_eq!(field.field_name_with_behaviour(), "email_input");
+        assert_eq!(field.field_name_with_behaviour(), "email_shape");
     }
 
     #[test]
-    fn multiword_shape_name_drives_field_suffix() {
+    fn multiword_shape_name_without_prototyping_suffix_uses_shape() {
         let field = FieldVariant::new("location", "Country", false)
             .with_shape_path("gpui_form_component::infinite_select::InfiniteSelect<Country>");
 
-        assert_eq!(
-            field.field_name_with_behaviour(),
-            "location_infinite_select"
-        );
+        assert_eq!(field.field_name_with_behaviour(), "location_shape");
     }
 
     #[test]

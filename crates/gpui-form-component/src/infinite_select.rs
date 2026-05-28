@@ -938,24 +938,11 @@ where
 {
 }
 
-#[bon::bon]
 impl<T, D> InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
-    /// Starts a bon-style option chain for `#[gpui_form(...)]`.
-    #[builder(start_fn = builder, finish_fn = build)]
-    pub fn options(
-        #[builder(default)] searchable: bool,
-        max_depth: Option<usize>,
-    ) -> InfiniteSelectOptions {
-        InfiniteSelectOptions {
-            searchable,
-            max_depth,
-        }
-    }
-
     /// Creates a new state from `T::default()`.
     pub fn new_default(window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self::new(T::default(), window, cx)
@@ -1231,29 +1218,6 @@ where
     }
 }
 
-#[allow(unnameable_types)]
-impl<T, D> InfiniteSelectState<T, D>
-where
-    T: InfiniteSelectValue,
-    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
-{
-    /// Starts an option chain with search enabled.
-    pub fn searchable(
-        value: bool,
-    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetSearchable>
-    {
-        Self::builder().searchable(value)
-    }
-
-    /// Starts an option chain with a max depth.
-    pub fn max_depth(
-        value: usize,
-    ) -> InfiniteSelectStateOptionsBuilder<T, D, infinite_select_state_options_builder::SetMaxDepth>
-    {
-        Self::builder().max_depth(value)
-    }
-}
-
 /// Render wrapper used by generated form code for infinite-select fields.
 #[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
@@ -1262,7 +1226,8 @@ where
         state = InfiniteSelectState<T, D>,
         new = InfiniteSelectState::<T, D>::new_default,
         requires_value = false,
-        field_suffix = "infinite_select"
+        field_suffix = "infinite_select",
+        value_binding
     )
 )]
 #[derive(IntoElement)]

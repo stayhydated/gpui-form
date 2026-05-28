@@ -47,7 +47,7 @@ because generated code references `gpui_form_runtime::shape`.
 ```rust
 #[gpui_form(gpui_form_collection::input::Input::<_>)]
 #[gpui_form(gpui_form_collection::select::Select::<_>)]
-#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]
+#[gpui_form(gpui_form_collection::combobox::Combobox::<Item>)]
 #[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]
 #[gpui_form(gpui_form_collection::slider::Slider)]
 #[gpui_form(gpui_form_collection::color_picker::ColorPicker)]
@@ -95,7 +95,7 @@ Common struct attributes:
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
   choice; derive `SelectItem`. Use a custom `ComponentShape` wrapper when the
   select should expose search or other component-specific behavior.
-- Use `gpui_form_collection::combobox::Combobox::<_>` for multi-value enum-like
+- Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`.
 - Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
   input with step buttons.

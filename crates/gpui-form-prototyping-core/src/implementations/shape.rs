@@ -51,11 +51,11 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
     ) -> TokenStream {
         let field_in_struct_name_ident = field.field_ident_with_behaviour();
 
-        // When the component type is known, emit Component::new(&entity) like other components.
-        // The component type is in scope via `use {module}::*;` in the generated file.
-        let child_tokens = if let Some(component_path) = field.component_path_parsed() {
+        // When the component type is known, emit <Component>::new(&entity). The
+        // bracketed form works for generic component types such as Combobox<_>.
+        let child_tokens = if let Some(component_type) = field.component_type_parsed() {
             quote! {
-                #component_path::new(&self.fields.#field_in_struct_name_ident)
+                <#component_type>::new(&self.fields.#field_in_struct_name_ident)
             }
         } else {
             let field_name = field.field_name();
@@ -225,7 +225,7 @@ mod tests {
     #[test]
     fn shape_generator_emits_component_call_when_component_known() {
         const FIELDS_WITH_COMPONENT: [FieldVariant; 1] =
-            [FieldVariant::new("tags", "Vec<String>", false).with_component_path("TagsInput")];
+            [FieldVariant::new("tags", "Vec<String>", false).with_component_type("TagsInput")];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS_WITH_COMPONENT, "src/demo.rs", false);
 
@@ -235,8 +235,8 @@ mod tests {
         let compact = compact(&tokens.to_string());
 
         assert!(
-            compact.contains("TagsInput::new(&self.fields.tags_shape)"),
-            "render should emit Component::new(&entity): got {compact}"
+            compact.contains("<TagsInput>::new(&self.fields.tags_shape)"),
+            "render should emit <Component>::new(&entity): got {compact}"
         );
     }
 
@@ -310,9 +310,10 @@ mod tests {
     }
 
     #[test]
-    fn shape_generator_uses_shape_suffix_for_component_names() {
+    fn shape_generator_uses_declared_suffix_for_component_names() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "CountryCode", false)
             .with_shape_path("crate::shapes::CountrySelectShape")
+            .with_prototyping_field_suffix(Some("select"))
             .with_value_binding(true)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
@@ -329,11 +330,31 @@ mod tests {
 
         assert!(
             compact_created.contains("letcountry_select=cx.new"),
-            "shape names should drive generated field suffixes: {compact_created}"
+            "declared prototyping suffixes should drive generated field suffixes: {compact_created}"
         );
         assert!(
             compact_handler.contains("fnon_country_select_event"),
-            "shape names should drive generated handler suffixes: {compact_handler}"
+            "declared prototyping suffixes should drive generated handler suffixes: {compact_handler}"
+        );
+    }
+
+    #[test]
+    fn shape_generator_renders_generic_component_type() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("tags", "Vec<Tag>", false)
+            .with_component_type("gpui_component::combobox::Combobox<_>")
+            .with_prototyping_field_suffix(Some("combobox"))];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let tokens = generator.generate_render_child(&field, &SHAPE);
+        let compact = compact(&tokens.to_string());
+
+        assert!(
+            compact.contains(
+                "<gpui_component::combobox::Combobox<_>>::new(&self.fields.tags_combobox)"
+            ),
+            "generic component types should be rendered with qualified type syntax: {compact}"
         );
     }
 }

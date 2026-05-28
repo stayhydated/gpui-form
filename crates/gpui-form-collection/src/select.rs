@@ -18,7 +18,7 @@ gpui_form_derive::component_shape! {
     {
         type State = SelectState<D>;
         new = Self::new_default;
-        component = gpui_component::select::Select;
+        component = gpui_component::select::Select<_>;
         requires_value = false;
         field_suffix = "select";
 
@@ -51,24 +51,11 @@ gpui_form_derive::component_shape! {
     }
 }
 
-/// Options for callers that construct select state outside the derive path.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct SelectOptions {
-    pub searchable: bool,
-}
-
-#[bon::bon]
 impl<T, D> Select<T, D>
 where
     T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
     D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
 {
-    /// Starts a bon-style option chain for `#[gpui_form(...)]`.
-    #[builder(start_fn = builder, finish_fn = build)]
-    pub fn options(#[builder(default)] searchable: bool) -> SelectOptions {
-        SelectOptions { searchable }
-    }
-
     pub fn new_default(
         window: &mut Window,
         cx: &mut Context<'_, SelectState<D>>,
@@ -90,19 +77,5 @@ where
             window,
             cx,
         )
-    }
-}
-
-#[allow(unnameable_types)]
-impl<T, D> Select<T, D>
-where
-    T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
-    D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
-{
-    /// Starts an option chain with search enabled.
-    pub fn searchable(
-        value: bool,
-    ) -> SelectOptionsBuilder<T, D, select_options_builder::SetSearchable> {
-        Self::builder().searchable(value)
     }
 }

@@ -27,7 +27,7 @@ pub trait ComponentShape {
     /// Build the component state.
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State;
 
-    /// Optional path to the UI component type (e.g. `"TagsInput"`).
+    /// Optional UI component type (e.g. `"TagsInput"` or `"Combobox<_>"`).
     ///
     /// When set here via `gpui_form_derive::component_shape!` or
     /// `#[gpui_form_shape(component = ...)]`, the prototyping code generator can
@@ -36,7 +36,7 @@ pub trait ComponentShape {
     ///
     /// A `.component(...)` override on the field shape expression always takes
     /// precedence.
-    const COMPONENT_PATH: Option<&'static str> = None;
+    const COMPONENT_TYPE: Option<&'static str> = None;
 
     /// Whether generated prototyping code should wire this component shape
     /// through [`ComponentValueBinding`] by default.

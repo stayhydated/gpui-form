@@ -122,7 +122,7 @@ Responsibilities:
    `state = ...`.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
-1. Schema/prototyping metadata can optionally carry a concrete UI component path
+1. Schema/prototyping metadata can optionally carry a concrete UI component type
    for scaffold generation.
 1. Shape-level prototyping metadata can carry a preferred field/helper suffix
    for scaffold generation, with field-level annotations able to override it.
@@ -197,7 +197,7 @@ When adding a new reusable component shape that needs runtime state:
 
 1. add the runtime helper in this crate
 1. expose it through `ComponentShape` or a helper macro/derive
-1. publish shape metadata such as `COMPONENT_PATH`, `RequiredValuePolicy`,
+1. publish shape metadata such as `COMPONENT_TYPE`, `RequiredValuePolicy`,
    `VALUE_BINDING`, and `PROTOTYPING.field_suffix` when generated scaffolds or
    value-holder storage need it
 1. update user-facing docs so applications import `gpui-form-runtime`

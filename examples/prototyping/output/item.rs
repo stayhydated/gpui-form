@@ -185,7 +185,9 @@ impl Render for ItemForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.index_input)),
+                            .child(<gpui_component::input::Input>::new(
+                                &self.fields.index_input,
+                            )),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(
                         cx,

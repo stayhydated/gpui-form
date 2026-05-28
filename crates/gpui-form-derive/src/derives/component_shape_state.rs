@@ -34,6 +34,8 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
                 shape.set_field_suffix(field_suffix, &meta.path)
+            } else if meta.path.is_ident("value_binding") {
+                shape.enable_value_binding(&meta.path)
             } else {
                 Err(meta.error(format!(
                     "unsupported `gpui_form_shape` option; expected {SHAPE_METADATA_OPTIONS}",
@@ -47,8 +49,7 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
 
 fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
-    let mut meta = parse_meta(&input.attrs)?;
-    meta.enable_value_binding(ident)?;
+    let meta = parse_meta(&input.attrs)?;
     let state = meta.state().cloned().ok_or_else(|| {
         syn::Error::new_spanned(
             ident,
@@ -62,25 +63,70 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
     let gpui_crate = CratePaths::resolve().gpui;
+    let inferred_component_type = if input.generics.params.is_empty() {
+        quote! { #ident }
+    } else {
+        let inferred_args = input.generics.params.iter().map(|param| match param {
+            syn::GenericParam::Lifetime(_) => quote! { '_ },
+            syn::GenericParam::Type(_) | syn::GenericParam::Const(_) => quote! { _ },
+        });
+        quote! { #ident < #(#inferred_args),* > }
+    };
     let inferred_component_const = if !meta.has_component() {
         Some(quote! {
-            const COMPONENT_PATH: Option<&'static str> =
-                Some(concat!(module_path!(), "::", stringify!(#ident)));
+            const COMPONENT_TYPE: Option<&'static str> =
+                Some(concat!(module_path!(), "::", stringify!(#inferred_component_type)));
         })
     } else {
         None
     };
-    let mut binding_generics = input.generics.clone();
-    binding_generics
-        .params
-        .push(syn::parse_quote!(__GpuiFormValueBindingValue));
-    binding_generics
-        .make_where_clause()
-        .predicates
-        .push(syn::parse_quote! {
-            #state: #runtime_crate::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>
-        });
-    let (binding_impl_generics, _, binding_where_clause) = binding_generics.split_for_impl();
+    let binding_impl = if meta.has_value_binding() {
+        let mut binding_generics = input.generics.clone();
+        binding_generics
+            .params
+            .push(syn::parse_quote!(__GpuiFormValueBindingValue));
+        binding_generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                #state: #runtime_crate::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>
+            });
+        let (binding_impl_generics, _, binding_where_clause) = binding_generics.split_for_impl();
+
+        Some(quote! {
+            impl #binding_impl_generics #runtime_crate::shape::ComponentValueBinding<__GpuiFormValueBindingValue>
+                for #ident #ty_generics
+                #binding_where_clause
+            {
+                type Event =
+                    <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                        __GpuiFormValueBindingValue
+                    >>::Event;
+
+                fn seed_value_binding_state(
+                    state: &mut Self::State,
+                    value: Option<&__GpuiFormValueBindingValue>,
+                    window: &mut #gpui_crate::Window,
+                    cx: &mut #gpui_crate::Context<'_, Self::State>,
+                ) {
+                    <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                        __GpuiFormValueBindingValue
+                    >>::seed_value_binding_state(state, value, window, cx);
+                }
+
+                fn form_value_change(
+                    state: &Self::State,
+                    event: &Self::Event,
+                ) -> #runtime_crate::shape::FormValueChange<__GpuiFormValueBindingValue> {
+                    <#state as #runtime_crate::shape::ComponentStateValueBinding<
+                        __GpuiFormValueBindingValue
+                    >>::form_value_change(state, event)
+                }
+            }
+        })
+    } else {
+        None
+    };
 
     Ok(quote! {
         impl #impl_generics #runtime_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
@@ -97,35 +143,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             #inferred_component_const
         }
 
-        impl #binding_impl_generics #runtime_crate::shape::ComponentValueBinding<__GpuiFormValueBindingValue>
-            for #ident #ty_generics
-            #binding_where_clause
-        {
-            type Event =
-                <#state as #runtime_crate::shape::ComponentStateValueBinding<
-                    __GpuiFormValueBindingValue
-                >>::Event;
-
-            fn seed_value_binding_state(
-                state: &mut Self::State,
-                value: Option<&__GpuiFormValueBindingValue>,
-                window: &mut #gpui_crate::Window,
-                cx: &mut #gpui_crate::Context<'_, Self::State>,
-            ) {
-                <#state as #runtime_crate::shape::ComponentStateValueBinding<
-                    __GpuiFormValueBindingValue
-                >>::seed_value_binding_state(state, value, window, cx);
-            }
-
-            fn form_value_change(
-                state: &Self::State,
-                event: &Self::Event,
-            ) -> #runtime_crate::shape::FormValueChange<__GpuiFormValueBindingValue> {
-                <#state as #runtime_crate::shape::ComponentStateValueBinding<
-                    __GpuiFormValueBindingValue
-                >>::form_value_change(state, event)
-            }
-        }
+        #binding_impl
     })
 }
 
@@ -182,12 +200,12 @@ mod tests {
         );
         assert!(
             compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
-            "component path should be inferred when component is not specified"
+            "component type should be inferred when component is not specified"
         );
     }
 
     #[test]
-    fn test_component_shape_with_component_path() {
+    fn test_component_shape_with_component_type() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
             #[gpui_form_shape(
@@ -203,12 +221,12 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("COMPONENT_PATH"),
-            "should emit COMPONENT_PATH const when component is specified"
+            compact.contains("COMPONENT_TYPE"),
+            "should emit COMPONENT_TYPE const when component is specified"
         );
         assert!(
             compact.contains("crate::ui::TagsInput"),
-            "should embed the component path as a string"
+            "should embed the component type as a string"
         );
     }
 
@@ -320,17 +338,57 @@ mod tests {
         );
         assert!(
             compact.contains("concat!(module_path!(),\"::\",stringify!(TagsInput))"),
-            "component derive should infer the UI component path: {compact}"
+            "component derive should infer the UI component type: {compact}"
         );
         assert!(
+            !compact.contains("VALUE_BINDING:bool=true"),
+            "component derive should not opt into value binding without explicit metadata: {compact}"
+        );
+        assert!(
+            !compact.contains("ComponentValueBinding<__GpuiFormValueBindingValue>forTagsInput"),
+            "component derive should not emit binding delegation without explicit metadata: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_derive_infers_generic_component_type() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::PickerState<T, D>)]
+            struct Picker<T, D = Vec<T>>(T, D);
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("concat!(module_path!(),\"::\",stringify!(Picker<_,_>))"),
+            "generic component derives should infer render component type arguments: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_derive_explicit_value_binding() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::TagsState, field_suffix = "tags", value_binding)]
+            struct TagsInput;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
             compact.contains("VALUE_BINDING:bool=true"),
-            "component derive should opt into value binding by default: {compact}"
+            "explicit value_binding should publish inherited binding metadata: {compact}"
         );
         assert!(
             compact.contains(
                 "ComponentValueBinding<__GpuiFormValueBindingValue>forTagsInputwherecrate::state::TagsState:::gpui_form_runtime::shape::ComponentStateValueBinding<__GpuiFormValueBindingValue>"
             ),
-            "component derive should delegate value binding through the backing state: {compact}"
+            "explicit value_binding should delegate through the backing state: {compact}"
         );
     }
 

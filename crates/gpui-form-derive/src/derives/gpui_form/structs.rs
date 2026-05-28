@@ -293,7 +293,8 @@ fn parse_meta_name_value(
             Ok(())
         },
         _ => Err(
-            DarlingError::custom(format!("unknown gpui_form field option `{key}`")).with_span(&rhs),
+            DarlingError::custom(format!("unknown gpui_form field option `{key}`"))
+                .with_span(&name_value.path),
         ),
     }
 }

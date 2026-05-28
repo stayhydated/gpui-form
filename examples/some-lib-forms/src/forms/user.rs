@@ -738,7 +738,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(
+                            .child(<gpui_component::input::Input>::new(
                                 &self.fields.username_input,
                             )),
                     )
@@ -786,7 +786,9 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.email_input)),
+                            .child(<gpui_component::input::Input>::new(
+                                &self.fields.email_input,
+                            )),
                     )
                     .child(
                         field()
@@ -832,7 +834,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.age_input)),
+                            .child(<gpui_component::input::Input>::new(&self.fields.age_input)),
                     )
                     .child(
                         field()
@@ -878,7 +880,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(
+                            .child(<gpui_component::input::Input>::new(
                                 &self.fields.balance_input,
                             )),
                     )
@@ -926,7 +928,7 @@ impl Render for UserForm {
                                         })
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.debt_input)),
+                            .child(<gpui_component::input::Input>::new(&self.fields.debt_input)),
                     )
                     .child(
                         field()
@@ -947,7 +949,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_collection::number_input::NumberInputField::new(
+                            .child(<gpui_form_collection::number_input::NumberInputField>::new(
                                 &self.fields.rating_number_input,
                             )),
                     )
@@ -970,7 +972,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::slider::Slider::new(
+                            .child(<gpui_component::slider::Slider>::new(
                                 &self.fields.attention_level_slider,
                             )),
                     )
@@ -993,7 +995,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::color_picker::ColorPicker::new(
+                            .child(<gpui_component::color_picker::ColorPicker>::new(
                                 &self.fields.brand_color_color_picker,
                             )),
                     )
@@ -1016,7 +1018,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_collection::otp_input::OtpInputField::new(
+                            .child(<gpui_form_collection::otp_input::OtpInputField>::new(
                                 &self.fields.otp_code_otp_input,
                             )),
                     )
@@ -1039,7 +1041,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_component::file_picker::FilePicker::new(
+                            .child(<gpui_form_component::file_picker::FilePicker>::new(
                                 &self.fields.uploaded_files_file_picker,
                             )),
                     )
@@ -1062,7 +1064,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::date_picker::DatePicker::new(
+                            .child(<gpui_component::date_picker::DatePicker>::new(
                                 &self.fields.holiday_range_date_range_picker,
                             )),
                     )
@@ -1085,7 +1087,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_collection::switch::SwitchField::new(
+                            .child(<gpui_form_collection::switch::SwitchField>::new(
                                 &self.fields.subscribe_newsletter_switch,
                             )),
                     )
@@ -1108,7 +1110,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_collection::checkbox::CheckboxField::new(
+                            .child(<gpui_form_collection::checkbox::CheckboxField>::new(
                                 &self.fields.enable_notifications_checkbox,
                             )),
                     )
@@ -1131,7 +1133,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::select::Select::new(
+                            .child(<gpui_component::select::Select<_>>::new(
                                 &self.fields.preferred_select,
                             )),
                     )
@@ -1154,7 +1156,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::select::Select::new(
+                            .child(<gpui_component::select::Select<_>>::new(
                                 &self.fields.country_select,
                             )),
                     )
@@ -1177,7 +1179,7 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::date_picker::DatePicker::new(
+                            .child(<gpui_component::date_picker::DatePicker>::new(
                                 &self.fields.birth_date_date_picker,
                             )),
                     )

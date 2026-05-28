@@ -12,7 +12,6 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
-bon = { workspace = true }
 chrono = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }

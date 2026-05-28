@@ -2,7 +2,7 @@ use darling::Error as DarlingError;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
-use syn::{Expr, Lit, Path};
+use syn::{Expr, Lit, Path, Type};
 
 use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
@@ -101,9 +101,9 @@ pub struct ComponentMethod {
 pub struct ShapeOptions {
     /// Path to a type implementing `gpui_form_runtime::shape::ComponentShape`.
     pub shape: syn::Path,
-    /// UI component type path (e.g. `TagsInput`).
+    /// UI component type (e.g. `TagsInput` or `Combobox<_>`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
-    pub component: Option<syn::Path>,
+    pub component: Option<Type>,
     /// Optional explicit generated field/helper suffix.
     pub field_suffix: Option<String>,
     span: Span,
@@ -140,7 +140,7 @@ impl ShapeOptions {
     ) -> darling::Result<()> {
         match method.to_string().as_str() {
             "component" => {
-                set_metadata_once(&mut self.component, expect_path_arg(method, args)?, method)?;
+                set_metadata_once(&mut self.component, expect_type_arg(method, args)?, method)?;
             },
             "field_suffix" => {
                 set_metadata_once(
@@ -184,8 +184,16 @@ impl ShapeOptions {
             .unwrap_or_else(|| "shape".to_string());
         }
 
-        let shape = self.shape.to_token_stream().to_string();
-        gpui_form_schema::registry::component_suffix_from_shape(field_name, &shape)
+        let suffix_source = self
+            .component
+            .as_ref()
+            .and_then(type_suffix_source)
+            .or_else(|| path_suffix_source(&self.shape));
+
+        suffix_source
+            .and_then(|source| {
+                gpui_form_schema::registry::component_suffix_from_suffix(field_name, &source)
+            })
             .unwrap_or_else(|| "shape".to_string())
     }
 
@@ -246,6 +254,87 @@ impl ShapeOptions {
     pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         RequiredValue::shape(self.resolved_shape(field_type))
     }
+
+    fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
+        if !is_combobox_with_inferred_item(&self.shape) {
+            return Ok(());
+        }
+
+        let Some(item_type) = vec_inner_type(field_type) else {
+            return Ok(());
+        };
+
+        let field_type = type_display(field_type);
+        let item_type = type_display(item_type);
+        Err(syn::Error::new(
+            self.span,
+            format!(
+                "`Combobox::<_>` inferred `{field_type}`; use `Combobox::<{item_type}>` for `{field_type}` fields"
+            ),
+        ))
+    }
+}
+
+fn is_combobox_with_inferred_item(path: &Path) -> bool {
+    let Some(segment) = path.segments.last() else {
+        return false;
+    };
+    if segment.ident != "Combobox" {
+        return false;
+    }
+
+    let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
+        return false;
+    };
+
+    args.args
+        .first()
+        .is_some_and(|arg| matches!(arg, syn::GenericArgument::Type(Type::Infer(_))))
+}
+
+fn vec_inner_type(ty: &Type) -> Option<&Type> {
+    let Type::Path(type_path) = ty else {
+        return None;
+    };
+    let segment = type_path.path.segments.last()?;
+    if segment.ident != "Vec" {
+        return None;
+    }
+
+    let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
+        return None;
+    };
+    args.args.iter().find_map(|arg| match arg {
+        syn::GenericArgument::Type(inner) => Some(inner),
+        _ => None,
+    })
+}
+
+fn type_display(ty: &Type) -> String {
+    ty.to_token_stream()
+        .to_string()
+        .replace(" :: ", "::")
+        .replace(" < ", "<")
+        .replace(" >", ">")
+        .replace(" , ", ", ")
+}
+
+fn type_suffix_source(ty: &Type) -> Option<String> {
+    let Type::Path(type_path) = ty else {
+        return None;
+    };
+
+    path_suffix_source(&type_path.path)
+}
+
+fn path_suffix_source(path: &Path) -> Option<String> {
+    let ident = path.segments.last()?.ident.to_string();
+    let suffix_source = ident
+        .strip_suffix("Shape")
+        .or_else(|| ident.strip_suffix("State"))
+        .unwrap_or(&ident);
+
+    Some(suffix_source.to_string())
 }
 
 fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMethod>)> {
@@ -328,16 +417,23 @@ fn normalize_shape_path(mut path: Path) -> Path {
     path
 }
 
-fn expect_path_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Path> {
+fn expect_type_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Type> {
     let [arg] = args else {
         return Err(
-            DarlingError::custom(format!("`{method}` expects exactly one path argument"))
+            DarlingError::custom(format!("`{method}` expects exactly one type argument"))
                 .with_span(method),
         );
     };
 
     match arg {
-        Expr::Path(path) => Ok(path.path.clone()),
+        Expr::Path(path) => Ok(Type::Path(syn::TypePath {
+            qself: path.qself.clone(),
+            path: normalize_shape_path(path.path.clone()),
+        })),
+        Expr::Infer(infer) => Err(DarlingError::custom(
+            "component type cannot be inferred with bare `_`; use an explicit component type",
+        )
+        .with_span(infer)),
         _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
     }
 }
@@ -484,18 +580,24 @@ impl Components {
         }
     }
 
-    pub fn component_path_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+    pub fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
+        match self {
+            Self::Shape(options) => options.validate_field_type(field_type),
+        }
+    }
+
+    pub fn component_type_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
         let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
         let runtime_crate = CratePaths::resolve().gpui_form_runtime;
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
-            Some(quote! { .with_component_path(#component_str) })
+            Some(quote! { .with_component_type(#component_str) })
         } else {
             Some(quote! {
-                .with_component_path_opt(
-                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_PATH
+                .with_component_type_opt(
+                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
                 )
             })
         }
@@ -524,7 +626,11 @@ impl Components {
         })
     }
 
-    pub fn prototyping_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
+    pub fn prototyping_tokens(
+        &self,
+        _field_name: &str,
+        field_type: &syn::Type,
+    ) -> Option<TokenStream> {
         let Self::Shape(options) = self;
 
         if let Some(field_suffix) = &options.field_suffix {

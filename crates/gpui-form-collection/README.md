@@ -19,8 +19,10 @@ pub struct Account {
 ```
 
 The `_` in `Input::<_>` is resolved by `GpuiForm` to the field's
-form-side type. Generic component expressions use Rust turbofish syntax inside the
-attribute and are normalized back into type paths by the derive.
+form-side type. Generic component expressions use Rust turbofish syntax inside
+the attribute and are normalized back into type paths by the derive.
+`Combobox<T>` is different: `T` is the item type for a `Vec<T>` field, so write
+`Combobox::<Country>` rather than `Combobox::<_>`.
 
 Currently provided components:
 

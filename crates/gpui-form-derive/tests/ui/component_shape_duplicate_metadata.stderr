@@ -1,0 +1,5 @@
+error: duplicate `field_suffix` option
+ --> tests/ui/component_shape_duplicate_metadata.rs:9:9
+  |
+9 |         field_suffix = "field";
+  |         ^^^^^^^^^^^^

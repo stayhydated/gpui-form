@@ -1,0 +1,5 @@
+error: `Combobox::<_>` inferred `Vec<Role>`; use `Combobox::<Role>` for `Vec<Role>` fields
+  --> tests/ui/gpui_form_combobox_wrong_value_type.rs:35:17
+   |
+35 |     #[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]
+   |                 ^^^^^^^^^^^^^^^^^^^^

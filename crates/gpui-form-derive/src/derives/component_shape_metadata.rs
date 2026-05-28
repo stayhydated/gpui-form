@@ -7,17 +7,17 @@ use gpui_form_codegen::CratePaths;
 use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `requires_value = ...`, \
-     or `field_suffix = ...`";
+     `value_binding`, or `field_suffix = ...`";
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
     new: Option<Expr>,
     /// Optional backing state type when deriving on a render component.
     state: Option<Type>,
-    /// Optional UI component type path.
-    /// When set, `ComponentShape::COMPONENT_PATH` is populated so that
+    /// Optional UI component type.
+    /// When set, `ComponentShape::COMPONENT_TYPE` is populated so that
     /// field annotations do not need to repeat `component = ...`.
-    component: Option<Path>,
+    component: Option<Type>,
     /// Whether non-optional source fields should keep a missing-value state in
     /// generated form value holders.
     requires_value: Option<LitBool>,
@@ -42,9 +42,16 @@ impl ComponentShapeMetadata {
 
     pub(super) fn set_component<T: quote::ToTokens>(
         &mut self,
-        component: Path,
+        component: Type,
         span: T,
     ) -> Result<()> {
+        if matches!(component, Type::Infer(_)) {
+            return Err(syn::Error::new_spanned(
+                span,
+                "component type cannot be inferred with bare `_`; use an explicit component type",
+            ));
+        }
+
         set_once(&mut self.component, component, span, "component")
     }
 
@@ -122,9 +129,9 @@ impl ComponentShapeMetadata {
         let value_binding_policy_assoc = quote! {
             type ValueBindingPolicy = #value_binding_policy;
         };
-        let component_path_const = self.component.as_ref().map(|component| {
+        let component_type_const = self.component.as_ref().map(|component| {
             quote! {
-                const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
+                const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(#component));
             }
         });
         let value_binding_const = self.value_binding.then(|| {
@@ -143,7 +150,7 @@ impl ComponentShapeMetadata {
         quote! {
             #required_value_policy_assoc
             #value_binding_policy_assoc
-            #component_path_const
+            #component_type_const
             #value_binding_const
             #prototyping_const
         }

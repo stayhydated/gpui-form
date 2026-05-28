@@ -277,16 +277,17 @@ paths and closures are called with
 `gpui_form_derive::component_shape!`, omitting `new` calls
 `<State>::new(window, cx)`. For `#[derive(ComponentShape)]`, `state = ...` is
 required and omitting `new` also calls `<State>::new(window, cx)`.
-The `component = ...` option also publishes `COMPONENT_PATH` metadata for
-generated/prototyping render code, so prefer a path that remains valid from the
+The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
+generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The function-like macro uses semicolons between options.
 
-For component shapes that should participate in generated prototyping
-subscriptions, put `#[gpui_form_derive::component_value_binding]` on the
-backing state's `ComponentValueBinding<T>` impl. The attribute compiles that
-impl as `ComponentStateValueBinding<T>`, which component-derived shapes
-delegate through.
+For component-derived shapes that should participate in generated prototyping
+subscriptions, add `value_binding` to `#[gpui_form_shape(...)]` and put
+`#[gpui_form_derive::component_value_binding]` on the backing state's
+`ComponentValueBinding<T>` impl. The attribute compiles that impl as
+`ComponentStateValueBinding<T>`, which component-derived shapes delegate
+through.
 For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
 `ComponentValueBinding<T>` impl inside the macro block to emit the impl with
 the shape and publish shape-level value-binding metadata automatically.

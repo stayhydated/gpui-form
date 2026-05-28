@@ -103,7 +103,7 @@ the shape expression directly in the attribute:
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
-- `#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]`
+- `#[gpui_form(gpui_form_collection::combobox::Combobox::<Country>)]`
 - `#[gpui_form(gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(gpui_form_collection::switch::Switch)]`
 - `#[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]`
@@ -155,8 +155,9 @@ Common field-level helpers:
   `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.
 - generated form field/helper suffixes use field-level `.field_suffix(...)`
-  first, then the shape-name heuristic. Shape-level
-  `ComponentShape::PROTOTYPING.field_suffix` is inventory metadata for
+  when supplied; otherwise they derive a suffix from the explicit component
+  type or shape type name, such as `birth_date_date_picker`. Shape-level
+  `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
   prototyping output.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
@@ -288,7 +289,9 @@ pub struct Account {
 ```
 
 The `_` generic is resolved to the field's form-side type, including any
-`#[gpui_form(type = ...)]` override.
+`#[gpui_form(type = ...)]` override. `Combobox<T>` is the exception: its
+generic is the selected item type, so a `Vec<Country>` field uses
+`Combobox::<Country>`.
 
 ### 2. Derive on an owned component
 
@@ -356,9 +359,10 @@ If you implement `ComponentShape` manually instead of using the derive or
 is usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.
 
-Component-derived shapes can opt into generated value synchronization by
-placing `#[gpui_form_derive::component_value_binding]` on the backing state's
-binding impl:
+Component-derived shapes can opt into generated value synchronization by adding
+`value_binding` to `#[gpui_form_shape(...)]` and placing
+`#[gpui_form_derive::component_value_binding]` on the backing state's binding
+impl:
 
 ```rs
 pub struct TagsInputState;

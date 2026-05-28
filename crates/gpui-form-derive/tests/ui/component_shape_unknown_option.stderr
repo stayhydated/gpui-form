@@ -1,0 +1,5 @@
+error: expected `type State = ...;`, an `impl` item, or `new = ...`, `component = ...`, `requires_value = ...`, or `field_suffix = ...`
+ --> tests/ui/component_shape_unknown_option.rs:8:9
+  |
+8 |         unknown = true;
+  |         ^^^^^^^

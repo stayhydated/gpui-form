@@ -1,0 +1,5 @@
+error: component type cannot be inferred with bare `_`; use an explicit component type
+ --> tests/ui/component_shape_invalid_component_infer.rs:8:9
+  |
+8 |         component = _;
+  |         ^^^^^^^^^

@@ -63,12 +63,13 @@ resolved with `proc-macro-crate`, so renamed downstream dependencies are still
 addressed correctly. Downstream crates that use component-backed fields must
 depend on `gpui-form-runtime` explicitly.
 
-Generated identifiers use an explicit field-level `field_suffix` first, then
-the resolved component shape's final segment. The shape-name fallback strips
-`Shape` or `State`, removes a duplicate field prefix, and falls back to `shape`
-when the shape name is exactly the field name. Explicit suffix metadata goes
-through the same field-name normalization. For example, `email: EmailInputShape`
-becomes `email_input`, while `tags: TagsState` falls back to `tags_shape`.
+Generated identifiers use an explicit field-level `field_suffix` first, then an
+explicit component type, then the resolved component shape's final segment. The
+path fallback strips `Shape` or `State`, removes a duplicate field prefix, and
+falls back to `shape` when the suffix exactly matches the field name. Explicit
+suffix metadata goes through the same field-name normalization. For example,
+`birth_date: DatePicker` becomes `birth_date_date_picker`, while
+`tags: TagsState` falls back to `tags_shape`.
 
 No `gpui-component` UI component is hard-coded here. Reusable gpui-component-backed
 representations live in `gpui-form-collection`; application-specific widgets
@@ -80,7 +81,7 @@ Inventory/prototyping metadata records:
 
 - shape-only field metadata (`FieldVariant::new(field_name, value_type, optional)`)
 - the resolved component shape path
-- the optional render component path
+- the optional render component type
 - the required-value holder policy
 - the value-binding flag
 - the optional component-shape prototyping field suffix

@@ -1,0 +1,11 @@
+error: unexpected end of input, missing `type State = ...;`
+ --> tests/ui/component_shape_missing_state.rs:3:1
+  |
+3 | / component_shape! {
+4 | |     struct MissingStateShape {
+5 | |         field_suffix = "input";
+6 | |     }
+7 | | }
+  | |_^
+  |
+  = note: this error originates in the macro `component_shape` (in Nightly builds, run with -Z macro-backtrace for more info)

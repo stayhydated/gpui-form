@@ -11,7 +11,7 @@ impl State {
 }
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(state = State)]
+#[gpui_form_shape(state = State, value_binding)]
 struct DerivedShape;
 
 #[derive(GpuiForm)]

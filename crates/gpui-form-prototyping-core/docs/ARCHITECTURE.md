@@ -91,10 +91,10 @@ All component fields are shape-backed:
 
 - the generator still initializes component state into generated `FormFields`
 - generated local variable, field, and handler names use
-  `FieldVariant::field_name_with_behaviour`, which prefers component-shape prototyping
-  suffix metadata before falling back to shape-derived suffixes
-- if `FieldVariant::component_path` is present, the generator can emit
-  `Component::new(&entity)` and import the component type
+  `FieldVariant::field_name_with_behaviour`, which uses precomputed
+  component-shape prototyping suffix metadata
+- if `FieldVariant::component_type` is present, the generator parses it as a
+  Rust type and emits `<Component>::new(&entity)`
 - if that metadata is missing, the generator falls back to a placeholder row
 - component subscriptions are generated only when `FieldVariant::value_binding`
   is true; the field's shape must provide the generic

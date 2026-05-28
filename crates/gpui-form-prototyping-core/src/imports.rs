@@ -21,9 +21,7 @@ pub enum Alias {
 
 /// A single item to be imported into a generated file.
 ///
-/// Both `path` and the inner value of [`Alias::Rename`] are `&'static str`
-/// because component paths are stored as `&'static str` in
-/// [`FieldVariant::component_path`](gpui_form_schema::registry::FieldVariant::component_path).
+/// Both `path` and the inner value of [`Alias::Rename`] are `&'static str`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ImportItem {
     /// Full path to the imported item, e.g. `"my_crate::widgets::FieldWidget"`.

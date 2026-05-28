@@ -200,7 +200,7 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_component::input::Input::new(&self.fields.name_input)),
+                            .child(<gpui_component::input::Input>::new(&self.fields.name_input)),
                     )
                     .child(
                         field()
@@ -221,9 +221,11 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(gpui_form_component::infinite_select::InfiniteSelect::new(
-                                &self.fields.location_infinite_select,
-                            )),
+                            .child(
+                                <gpui_form_component::infinite_select::InfiniteSelect<_, _>>::new(
+                                    &self.fields.location_infinite_select,
+                                ),
+                            ),
                     )
                     .child(field().label_indent(false).child(self.action_buttons(
                         cx,

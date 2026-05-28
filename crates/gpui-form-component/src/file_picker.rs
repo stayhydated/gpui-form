@@ -243,7 +243,8 @@ impl Render for FilePickerState {
     gpui_form_shape(
         state = FilePickerState,
         requires_value = false,
-        field_suffix = "file_picker"
+        field_suffix = "file_picker",
+        value_binding
     )
 )]
 #[derive(IntoElement)]

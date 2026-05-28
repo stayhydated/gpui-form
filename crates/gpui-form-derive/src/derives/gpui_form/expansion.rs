@@ -161,6 +161,20 @@ pub fn expand_gpui_form(
         .to_compile_error();
     }
 
+    if let Some(error) = fields_iter.iter().find_map(|field| {
+        let rendered = field.rendered()?;
+        let component_def = rendered.component?;
+        let (_, original_inner_type) = extract_option_inner_type(&field.ty);
+        let base_type = rendered
+            .r#type
+            .map(|ty| extract_option_inner_type(&ty.0).1)
+            .unwrap_or(original_inner_type);
+
+        component_def.validate_field_type(&base_type).err()
+    }) {
+        return error.to_compile_error();
+    }
+
     let component_field_pairs: Vec<crate::derives::gpui_form::structs::ComponentFieldContent> =
         fields_iter
             .iter()
@@ -305,10 +319,11 @@ pub fn expand_gpui_form(
                     quote! { .with_default(#expr_str) }
                 });
 
-                let component_path_tokens = component_def.component_path_tokens(&base_type);
+                let component_type_tokens = component_def.component_type_tokens(&base_type);
                 let shape_path_tokens = component_def.shape_path_tokens(&base_type);
                 let value_binding_tokens = component_def.value_binding_tokens(&base_type);
-                let prototyping_tokens = component_def.prototyping_tokens(&base_type);
+                let prototyping_tokens =
+                    component_def.prototyping_tokens(&field_name_str, &base_type);
                 let from_expr_tokens = option_expr_string_tokens(&rendered.from.cloned());
                 let into_expr_tokens = option_expr_string_tokens(&rendered.into.cloned());
 
@@ -325,7 +340,7 @@ pub fn expand_gpui_form(
                         #( #validation_literals ),*
                     ])
                     #default_expr_tokens
-                    #component_path_tokens
+                    #component_type_tokens
                     #shape_path_tokens
                     #value_binding_tokens
                     #prototyping_tokens

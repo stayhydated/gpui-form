@@ -393,7 +393,8 @@ impl Render for DateRangePickerState {
     feature = "component-shape",
     gpui_form_shape(
         state = DatePickerState,
-        field_suffix = "date_picker"
+        field_suffix = "date_picker",
+        value_binding
     )
 )]
 #[derive(IntoElement)]
@@ -415,7 +416,8 @@ pub struct DatePicker {
     feature = "component-shape",
     gpui_form_shape(
         state = DateRangePickerState,
-        field_suffix = "date_range_picker"
+        field_suffix = "date_range_picker",
+        value_binding
     )
 )]
 #[derive(IntoElement)]

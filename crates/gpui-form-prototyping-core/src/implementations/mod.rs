@@ -25,7 +25,7 @@ pub struct ResolvedField<'a> {
     value_type: Type,
     component_ident: Ident,
     shape_path: Option<Path>,
-    component_path: Option<Path>,
+    component_type: Option<Type>,
 }
 
 impl<'a> ResolvedField<'a> {
@@ -38,12 +38,12 @@ impl<'a> ResolvedField<'a> {
             }
         })?;
 
-        let component_path = match field.component_path {
-            Some(component_path) => {
-                Some(syn::parse_str::<Path>(component_path).map_err(|error| {
-                    PrototypingError::InvalidPath {
-                        kind: "component path",
-                        value: component_path.to_string(),
+        let component_type = match field.component_type {
+            Some(component_type) => {
+                Some(syn::parse_str::<Type>(component_type).map_err(|error| {
+                    PrototypingError::InvalidType {
+                        field_name: field.field_name.to_string(),
+                        value: component_type.to_string(),
                         error: error.to_string(),
                     }
                 })?)
@@ -70,7 +70,7 @@ impl<'a> ResolvedField<'a> {
             value_type,
             component_ident: format_ident!("Shape"),
             shape_path,
-            component_path,
+            component_type,
         })
     }
 
@@ -114,8 +114,8 @@ impl<'a> ResolvedField<'a> {
         self.field.value_binding
     }
 
-    pub fn component_path(&self) -> Option<&'a str> {
-        self.field.component_path
+    pub fn component_type(&self) -> Option<&'a str> {
+        self.field.component_type
     }
 
     pub fn shape_path(&self) -> Option<&Path> {
@@ -126,8 +126,8 @@ impl<'a> ResolvedField<'a> {
         self.shape_path.clone()
     }
 
-    pub fn component_path_parsed(&self) -> Option<&Path> {
-        self.component_path.as_ref()
+    pub fn component_type_parsed(&self) -> Option<&Type> {
+        self.component_type.as_ref()
     }
 
     pub fn kebab_id(&self) -> String {

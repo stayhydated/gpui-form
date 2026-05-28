@@ -45,7 +45,7 @@ Supported component forms:
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
-- `#[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]`
+- `#[gpui_form(gpui_form_collection::combobox::Combobox::<Country>)]`
 - `#[gpui_form(gpui_form_collection::checkbox::Checkbox)]`
 - `#[gpui_form(gpui_form_collection::switch::Switch)]`
 - `#[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]`
@@ -113,8 +113,9 @@ Behavior notes:
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
 - generated `FormFields` and `FormComponents` suffixes use field-level
-  `.field_suffix(...)` first, then the shape-name heuristic. Shape-level
-  `ComponentShape::PROTOTYPING.field_suffix` is inventory metadata for
+  `.field_suffix(...)` when supplied; otherwise they derive a suffix from the
+  explicit component type or shape type name. Shape-level
+  `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
   prototyping output
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
@@ -148,16 +149,17 @@ pub struct TagsInput {
 ```
 
 `state = ...` supplies `ComponentShape::State`. If `component = ...` is omitted,
-`ComponentShape::COMPONENT_PATH` defaults to the derived type's module path.
+`ComponentShape::COMPONENT_TYPE` defaults to the derived type's module path.
 By default, the generated implementation calls `<State>::new(window, cx)`.
 `state` and `new` use normal Rust path resolution, so short in-scope names are
 fine. `new = ...` accepts a constructor expression. Function paths and closures
 are called with `(window, cx)`; full constructor expressions such as
 `TagsState::with_label(window, cx, "tags")` are emitted as written.
-The `component = ...` option also publishes `COMPONENT_PATH` metadata for
-generated/prototyping render code, so prefer a path that remains valid from the
+The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
+generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
-Component-derived shapes always publish `VALUE_BINDING = true` and delegate
+Component-derived shapes publish value-binding metadata only when
+`#[gpui_form_shape(..., value_binding)]` is present. In that mode, they delegate
 `ComponentValueBinding<T>` through the backing state's
 `ComponentStateValueBinding<T>` implementation. The generated
 `ValueBindingPolicy` associated type drives compile-time inherited binding
@@ -166,9 +168,10 @@ checks, while `VALUE_BINDING` remains metadata for schema and prototyping.
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
 
-Use `#[gpui_form_derive::component_value_binding]` on the backing state's
-binding impl when the component-derived shape should delegate value binding to
-that state:
+Use `value_binding` on the shape metadata and
+`#[gpui_form_derive::component_value_binding]` on the backing state's binding
+impl when the component-derived shape should delegate value binding to that
+state:
 
 ```rs
 #[gpui_form_derive::component_value_binding]

@@ -22,8 +22,8 @@ pub fn gpui_form_derive(input: TokenStream) -> TokenStream {
 /// `<State>::new(window, cx)`. Override the constructor with `new = ...`, a
 /// closure, or a direct constructor expression.
 ///
-/// Supports `state = ...`, `new = ...`, `component = ...`, and
-/// `field_suffix = ...`.
+/// Supports `state = ...`, `new = ...`, `component = ...`, `requires_value = ...`,
+/// `value_binding`, and `field_suffix = ...`.
 #[proc_macro_derive(ComponentShape, attributes(gpui_form_shape))]
 #[proc_macro_error]
 pub fn derive_component_shape(input: TokenStream) -> TokenStream {

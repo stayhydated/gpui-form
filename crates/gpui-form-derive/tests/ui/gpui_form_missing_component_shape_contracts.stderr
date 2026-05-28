@@ -23,7 +23,7 @@ note: required for `DerivedShape` to implement `ComponentValueBinding<std::strin
    |
 13 | #[derive(ComponentShape)]
    |          -------------- type parameter would need to implement `ComponentValueBinding<std::string::String>`
-14 | #[gpui_form_shape(state = State)]
+14 | #[gpui_form_shape(state = State, value_binding)]
 15 | struct DerivedShape;
    |        ^^^^^^^^^^^^
    = help: consider manually implementing `ComponentValueBinding<std::string::String>` to avoid undesired bounds

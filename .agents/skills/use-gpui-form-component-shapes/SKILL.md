@@ -77,10 +77,11 @@ Metadata rules:
   `new = Self::with_mode(window, cx, Mode::Compact)` when the expression should
   be emitted as written.
 - Add `component = ...` only when generated metadata should use a render
-  component path different from the derived type.
+  component type different from the derived type.
 - Add `requires_value = false` when the component can synthesize a missing value
   and non-optional fields should use direct `T` value-holder storage by default.
-- Component-derived shapes publish value-binding metadata automatically.
+- Add `value_binding` when the derived shape should delegate value binding
+  through the backing state's `ComponentStateValueBinding<T>` implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
   generated field/helper suffix.
 
@@ -135,7 +136,8 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-The macro accepts the same metadata as the derive form, plus `type State = ...`.
+The macro accepts the same metadata as the derive form, except derive-only
+`value_binding`, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
@@ -153,14 +155,14 @@ If generated forms should keep the form value and component state synchronized,
 put `#[gpui_form_derive::component_value_binding]` on a
 `gpui_form_runtime::shape::ComponentValueBinding<T>` impl for the backing state.
 The attribute compiles it as the state-level binding used by component-derived
-shapes. For wrapper shapes created by `component_shape!`, prefer putting the
-`ComponentValueBinding<T>` impl inside the macro block; nested binding impls are
-emitted with the shape and automatically publish shape-level value-binding
-metadata.
+shapes that opt in with `#[gpui_form_shape(..., value_binding)]`. For wrapper
+shapes created by `component_shape!`, prefer putting the `ComponentValueBinding<T>`
+impl inside the macro block; nested binding impls are emitted with the shape and
+automatically publish shape-level value-binding metadata.
 
-Value binding is shape-owned. Use a component-derived shape or a wrapper shape
-with a nested `ComponentValueBinding<T>` impl when generated forms should
-inherit synchronization.
+Value binding is shape-owned. Use a component-derived shape with explicit
+`value_binding` or a wrapper shape with a nested `ComponentValueBinding<T>` impl
+when generated forms should inherit synchronization.
 
 ## Checks
 
