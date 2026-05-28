@@ -8,6 +8,7 @@ struct InputState;
 impl gpui_form_runtime::shape::ComponentShape for NumericShape {
     type State = NumericState;
     type RequiredValuePolicy = gpui_form_runtime::shape::AllowMissingValue;
+    type ValueBindingPolicy = gpui_form_runtime::shape::NoComponentValueBinding;
 
     fn new(
         _window: &mut gpui::Window,
@@ -20,6 +21,7 @@ impl gpui_form_runtime::shape::ComponentShape for NumericShape {
 impl gpui_form_runtime::shape::ComponentShape for InputShape {
     type State = InputState;
     type RequiredValuePolicy = gpui_form_runtime::shape::AllowMissingValue;
+    type ValueBindingPolicy = gpui_form_runtime::shape::NoComponentValueBinding;
 
     fn new(
         _window: &mut gpui::Window,

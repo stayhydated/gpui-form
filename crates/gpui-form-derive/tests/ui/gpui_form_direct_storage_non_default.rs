@@ -1,5 +1,5 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{AllowMissingValue, ComponentShape};
+use gpui_form_runtime::shape::{AllowMissingValue, ComponentShape, NoComponentValueBinding};
 
 #[derive(Clone, Debug)]
 struct NonDefault(String);
@@ -17,6 +17,7 @@ struct DirectStorageShape;
 impl ComponentShape for DirectStorageShape {
     type State = State;
     type RequiredValuePolicy = AllowMissingValue;
+    type ValueBindingPolicy = NoComponentValueBinding;
 
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
         State::new(window, cx)

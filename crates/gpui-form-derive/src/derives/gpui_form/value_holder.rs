@@ -804,7 +804,7 @@ pub fn generate_value_holder(
         #conversion_error_type
         #derive_output
         #builder_attr
-        pub struct #wrapped_ident #ty_generics #holder_where_clause {
+        pub struct #wrapped_ident #impl_generics #holder_where_clause {
             #(#field_definitions),*
         }
 

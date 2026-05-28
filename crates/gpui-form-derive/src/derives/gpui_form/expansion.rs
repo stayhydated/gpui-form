@@ -6,6 +6,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens as _, format_ident, quote};
 use std::collections::HashMap;
 use syn::DeriveInput;
+use syn::GenericParam;
 
 use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
 use crate::derives::gpui_form::components::generate_component_field;
@@ -20,6 +21,30 @@ fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
             quote! { Some(#expr_str) }
         },
         None => quote! { None },
+    }
+}
+
+fn phantom_type_tokens(generics: &syn::Generics) -> TokenStream {
+    let params: Vec<TokenStream> = generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            GenericParam::Type(param) => {
+                let ident = &param.ident;
+                Some(quote! { #ident })
+            },
+            GenericParam::Lifetime(param) => {
+                let lifetime = &param.lifetime;
+                Some(quote! { &#lifetime () })
+            },
+            GenericParam::Const(_) => None,
+        })
+        .collect();
+
+    if params.is_empty() {
+        quote! { () }
+    } else {
+        quote! { (#(#params),*) }
     }
 }
 
@@ -38,6 +63,7 @@ pub fn expand_gpui_form(
     let struct_name = &parsed.ident;
     let components_holder_name = format_ident!("{}FormFields", struct_name);
     let components_base_declarations_name = format_ident!("{}FormComponents", struct_name);
+    let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
 
     let koruma_options = parsed.koruma.as_ref().map(|k| k.0.clone());
 
@@ -51,7 +77,7 @@ pub fn expand_gpui_form(
             enable_koruma,
             enable_koruma_fluent,
         );
-        let shape_impl = if options.generate_shape {
+        let shape_impl = if options.generate_shape && original_input.generics.params.is_empty() {
             quote! {
                 ::gpui_form::schema::registry::inventory::submit! {
                     ::gpui_form::schema::registry::GpuiFormShape::new(
@@ -319,16 +345,16 @@ pub fn expand_gpui_form(
         quote! {}
     } else {
         quote! {
-            const _: () = {
+            impl #impl_generics #components_holder_name #ty_generics #where_clause {
                 #[allow(dead_code)]
                 fn __gpui_form_component_type_checks() {
                     #(#component_type_check_tokens)*
                 }
-            };
+            }
         }
     };
 
-    let shape_impl = if options.generate_shape {
+    let shape_impl = if options.generate_shape && original_input.generics.params.is_empty() {
         quote! {
             ::gpui_form::schema::registry::inventory::submit! {
                 ::gpui_form::schema::registry::GpuiFormShape::new(
@@ -345,21 +371,39 @@ pub fn expand_gpui_form(
         quote! {}
     };
 
+    let components_base_declarations = if original_input.generics.params.is_empty() {
+        quote! {
+            pub struct #components_base_declarations_name;
+
+            impl #components_base_declarations_name {
+              #(#field_base_declarations_tokens)*
+            }
+        }
+    } else {
+        let phantom_type = phantom_type_tokens(&original_input.generics);
+        quote! {
+            pub struct #components_base_declarations_name #impl_generics(
+                ::core::marker::PhantomData<fn() -> #phantom_type>
+            ) #where_clause;
+
+            impl #impl_generics #components_base_declarations_name #ty_generics #where_clause {
+              #(#field_base_declarations_tokens)*
+            }
+        }
+    };
+
     let expanded = quote! {
         #value_holder_tokens
-        #component_type_checks
 
-        pub struct #components_holder_name {
+        pub struct #components_holder_name #impl_generics #where_clause {
             #(#field_structure_tokens)*
         }
 
+        #component_type_checks
+
         #shape_impl
 
-        pub struct #components_base_declarations_name;
-
-        impl #components_base_declarations_name {
-          #(#field_base_declarations_tokens)*
-        }
+        #components_base_declarations
     };
 
     expanded

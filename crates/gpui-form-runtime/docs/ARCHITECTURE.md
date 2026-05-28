@@ -11,15 +11,21 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/shape.rs`: `ComponentShape`, required-value policy markers,
-  value-holder storage helpers, value-binding contracts, and generated-code
-  helper aliases/functions
+- `src/shape.rs`: `ComponentShape`, required-value and value-binding policy
+  markers, value-holder storage helpers, value-binding contracts, and
+  generated-code helper aliases/functions
 
 ## Boundaries
 
 `gpui-form-runtime` may depend on `gpui` because `ComponentShape::new`,
 `ComponentValueBinding`, and `ComponentStateValueBinding` use `Window`,
 `Context`, and `EventEmitter`.
+
+Generated inherited value-binding checks dispatch through
+`ComponentShape::ValueBindingPolicy` and `AssertComponentValueBindingPolicy`
+rather than const generics. This keeps generic shape paths such as
+`Input<T>` type-checkable while preserving `ComponentShape::VALUE_BINDING` as
+inventory and prototyping metadata.
 
 It should not depend on:
 

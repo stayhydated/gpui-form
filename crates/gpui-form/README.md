@@ -349,6 +349,11 @@ value-binding metadata.
 Component-backed fields compile against `gpui_form_runtime::shape`; add
 `gpui-form-runtime` as an explicit dependency when using custom or built-in
 component shapes.
+If you implement `ComponentShape` manually instead of using the derive or
+`component_shape!`, set both policy associated types:
+`RequiredValuePolicy` controls value-holder storage, and `ValueBindingPolicy`
+is usually `NoComponentValueBinding` unless the shape should inherit
+`ComponentValueBinding<T>` synchronization by default.
 
 Component-derived shapes can opt into generated value synchronization by
 placing `#[gpui_form_derive::component_value_binding]` on the backing state's

@@ -35,13 +35,20 @@ fn component_value_type(item: &ItemImpl) -> Result<Type> {
         ));
     };
 
-    args.args
-        .iter()
-        .find_map(|arg| match arg {
-            GenericArgument::Type(ty) => Some(ty.clone()),
-            _ => None,
-        })
-        .ok_or_else(|| syn::Error::new_spanned(segment, "expected `ComponentValueBinding<T>`"))
+    if args.args.len() != 1 {
+        return Err(syn::Error::new_spanned(
+            &args.args,
+            "`ComponentValueBinding` requires exactly one type argument",
+        ));
+    }
+
+    match args.args.first().expect("checked len") {
+        GenericArgument::Type(ty) => Ok(ty.clone()),
+        arg => Err(syn::Error::new_spanned(
+            arg,
+            "`ComponentValueBinding` argument must be a type",
+        )),
+    }
 }
 
 fn expand(mut item: ItemImpl) -> Result<TokenStream> {

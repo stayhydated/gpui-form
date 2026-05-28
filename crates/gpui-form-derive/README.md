@@ -157,7 +157,9 @@ generated/prototyping render code, so prefer a path that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 Component-derived shapes always publish `VALUE_BINDING = true` and delegate
 `ComponentValueBinding<T>` through the backing state's
-`ComponentStateValueBinding<T>` implementation.
+`ComponentStateValueBinding<T>` implementation. The generated
+`ValueBindingPolicy` associated type drives compile-time inherited binding
+checks, while `VALUE_BINDING` remains metadata for schema and prototyping.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
@@ -213,6 +215,9 @@ the generated implementation calls `<State>::new(window, cx)`.
 store `T` directly because the component can synthesize a missing value.
 Options may be separated with semicolons or commas, and the final separator is
 optional.
+Nested `ComponentValueBinding<T>` impls set the generated
+`ValueBindingPolicy` to `InheritedComponentValueBinding`; otherwise the macro
+uses `NoComponentValueBinding`.
 Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
 contract and automatically publish shape-level value-binding metadata.
 

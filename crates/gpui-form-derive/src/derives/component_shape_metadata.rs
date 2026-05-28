@@ -112,6 +112,14 @@ impl ComponentShapeMetadata {
         let required_value_policy_assoc = quote! {
             type RequiredValuePolicy = #required_value_policy;
         };
+        let value_binding_policy = if self.value_binding {
+            quote! { #runtime_crate::shape::InheritedComponentValueBinding }
+        } else {
+            quote! { #runtime_crate::shape::NoComponentValueBinding }
+        };
+        let value_binding_policy_assoc = quote! {
+            type ValueBindingPolicy = #value_binding_policy;
+        };
         let component_path_const = self.component.as_ref().map(|component| {
             quote! {
                 const COMPONENT_PATH: Option<&'static str> = Some(stringify!(#component));
@@ -132,6 +140,7 @@ impl ComponentShapeMetadata {
 
         quote! {
             #required_value_policy_assoc
+            #value_binding_policy_assoc
             #component_path_const
             #value_binding_const
             #prototyping_const

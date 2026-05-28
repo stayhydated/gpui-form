@@ -190,35 +190,11 @@ impl ShapeOptions {
             Some(false) => quote! {},
             None => quote_spanned! {span=>
                 {
-                    struct __GpuiFormValueBindingEnabled<const ENABLED: bool>;
-
-                    trait __GpuiFormAssertInheritedValueBinding<Shape, Value> {
-                        fn check();
-                    }
-
-                    impl<Shape, Value> __GpuiFormAssertInheritedValueBinding<Shape, Value>
-                        for __GpuiFormValueBindingEnabled<false>
-                    where
-                        Shape: ::gpui_form_runtime::shape::ComponentShape,
-                    {
-                        fn check() {}
-                    }
-
-                    impl<Shape, Value> __GpuiFormAssertInheritedValueBinding<Shape, Value>
-                        for __GpuiFormValueBindingEnabled<true>
-                    where
-                        Shape: ::gpui_form_runtime::shape::ComponentValueBinding<Value>,
-                        ::gpui_form_runtime::shape::ComponentStateOf<Shape>:
-                            ::gpui::EventEmitter<
-                                ::gpui_form_runtime::shape::ComponentEventOf<Shape, Value>
-                            >,
-                    {
-                        fn check() {}
-                    }
-
-                    <__GpuiFormValueBindingEnabled<
-                        { <#shape as ::gpui_form_runtime::shape::ComponentShape>::VALUE_BINDING }
-                    > as __GpuiFormAssertInheritedValueBinding<#shape, #field_type>>::check();
+                    <<#shape as ::gpui_form_runtime::shape::ComponentShape>::ValueBindingPolicy
+                        as ::gpui_form_runtime::shape::AssertComponentValueBindingPolicy<
+                            #shape,
+                            #field_type,
+                        >>::assert_component_value_binding_policy();
                 }
             },
         };

@@ -142,6 +142,11 @@ missing value; consuming field attributes do not accept `.requires_value(...)`.
 Options may be separated with semicolons or commas. The block may also contain
 `impl` items.
 
+When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
+both policy associated types. Use `NoComponentValueBinding` unless the shape
+should inherit reusable `ComponentValueBinding<T>` impls by default; use
+`InheritedComponentValueBinding` for that inherited path.
+
 ## Value Binding
 
 If generated forms should keep the form value and component state synchronized,

@@ -20,7 +20,10 @@ The derive macro stores `Entity<<Shape as ComponentShape>::State>` in generated
 form fields and calls `ComponentShape::new(window, cx)` from the generated
 component constructor. Shapes also publish a `RequiredValuePolicy`, which lets
 generated value holders inherit whether a non-optional field should use direct
-`T` storage or missing-aware `Option<T>` storage.
+`T` storage or missing-aware `Option<T>` storage. Manual implementations also
+publish a `ValueBindingPolicy`: use `NoComponentValueBinding` by default, or
+`InheritedComponentValueBinding` when fields should inherit shape-level
+`ComponentValueBinding<T>` synchronization.
 
 For owned components, derive on the rendered component and supply `state = ...`;
 generated forms store the backing state entity:

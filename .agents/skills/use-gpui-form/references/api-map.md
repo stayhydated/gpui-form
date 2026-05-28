@@ -250,3 +250,8 @@ missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; nested binding impls publish
 shape-level value-binding metadata automatically. Omit nested binding impls to
 leave that metadata disabled.
+
+Manual `ComponentShape` impls must provide both `RequiredValuePolicy` and
+`ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or
+`InheritedComponentValueBinding` when the shape should inherit reusable
+`ComponentValueBinding<T>` impls.

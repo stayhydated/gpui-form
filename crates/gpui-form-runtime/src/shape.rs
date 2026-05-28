@@ -20,6 +20,10 @@ pub trait ComponentShape {
     /// missing-value state in the generated value holder.
     type RequiredValuePolicy: ComponentRequiredValuePolicy;
 
+    /// Shape-owned policy for whether generated prototyping code should
+    /// inherit value binding by default.
+    type ValueBindingPolicy: ComponentValueBindingPolicy;
+
     /// Build the component state.
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State;
 
@@ -40,7 +44,8 @@ pub trait ComponentShape {
     /// Field-level `Shape.value_binding()` still opts in explicitly. This
     /// shape-level flag is useful when the component's derive or reusable
     /// shape owns the metadata and each field should inherit it.
-    const VALUE_BINDING: bool = false;
+    const VALUE_BINDING: bool =
+        <Self::ValueBindingPolicy as ComponentValueBindingPolicy>::VALUE_BINDING;
 
     /// Whether this shape's default value-holder policy requires a present value.
     const REQUIRES_VALUE: bool =
@@ -58,6 +63,48 @@ pub trait ComponentShape {
 pub trait ComponentRequiredValuePolicy {
     /// Whether a missing generated value-holder value is invalid by default.
     const REQUIRES_VALUE: bool;
+}
+
+/// Marker trait for a component shape's inherited value-binding policy.
+pub trait ComponentValueBindingPolicy {
+    /// Whether generated prototyping metadata should use value binding by
+    /// default when the field does not explicitly call `.value_binding(...)`.
+    const VALUE_BINDING: bool;
+}
+
+/// Do not inherit value binding from the shape.
+pub struct NoComponentValueBinding;
+
+impl ComponentValueBindingPolicy for NoComponentValueBinding {
+    const VALUE_BINDING: bool = false;
+}
+
+/// Inherit value binding from the shape.
+pub struct InheritedComponentValueBinding;
+
+impl ComponentValueBindingPolicy for InheritedComponentValueBinding {
+    const VALUE_BINDING: bool = true;
+}
+
+/// Assert the trait requirements implied by a shape's value-binding policy.
+pub trait AssertComponentValueBindingPolicy<Shape, Value>: ComponentValueBindingPolicy {
+    fn assert_component_value_binding_policy();
+}
+
+impl<Shape, Value> AssertComponentValueBindingPolicy<Shape, Value> for NoComponentValueBinding
+where
+    Shape: ComponentShape,
+{
+    fn assert_component_value_binding_policy() {}
+}
+
+impl<Shape, Value> AssertComponentValueBindingPolicy<Shape, Value>
+    for InheritedComponentValueBinding
+where
+    Shape: ComponentValueBinding<Value>,
+    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
+{
+    fn assert_component_value_binding_policy() {}
 }
 
 /// Store non-optional source fields as `Option<T>` and treat `None` as missing.

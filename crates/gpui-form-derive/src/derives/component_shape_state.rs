@@ -51,7 +51,8 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
 
 fn expand(input: DeriveInput) -> Result<TokenStream> {
     let ident = &input.ident;
-    let meta = parse_meta(&input.attrs)?;
+    let mut meta = parse_meta(&input.attrs)?;
+    meta.enable_value_binding(ident)?;
     let state = meta.state().cloned().ok_or_else(|| {
         syn::Error::new_spanned(
             ident,
@@ -71,9 +72,6 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
         })
     } else {
         None
-    };
-    let inferred_value_binding_const = quote! {
-        const VALUE_BINDING: bool = true;
     };
     let mut binding_generics = input.generics.clone();
     binding_generics
@@ -100,7 +98,6 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
 
             #metadata_impl_items
             #inferred_component_const
-            #inferred_value_binding_const
         }
 
         impl #binding_impl_generics #runtime_crate::shape::ComponentValueBinding<__GpuiFormValueBindingValue>

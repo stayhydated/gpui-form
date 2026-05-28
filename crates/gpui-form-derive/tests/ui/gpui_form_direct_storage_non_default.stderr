@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
    |
 help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
@@ -19,9 +19,9 @@ help: consider annotating `NonDefault` with `#[derive(Default)]`
    |
 
 error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
    |
 help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
@@ -38,9 +38,9 @@ help: consider annotating `NonDefault` with `#[derive(Default)]`
    |
 
 error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
    |
 help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
@@ -57,9 +57,9 @@ help: consider annotating `NonDefault` with `#[derive(Default)]`
    |
 
 error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
    |
 help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
@@ -76,27 +76,27 @@ help: consider annotating `NonDefault` with `#[derive(Default)]`
    |
 
 error[E0277]: the trait bound `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage: Clone` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `Clone` is not implemented for `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage`
 
 error[E0277]: `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage` doesn't implement `Debug`
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `Debug` is not implemented for `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage`
 
 error[E0277]: the trait bound `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:26:10
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:27:10
    |
-26 | #[derive(GpuiForm)]
+27 | #[derive(GpuiForm)]
    |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `<AllowMissingValue as ValueHolderStorage<NonDefault>>::Storage`
 
 error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:28:17
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:29:17
    |
-28 |     #[gpui_form(DirectStorageShape)]
+29 |     #[gpui_form(DirectStorageShape)]
    |                 ^^^^^^^^^^^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
    |
 help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
@@ -106,9 +106,9 @@ help: the trait `ValueHolderStorage<T>` is implemented for `AllowMissingValue`
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = note: required for `AllowMissingValue` to implement `ValueHolderStorage<NonDefault>`
 note: required by a bound in `__gpui_form_assert_value_holder_storage`
-  --> tests/ui/gpui_form_direct_storage_non_default.rs:28:17
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:29:17
    |
-28 |     #[gpui_form(DirectStorageShape)]
+29 |     #[gpui_form(DirectStorageShape)]
    |                 ^^^^^^^^^^^^^^^^^^ required by this bound in `__gpui_form_assert_value_holder_storage`
 help: consider annotating `NonDefault` with `#[derive(Default)]`
    |

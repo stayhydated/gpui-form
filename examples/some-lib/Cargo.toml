@@ -34,4 +34,4 @@ ui = [  ]
 validation = [  ]
 
 [package.metadata.cargo-machete]
-ignored = [ "gpui", "gpui-component" ]
+ignored = [ "gpui", "gpui-component", "gpui-form-runtime" ]

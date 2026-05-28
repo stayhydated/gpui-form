@@ -15,7 +15,6 @@ es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-es-fluent = { workspace = true }
-gpui-form = { workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { workspace = true }
 gpui-form-runtime = { workspace = true }

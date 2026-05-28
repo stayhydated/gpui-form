@@ -97,7 +97,10 @@ The derive layer:
 
 When the `inventory` feature is enabled:
 
-1. `GpuiForm` emits one `GpuiFormShape` per derived struct.
+1. `GpuiForm` emits one `GpuiFormShape` per non-generic derived struct.
+   Generic source structs skip inventory registration because inventory items
+   cannot reference source type parameters at item scope; their generated form
+   code still carries the source generics.
 1. Each field becomes a `FieldVariant` with component contract metadata from
    `gpui-form-codegen`.
 1. Metadata includes validation rule identifiers, defaults, full value type
@@ -114,9 +117,9 @@ When the `inventory` feature is enabled:
 - accepts a constructor expression for `new = ...`; paths and closures receive
   `(window, cx)`, while direct constructor expressions are emitted as written
 - optionally stores a component path for prototyping output
-- sets shape-level `VALUE_BINDING` metadata for `ComponentValueBinding<T>`
-  prototyping hooks, including `seed_value_binding_state` and
-  `form_value_change`
+- sets shape-level `ValueBindingPolicy` and `VALUE_BINDING` metadata for
+  `ComponentValueBinding<T>` prototyping hooks, including
+  `seed_value_binding_state` and `form_value_change`
 - emits component-derived `ComponentValueBinding<T>` delegation through the
   backing state's `ComponentStateValueBinding<T>` implementation
 - defaults to implementing `gpui_form_runtime::shape::ComponentShape`
@@ -130,8 +133,8 @@ When the `inventory` feature is enabled:
   keys
 - accepts either semicolon or comma separators between metadata entries
 - accepts nested `impl` items, emits them after the generated `ComponentShape`
-  impl, and infers shape-level `VALUE_BINDING` when a nested impl targets
-  `ComponentValueBinding<T>`
+  impl, and infers shape-level `ValueBindingPolicy` / `VALUE_BINDING` when a
+  nested impl targets `ComponentValueBinding<T>`
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign

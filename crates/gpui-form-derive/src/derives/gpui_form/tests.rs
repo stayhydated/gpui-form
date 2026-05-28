@@ -209,27 +209,6 @@ mod gpui_form_tests {
             let field = data_struct.fields.iter().next().unwrap();
             let result = koruma_derive_core::parse_field(field, 0);
 
-            eprintln!("=== DEBUG: parse_field result for CommonVRead.index ===");
-            match &result {
-                ParseFieldResult::Valid(info) => {
-                    eprintln!("  Result: Valid");
-                    eprintln!("  is_newtype: {}", info.is_newtype());
-                    eprintln!(
-                        "  field_validators.len(): {}",
-                        info.validation.field_validators.len()
-                    );
-                    for (idx, v) in info.validation.field_validators.iter().enumerate() {
-                        eprintln!("    validator[{}]: {}", idx, v.name());
-                    }
-                },
-                ParseFieldResult::Skip => {
-                    eprintln!("  Result: Skip");
-                },
-                ParseFieldResult::Error(e) => {
-                    eprintln!("  Result: Error({})", e);
-                },
-            }
-
             match result {
                 ParseFieldResult::Valid(info) => {
                     assert!(
@@ -256,8 +235,6 @@ mod gpui_form_tests {
         );
 
         let expanded_str = expanded.to_string();
-        eprintln!("=== Generated code (first 1000 chars) ===");
-        eprintln!("{}", &expanded_str[..expanded_str.len().min(1000)]);
 
         assert!(
             expanded_str.contains("with_validations"),

@@ -15,7 +15,14 @@ fn gpui_form_reports_invalid_field_attributes() {
     let tests = trybuild::TestCases::new();
     tests.compile_fail("tests/ui/gpui_form_direct_storage_*.rs");
     tests.compile_fail("tests/ui/gpui_form_duplicate_*.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_*.rs");
     tests.compile_fail("tests/ui/gpui_form_missing_*.rs");
+}
+
+#[test]
+fn gpui_form_accepts_generic_shape_backed_forms() {
+    let tests = trybuild::TestCases::new();
+    tests.pass("tests/ui/gpui_form_generic_shape_pass.rs");
 }
 
 #[test]

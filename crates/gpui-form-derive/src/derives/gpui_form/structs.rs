@@ -172,9 +172,13 @@ impl FromField for ComponentField {
                 continue;
             }
 
-            let Some(list) = attr.meta.require_list().ok() else {
-                continue;
-            };
+            let list = attr.meta.require_list().map_err(|_| {
+                DarlingError::custom(
+                    "`gpui_form` field attribute must be a list, for example \
+                     `#[gpui_form(my::Shape)]`",
+                )
+                .with_span(attr)
+            })?;
 
             let items = Punctuated::<GpuiFormArg, syn::Token![,]>::parse_terminated
                 .parse2(list.tokens.clone())
