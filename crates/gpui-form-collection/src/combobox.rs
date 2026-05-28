@@ -21,6 +21,7 @@ gpui_form_derive::component_shape! {
         type State = ComboboxState<D>;
         new = Self::new_default;
         component = gpui_component::combobox::Combobox<_>;
+        requires_value = false;
         field_suffix = "combobox";
 
         impl<T, D> ComponentValueBinding<Vec<T>> for Combobox<T, D>

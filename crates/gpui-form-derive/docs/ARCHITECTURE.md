@@ -50,7 +50,9 @@ that crate's `derive` feature is enabled.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
    Field-level component shapes are written as positional expressions such as
    `#[gpui_form(my::Shape)]`; the parser rejects duplicate component
-   expressions before codegen.
+   expressions before codegen. Component metadata is validated at the macro
+   boundary: `component = ...` must be path-like and `field_suffix = "..."`
+   must be a non-empty identifier suffix.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.
@@ -83,6 +85,9 @@ Important behaviors:
   default, and conversion metadata during field parsing
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
   missing without a default; `From` is reserved for infallible holders
+- non-optional shape-backed fields whose `RequiredValuePolicy` can represent
+  missing values also get generated Koruma validators so `validate()` reports
+  missing shape-required values before holder-to-model conversion
 
 ## Koruma Integration
 
@@ -128,7 +133,7 @@ When the `inventory` feature is enabled:
   backing state's `ComponentStateValueBinding<T>` implementation only when
   `value_binding` is present
 - defaults to implementing `gpui_form_runtime::shape::ComponentShape`
-  for downstream application crates
+  for downstream application or integration crates that define shapes directly
 - resolves generated `gpui`, `gpui-form`, and `gpui-form-runtime` paths through
   the shared codegen crate-path resolver
 
@@ -148,6 +153,10 @@ When the `inventory` feature is enabled:
 - emits the implementation against `gpui_form_runtime::shape` by default
 - leaves optional external `ComponentValueBinding<T>` implementations to the
   caller or collection crate when they are not nested in the macro block
+
+These shape-definition macros are lower-level than `#[derive(GpuiForm)]` and
+still require a direct `gpui-form-runtime` dependency. Generated `GpuiForm`
+component fields use the facade path `gpui_form::runtime::shape`.
 
 ## Coordination Rules
 

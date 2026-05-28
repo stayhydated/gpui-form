@@ -7,7 +7,7 @@ use gpui_component::form::field;
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
-use gpui_form_runtime::shape::{
+use gpui_form::runtime::shape::{
     ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
     seed_value_binding_state,
 };

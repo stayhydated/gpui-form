@@ -429,4 +429,42 @@ mod tests {
             "macro should report duplicate options clearly: {err}"
         );
     }
+
+    #[test]
+    fn component_shape_function_macro_rejects_non_path_component_type() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+                component = (crate::ui::Input, crate::ui::OtherInput);
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject non-path component metadata"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string()
+                .contains("component metadata must be a path-like type"),
+            "macro should reject non-path component metadata clearly: {err}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_invalid_field_suffix() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+                field_suffix = "";
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject invalid field suffix metadata"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string()
+                .contains("`field_suffix` must be a non-empty ASCII identifier suffix"),
+            "macro should reject invalid field suffix metadata clearly: {err}"
+        );
+    }
 }

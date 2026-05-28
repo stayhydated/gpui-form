@@ -31,9 +31,6 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", branch 
 
 gpui-form = "*"
 
-# Optional: component-shape runtime contracts for component-backed fields
-gpui-form-runtime = "*"
-
 # Optional: runtime component helpers, built-in component shapes,
 # and the InfiniteSelect derive
 gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
@@ -131,10 +128,11 @@ Component shapes own the default required-value policy for non-optional fields.
 Shapes that can safely synthesize a missing value, such as the built-in inputs,
 selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
 generated value-holder storage as `T`. Shapes that require a present value use
-`Option<T>` storage and conversion back to the source model fails when the value
-is missing. Those fallible holder-to-model paths implement `TryFrom`; `From`
-is only generated when the reverse conversion is infallible. Define this
-behavior on the reusable component shape with `requires_value = false`.
+`Option<T>` storage; generated `validate()` reports a missing value and
+conversion back to the source model fails when the value is missing. Those
+fallible holder-to-model paths implement `TryFrom`; `From` is only generated
+when the reverse conversion is infallible. Define this behavior on the
+reusable component shape with `requires_value = false`.
 
 Common field-level helpers:
 
@@ -157,7 +155,8 @@ Common field-level helpers:
   when supplied; otherwise they derive a suffix from the explicit component
   type or shape type name, such as `birth_date_date_picker`. Shape-level
   `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
-  prototyping output.
+  prototyping output. Field-level suffixes must be non-empty identifier
+  suffixes.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
@@ -290,7 +289,10 @@ pub struct Account {
 The `_` generic is resolved to the field's form-side type, including any
 `#[gpui_form(type = ...)]` override. `Combobox<T>` is the exception: its
 generic is the selected item type, so a `Vec<Country>` field uses
-`Combobox::<Country>`.
+`Combobox::<Country>`. The collection combobox publishes
+`requires_value = false`: an empty selection is emitted as
+`FormValueChange::Clear`, so optional fields clear to `None` and
+non-optional `Vec<T>` fields reset to `Vec::default()`.
 
 ### 2. Derive on an owned component
 
@@ -343,16 +345,21 @@ into Rust's orphan rules.
 It uses `new`, `component`, `requires_value`, and `field_suffix` metadata,
 plus `type State = ...` for the wrapped external state type. If `new` is
 omitted, the macro calls `<State>::new(window, cx)`.
+`component = ...` must be a path-like type, and `field_suffix = "..."` must be
+a non-empty identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
 impl is emitted with the shape and automatically publishes shape-level
 value-binding metadata. The impl target must be the shape declared by the
 macro.
 
-Component-backed fields compile against `gpui_form_runtime::shape`; add
-`gpui-form-runtime` as an explicit dependency when using custom or built-in
-component shapes. The derive resolves renamed `gpui-form-runtime` dependencies
-when emitting generated paths.
+Generated `GpuiForm` component fields compile against
+`gpui_form::runtime::shape`, which is re-exported by the facade crate. Normal
+application crates do not add `gpui-form-runtime` just because a field uses a
+component shape. Add `gpui-form-runtime` directly only for lower-level shape
+crates that use `#[derive(ComponentShape)]`, `component_shape!`,
+`component_value_binding`, or manual runtime trait implementations; those
+macros emit direct runtime paths and resolve renamed runtime dependencies.
 If you implement `ComponentShape` manually instead of using the derive or
 `component_shape!`, set both policy associated types:
 `RequiredValuePolicy` controls value-holder storage, and `ValueBindingPolicy`
@@ -368,7 +375,7 @@ impl:
 pub struct TagsInputState;
 
 #[gpui_form_derive::component_value_binding]
-impl gpui_form_runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
+impl gpui_form::runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
     type Event = TagsInputEvent;
     /* seed_value_binding_state and form_value_change */
 }
@@ -382,7 +389,7 @@ gpui_form_derive::component_shape! {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
 
-        impl gpui_form_runtime::shape::ComponentValueBinding<String> for EmailInputShape {
+        impl gpui_form::runtime::shape::ComponentValueBinding<String> for EmailInputShape {
             type Event = gpui_component::input::InputEvent;
             /* seed_value_binding_state and form_value_change */
         }
@@ -390,10 +397,11 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-Shape contracts and value-binding helpers are available from
-`gpui_form_runtime::shape`. Concrete runtime widgets are available from
-`gpui_form_component`; `gpui-form` does not re-export component modules or
-their derives.
+Generated form code reaches shape contracts through
+`gpui_form::runtime::shape`. Lower-level shape crates may also depend on
+`gpui-form-runtime` and use `gpui_form_runtime::shape` directly. Concrete
+runtime widgets are available from `gpui_form_component`; `gpui-form` does not
+re-export component modules or their derives.
 
 ## File Picker Runtime
 
@@ -476,8 +484,9 @@ writes scaffolded GPUI form files into `examples/some-lib-forms/src/forms`, and
 formats them with `rustfmt`. The Storybook form titles generated by that example
 use the GPUI app context so they follow the active Storybook locale through
 `gpui-es-fluent`. Value-bound shape-backed fields use helper functions and
-runtime aliases from `gpui_form_runtime::shape` for state and event projections,
-keeping handler signatures based on names such as `on_email_input_event`.
+runtime aliases from `gpui_form::runtime::shape` for state and event
+projections, keeping handler signatures based on names such as
+`on_email_input_event`.
 
 ## Examples
 

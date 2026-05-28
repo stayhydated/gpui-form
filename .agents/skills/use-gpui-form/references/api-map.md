@@ -12,7 +12,6 @@ versions to the version guidance for the `gpui-form` version in use.
 gpui = { git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
 gpui-form = "*"
-gpui-form-runtime = "*"
 gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
@@ -32,15 +31,17 @@ use gpui_form_derive::ComponentShape;
 
 Useful runtime/helper paths:
 
-- `gpui_form_runtime::shape`
+- `gpui_form::runtime::shape`
 - `gpui_form_component::date_picker`
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
 - `gpui_form_derive::component_shape!`
 
-Component-backed fields require `gpui-form-runtime` as an explicit dependency
-because generated code references `gpui_form_runtime::shape`.
+Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
+the facade. Add `gpui-form-runtime` directly only when defining lower-level
+shapes with `gpui_form_derive` shape macros, `component_value_binding`, or
+manual runtime trait impls.
 
 ## Supported Component Syntax
 
@@ -64,6 +65,9 @@ because generated code references `gpui_form_runtime::shape`.
 #[gpui_form(my::Shape.component(my::ui::Widget))]
 #[gpui_form(my::Shape.field_suffix("input"))]
 ```
+
+The `.component(...)` override must be path-like, and `.field_suffix("...")`
+must be a non-empty identifier suffix.
 
 Common field attributes:
 
@@ -96,7 +100,9 @@ Common struct attributes:
   choice; derive `SelectItem`. Use a custom `ComponentShape` wrapper when the
   select should expose search or other component-specific behavior.
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
-  choices from `gpui_component::combobox::Combobox`.
+  choices from `gpui_component::combobox::Combobox`. Empty selection is
+  `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
+  `Vec<Item>` fields reset to `Vec::default()`.
 - Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
   input with step buttons.
 - Use `gpui_form_collection::slider::Slider` for continuous numeric values.
@@ -122,7 +128,8 @@ Common struct attributes:
 - Component shapes own the default required-value policy for non-optional
   fields. Put `requires_value = false` on the reusable shape definition when it
   can synthesize missing values; field attributes do not accept
-  `.requires_value(...)`.
+  `.requires_value(...)`. Required shape-backed values are reported by
+  generated `validate()` and by fallible holder-to-model conversion.
 
 ## Generated Names
 
@@ -232,6 +239,10 @@ pub struct PostEditor {
 
 `new` accepts a constructor path or closure and is called with `(window, cx)`;
 if omitted, the derive calls `<State>::new(window, cx)`.
+Crates that use `#[derive(ComponentShape)]`, `component_shape!`,
+`component_value_binding`, or manual `ComponentShape` impls should depend on
+`gpui-form-runtime` directly because those lower-level surfaces emit direct
+runtime paths.
 
 Or declare a reusable shape:
 
@@ -250,8 +261,9 @@ Use `requires_value = false` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; nested binding impls publish
 shape-level value-binding metadata automatically. The impl target must be the
-shape declared by the macro. Omit nested binding impls to leave that metadata
-disabled.
+shape declared by the macro. `component = ...` must be a path-like type, and
+`field_suffix = "..."` must be a non-empty identifier suffix. Omit nested
+binding impls to leave that metadata disabled.
 
 Manual `ComponentShape` impls must provide both `RequiredValuePolicy` and
 `ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or

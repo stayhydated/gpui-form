@@ -4,7 +4,8 @@ GPUI-facing runtime helpers for the `gpui-form` ecosystem.
 
 Applications that use these runtime helpers should depend on this crate
 directly. Component-shape contracts live in
-[`gpui-form-runtime`](../gpui-form-runtime/README.md).
+[`gpui-form-runtime`](../gpui-form-runtime/README.md) and are re-exported by
+`gpui-form` for generated `GpuiForm` field code.
 
 ## What It Provides
 
@@ -228,9 +229,11 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`gpui_form_runtime::shape::ComponentShape` is the contract used by
-`#[gpui_form(Shape)]`. This crate's `component-shape` feature implements that
-contract for its built-in rendered component types.
+`ComponentShape` is the contract used by `#[gpui_form(Shape)]`. Generated
+`GpuiForm` field code reaches it through `gpui_form::runtime::shape`; crates
+that define shapes directly may use `gpui_form_runtime::shape`. This crate's
+`component-shape` feature implements that contract for its built-in rendered
+component types.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -280,6 +283,8 @@ required and omitting `new` also calls `<State>::new(window, cx)`.
 The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
 generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
+The value must be a path-like type. `field_suffix = "..."` must be a
+non-empty identifier suffix.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping
@@ -292,8 +297,8 @@ For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
 `ComponentValueBinding<T>` impl inside the macro block to emit the impl with
 the shape and publish shape-level value-binding metadata automatically.
 
-Reusable shapes can also publish `gpui_form_runtime::shape::ComponentPrototyping`
-metadata.
+Reusable shapes can also publish `ComponentPrototyping` metadata through the
+shape contract.
 Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`,
 or `#[gpui_form_shape(...)]` so prototyping generators can emit names such as
 `email_input` without deriving that suffix from the shape type. Generated

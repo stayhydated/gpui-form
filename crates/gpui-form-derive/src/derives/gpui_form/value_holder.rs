@@ -49,7 +49,8 @@ fn facade_crate_path() -> syn::Path {
 }
 
 fn runtime_crate_path() -> syn::Path {
-    CratePaths::resolve().gpui_form_runtime
+    let crate_paths = CratePaths::resolve();
+    crate_paths.gpui_form_facade_runtime()
 }
 
 fn form_field_type_tokens(field: &FieldOptionality) -> TokenStream {
@@ -651,6 +652,182 @@ fn generate_present_fields_json_entry(field: &FieldOptionality) -> TokenStream {
     }
 }
 
+fn required_value_policy_validator_tokens(
+    validator_ident: &syn::Ident,
+    builder_ident: &syn::Ident,
+    target_ident: &syn::Ident,
+    target_trait_ident: &syn::Ident,
+    enable_koruma_fluent: bool,
+) -> TokenStream {
+    let runtime_crate = runtime_crate_path();
+    let fluent_impl = if enable_koruma_fluent {
+        quote! {
+            impl<Target> ::es_fluent::FluentMessage for #validator_ident<Target> {
+                fn to_fluent_string_with(
+                    &self,
+                    _localize: &mut dyn for<'a> FnMut(
+                        &str,
+                        &str,
+                        Option<&::std::collections::HashMap<&str, ::es_fluent::FluentValue<'a>>>,
+                    ) -> String,
+                ) -> String {
+                    "This field is required.".to_string()
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+
+    quote! {
+        #[doc(hidden)]
+        pub struct #target_ident<Policy, Value> {
+            _marker: ::core::marker::PhantomData<fn() -> (Policy, Value)>,
+        }
+
+        #[doc(hidden)]
+        pub trait #target_trait_ident {
+            type Storage;
+
+            fn is_present(value: &Self::Storage) -> bool;
+        }
+
+        impl<Policy, Value> #target_trait_ident for #target_ident<Policy, Value>
+        where
+            Policy: #runtime_crate::shape::ValueHolderStorage<Value>,
+        {
+            type Storage =
+                <Policy as #runtime_crate::shape::ValueHolderStorage<Value>>::Storage;
+
+            fn is_present(value: &Self::Storage) -> bool {
+                <Policy as #runtime_crate::shape::ValueHolderStorage<Value>>::is_present(value)
+            }
+        }
+
+        #[doc(hidden)]
+        pub struct #validator_ident<Target> {
+            _marker: ::core::marker::PhantomData<fn() -> Target>,
+        }
+
+        impl<Target> ::core::clone::Clone for #validator_ident<Target> {
+            fn clone(&self) -> Self {
+                *self
+            }
+        }
+
+        impl<Target> ::core::marker::Copy for #validator_ident<Target> {}
+
+        impl<Target> ::core::fmt::Debug for #validator_ident<Target> {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                f.debug_struct(stringify!(#validator_ident)).finish()
+            }
+        }
+
+        impl<Target> #validator_ident<Target> {
+            pub fn builder() -> #builder_ident<Target> {
+                #builder_ident {
+                    _marker: ::core::marker::PhantomData,
+                }
+            }
+        }
+
+        impl<Target> #validator_ident<Target>
+        where
+            Target: #target_trait_ident,
+        {
+            pub fn validate(&self, value: &<Target as #target_trait_ident>::Storage) -> bool {
+                <Target as #target_trait_ident>::is_present(value)
+            }
+        }
+
+        #[doc(hidden)]
+        pub struct #builder_ident<Target> {
+            _marker: ::core::marker::PhantomData<fn() -> Target>,
+        }
+
+        impl<Target> ::core::clone::Clone for #builder_ident<Target> {
+            fn clone(&self) -> Self {
+                *self
+            }
+        }
+
+        impl<Target> ::core::marker::Copy for #builder_ident<Target> {}
+
+        impl<Target> ::core::fmt::Debug for #builder_ident<Target> {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                f.debug_struct(stringify!(#builder_ident)).finish()
+            }
+        }
+
+        impl<Target> #builder_ident<Target> {
+            pub fn build(self) -> #validator_ident<Target> {
+                #validator_ident {
+                    _marker: ::core::marker::PhantomData,
+                }
+            }
+        }
+
+        impl<Target> ::koruma::BuilderWithValueRef<<Target as #target_trait_ident>::Storage>
+            for #builder_ident<Target>
+        where
+            Target: #target_trait_ident,
+        {
+            type Output = Self;
+
+            fn with_value_ref(
+                self,
+                _value: &<Target as #target_trait_ident>::Storage,
+            ) -> Self::Output {
+                self
+            }
+        }
+
+        impl<Target> ::koruma::Validate<<Target as #target_trait_ident>::Storage>
+            for #validator_ident<Target>
+        where
+            Target: #target_trait_ident,
+        {
+            fn validate(
+                &self,
+                value: &<Target as #target_trait_ident>::Storage,
+            ) -> bool {
+                self.validate(value)
+            }
+        }
+
+        #fluent_impl
+    }
+}
+
+fn required_validation_builder_tokens(
+    field: &FieldOptionality,
+    validator_ident: &syn::Ident,
+    target_ident: &syn::Ident,
+) -> Option<TokenStream> {
+    if !field.needs_required_validation() {
+        return None;
+    }
+
+    match field_storage(field) {
+        FieldStorage::RequiredValue => Some(quote! {
+            koruma_collection::general::RequiredValidation::<Option<_>>::builder()
+        }),
+        FieldStorage::ShapePolicy(shape) => {
+            let base_type = form_base_type(field);
+            let runtime_crate = runtime_crate_path();
+            Some(quote! {
+                #validator_ident::<
+                    #target_ident<
+                        <#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy,
+                        #base_type
+                    >
+                >::builder()
+            })
+        },
+        FieldStorage::OriginallyOptional | FieldStorage::Plain => None,
+    }
+}
+
 pub fn parse_field_default(field: &ComponentField) -> Option<syn::Expr> {
     field
         .rendered()
@@ -665,6 +842,19 @@ pub fn generate_value_holder(
     enable_koruma_fluent: bool,
 ) -> (TokenStream, Vec<String>) {
     let has_skipped_fields = fields.iter().any(|f| f.skip);
+    let original_ident = &original_input.ident;
+    let wrapped_ident = format_ident!("{}FormValueHolder", original_ident);
+    let conversion_error_ident = format_ident!("{}ConversionError", wrapped_ident);
+    let required_policy_validator_ident =
+        format_ident!("__{}RequiredValuePolicyValidation", wrapped_ident);
+    let required_policy_validator_builder_ident =
+        format_ident!("__{}RequiredValuePolicyValidationBuilder", wrapped_ident);
+    let required_policy_validator_target_ident =
+        format_ident!("__{}RequiredValuePolicyValidationTarget", wrapped_ident);
+    let required_policy_validator_target_trait_ident = format_ident!(
+        "__{}RequiredValuePolicyValidationTargetTrait",
+        wrapped_ident
+    );
     let fields_requiring_required: Vec<String> = fields
         .iter()
         .filter(|f| f.needs_required_validation())
@@ -672,6 +862,12 @@ pub fn generate_value_holder(
         .collect();
 
     let has_any_required = fields.iter().any(|f| f.needs_required_validation());
+    let has_shape_policy_required = fields.iter().any(|f| {
+        !f.skip
+            && !f.was_optional
+            && matches!(f.required_value, RequiredValue::Shape(_))
+            && !f.validation.is_nested
+    });
 
     let mut field_attrs: HashMap<String, Vec<TokenStream>> = HashMap::new();
 
@@ -682,19 +878,21 @@ pub fn generate_value_holder(
         let field_name = f.field_name.to_string();
 
         if enable_koruma {
-            let needs_required = f.needs_required_validation();
+            let required_validation = required_validation_builder_tokens(
+                f,
+                &required_policy_validator_ident,
+                &required_policy_validator_target_ident,
+            );
 
             let has_existing_validations = !f.validation.field_validators.is_empty()
                 || !f.validation.element_validators.is_empty();
             let has_newtype = f.validation.is_newtype;
 
-            if needs_required || has_existing_validations || has_newtype {
+            if required_validation.is_some() || has_existing_validations || has_newtype {
                 let mut koruma_items: Vec<TokenStream> = Vec::new();
 
-                if needs_required {
-                    koruma_items.push(quote! {
-                        koruma_collection::general::RequiredValidation::<Option<_>>::builder()
-                    });
+                if let Some(required_validation) = required_validation {
+                    koruma_items.push(required_validation);
                 }
 
                 let existing_validations: Vec<TokenStream> = f
@@ -763,9 +961,6 @@ pub fn generate_value_holder(
         quote! {}
     };
 
-    let original_ident = &original_input.ident;
-    let wrapped_ident = format_ident!("{}FormValueHolder", original_ident);
-    let conversion_error_ident = format_ident!("{}ConversionError", wrapped_ident);
     let conversion_error_type = generate_conversion_error_type(&conversion_error_ident);
     let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
     let mut holder_where_clause = where_clause.cloned();
@@ -935,8 +1130,21 @@ pub fn generate_value_holder(
         }
     };
 
+    let required_policy_validator = if needs_koruma_derive && has_shape_policy_required {
+        required_value_policy_validator_tokens(
+            &required_policy_validator_ident,
+            &required_policy_validator_builder_ident,
+            &required_policy_validator_target_ident,
+            &required_policy_validator_target_trait_ident,
+            enable_koruma_fluent,
+        )
+    } else {
+        quote! {}
+    };
+
     let mut tokens = quote! {
         #conversion_error_type
+        #required_policy_validator
         #derive_output
         #builder_attr
         pub struct #wrapped_ident #impl_generics #holder_where_clause {

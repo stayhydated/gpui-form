@@ -359,4 +359,43 @@ mod tests {
             "should report the duplicated option name: {err}"
         );
     }
+
+    #[test]
+    fn test_component_shape_rejects_non_path_component_type() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                component = (crate::ui::TagsInput, crate::ui::OtherInput)
+            )]
+            struct TagsInput;
+        })
+        .unwrap();
+
+        let err = expand(input).unwrap_err();
+
+        assert!(
+            err.to_string()
+                .contains("component metadata must be a path-like type"),
+            "should reject non-path component metadata: {err}"
+        );
+    }
+
+    #[test]
+    fn test_component_shape_rejects_invalid_field_suffix() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::TagsState, field_suffix = "tags-input")]
+            struct TagsInput;
+        })
+        .unwrap();
+
+        let err = expand(input).unwrap_err();
+
+        assert!(
+            err.to_string()
+                .contains("`field_suffix` must be a non-empty ASCII identifier suffix"),
+            "should reject invalid field suffix metadata: {err}"
+        );
+    }
 }

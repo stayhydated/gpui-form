@@ -28,6 +28,11 @@ rather than const generics. This keeps generic shape paths such as
 policy associated types directly so hand-written shapes cannot make const
 metadata disagree with their storage or binding policy.
 
+Generated validation asks `ValueHolderStorage::is_present` whether a
+policy-owned holder field currently contains a value. `RequireValue` reports
+`None` as missing; `AllowMissingValue` always reports present because its
+storage is direct `T`.
+
 It should not depend on:
 
 - `gpui-form-component`, which owns concrete reusable widgets

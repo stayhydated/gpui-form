@@ -40,11 +40,14 @@ Important parse-time responsibilities:
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
+- `component(...)` records render-component metadata for prototyping output and
+  must be path-like
 - non-optional shape-backed fields inherit the shape's required-value policy by
   default
 - shape-level `ValueBindingPolicy` records whether generated prototyping code
   should use `ComponentValueBinding`
-- `field_suffix("...")` records a field-level prototyping name override
+- `field_suffix("...")` records a field-level prototyping name override and
+  must be a non-empty identifier suffix
 
 Component-specific settings belong inside the shape's `ComponentShape::new`
 implementation or in a dedicated wrapper shape. This crate does not know about
@@ -58,10 +61,11 @@ The shape layout emits two things:
 - a `FormComponents` constructor that delegates to
   `<Shape as ComponentShape>::new(window, cx)`
 
-Emitted runtime paths target `gpui_form_runtime::shape` by default and are
-resolved with `proc-macro-crate`, so renamed downstream dependencies are still
-addressed correctly. Downstream crates that use component-backed fields must
-depend on `gpui-form-runtime` explicitly.
+For `GpuiForm` output, emitted runtime paths target
+`gpui_form::runtime::shape` through the facade dependency. Downstream crates
+that use component-backed fields depend on `gpui-form` plus the crate that owns
+the concrete shape type; they do not need a direct `gpui-form-runtime`
+dependency for generated field code.
 
 Generated identifiers use an explicit field-level `field_suffix` first, then an
 explicit component type, then the resolved component shape's final segment. The

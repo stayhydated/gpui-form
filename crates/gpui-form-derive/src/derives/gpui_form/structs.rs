@@ -39,7 +39,10 @@ impl FieldOptionality {
     /// - Are not nested structs (nested fields have their own validation)
     pub fn needs_required_validation(&self) -> bool {
         !self.skip
-            && matches!(self.required_value, RequiredValue::Explicit(true))
+            && matches!(
+                self.required_value,
+                RequiredValue::Explicit(true) | RequiredValue::Shape(_)
+            )
             && !self.was_optional
             && !self.validation.is_nested
     }
@@ -155,13 +158,36 @@ impl Parse for GpuiFormFieldOption {
 pub struct ComponentField {
     pub ident: Option<Ident>,
     pub ty: Type,
+    intent: ParsedFieldIntent,
+}
+
+#[derive(Debug, Default)]
+struct RenderedOptions {
     r#type: Option<TypeOverride>,
     into: Option<Expr>,
     from: Option<Expr>,
     component: Option<Components>,
     default: Option<DefaultExpr>,
-    skip: bool,
-    skip_seen: bool,
+}
+
+impl RenderedOptions {
+    fn first_conflict(&self) -> Option<&'static str> {
+        [
+            ("component", self.component.is_some()),
+            ("default", self.default.is_some()),
+            ("type", self.r#type.is_some()),
+            ("from", self.from.is_some()),
+            ("into", self.into.is_some()),
+        ]
+        .into_iter()
+        .find_map(|(option, present)| present.then_some(option))
+    }
+}
+
+#[derive(Debug)]
+enum ParsedFieldIntent {
+    Skipped,
+    Rendered(RenderedOptions),
 }
 
 pub struct SkippedField;
@@ -181,16 +207,17 @@ pub enum ComponentFieldIntent<'a> {
 
 impl ComponentField {
     pub fn intent(&self) -> ComponentFieldIntent<'_> {
-        if self.skip {
-            ComponentFieldIntent::Skipped(SkippedField)
-        } else {
-            ComponentFieldIntent::Rendered(RenderedField {
-                r#type: self.r#type.as_ref(),
-                into: self.into.as_ref(),
-                from: self.from.as_ref(),
-                component: self.component.as_ref(),
-                default: self.default.as_ref(),
-            })
+        match &self.intent {
+            ParsedFieldIntent::Skipped => ComponentFieldIntent::Skipped(SkippedField),
+            ParsedFieldIntent::Rendered(rendered) => {
+                ComponentFieldIntent::Rendered(RenderedField {
+                    r#type: rendered.r#type.as_ref(),
+                    into: rendered.into.as_ref(),
+                    from: rendered.from.as_ref(),
+                    component: rendered.component.as_ref(),
+                    default: rendered.default.as_ref(),
+                })
+            },
         }
     }
 
@@ -211,13 +238,7 @@ impl FromField for ComponentField {
         let mut parsed = ComponentField {
             ident: field.ident.clone(),
             ty: field.ty.clone(),
-            r#type: None,
-            into: None,
-            from: None,
-            component: None,
-            default: None,
-            skip: false,
-            skip_seen: false,
+            intent: ParsedFieldIntent::Rendered(RenderedOptions::default()),
         };
 
         for attr in &field.attrs {
@@ -242,8 +263,6 @@ impl FromField for ComponentField {
             }
         }
 
-        validate_field_intent(&parsed)?;
-
         Ok(parsed)
     }
 }
@@ -255,20 +274,20 @@ fn parse_gpui_form_item(
     match item {
         GpuiFormFieldOption::Skip { span } => set_skip(field, true, &span),
         GpuiFormFieldOption::Type { span, ty } => {
-            ensure_not_skipped(field, "type", &span)?;
-            set_once(&mut field.r#type, TypeOverride(ty), "type", &span)
+            let options = rendered_options_mut(field, "type", &span)?;
+            set_once(&mut options.r#type, TypeOverride(ty), "type", &span)
         },
         GpuiFormFieldOption::Into { span, expr } => {
-            ensure_not_skipped(field, "into", &span)?;
-            set_once(&mut field.into, expr, "into", &span)
+            let options = rendered_options_mut(field, "into", &span)?;
+            set_once(&mut options.into, expr, "into", &span)
         },
         GpuiFormFieldOption::From { span, expr } => {
-            ensure_not_skipped(field, "from", &span)?;
-            set_once(&mut field.from, expr, "from", &span)
+            let options = rendered_options_mut(field, "from", &span)?;
+            set_once(&mut options.from, expr, "from", &span)
         },
         GpuiFormFieldOption::Default { span, expr } => {
-            ensure_not_skipped(field, "default", &span)?;
-            set_once(&mut field.default, DefaultExpr(expr), "default", &span)
+            let options = rendered_options_mut(field, "default", &span)?;
+            set_once(&mut options.default, DefaultExpr(expr), "default", &span)
         },
         GpuiFormFieldOption::Component(expr) => parse_gpui_form_expression(field, expr),
     }
@@ -303,7 +322,6 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
 }
 
 fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling::Result<()> {
-    ensure_not_skipped(field, "component", &expr)?;
     let component = Components::from_expr(&expr)?;
     set_component(field, component, &expr)
 }
@@ -313,9 +331,9 @@ fn set_component<T: syn::spanned::Spanned>(
     component: Components,
     span: &T,
 ) -> darling::Result<()> {
-    ensure_not_skipped(field, "component", span)?;
+    let options = rendered_options_mut(field, "component", span)?;
 
-    if field.component.is_some() {
+    if options.component.is_some() {
         return Err(DarlingError::custom(
             "multiple component expressions were provided; keep a single shape \
              expression, such as `#[gpui_form(my::Shape)]`",
@@ -323,7 +341,7 @@ fn set_component<T: syn::spanned::Spanned>(
         .with_span(span));
     }
 
-    field.component = Some(component);
+    options.component = Some(component);
     Ok(())
 }
 
@@ -349,32 +367,24 @@ fn set_skip<S: syn::spanned::Spanned>(
     value: bool,
     span: &S,
 ) -> darling::Result<()> {
-    if field.skip_seen {
-        return Err(DarlingError::custom(
+    if !value {
+        return Ok(());
+    }
+
+    match &field.intent {
+        ParsedFieldIntent::Skipped => Err(DarlingError::custom(
             "duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry",
         )
-        .with_span(span));
+        .with_span(span)),
+        ParsedFieldIntent::Rendered(options) => {
+            if let Some(option) = options.first_conflict() {
+                return Err(skip_conflict_error(option).with_span(span));
+            }
+
+            field.intent = ParsedFieldIntent::Skipped;
+            Ok(())
+        },
     }
-
-    if value {
-        validate_no_skip_conflicts(field, span)?;
-    }
-
-    field.skip = value;
-    field.skip_seen = true;
-    Ok(())
-}
-
-fn ensure_not_skipped<S: syn::spanned::Spanned>(
-    field: &ComponentField,
-    option: &str,
-    span: &S,
-) -> darling::Result<()> {
-    if field.skip {
-        return Err(skip_conflict_error(option).with_span(span));
-    }
-
-    Ok(())
 }
 
 fn skip_conflict_error(option: &str) -> DarlingError {
@@ -384,31 +394,15 @@ fn skip_conflict_error(option: &str) -> DarlingError {
     ))
 }
 
-fn validate_no_skip_conflicts<S: syn::spanned::Spanned>(
-    field: &ComponentField,
+fn rendered_options_mut<'a, S: syn::spanned::Spanned>(
+    field: &'a mut ComponentField,
+    option: &str,
     span: &S,
-) -> darling::Result<()> {
-    let conflicts = [
-        ("component", field.component.is_some()),
-        ("default", field.default.is_some()),
-        ("type", field.r#type.is_some()),
-        ("from", field.from.is_some()),
-        ("into", field.into.is_some()),
-    ];
-
-    if let Some((option, _)) = conflicts.into_iter().find(|(_, present)| *present) {
-        return Err(skip_conflict_error(option).with_span(span));
+) -> darling::Result<&'a mut RenderedOptions> {
+    match &mut field.intent {
+        ParsedFieldIntent::Rendered(options) => Ok(options),
+        ParsedFieldIntent::Skipped => Err(skip_conflict_error(option).with_span(span)),
     }
-
-    Ok(())
-}
-
-fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
-    if field.skip {
-        validate_no_skip_conflicts(field, &field.ident)?;
-    }
-
-    Ok(())
 }
 
 fn unwrap_grouped_expr(expr: Expr) -> Expr {

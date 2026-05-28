@@ -9,8 +9,11 @@ description: "Use when Codex needs to add, review, or refactor gpui-form compone
 
 Use this skill for user-facing app or integration code that wires custom
 components into `#[derive(GpuiForm)]` through `ComponentShape`.
-Ensure the consuming crate depends on `gpui-form-runtime`, because generated
-code references `gpui_form_runtime::shape`.
+Normal generated `GpuiForm` component fields reach runtime contracts through
+`gpui_form::runtime::shape`, but crates that define custom shapes with
+`#[derive(ComponentShape)]`, `component_shape!`, `component_value_binding`, or
+manual runtime trait impls should depend on `gpui-form-runtime` directly
+because those lower-level surfaces emit direct runtime paths.
 
 Use `use-gpui-form` for ordinary forms built from existing built-in,
 collection, or component-owned shapes. Use this skill when the work crosses
@@ -76,14 +79,15 @@ Metadata rules:
 - Use a full constructor expression such as
   `new = Self::with_mode(window, cx, Mode::Compact)` when the expression should
   be emitted as written.
-- Add `component = ...` only when generated metadata should use a render
-  component type different from the derived type.
+- Add `component = ...` only when generated metadata should use a path-like
+  render component type different from the derived type.
 - Add `requires_value = false` when the component can synthesize a missing value
   and non-optional fields should use direct `T` value-holder storage by default.
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
-  generated field/helper suffix.
+  generated field/helper suffix. The suffix must be a non-empty identifier
+  suffix.
 
 ## External State Pattern
 
@@ -141,8 +145,9 @@ The macro accepts the same metadata as the derive form, except derive-only
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
-Separate metadata entries with semicolons. The block may also contain `impl`
-items.
+Use a path-like `component = ...` value and a non-empty identifier suffix for
+`field_suffix = "..."`. Separate metadata entries with semicolons. The block
+may also contain `impl` items.
 
 When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
 both policy associated types. Use `NoComponentValueBinding` unless the shape

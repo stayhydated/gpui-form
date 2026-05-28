@@ -244,13 +244,9 @@ pub fn expand_gpui_form(
         });
     }
 
-    let has_fields_needing_required = field_optionality.iter().any(|f| {
-        !f.skip
-            && matches!(f.required_value, RequiredValue::Explicit(true))
-            && !f.was_optional
-            && !f.validation.is_newtype
-            && !f.validation.is_nested
-    });
+    let has_fields_needing_required = field_optionality
+        .iter()
+        .any(|f| f.needs_required_validation() && !f.validation.is_newtype);
 
     let has_any_koruma_validations = field_optionality.iter().any(|f| {
         !f.skip
@@ -306,8 +302,12 @@ pub fn expand_gpui_form(
                     .cloned()
                     .unwrap_or_default();
 
-                if fields_requiring_required.contains(&field_name_str)
-                    && !validation_rules.contains(&"RequiredValidation".to_string())
+                let needs_inferred_required_rule = fields_requiring_required
+                    .contains(&field_name_str)
+                    && !validation_rules.contains(&"RequiredValidation".to_string());
+
+                if needs_inferred_required_rule
+                    && !matches!(required_value, RequiredValue::Shape(_))
                 {
                     validation_rules.insert(0, "RequiredValidation".to_string());
                 }
@@ -316,6 +316,35 @@ pub fn expand_gpui_form(
                     .iter()
                     .map(|v| syn::LitStr::new(v, proc_macro2::Span::call_site()))
                     .collect();
+                let validation_rules_tokens = if needs_inferred_required_rule
+                    && let RequiredValue::Shape(shape) = &required_value
+                {
+                    let runtime_crate = CratePaths::resolve().gpui_form_facade_runtime();
+                    quote! {
+                        {
+                            const __GPUI_FORM_FIELD_VALIDATIONS: &[&str] =
+                                if <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
+                                    as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
+                                {
+                                    &[
+                                        "RequiredValidation",
+                                        #( #validation_literals ),*
+                                    ]
+                                } else {
+                                    &[
+                                        #( #validation_literals ),*
+                                    ]
+                                };
+                            __GPUI_FORM_FIELD_VALIDATIONS
+                        }
+                    }
+                } else {
+                    quote! {
+                        &[
+                            #( #validation_literals ),*
+                        ]
+                    }
+                };
 
                 let default_expr_tokens = rendered.default.map(|expr| {
                     let expr_str = expr.0.to_token_stream().to_string();
@@ -343,9 +372,7 @@ pub fn expand_gpui_form(
                     )
                     .with_requires_value(#requires_value_tokens)
                     .with_conversions(#from_expr_tokens, #into_expr_tokens)
-                    .with_validations(&[
-                        #( #validation_literals ),*
-                    ])
+                    .with_validations(#validation_rules_tokens)
                     #default_expr_tokens
                     #component_type_tokens
                     #shape_path_tokens

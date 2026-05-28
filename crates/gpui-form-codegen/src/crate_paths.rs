@@ -1,5 +1,5 @@
 use proc_macro_crate::{FoundCrate, crate_name};
-use syn::Path;
+use syn::{Path, parse_quote};
 
 #[derive(Clone, Debug)]
 pub struct CratePaths {
@@ -15,6 +15,12 @@ impl CratePaths {
             gpui_form: resolve_crate_path("gpui-form", "::gpui_form"),
             gpui_form_runtime: resolve_crate_path("gpui-form-runtime", "::gpui_form_runtime"),
         }
+    }
+
+    pub fn gpui_form_facade_runtime(&self) -> Path {
+        let mut path = self.gpui_form.clone();
+        path.segments.push(parse_quote!(runtime));
+        path
     }
 }
 

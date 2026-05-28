@@ -200,8 +200,10 @@ When adding a new reusable component shape that needs runtime state:
 1. publish shape metadata such as `COMPONENT_TYPE`, `RequiredValuePolicy`,
    `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generated
    scaffolds or value-holder storage need it
-1. update user-facing docs so applications import `gpui-form-runtime`
-   explicitly when generated code references shape helpers
+1. update user-facing docs so normal generated forms use
+   `gpui_form::runtime::shape`, while lower-level shape-definition crates add
+   `gpui-form-runtime` directly when they invoke shape macros or implement
+   runtime traits by hand
 
 ## When To Update This Document
 

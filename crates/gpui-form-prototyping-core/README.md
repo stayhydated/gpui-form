@@ -56,7 +56,7 @@ that hand-written forms use. Generated text inputs use the form-side
 
 Shape-backed fields remain inert by default. If a field's shape opts into
 `value_binding`, the adapter emits generic seed and subscription hooks through
-`gpui_form_runtime::shape::ComponentValueBinding<T>`. Generated
+`gpui_form::runtime::shape::ComponentValueBinding<T>`. Generated
 scaffolds use `ComponentShape::PROTOTYPING.field_suffix` when available
 for field and handler suffixes, such as `email_input` and
 `on_email_input_event`, then fall back to the generic `shape` suffix.

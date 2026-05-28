@@ -9,7 +9,7 @@ fn workspace_root() -> PathBuf {
 }
 
 #[test]
-fn gpui_form_derive_supports_renamed_runtime_dependency() {
+fn gpui_form_derive_uses_facade_runtime_reexport() {
     let workspace = workspace_root();
     let crate_dir = workspace.join("target/renamed-dependency-check");
     let src_dir = crate_dir.join("src");
@@ -28,10 +28,8 @@ edition = "2024"
 [dependencies]
 gpui = {{ git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }}
 gpui-form = {{ path = "{gpui_form}", default-features = false, features = ["derive"] }}
-renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}" }}
 "#,
             gpui_form = workspace.join("crates/gpui-form").display(),
-            runtime = workspace.join("crates/gpui-form-runtime").display(),
         ),
     )
     .expect("write renamed dependency test manifest");
@@ -39,7 +37,7 @@ renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}"
     fs::write(
         src_dir.join("lib.rs"),
         r#"
-use renamed_gpui_form_runtime::shape::{
+use gpui_form::runtime::shape::{
     ComponentShape, NoComponentValueBinding, RequireValue,
 };
 

@@ -55,8 +55,73 @@ impl RustExpr {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentSuffix(&'static str);
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ComponentSuffixError {
+    value: String,
+}
+
+impl ComponentSuffixError {
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+impl std::fmt::Display for ComponentSuffixError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "`field_suffix` must be a non-empty ASCII identifier suffix, got `{}`",
+            self.value
+        )
+    }
+}
+
+impl std::error::Error for ComponentSuffixError {}
+
+const fn is_ascii_ident_start(byte: u8) -> bool {
+    byte == b'_' || byte >= b'a' && byte <= b'z' || byte >= b'A' && byte <= b'Z'
+}
+
+const fn is_ascii_ident_continue(byte: u8) -> bool {
+    is_ascii_ident_start(byte) || byte >= b'0' && byte <= b'9'
+}
+
+pub const fn is_valid_component_suffix(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.is_empty() || (bytes.len() == 1 && bytes[0] == b'_') {
+        return false;
+    }
+    if !is_ascii_ident_start(bytes[0]) {
+        return false;
+    }
+
+    let mut idx = 1;
+    while idx < bytes.len() {
+        if !is_ascii_ident_continue(bytes[idx]) {
+            return false;
+        }
+        idx += 1;
+    }
+
+    true
+}
+
+pub fn validate_component_suffix(value: &str) -> Result<(), ComponentSuffixError> {
+    if is_valid_component_suffix(value) {
+        Ok(())
+    } else {
+        Err(ComponentSuffixError {
+            value: value.to_string(),
+        })
+    }
+}
+
 impl ComponentSuffix {
     pub const fn new(value: &'static str) -> Self {
+        assert!(
+            is_valid_component_suffix(value),
+            "component suffix must be a non-empty ASCII identifier suffix"
+        );
         Self(value)
     }
 
@@ -154,14 +219,13 @@ pub struct FieldVariant {
     pub from_expr: Option<RustExpr>,
     /// Form-to-source conversion expression, if one was specified.
     pub into_expr: Option<RustExpr>,
-    /// Shape type path implementing
-    /// `gpui_form_runtime::shape::ComponentShape`.
+    /// Shape type path implementing the component shape contract.
     pub shape_path: Option<RustPath>,
     /// UI component type (e.g. "TagsInput" or "Combobox<_>").
     /// Used by the prototyping code generator to emit `<Component>::new(&entity)`.
     pub component_type: Option<RustType>,
-    /// Whether the component shape opted into
-    /// `gpui_form_runtime::shape::ComponentValueBinding` generation.
+    /// Whether the component shape opted into `ComponentValueBinding`
+    /// generation.
     pub value_binding: bool,
     /// Preferred generated field/helper suffix supplied by the shape's
     /// prototyping metadata.
@@ -309,7 +373,10 @@ pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<St
 
 #[cfg(test)]
 mod tests {
-    use super::{ComponentSuffix, FieldVariant, RustPath, RustType};
+    use super::{
+        ComponentSuffix, FieldVariant, RustPath, RustType, is_valid_component_suffix,
+        validate_component_suffix,
+    };
 
     #[test]
     fn shape_name_without_prototyping_suffix_falls_back_to_shape() {
@@ -370,6 +437,23 @@ mod tests {
             .with_shape_path(RustPath::new("crate::state::TagsState"));
 
         assert_eq!(field.field_name_with_behaviour(), "tags_shape");
+    }
+
+    #[test]
+    fn component_suffix_validation_accepts_identifier_suffixes() {
+        assert!(is_valid_component_suffix("input"));
+        assert!(is_valid_component_suffix("number_input"));
+        assert!(is_valid_component_suffix("_internal"));
+    }
+
+    #[test]
+    fn component_suffix_validation_rejects_invalid_suffixes() {
+        for value in ["", "_", "123", "field suffix", "field-suffix"] {
+            assert!(
+                validate_component_suffix(value).is_err(),
+                "{value:?} should be rejected"
+            );
+        }
     }
 }
 

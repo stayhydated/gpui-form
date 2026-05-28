@@ -48,13 +48,16 @@ uses the default `Vec<T>` delegate. If an application needs search or other
 select-specific configuration, define a small `ComponentShape` wrapper whose
 `new` function configures the underlying `SelectState`.
 
-Collection components implement `gpui_form_runtime::shape::ComponentShape`
-and add value adapters where the component can synchronize form state
-generically. Components that synthesize a missing value, such as input, select,
+Collection components implement `ComponentShape` and add value adapters where
+the component can synchronize form state generically. `GpuiForm` generated code
+uses these contracts through the facade path `gpui_form::runtime::shape`.
+Components that synthesize a missing value, such as input, select, combobox,
 checkbox, switch, number input, slider, and OTP input, publish direct `T`
-value-holder storage as their default required-value policy. They also publish
-prototyping field suffix metadata, so generated scaffolds use names such as
-`code_input`, `country_select`, `theme_combobox`, `notifications_switch`,
-`age_number_input`, `volume_slider`, `theme_color_picker`,
-`birth_date_picker`, `holiday_date_range_picker`, and `otp_code_otp_input`
-without relying on shape-name fallbacks.
+value-holder storage as their default required-value policy. For combobox,
+empty selection is explicit: value binding emits `FormValueChange::Clear`, so
+optional fields clear to `None` and non-optional `Vec<T>` fields reset to
+`Vec::default()`. They also publish prototyping field suffix metadata, so
+generated scaffolds use names such as `code_input`, `country_select`,
+`theme_combobox`, `notifications_switch`, `age_number_input`, `volume_slider`,
+`theme_color_picker`, `birth_date_picker`, `holiday_date_range_picker`, and
+`otp_code_otp_input` without relying on shape-name fallbacks.

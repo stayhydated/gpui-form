@@ -95,14 +95,18 @@ Behavior notes:
 - component shapes own the default required-value policy for non-optional
   fields; shapes that can synthesize a missing value keep generated value-holder
   storage as `T`, while required shapes use `Option<T>` and fail conversion when
-  missing. Fallible holder-to-model paths implement `TryFrom`; `From` is only
-  emitted for infallible reverse conversions
+  missing. Generated `validate()` reports missing required shape values.
+  Fallible holder-to-model paths implement `TryFrom`; `From` is only emitted
+  for infallible reverse conversions
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements
   `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
   `seed_value_binding_state` and maps component events to `FormValueChange<T>`
+- generated `GpuiForm` component field code references
+  `gpui_form::runtime::shape`; normal application crates do not need
+  `gpui-form-runtime` directly just because a field uses a component shape
 - `type`/`from`/`into` let the generated holder edit a type that differs from
   the original model field
 - `gpui_form_collection::input::Input::<_>`,
@@ -116,7 +120,8 @@ Behavior notes:
   `.field_suffix(...)` when supplied; otherwise they derive a suffix from the
   explicit component type or shape type name. Shape-level
   `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
-  prototyping output
+  prototyping output. Field-level suffixes must be non-empty identifier
+  suffixes
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model
@@ -158,6 +163,8 @@ are called with `(window, cx)`; full constructor expressions such as
 The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
 generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
+The value must be a path-like type. `field_suffix = "..."` must be a
+non-empty identifier suffix.
 Component-derived shapes publish value-binding metadata only when
 `#[gpui_form_shape(..., value_binding)]` is present. In that mode, they delegate
 `ComponentValueBinding<T>` through the backing state's
@@ -218,6 +225,8 @@ with `type State = ...` supplying the wrapped state type. If `new` is omitted,
 the generated implementation calls `<State>::new(window, cx)`.
 `requires_value = false` publishes that non-optional fields using this shape can
 store `T` directly because the component can synthesize a missing value.
+`component = ...` must be path-like, and `field_suffix = "..."` must be a
+non-empty identifier suffix.
 Separate metadata entries with semicolons.
 Nested `ComponentValueBinding<T>` impls set the generated
 `ValueBindingPolicy` to `InheritedComponentValueBinding`; otherwise the macro

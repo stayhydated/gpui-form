@@ -19,8 +19,8 @@ impl super::ComponentLayout for ShapeComponent {
             crate::names::ComponentFieldName::new(&options.component_suffix(name), name);
         let shape = options.runtime_shape(r#type);
         let crate_paths = CratePaths::resolve();
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
         let gpui_crate = crate_paths.gpui;
-        let runtime_crate = crate_paths.gpui_form_runtime;
 
         let state_type = quote! {
             <#shape as #runtime_crate::shape::ComponentShape>::State

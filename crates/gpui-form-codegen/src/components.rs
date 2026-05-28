@@ -1,4 +1,5 @@
 use darling::Error as DarlingError;
+use gpui_form_schema::registry::validate_component_suffix;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
@@ -37,6 +38,10 @@ fn token_tree_with_span(mut token: TokenTree, span: Span) -> TokenTree {
     }
 
     token
+}
+
+pub fn validate_shape_field_suffix(value: &str) -> Result<(), String> {
+    validate_component_suffix(value).map_err(|err| err.to_string())
 }
 
 pub trait ComponentOption {}
@@ -82,7 +87,8 @@ impl RequiredValue {
         match self {
             Self::Explicit(value) => quote! { #value },
             Self::Shape(shape) => {
-                let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+                let crate_paths = CratePaths::resolve();
+                let runtime_crate = crate_paths.gpui_form_facade_runtime();
                 quote! {
                     <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
                         as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
@@ -100,7 +106,7 @@ pub struct ComponentMethod {
 
 #[derive(Clone, Debug)]
 pub struct ShapeOptions {
-    /// Path to a type implementing `gpui_form_runtime::shape::ComponentShape`.
+    /// Path to a type implementing `gpui_form::runtime::shape::ComponentShape`.
     pub shape: syn::Path,
     /// UI component type (e.g. `TagsInput` or `Combobox<_>`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
@@ -146,7 +152,7 @@ impl ShapeOptions {
             "field_suffix" => {
                 set_metadata_once(
                     &mut self.field_suffix,
-                    expect_string_arg(method, args)?,
+                    expect_field_suffix_arg(method, args)?,
                     method,
                 )?;
             },
@@ -200,7 +206,8 @@ impl ShapeOptions {
 
     pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.runtime_shape(field_type);
-        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+        let crate_paths = CratePaths::resolve();
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
 
         quote! {
             <#shape as #runtime_crate::shape::ComponentShape>::new(window, cx)
@@ -214,7 +221,8 @@ impl ShapeOptions {
     ) -> Option<TokenStream> {
         let shape = self.resolved_shape(field_type);
         let span = self.span;
-        let runtime_crate = tokens_with_span(&CratePaths::resolve().gpui_form_runtime, span);
+        let crate_paths = CratePaths::resolve();
+        let runtime_crate = tokens_with_span(&crate_paths.gpui_form_facade_runtime(), span);
         let value_binding_assertion = quote_spanned! {span=>
             {
                 <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
@@ -456,6 +464,13 @@ fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Stri
     }
 }
 
+fn expect_field_suffix_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<String> {
+    let value = expect_string_arg(method, args)?;
+    validate_component_suffix(&value)
+        .map_err(|err| DarlingError::custom(err.to_string()).with_span(method))?;
+    Ok(value)
+}
+
 fn set_metadata_once<T>(
     slot: &mut Option<T>,
     value: T,
@@ -591,8 +606,9 @@ impl Components {
         let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
-        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
-        let schema_crate = CratePaths::resolve().gpui_form;
+        let crate_paths = CratePaths::resolve();
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
+        let schema_crate = crate_paths.gpui_form;
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
             Some(quote! {
@@ -628,7 +644,8 @@ impl Components {
         let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
-        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+        let crate_paths = CratePaths::resolve();
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
 
         Some(quote! {
             .with_value_binding(
@@ -655,8 +672,9 @@ impl Components {
             })
         } else {
             let shape = options.resolved_shape(field_type);
-            let runtime_crate = CratePaths::resolve().gpui_form_runtime;
-            let schema_crate = CratePaths::resolve().gpui_form;
+            let crate_paths = CratePaths::resolve();
+            let runtime_crate = crate_paths.gpui_form_facade_runtime();
+            let schema_crate = crate_paths.gpui_form;
 
             Some(quote! {
                 .with_prototyping_field_suffix(

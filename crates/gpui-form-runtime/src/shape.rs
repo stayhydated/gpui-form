@@ -170,6 +170,13 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
     where
         T: Clone,
         Present: FnOnce(T) -> Output;
+
+    /// Return whether storage contains a source value.
+    ///
+    /// Generated validation uses this to make shape-owned requiredness visible
+    /// to `validate()` without hard-coding whether the policy stores `Option<T>`
+    /// or `T`.
+    fn is_present(storage: &Self::Storage) -> bool;
 }
 
 impl<T> ValueHolderStorage<T> for RequireValue {
@@ -226,6 +233,10 @@ impl<T> ValueHolderStorage<T> for RequireValue {
     {
         storage.clone().map(present)
     }
+
+    fn is_present(storage: &Self::Storage) -> bool {
+        storage.is_some()
+    }
 }
 
 impl<T: Default> ValueHolderStorage<T> for AllowMissingValue {
@@ -278,6 +289,10 @@ impl<T: Default> ValueHolderStorage<T> for AllowMissingValue {
         Present: FnOnce(T) -> Output,
     {
         Some(present(storage.clone()))
+    }
+
+    fn is_present(_storage: &Self::Storage) -> bool {
+        true
     }
 }
 

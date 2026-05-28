@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Expr, LitBool, LitStr, Path, Result, Type};
 
-use gpui_form_codegen::CratePaths;
+use gpui_form_codegen::{CratePaths, components::validate_shape_field_suffix};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
@@ -45,11 +45,20 @@ impl ComponentShapeMetadata {
         component: Type,
         span: T,
     ) -> Result<()> {
-        if matches!(component, Type::Infer(_)) {
-            return Err(syn::Error::new_spanned(
-                span,
-                "component type cannot be inferred with bare `_`; use an explicit component type",
-            ));
+        match &component {
+            Type::Path(_) => {},
+            Type::Infer(_) => {
+                return Err(syn::Error::new_spanned(
+                    span,
+                    "component type cannot be inferred with bare `_`; use an explicit component type",
+                ));
+            },
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    span,
+                    "component metadata must be a path-like type, such as `my_crate::Input`",
+                ));
+            },
         }
 
         set_once(&mut self.component, component, span, "component")
@@ -93,6 +102,8 @@ impl ComponentShapeMetadata {
         field_suffix: LitStr,
         span: T,
     ) -> Result<()> {
+        validate_shape_field_suffix(&field_suffix.value())
+            .map_err(|message| syn::Error::new_spanned(&field_suffix, message))?;
         set_once(&mut self.field_suffix, field_suffix, span, "field_suffix")
     }
 

@@ -21,6 +21,7 @@ inventory = [ "gpui-form-derive?/inventory" ]
 bon = { workspace = true }
 gpui-form-core = { workspace = true }
 gpui-form-derive = { optional = true, workspace = true }
+gpui-form-runtime = { workspace = true }
 gpui-form-schema = { workspace = true }
 
 [lints]

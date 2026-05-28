@@ -2,9 +2,11 @@
 
 Runtime contracts referenced by `gpui-form` generated code.
 
-Most applications start with [`gpui-form`](../gpui-form/README.md) and add
-`gpui-form-runtime` when they use component-backed fields, app-owned
-`ComponentShape`s, or value-bound component prototyping.
+Most applications start with [`gpui-form`](../gpui-form/README.md), whose
+facade re-exports these contracts as `gpui_form::runtime::shape` for generated
+`GpuiForm` code. Depend on `gpui-form-runtime` directly only when writing
+lower-level integration code: app-owned `ComponentShape`s, wrapper shapes,
+`component_value_binding` impls, or manual runtime trait implementations.
 
 ```toml
 [dependencies]
@@ -20,10 +22,11 @@ The derive macro stores `Entity<<Shape as ComponentShape>::State>` in generated
 form fields and calls `ComponentShape::new(window, cx)` from the generated
 component constructor. Shapes also publish a `RequiredValuePolicy`, which lets
 generated value holders inherit whether a non-optional field should use direct
-`T` storage or missing-aware `Option<T>` storage. Manual implementations also
-publish a `ValueBindingPolicy`: use `NoComponentValueBinding` by default, or
-`InheritedComponentValueBinding` when fields should inherit shape-level
-`ComponentValueBinding<T>` synchronization.
+`T` storage or missing-aware `Option<T>` storage. Missing-aware storage is
+visible to generated `validate()` and fallible holder-to-model conversion.
+Manual implementations also publish a `ValueBindingPolicy`: use
+`NoComponentValueBinding` by default, or `InheritedComponentValueBinding` when
+fields should inherit shape-level `ComponentValueBinding<T>` synchronization.
 
 For owned components, derive on the rendered component and supply `state = ...`;
 generated forms store the backing state entity:

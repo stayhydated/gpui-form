@@ -1,5 +1,6 @@
+use gpui_form::runtime::shape::{ComponentShape, NoComponentValueBinding, RequireValue};
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{ComponentShape, NoComponentValueBinding, RequireValue};
+use koruma::ValidationError as _;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct NonDefault(String);
@@ -25,6 +26,7 @@ impl ComponentShape for RequiredShape {
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+#[gpui_form(koruma)]
 struct RequiredDemo {
     #[gpui_form(RequiredShape)]
     value: NonDefault,
@@ -43,6 +45,19 @@ fn missing_required_shape_value_reports_field_name() {
 
     assert_eq!(err.field_name, "value");
     assert_eq!(err.to_string(), "Missing required value for field 'value'");
+}
+
+#[test]
+fn validate_reports_missing_required_shape_value() {
+    let err = RequiredDemoFormValueHolder { value: None }
+        .validate()
+        .expect_err("shape-required missing value should fail Koruma validation");
+
+    assert!(err.has_errors());
+    assert!(
+        format!("{err:?}").contains("value"),
+        "validation error should identify the missing field: {err:?}"
+    );
 }
 
 #[test]
