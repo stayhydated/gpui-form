@@ -1,0 +1,49 @@
+error[E0277]: the trait bound `State: ComponentStateValueBinding<std::string::String>` is not satisfied
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:25:17
+   |
+25 |     #[gpui_form(DerivedShape)]
+   |                 ^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `ComponentStateValueBinding<std::string::String>` is not implemented for `State`
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:3:1
+   |
+ 3 | struct State;
+   | ^^^^^^^^^^^^
+help: the trait `AssertComponentValueBindingPolicy<Shape, Value>` is implemented for `InheritedComponentValueBinding`
+  --> $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
+   |
+   | / impl<Shape, Value> AssertComponentValueBindingPolicy<Shape, Value>
+   | |     for InheritedComponentValueBinding
+   | | where
+   | |     Shape: ComponentValueBinding<Value>,
+   | |     ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
+   | |________________________________________________________________________________^
+note: required for `DerivedShape` to implement `ComponentValueBinding<std::string::String>`
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:15:8
+   |
+13 | #[derive(ComponentShape)]
+   |          -------------- type parameter would need to implement `ComponentValueBinding<std::string::String>`
+14 | #[gpui_form_shape(state = State)]
+15 | struct DerivedShape;
+   |        ^^^^^^^^^^^^
+   = help: consider manually implementing `ComponentValueBinding<std::string::String>` to avoid undesired bounds
+   = note: required for `InheritedComponentValueBinding` to implement `AssertComponentValueBindingPolicy<DerivedShape, std::string::String>`
+
+error[E0277]: the trait bound `WrapperShape: ComponentValueBinding<std::string::String>` is not satisfied
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:31:17
+   |
+31 |     #[gpui_form(WrapperShape.value_binding())]
+   |                 ^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `ComponentValueBinding<std::string::String>` is not implemented for `WrapperShape`
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:17:1
+   |
+17 | / component_shape! {
+18 | |     struct WrapperShape {
+   | |_______________________^
+help: the trait `ComponentValueBinding<__GpuiFormValueBindingValue>` is implemented for `DerivedShape`
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:13:10
+   |
+13 | #[derive(ComponentShape)]
+   |          ^^^^^^^^^^^^^^
+   = note: this error originates in the macro `component_shape` which comes from the expansion of the derive macro `ComponentShape` (in Nightly builds, run with -Z macro-backtrace for more info)

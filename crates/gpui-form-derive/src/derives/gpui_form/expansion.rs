@@ -1,5 +1,5 @@
 use darling::FromDeriveInput as _;
-use gpui_form_codegen::components::RequiredValue;
+use gpui_form_codegen::{CratePaths, components::RequiredValue};
 use itertools::Itertools as _;
 use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
 use proc_macro2::TokenStream;
@@ -52,6 +52,7 @@ pub fn expand_gpui_form(
     derive_input: DeriveInput,
     options: GpuiFormOptions,
 ) -> proc_macro2::TokenStream {
+    let facade_crate = CratePaths::resolve().gpui_form;
     let original_input = derive_input.clone();
     let derive_input = flatten_cfg_attr_in_derive_input(derive_input);
 
@@ -79,8 +80,8 @@ pub fn expand_gpui_form(
         );
         let shape_impl = if options.generate_shape && original_input.generics.params.is_empty() {
             quote! {
-                ::gpui_form::schema::registry::inventory::submit! {
-                    ::gpui_form::schema::registry::GpuiFormShape::new(
+                #facade_crate::schema::registry::inventory::submit! {
+                    #facade_crate::schema::registry::GpuiFormShape::new(
                         stringify!(#struct_name),
                         &[],
                         file!(),
@@ -187,7 +188,12 @@ pub fn expand_gpui_form(
         let field_name = field.ident.clone().unwrap();
         let field_name_str = field_name.to_string();
         let (was_optional, inner_type) = extract_option_inner_type(&field.ty);
-        let required_value = if !field.skip() && field.component.is_some() && !was_optional {
+        let rendered = field.rendered();
+        let required_value = if rendered
+            .as_ref()
+            .is_some_and(|rendered| rendered.component.is_some())
+            && !was_optional
+        {
             required_value_map
                 .get(&field_name_str)
                 .cloned()
@@ -208,9 +214,15 @@ pub fn expand_gpui_form(
             required_value,
             validation,
             default_expr,
-            override_type: field.r#type.as_ref().map(|ty| ty.0.clone()),
-            into_expr: field.into.clone(),
-            from_expr: field.from.clone(),
+            override_type: rendered
+                .as_ref()
+                .and_then(|rendered| rendered.r#type.map(|ty| ty.0.clone())),
+            into_expr: rendered
+                .as_ref()
+                .and_then(|rendered| rendered.into.cloned()),
+            from_expr: rendered
+                .as_ref()
+                .and_then(|rendered| rendered.from.cloned()),
             skip: field.skip(),
         });
     }
@@ -244,7 +256,9 @@ pub fn expand_gpui_form(
         .filter_map(|field| {
             if field.skip() {
                 None
-            } else if let Some(component_def) = field.component.as_ref() {
+            } else if let Some(rendered) = field.rendered()
+                && let Some(component_def) = rendered.component
+            {
                 let field_name_str = field
                     .ident
                     .as_ref()
@@ -252,8 +266,8 @@ pub fn expand_gpui_form(
                     .to_string();
                 let (was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
                 let base_type = field
-                    .r#type
-                    .as_ref()
+                    .rendered()
+                    .and_then(|rendered| rendered.r#type)
                     .map(|ty| extract_option_inner_type(&ty.0).1)
                     .unwrap_or_else(|| original_inner_type.clone());
                 let component_required_value = required_value_map
@@ -286,7 +300,7 @@ pub fn expand_gpui_form(
                     .map(|v| syn::LitStr::new(v, proc_macro2::Span::call_site()))
                     .collect();
 
-                let default_expr_tokens = field.default.as_ref().map(|expr| {
+                let default_expr_tokens = rendered.default.map(|expr| {
                     let expr_str = expr.0.to_token_stream().to_string();
                     quote! { .with_default(#expr_str) }
                 });
@@ -295,11 +309,11 @@ pub fn expand_gpui_form(
                 let shape_path_tokens = component_def.shape_path_tokens(&base_type);
                 let value_binding_tokens = component_def.value_binding_tokens(&base_type);
                 let prototyping_tokens = component_def.prototyping_tokens(&base_type);
-                let from_expr_tokens = option_expr_string_tokens(&field.from);
-                let into_expr_tokens = option_expr_string_tokens(&field.into);
+                let from_expr_tokens = option_expr_string_tokens(&rendered.from.cloned());
+                let into_expr_tokens = option_expr_string_tokens(&rendered.into.cloned());
 
                 Some(quote! {
-                    ::gpui_form::schema::registry::FieldVariant::new(
+                    #facade_crate::schema::registry::FieldVariant::new(
                         #field_name_str,
                         #field_type_str,
                         #is_optional
@@ -329,11 +343,12 @@ pub fn expand_gpui_form(
                 return None;
             }
 
-            let component_def = field.component.as_ref()?;
+            let rendered = field.rendered()?;
+            let component_def = rendered.component?;
             let (was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
             let base_type = field
-                .r#type
-                .as_ref()
+                .rendered()
+                .and_then(|rendered| rendered.r#type)
                 .map(|ty| extract_option_inner_type(&ty.0).1)
                 .unwrap_or(original_inner_type);
 
@@ -356,8 +371,8 @@ pub fn expand_gpui_form(
 
     let shape_impl = if options.generate_shape && original_input.generics.params.is_empty() {
         quote! {
-            ::gpui_form::schema::registry::inventory::submit! {
-                ::gpui_form::schema::registry::GpuiFormShape::new(
+            #facade_crate::schema::registry::inventory::submit! {
+                #facade_crate::schema::registry::GpuiFormShape::new(
                     stringify!(#struct_name),
                     &[
                         #(#field_variant_construction_code),*

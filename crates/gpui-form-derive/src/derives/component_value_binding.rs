@@ -5,6 +5,8 @@ use syn::{
     parse_macro_input, parse_quote,
 };
 
+use gpui_form_codegen::CratePaths;
+
 fn component_value_type(item: &ItemImpl) -> Result<Type> {
     let Some((_, trait_path, _)) = &item.trait_ else {
         return Err(syn::Error::new_spanned(
@@ -55,8 +57,8 @@ fn expand(mut item: ItemImpl) -> Result<TokenStream> {
     let value_type = component_value_type(&item)?;
 
     if let Some((_, trait_path, _)) = &mut item.trait_ {
-        *trait_path =
-            parse_quote!(::gpui_form_runtime::shape::ComponentStateValueBinding<#value_type>);
+        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+        *trait_path = parse_quote!(#runtime_crate::shape::ComponentStateValueBinding<#value_type>);
     }
 
     for impl_item in &mut item.items {

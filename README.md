@@ -134,14 +134,16 @@ Shapes that can safely synthesize a missing value, such as the built-in inputs,
 selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
 generated value-holder storage as `T`. Shapes that require a present value use
 `Option<T>` storage and conversion back to the source model fails when the value
-is missing. Define this behavior on the reusable component shape with
-`requires_value = false`.
+is missing. Those fallible holder-to-model paths implement `TryFrom`; `From`
+is only generated when the reverse conversion is infallible. Define this
+behavior on the reusable component shape with `requires_value = false`.
 
 Common field-level helpers:
 
 - `#[gpui_form(default = <expr>)]` seeds the generated value holder.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
-  allowing prefill from the original model.
+  allowing prefill from the original model. It cannot be combined with
+  component, default, or conversion options on the same field.
 - `#[gpui_form(type = <form_type>, from = <expr>, into = <expr>)]` lets the
   generated form edit a type that differs from the original field type.
 - `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
@@ -349,7 +351,8 @@ value-binding metadata.
 
 Component-backed fields compile against `gpui_form_runtime::shape`; add
 `gpui-form-runtime` as an explicit dependency when using custom or built-in
-component shapes.
+component shapes. The derive resolves renamed `gpui-form-runtime` dependencies
+when emitting generated paths.
 If you implement `ComponentShape` manually instead of using the derive or
 `component_shape!`, set both policy associated types:
 `RequiredValuePolicy` controls value-holder storage, and `ValueBindingPolicy`

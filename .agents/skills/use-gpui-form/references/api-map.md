@@ -77,6 +77,9 @@ Common field attributes:
 #[gpui_form(into = <expr>)]
 ```
 
+`skip` cannot be combined with component, default, type, from, or into options
+on the same field.
+
 Common struct attributes:
 
 ```rust

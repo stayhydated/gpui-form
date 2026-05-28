@@ -126,14 +126,14 @@ impl LocationFormForm {
         *self = Self::new(window, cx);
         cx.notify();
     }
-    fn submit_payload(&self) -> LocationForm {
-        self.current_data.clone().into()
+    fn submit_payload(&self) -> Option<LocationForm> {
+        LocationFormFormValueHolder::try_from(self.current_data.clone()).ok()
     }
     fn submit_button(
         &self,
         cx: &mut Context<Self>,
         label: impl Into<gpui::SharedString>,
-        on_submit: impl Fn(LocationForm, &mut Window, &mut Context<Self>) + 'static,
+        on_submit: impl Fn(Option<LocationForm>, &mut Window, &mut Context<Self>) + 'static,
     ) -> gpui_component::button::Button {
         gpui_component::button::Button::new(format!("{}-submit-button", "location_form-form"))
             .label(label)
@@ -156,7 +156,7 @@ impl LocationFormForm {
     fn action_buttons(
         &self,
         cx: &mut Context<Self>,
-        on_submit: impl Fn(LocationForm, &mut Window, &mut Context<Self>) + 'static,
+        on_submit: impl Fn(Option<LocationForm>, &mut Window, &mut Context<Self>) + 'static,
     ) -> impl IntoElement {
         div()
             .flex()

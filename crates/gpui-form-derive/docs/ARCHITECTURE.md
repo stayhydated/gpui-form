@@ -79,6 +79,10 @@ Important behaviors:
   into the holder
 - reverse conversion becomes explicit `into_original(...)` when skipped fields
   prevent a fully automatic round trip
+- skipped fields are normalized as skipped intent and reject component,
+  default, and conversion metadata during field parsing
+- holder-to-model conversion uses `TryFrom` when any non-skipped field can be
+  missing without a default; `From` is reserved for infallible holders
 
 ## Koruma Integration
 
@@ -124,6 +128,8 @@ When the `inventory` feature is enabled:
   backing state's `ComponentStateValueBinding<T>` implementation
 - defaults to implementing `gpui_form_runtime::shape::ComponentShape`
   for downstream application crates
+- resolves generated `gpui`, `gpui-form`, and `gpui-form-runtime` paths through
+  the shared codegen crate-path resolver
 
 ### `component_shape!`
 

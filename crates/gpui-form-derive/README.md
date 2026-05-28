@@ -97,7 +97,8 @@ Behavior notes:
 - component shapes own the default required-value policy for non-optional
   fields; shapes that can synthesize a missing value keep generated value-holder
   storage as `T`, while required shapes use `Option<T>` and fail conversion when
-  missing
+  missing. Fallible holder-to-model paths implement `TryFrom`; `From` is only
+  emitted for infallible reverse conversions
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - `.value_binding()` records that the component shape implements
@@ -123,12 +124,15 @@ Behavior notes:
 - when skipped fields are present, the generated value holder keeps builder
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion
+- `skip` cannot be combined with component, `default`, `type`, `from`, or
+  `into` options on the same field
 
 ## `#[derive(ComponentShape)]`
 
 Implements `gpui_form_runtime::shape::ComponentShape` for a rendered component
 with separate backing state. Crates that use this derive need an explicit
-`gpui-form-runtime` dependency.
+`gpui-form-runtime` dependency; generated paths resolve renamed runtime
+dependencies.
 
 ```rs
 use crate::state::{TagsState, build};

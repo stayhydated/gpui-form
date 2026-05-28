@@ -138,18 +138,54 @@ impl Parse for GpuiFormArg {
 pub struct ComponentField {
     pub ident: Option<Ident>,
     pub ty: Type,
-    pub r#type: Option<TypeOverride>,
-    pub into: Option<Expr>,
-    pub from: Option<Expr>,
-    pub component: Option<Components>,
-    pub default: Option<DefaultExpr>,
-    pub skip: bool,
+    r#type: Option<TypeOverride>,
+    into: Option<Expr>,
+    from: Option<Expr>,
+    component: Option<Components>,
+    default: Option<DefaultExpr>,
+    skip: bool,
     skip_seen: bool,
 }
 
+pub struct SkippedField;
+
+pub struct RenderedField<'a> {
+    pub r#type: Option<&'a TypeOverride>,
+    pub into: Option<&'a Expr>,
+    pub from: Option<&'a Expr>,
+    pub component: Option<&'a Components>,
+    pub default: Option<&'a DefaultExpr>,
+}
+
+pub enum ComponentFieldIntent<'a> {
+    Skipped(SkippedField),
+    Rendered(RenderedField<'a>),
+}
+
 impl ComponentField {
+    pub fn intent(&self) -> ComponentFieldIntent<'_> {
+        if self.skip {
+            ComponentFieldIntent::Skipped(SkippedField)
+        } else {
+            ComponentFieldIntent::Rendered(RenderedField {
+                r#type: self.r#type.as_ref(),
+                into: self.into.as_ref(),
+                from: self.from.as_ref(),
+                component: self.component.as_ref(),
+                default: self.default.as_ref(),
+            })
+        }
+    }
+
+    pub fn rendered(&self) -> Option<RenderedField<'_>> {
+        match self.intent() {
+            ComponentFieldIntent::Skipped(_) => None,
+            ComponentFieldIntent::Rendered(rendered) => Some(rendered),
+        }
+    }
+
     pub fn skip(&self) -> bool {
-        self.skip
+        matches!(self.intent(), ComponentFieldIntent::Skipped(_))
     }
 }
 
@@ -188,6 +224,8 @@ impl FromField for ComponentField {
                 parse_gpui_form_item(&mut parsed, item)?;
             }
         }
+
+        validate_field_intent(&parsed)?;
 
         Ok(parsed)
     }
@@ -242,6 +280,7 @@ fn parse_meta_name_value(
 
     match key.as_str() {
         "type" => {
+            ensure_not_skipped(field, "type", &name_value.path)?;
             set_once(
                 &mut field.r#type,
                 TypeOverride::from_expr(&rhs)?,
@@ -251,18 +290,22 @@ fn parse_meta_name_value(
             Ok(())
         },
         "into" => {
+            ensure_not_skipped(field, "into", &name_value.path)?;
             set_once(&mut field.into, rhs, "into", &name_value.path)?;
             Ok(())
         },
         "from" => {
+            ensure_not_skipped(field, "from", &name_value.path)?;
             set_once(&mut field.from, rhs, "from", &name_value.path)?;
             Ok(())
         },
         "component" => {
+            ensure_not_skipped(field, "component", &name_value.path)?;
             let component = parse_component_expr(rhs)?;
             set_component(field, component, &name_value.path)
         },
         "default" => {
+            ensure_not_skipped(field, "default", &name_value.path)?;
             set_once(
                 &mut field.default,
                 DefaultExpr::from_expr(&rhs)?,
@@ -287,6 +330,7 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
 
     match key.as_str() {
         "type" => {
+            ensure_not_skipped(field, "type", &lhs)?;
             set_once(
                 &mut field.r#type,
                 TypeOverride::from_expr(&rhs)?,
@@ -296,18 +340,22 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
             Ok(())
         },
         "into" => {
+            ensure_not_skipped(field, "into", &lhs)?;
             set_once(&mut field.into, rhs, "into", &lhs)?;
             Ok(())
         },
         "from" => {
+            ensure_not_skipped(field, "from", &lhs)?;
             set_once(&mut field.from, rhs, "from", &lhs)?;
             Ok(())
         },
         "component" => {
+            ensure_not_skipped(field, "component", &lhs)?;
             let component = parse_component_expr(rhs)?;
             set_component(field, component, &lhs)
         },
         "default" => {
+            ensure_not_skipped(field, "default", &lhs)?;
             set_once(
                 &mut field.default,
                 DefaultExpr::from_expr(&rhs)?,
@@ -399,6 +447,7 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
 }
 
 fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling::Result<()> {
+    ensure_not_skipped(field, "component", &expr)?;
     let component = Components::from_expr(&expr)?;
     set_component(field, component, &expr)
 }
@@ -422,6 +471,8 @@ fn set_component<T: syn::spanned::Spanned>(
     component: Components,
     span: &T,
 ) -> darling::Result<()> {
+    ensure_not_skipped(field, "component", span)?;
+
     if field.component.is_some() {
         return Err(DarlingError::custom(
             "multiple component expressions were provided; keep a single shape \
@@ -464,8 +515,58 @@ fn set_skip<S: syn::spanned::Spanned>(
         .with_span(span));
     }
 
+    if value {
+        validate_no_skip_conflicts(field, span)?;
+    }
+
     field.skip = value;
     field.skip_seen = true;
+    Ok(())
+}
+
+fn ensure_not_skipped<S: syn::spanned::Spanned>(
+    field: &ComponentField,
+    option: &str,
+    span: &S,
+) -> darling::Result<()> {
+    if field.skip {
+        return Err(skip_conflict_error(option).with_span(span));
+    }
+
+    Ok(())
+}
+
+fn skip_conflict_error(option: &str) -> DarlingError {
+    DarlingError::custom(format!(
+        "`skip` cannot be combined with `{option}` in a `gpui_form` field attribute; \
+         remove `skip` or remove the `{option}` option"
+    ))
+}
+
+fn validate_no_skip_conflicts<S: syn::spanned::Spanned>(
+    field: &ComponentField,
+    span: &S,
+) -> darling::Result<()> {
+    let conflicts = [
+        ("component", field.component.is_some()),
+        ("default", field.default.is_some()),
+        ("type", field.r#type.is_some()),
+        ("from", field.from.is_some()),
+        ("into", field.into.is_some()),
+    ];
+
+    if let Some((option, _)) = conflicts.into_iter().find(|(_, present)| *present) {
+        return Err(skip_conflict_error(option).with_span(span));
+    }
+
+    Ok(())
+}
+
+fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
+    if field.skip {
+        validate_no_skip_conflicts(field, &field.ident)?;
+    }
+
     Ok(())
 }
 

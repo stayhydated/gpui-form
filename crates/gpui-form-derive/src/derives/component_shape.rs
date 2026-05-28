@@ -1,3 +1,4 @@
+use gpui_form_codegen::CratePaths;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
@@ -169,6 +170,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let phantom_type = phantom_type_tokens(&generics);
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
+    let gpui_crate = CratePaths::resolve().gpui;
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
     quote! {
@@ -181,8 +183,8 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             type State = #state;
 
             fn new(
-                window: &mut ::gpui::Window,
-                cx: &mut ::gpui::Context<'_, Self::State>,
+                window: &mut #gpui_crate::Window,
+                cx: &mut #gpui_crate::Context<'_, Self::State>,
             ) -> Self::State {
                 #constructor_body
             }

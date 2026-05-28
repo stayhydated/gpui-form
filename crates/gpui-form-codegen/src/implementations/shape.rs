@@ -1,3 +1,4 @@
+use crate::CratePaths;
 use crate::components::*;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -17,20 +18,23 @@ impl super::ComponentLayout for ShapeComponent {
         let field_name_ident =
             crate::names::ComponentFieldName::new(&options.component_suffix(name), name);
         let shape = options.runtime_shape(r#type);
+        let crate_paths = CratePaths::resolve();
+        let gpui_crate = crate_paths.gpui;
+        let runtime_crate = crate_paths.gpui_form_runtime;
 
         let state_type = quote! {
-            <#shape as ::gpui_form_runtime::shape::ComponentShape>::State
+            <#shape as #runtime_crate::shape::ComponentShape>::State
         };
         let constructor_tokens = options.constructor_tokens(r#type);
 
         let field_structure_definition = quote! {
-            pub #field_name_ident: ::gpui::Entity<#state_type>,
+            pub #field_name_ident: #gpui_crate::Entity<#state_type>,
         };
 
         let field_base_declaration = quote! {
             pub fn #field_name_ident(
-                window: &mut ::gpui::Window,
-                cx: &mut ::gpui::Context<'_, #state_type>,
+                window: &mut #gpui_crate::Window,
+                cx: &mut #gpui_crate::Context<'_, #state_type>,
             ) -> #state_type {
                 #constructor_tokens
             }

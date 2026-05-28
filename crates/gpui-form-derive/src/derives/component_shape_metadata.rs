@@ -2,6 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Expr, LitBool, LitStr, Path, Result, Type};
 
+use gpui_form_codegen::CratePaths;
+
 use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `requires_value = ...`, \
@@ -88,7 +90,7 @@ impl ComponentShapeMetadata {
     }
 
     pub(super) fn runtime_crate_path() -> Path {
-        syn::parse_quote!(::gpui_form_runtime)
+        CratePaths::resolve().gpui_form_runtime
     }
 
     pub(super) fn constructor_body_or(&self, default_body: TokenStream) -> TokenStream {

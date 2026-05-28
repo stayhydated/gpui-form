@@ -1,0 +1,23 @@
+error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
+ --> tests/ui/gpui_form_skip_conflicts.rs:5:23
+  |
+5 |     #[gpui_form(skip, crate::InputShape)]
+  |                       ^^^^^
+
+error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
+  --> tests/ui/gpui_form_skip_conflicts.rs:11:36
+   |
+11 |     #[gpui_form(crate::InputShape, skip)]
+   |                                    ^^^^
+
+error: `skip` cannot be combined with `default` in a `gpui_form` field attribute; remove `skip` or remove the `default` option
+  --> tests/ui/gpui_form_skip_conflicts.rs:17:23
+   |
+17 |     #[gpui_form(skip, default = "value")]
+   |                       ^^^^^^^
+
+error: `skip` cannot be combined with `type` in a `gpui_form` field attribute; remove `skip` or remove the `type` option
+  --> tests/ui/gpui_form_skip_conflicts.rs:23:23
+   |
+23 |     #[gpui_form(skip, type = usize, from = |value| value.len(), into = |value| value.to_string())]
+   |                       ^^^^

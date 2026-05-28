@@ -26,6 +26,7 @@ impl FormLayout for StorybookLayout {
             is_empty,
             has_koruma,
             has_skipped_fields,
+            holder_conversion_can_fail,
             imports,
             component_creations,
             event_handlers,
@@ -53,6 +54,8 @@ impl FormLayout for StorybookLayout {
             }
         } else if *has_koruma {
             quote! { Result<Option<#struct_name_ident>, String> }
+        } else if *holder_conversion_can_fail {
+            quote! { Option<#struct_name_ident> }
         } else {
             quote! { #struct_name_ident }
         };
@@ -77,6 +80,8 @@ impl FormLayout for StorybookLayout {
                     Err(error) => Err(format!("{error:?}")),
                 }
             }
+        } else if *holder_conversion_can_fail {
+            quote! { #form_value_holder_ident::try_from(self.current_data.clone()).ok() }
         } else {
             quote! { self.current_data.clone().into() }
         };

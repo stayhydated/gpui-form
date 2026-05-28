@@ -1,10 +1,43 @@
 use darling::{Error as DarlingError, FromMeta};
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
 use syn::{Expr, Lit, Path};
 
+use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
+
+fn tokens_with_span<T: quote::ToTokens>(value: &T, span: Span) -> TokenStream {
+    value
+        .to_token_stream()
+        .into_iter()
+        .map(|token| token_tree_with_span(token, span))
+        .collect()
+}
+
+fn token_tree_with_span(mut token: TokenTree, span: Span) -> TokenTree {
+    if let TokenTree::Group(group) = &mut token {
+        let mut new_group = Group::new(
+            group.delimiter(),
+            group
+                .stream()
+                .into_iter()
+                .map(|token| token_tree_with_span(token, span))
+                .collect(),
+        );
+        new_group.set_span(span);
+        return TokenTree::Group(new_group);
+    }
+
+    match &mut token {
+        TokenTree::Group(_) => unreachable!("groups are handled above"),
+        TokenTree::Ident(ident) => ident.set_span(span),
+        TokenTree::Punct(punct) => punct.set_span(span),
+        TokenTree::Literal(literal) => literal.set_span(span),
+    }
+
+    token
+}
 
 pub trait ComponentOption {}
 
@@ -49,8 +82,9 @@ impl RequiredValue {
         match self {
             Self::Explicit(value) => quote! { #value },
             Self::Shape(shape) => {
+                let runtime_crate = CratePaths::resolve().gpui_form_runtime;
                 quote! {
-                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE
+                    <#shape as #runtime_crate::shape::ComponentShape>::REQUIRES_VALUE
                 }
             },
         }
@@ -168,9 +202,10 @@ impl ShapeOptions {
 
     pub fn constructor_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.runtime_shape(field_type);
+        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
 
         quote! {
-            <#shape as ::gpui_form_runtime::shape::ComponentShape>::new(window, cx)
+            <#shape as #runtime_crate::shape::ComponentShape>::new(window, cx)
         }
     }
 
@@ -181,17 +216,18 @@ impl ShapeOptions {
     ) -> Option<TokenStream> {
         let shape = self.resolved_shape(field_type);
         let span = self.span;
+        let runtime_crate = tokens_with_span(&CratePaths::resolve().gpui_form_runtime, span);
         let value_binding_assertion = match self.value_binding {
             Some(true) => quote_spanned! {span=>
                 {
-                    ::gpui_form_runtime::shape::assert_component_value_binding::<#shape, #field_type>();
+                    #runtime_crate::shape::assert_component_value_binding::<#shape, #field_type>();
                 }
             },
             Some(false) => quote! {},
             None => quote_spanned! {span=>
                 {
-                    <<#shape as ::gpui_form_runtime::shape::ComponentShape>::ValueBindingPolicy
-                        as ::gpui_form_runtime::shape::AssertComponentValueBindingPolicy<
+                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
+                        as #runtime_crate::shape::AssertComponentValueBindingPolicy<
                             #shape,
                             #field_type,
                         >>::assert_component_value_binding_policy();
@@ -203,11 +239,11 @@ impl ShapeOptions {
                 {
                     fn __gpui_form_assert_value_holder_storage<Policy, Value>()
                     where
-                        Policy: ::gpui_form_runtime::shape::ValueHolderStorage<Value>,
+                        Policy: #runtime_crate::shape::ValueHolderStorage<Value>,
                     {}
 
                     __gpui_form_assert_value_holder_storage::<
-                        <#shape as ::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicy,
+                        <#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy,
                         #field_type,
                     >();
                 }
@@ -218,7 +254,7 @@ impl ShapeOptions {
 
         Some(quote_spanned! {span=>
             {
-                fn __gpui_form_assert_component_shape<Shape: ::gpui_form_runtime::shape::ComponentShape>() {}
+                fn __gpui_form_assert_component_shape<Shape: #runtime_crate::shape::ComponentShape>() {}
                 __gpui_form_assert_component_shape::<#shape>();
                 #value_binding_assertion
                 #value_holder_storage_assertion
@@ -527,13 +563,14 @@ impl Components {
         let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
+        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
             Some(quote! { .with_component_path(#component_str) })
         } else {
             Some(quote! {
                 .with_component_path_opt(
-                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::COMPONENT_PATH
+                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_PATH
                 )
             })
         }
@@ -553,6 +590,7 @@ impl Components {
         let Self::Shape(options) = self;
 
         let shape = options.resolved_shape(field_type);
+        let runtime_crate = CratePaths::resolve().gpui_form_runtime;
 
         Some(match options.value_binding {
             Some(true) => quote! { .with_value_binding(true) },
@@ -560,7 +598,7 @@ impl Components {
             None => {
                 quote! {
                     .with_value_binding(
-                        <#shape as ::gpui_form_runtime::shape::ComponentShape>::VALUE_BINDING
+                        <#shape as #runtime_crate::shape::ComponentShape>::VALUE_BINDING
                     )
                 }
             },
@@ -577,10 +615,11 @@ impl Components {
             })
         } else {
             let shape = options.resolved_shape(field_type);
+            let runtime_crate = CratePaths::resolve().gpui_form_runtime;
 
             Some(quote! {
                 .with_prototyping_field_suffix(
-                    <#shape as ::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING
+                    <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING
                         .field_suffix
                 )
             })

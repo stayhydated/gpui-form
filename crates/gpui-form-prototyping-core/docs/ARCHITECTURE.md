@@ -55,7 +55,8 @@ It contains:
 - event/subscription/init tokens
 - render fragments
 - debug helpers
-- flags such as `is_empty`, `has_koruma`, and `has_skipped_fields`
+- flags such as `is_empty`, `has_koruma`, `has_skipped_fields`, and
+  `holder_conversion_can_fail`
 
 This allows callers to define different layout styles without reimplementing
 field analysis.

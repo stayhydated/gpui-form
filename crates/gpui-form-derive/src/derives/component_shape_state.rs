@@ -2,6 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Result, parse_macro_input};
 
+use gpui_form_codegen::CratePaths;
+
 use super::component_shape_metadata::{ComponentShapeMetadata, SHAPE_METADATA_OPTIONS};
 
 fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
@@ -65,6 +67,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
+    let gpui_crate = CratePaths::resolve().gpui;
     let inferred_component_const = if !meta.has_component() {
         Some(quote! {
             const COMPONENT_PATH: Option<&'static str> =
@@ -90,8 +93,8 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             type State = #state;
 
             fn new(
-                window: &mut ::gpui::Window,
-                cx: &mut ::gpui::Context<'_, Self::State>,
+                window: &mut #gpui_crate::Window,
+                cx: &mut #gpui_crate::Context<'_, Self::State>,
             ) -> Self::State {
                 #constructor_body
             }
@@ -112,8 +115,8 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             fn seed_value_binding_state(
                 state: &mut Self::State,
                 value: Option<&__GpuiFormValueBindingValue>,
-                window: &mut ::gpui::Window,
-                cx: &mut ::gpui::Context<'_, Self::State>,
+                window: &mut #gpui_crate::Window,
+                cx: &mut #gpui_crate::Context<'_, Self::State>,
             ) {
                 <#state as #runtime_crate::shape::ComponentStateValueBinding<
                     __GpuiFormValueBindingValue
