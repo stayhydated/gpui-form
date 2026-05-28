@@ -84,7 +84,7 @@ impl ItemForm {
     }
     fn submit_payload(&self) -> Result<Option<Item>, String> {
         match self.current_data.validate() {
-            Ok(_) => Ok(ItemFormValueHolder::try_from(self.current_data.clone()).ok()),
+            Ok(_) => Ok(self.current_data.clone().try_into_original().ok()),
             Err(error) => Err(format!("{error:?}")),
         }
     }
@@ -199,8 +199,8 @@ impl Render for ItemForm {
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
             .child(format!(
-                "into_original: {:?}",
-                ItemFormValueHolder::try_from(self.current_data.clone())
+                "try_into_original: {:?}",
+                self.current_data.clone().try_into_original()
             ))
     }
 }

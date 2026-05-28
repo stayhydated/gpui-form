@@ -96,8 +96,9 @@ Behavior notes:
   fields; shapes that can synthesize a missing value keep generated value-holder
   storage as `T`, while required shapes use `Option<T>` and fail conversion when
   missing. Generated `validate()` reports missing required shape values.
-  Fallible holder-to-model paths implement `TryFrom`; `From` is only emitted
-  for infallible reverse conversions
+  Fallible holder-to-model paths implement `TryFrom` and expose
+  `holder.try_into_original()`; infallible paths implement `From` and expose
+  `holder.into_original()`
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements

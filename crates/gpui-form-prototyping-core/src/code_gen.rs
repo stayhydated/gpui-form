@@ -251,11 +251,18 @@ impl<'a> FormShapeAdapter<'a> {
                             self.current_data.present_fields_json()
                         ))
                     }
+                } else if holder_conversion_can_fail {
+                    quote! {
+                        .child(format!(
+                            "try_into_original: {:?}",
+                            self.current_data.clone().try_into_original()
+                        ))
+                    }
                 } else {
                     quote! {
                         .child(format!(
                             "into_original: {:?}",
-                            #form_value_holder_ident::try_from(self.current_data.clone())
+                            self.current_data.clone().into_original()
                         ))
                     }
                 };

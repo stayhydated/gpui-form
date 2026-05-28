@@ -127,7 +127,7 @@ impl LocationFormForm {
         cx.notify();
     }
     fn submit_payload(&self) -> Option<LocationForm> {
-        LocationFormFormValueHolder::try_from(self.current_data.clone()).ok()
+        self.current_data.clone().try_into_original().ok()
     }
     fn submit_button(
         &self,
@@ -237,8 +237,8 @@ impl Render for LocationFormForm {
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
             .child(format!(
-                "into_original: {:?}",
-                LocationFormFormValueHolder::try_from(self.current_data.clone())
+                "try_into_original: {:?}",
+                self.current_data.clone().try_into_original()
             ))
     }
 }

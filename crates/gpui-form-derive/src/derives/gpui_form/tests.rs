@@ -165,7 +165,7 @@ mod gpui_form_tests {
         }
 
         let expanded = expansion::expand_gpui_form(
-            derive_input.clone(),
+            derive_input,
             structs::GpuiFormOptions {
                 generate_shape: true,
             },
@@ -385,6 +385,20 @@ mod gpui_form_tests {
                 && compact.contains("&[\"RequiredValidation\",]"),
             "shape-inherited requiredness should use the policy-aware validator and conditional metadata: {compact}"
         );
+        assert!(
+            compact.contains("impl::core::convert::TryFrom<TestFormFormValueHolder>forTestForm"),
+            "Fallible holders should keep the standard TryFrom impl: {compact}"
+        );
+        assert!(
+            compact.contains(
+                "pubfntry_into_original(self)->Result<TestForm,TestFormFormValueHolderConversionError>"
+            ),
+            "Fallible holders should expose try_into_original(self): {compact}"
+        );
+        assert!(
+            !compact.contains("pubfntry_from("),
+            "Generated holders should not expose the legacy inherent try_from helper"
+        );
     }
 
     #[test]
@@ -427,6 +441,14 @@ mod gpui_form_tests {
         assert!(
             compact.contains("birth_date:from.birth_date.map(") && compact.contains("to_model"),
             "From<FormValueHolder> for Original should apply `into` conversion"
+        );
+        assert!(
+            compact.contains("pubfninto_original(self)->TestForm"),
+            "Infallible holders should expose into_original(self): {compact}"
+        );
+        assert!(
+            !compact.contains("pubfntry_from("),
+            "Generated holders should not expose the legacy inherent try_from helper"
         );
     }
 

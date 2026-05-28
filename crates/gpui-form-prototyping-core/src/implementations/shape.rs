@@ -283,7 +283,13 @@ mod tests {
         let field = crate::implementations::ResolvedField::new(&FIELDS_WITH_COMPONENT[0]).unwrap();
         let tokens = generator.generate_render_child(&field, &SHAPE);
 
+        #[cfg(feature = "fluent")]
         insta::assert_snapshot!(pretty_tokens(tokens));
+        #[cfg(not(feature = "fluent"))]
+        insta::assert_snapshot!(
+            "shape_generator_emits_component_call_when_component_known_without_fluent",
+            pretty_tokens(tokens)
+        );
     }
 
     #[test]
@@ -397,6 +403,12 @@ mod tests {
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let tokens = generator.generate_render_child(&field, &SHAPE);
 
+        #[cfg(feature = "fluent")]
         insta::assert_snapshot!(pretty_tokens(tokens));
+        #[cfg(not(feature = "fluent"))]
+        insta::assert_snapshot!(
+            "shape_generator_renders_generic_component_type_without_fluent",
+            pretty_tokens(tokens)
+        );
     }
 }

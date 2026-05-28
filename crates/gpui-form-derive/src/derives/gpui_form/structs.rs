@@ -185,9 +185,32 @@ impl RenderedOptions {
 }
 
 #[derive(Debug)]
-enum ParsedFieldIntent {
-    Skipped,
-    Rendered(RenderedOptions),
+struct ParsedFieldIntent {
+    rendered: Option<Box<RenderedOptions>>,
+}
+
+impl ParsedFieldIntent {
+    fn rendered() -> Self {
+        Self {
+            rendered: Some(Box::default()),
+        }
+    }
+
+    fn is_skipped(&self) -> bool {
+        self.rendered.is_none()
+    }
+
+    fn rendered_options(&self) -> Option<&RenderedOptions> {
+        self.rendered.as_deref()
+    }
+
+    fn rendered_options_mut(&mut self) -> Option<&mut RenderedOptions> {
+        self.rendered.as_deref_mut()
+    }
+
+    fn skip(&mut self) {
+        self.rendered = None;
+    }
 }
 
 pub struct SkippedField;
@@ -207,17 +230,15 @@ pub enum ComponentFieldIntent<'a> {
 
 impl ComponentField {
     pub fn intent(&self) -> ComponentFieldIntent<'_> {
-        match &self.intent {
-            ParsedFieldIntent::Skipped => ComponentFieldIntent::Skipped(SkippedField),
-            ParsedFieldIntent::Rendered(rendered) => {
-                ComponentFieldIntent::Rendered(RenderedField {
-                    r#type: rendered.r#type.as_ref(),
-                    into: rendered.into.as_ref(),
-                    from: rendered.from.as_ref(),
-                    component: rendered.component.as_ref(),
-                    default: rendered.default.as_ref(),
-                })
-            },
+        match self.intent.rendered_options() {
+            Some(rendered) => ComponentFieldIntent::Rendered(RenderedField {
+                r#type: rendered.r#type.as_ref(),
+                into: rendered.into.as_ref(),
+                from: rendered.from.as_ref(),
+                component: rendered.component.as_ref(),
+                default: rendered.default.as_ref(),
+            }),
+            None => ComponentFieldIntent::Skipped(SkippedField),
         }
     }
 
@@ -238,7 +259,7 @@ impl FromField for ComponentField {
         let mut parsed = ComponentField {
             ident: field.ident.clone(),
             ty: field.ty.clone(),
-            intent: ParsedFieldIntent::Rendered(RenderedOptions::default()),
+            intent: ParsedFieldIntent::rendered(),
         };
 
         for attr in &field.attrs {
@@ -371,20 +392,23 @@ fn set_skip<S: syn::spanned::Spanned>(
         return Ok(());
     }
 
-    match &field.intent {
-        ParsedFieldIntent::Skipped => Err(DarlingError::custom(
+    if field.intent.is_skipped() {
+        return Err(DarlingError::custom(
             "duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry",
         )
-        .with_span(span)),
-        ParsedFieldIntent::Rendered(options) => {
-            if let Some(option) = options.first_conflict() {
-                return Err(skip_conflict_error(option).with_span(span));
-            }
-
-            field.intent = ParsedFieldIntent::Skipped;
-            Ok(())
-        },
+        .with_span(span));
     }
+
+    let options = field
+        .intent
+        .rendered_options()
+        .expect("non-skipped field intent should have rendered options");
+    if let Some(option) = options.first_conflict() {
+        return Err(skip_conflict_error(option).with_span(span));
+    }
+
+    field.intent.skip();
+    Ok(())
 }
 
 fn skip_conflict_error(option: &str) -> DarlingError {
@@ -399,10 +423,10 @@ fn rendered_options_mut<'a, S: syn::spanned::Spanned>(
     option: &str,
     span: &S,
 ) -> darling::Result<&'a mut RenderedOptions> {
-    match &mut field.intent {
-        ParsedFieldIntent::Rendered(options) => Ok(options),
-        ParsedFieldIntent::Skipped => Err(skip_conflict_error(option).with_span(span)),
-    }
+    field
+        .intent
+        .rendered_options_mut()
+        .ok_or_else(|| skip_conflict_error(option).with_span(span))
 }
 
 fn unwrap_grouped_expr(expr: Expr) -> Expr {

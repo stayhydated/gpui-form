@@ -60,6 +60,12 @@ impl FormLayout for StorybookLayout {
             quote! { #struct_name_ident }
         };
 
+        let fallible_submit_payload = if *holder_conversion_can_fail {
+            quote! { self.current_data.clone().try_into_original().ok() }
+        } else {
+            quote! { Some(self.current_data.clone().into_original()) }
+        };
+
         let submit_payload_expr = if *is_empty {
             quote! { () }
         } else if *has_skipped_fields {
@@ -76,14 +82,14 @@ impl FormLayout for StorybookLayout {
         } else if *has_koruma {
             quote! {
                 match self.current_data.validate() {
-                    Ok(_) => Ok(#form_value_holder_ident::try_from(self.current_data.clone()).ok()),
+                    Ok(_) => Ok(#fallible_submit_payload),
                     Err(error) => Err(format!("{error:?}")),
                 }
             }
         } else if *holder_conversion_can_fail {
-            quote! { #form_value_holder_ident::try_from(self.current_data.clone()).ok() }
+            fallible_submit_payload
         } else {
-            quote! { self.current_data.clone().into() }
+            quote! { self.current_data.clone().into_original() }
         };
 
         let submit_disabled = if *has_koruma {

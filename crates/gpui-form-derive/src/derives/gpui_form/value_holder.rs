@@ -1099,12 +1099,12 @@ pub fn generate_value_holder(
             }
 
             impl #impl_generics #wrapped_ident #ty_generics #holder_where_clause {
-                pub fn try_from(
-                    from: #wrapped_ident #ty_generics
+                pub fn try_into_original(
+                    self
                 ) -> Result<#original_ident #ty_generics, #conversion_error_ident> {
                     <#original_ident #ty_generics as ::core::convert::TryFrom<
                         #wrapped_ident #ty_generics
-                    >>::try_from(from)
+                    >>::try_from(self)
                 }
             }
         }
@@ -1121,10 +1121,8 @@ pub fn generate_value_holder(
             }
 
             impl #impl_generics #wrapped_ident #ty_generics #holder_where_clause {
-                pub fn try_from(
-                    from: #wrapped_ident #ty_generics
-                ) -> Result<#original_ident #ty_generics, #conversion_error_ident> {
-                    Ok(::core::convert::From::from(from))
+                pub fn into_original(self) -> #original_ident #ty_generics {
+                    ::core::convert::From::from(self)
                 }
             }
         }

@@ -130,9 +130,10 @@ selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
 generated value-holder storage as `T`. Shapes that require a present value use
 `Option<T>` storage; generated `validate()` reports a missing value and
 conversion back to the source model fails when the value is missing. Those
-fallible holder-to-model paths implement `TryFrom`; `From` is only generated
-when the reverse conversion is infallible. Define this behavior on the
-reusable component shape with `requires_value = false`.
+fallible holder-to-model paths implement `TryFrom` and expose
+`holder.try_into_original()`; infallible paths implement `From` and expose
+`holder.into_original()`. Define this behavior on the reusable component shape
+with `requires_value = false`.
 
 Common field-level helpers:
 
@@ -376,7 +377,7 @@ impl:
 pub struct TagsInputState;
 
 #[gpui_form_derive::component_value_binding]
-impl gpui_form::runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
+impl gpui_form_runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
     type Event = TagsInputEvent;
     /* seed_value_binding_state and form_value_change */
 }
@@ -390,7 +391,7 @@ gpui_form_derive::component_shape! {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
 
-        impl gpui_form::runtime::shape::ComponentValueBinding<String> for EmailInputShape {
+        impl gpui_form_runtime::shape::ComponentValueBinding<String> for EmailInputShape {
             type Event = gpui_component::input::InputEvent;
             /* seed_value_binding_state and form_value_change */
         }

@@ -40,7 +40,8 @@ struct DefaultedDemo {
 
 #[test]
 fn missing_required_shape_value_reports_field_name() {
-    let err = RequiredDemoFormValueHolder::try_from(RequiredDemoFormValueHolder { value: None })
+    let err = RequiredDemoFormValueHolder { value: None }
+        .try_into_original()
         .expect_err("missing required shape value should be fallible");
 
     assert_eq!(err.field_name, "value");
@@ -62,7 +63,7 @@ fn validate_reports_missing_required_shape_value() {
 
 #[test]
 fn defaulted_required_shape_value_remains_infallible() {
-    let model = DefaultedDemo::from(DefaultedDemoFormValueHolder { value: None });
+    let model = DefaultedDemoFormValueHolder { value: None }.into_original();
 
     assert_eq!(
         model,
