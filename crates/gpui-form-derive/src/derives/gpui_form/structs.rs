@@ -1,37 +1,18 @@
-use darling::{Error as DarlingError, FromField, FromMeta, ast::NestedMeta};
+use darling::{Error as DarlingError, FromField, FromMeta};
 use gpui_form_codegen::components::{Components, RequiredValue};
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
 use syn::{
-    Expr, ExprGroup, ExprParen, ExprPath, Ident, Meta, MetaList, Type, TypePath,
-    parse::{Parse, ParseStream, Parser as _, discouraged::Speculative as _},
+    Expr, ExprGroup, ExprParen, ExprPath, Ident, Token, Type,
+    parse::{Parse, ParseStream, Parser as _},
     punctuated::Punctuated,
 };
 
 #[derive(Clone, Debug)]
 pub struct TypeOverride(pub Type);
 
-impl FromMeta for TypeOverride {
-    fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        match expr {
-            Expr::Path(expr_path) => Ok(TypeOverride(Type::Path(TypePath {
-                qself: expr_path.qself.clone(),
-                path: expr_path.path.clone(),
-            }))),
-            Expr::Group(group) => Self::from_expr(&group.expr),
-            _ => Err(DarlingError::unexpected_expr_type(expr)),
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct DefaultExpr(pub Expr);
-
-impl FromMeta for DefaultExpr {
-    fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        Ok(DefaultExpr(expr.clone()))
-    }
-}
 
 /// Information about a field for value holder generation.
 pub struct FieldOptionality {
@@ -105,23 +86,68 @@ impl FromMeta for EmptyForm {
 }
 
 #[derive(Debug)]
-enum GpuiFormArg {
-    Meta(NestedMeta),
-    Expr(Expr),
+enum GpuiFormFieldOption {
+    Skip { span: Ident },
+    Type { span: Token![type], ty: Type },
+    Into { span: Ident, expr: Expr },
+    From { span: Ident, expr: Expr },
+    Default { span: Ident, expr: Expr },
+    Component(Expr),
 }
 
-impl Parse for GpuiFormArg {
+impl Parse for GpuiFormFieldOption {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let fork = input.fork();
-        if let Ok(meta) = fork.parse::<NestedMeta>()
-            && (fork.is_empty() || fork.peek(syn::Token![,]))
-        {
-            input.advance_to(&fork);
-            return Ok(Self::Meta(meta));
+        if input.peek(Token![type]) {
+            let key = input.parse::<Token![type]>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Type {
+                span: key,
+                ty: input.parse()?,
+            });
         }
 
-        let expr = input.parse::<Expr>()?;
-        Ok(Self::Expr(expr))
+        if input.peek(Ident) {
+            let fork = input.fork();
+            let key: Ident = fork.parse()?;
+
+            if fork.peek(Token![=]) {
+                let key: Ident = input.parse()?;
+                input.parse::<Token![=]>()?;
+
+                return match key.to_string().as_str() {
+                    "into" => Ok(Self::Into {
+                        span: key,
+                        expr: input.parse()?,
+                    }),
+                    "from" => Ok(Self::From {
+                        span: key,
+                        expr: input.parse()?,
+                    }),
+                    "default" => Ok(Self::Default {
+                        span: key,
+                        expr: input.parse()?,
+                    }),
+                    other => Err(syn::Error::new_spanned(
+                        key,
+                        format!("unknown gpui_form field option `{other}`"),
+                    )),
+                };
+            }
+
+            if fork.peek(syn::token::Paren) {
+                return Err(syn::Error::new_spanned(
+                    key.clone(),
+                    format!("unknown gpui_form field option `{key}`"),
+                ));
+            }
+
+            if key == "skip" {
+                input.parse::<Ident>()?;
+                return Ok(Self::Skip { span: key });
+            }
+        }
+
+        Ok(Self::Component(input.parse()?))
     }
 }
 
@@ -207,9 +233,9 @@ impl FromField for ComponentField {
                 .with_span(attr)
             })?;
 
-            let items = Punctuated::<GpuiFormArg, syn::Token![,]>::parse_terminated
+            let items = Punctuated::<GpuiFormFieldOption, syn::Token![,]>::parse_terminated
                 .parse2(list.tokens.clone())
-                .map_err(|err| DarlingError::custom(err.to_string()).with_span(list))?;
+                .map_err(DarlingError::from)?;
 
             for item in items {
                 parse_gpui_form_item(&mut parsed, item)?;
@@ -222,23 +248,29 @@ impl FromField for ComponentField {
     }
 }
 
-fn parse_gpui_form_item(field: &mut ComponentField, item: GpuiFormArg) -> darling::Result<()> {
+fn parse_gpui_form_item(
+    field: &mut ComponentField,
+    item: GpuiFormFieldOption,
+) -> darling::Result<()> {
     match item {
-        GpuiFormArg::Meta(meta) => parse_gpui_form_meta(field, meta),
-        GpuiFormArg::Expr(expr) => parse_gpui_form_expression(field, expr),
-    }
-}
-
-fn parse_gpui_form_meta(field: &mut ComponentField, meta: NestedMeta) -> darling::Result<()> {
-    match meta {
-        NestedMeta::Meta(meta) => match meta {
-            Meta::Path(path) => parse_meta_path_keyword(field, path),
-            Meta::List(list) => parse_meta_list(field, list),
-            Meta::NameValue(name_value) => parse_meta_name_value(field, name_value),
+        GpuiFormFieldOption::Skip { span } => set_skip(field, true, &span),
+        GpuiFormFieldOption::Type { span, ty } => {
+            ensure_not_skipped(field, "type", &span)?;
+            set_once(&mut field.r#type, TypeOverride(ty), "type", &span)
         },
-        NestedMeta::Lit(literal) => {
-            Err(DarlingError::unsupported_format("key-value pair").with_span(&literal))
+        GpuiFormFieldOption::Into { span, expr } => {
+            ensure_not_skipped(field, "into", &span)?;
+            set_once(&mut field.into, expr, "into", &span)
         },
+        GpuiFormFieldOption::From { span, expr } => {
+            ensure_not_skipped(field, "from", &span)?;
+            set_once(&mut field.from, expr, "from", &span)
+        },
+        GpuiFormFieldOption::Default { span, expr } => {
+            ensure_not_skipped(field, "default", &span)?;
+            set_once(&mut field.default, DefaultExpr(expr), "default", &span)
+        },
+        GpuiFormFieldOption::Component(expr) => parse_gpui_form_expression(field, expr),
     }
 }
 
@@ -252,87 +284,6 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
             set_component(field, component, &expr)
         },
     }
-}
-
-fn parse_meta_name_value(
-    field: &mut ComponentField,
-    name_value: syn::MetaNameValue,
-) -> darling::Result<()> {
-    let key = meta_path_to_key(&name_value.path)?;
-    let rhs = unwrap_grouped_expr(name_value.value);
-
-    match key.as_str() {
-        "type" => {
-            ensure_not_skipped(field, "type", &name_value.path)?;
-            set_once(
-                &mut field.r#type,
-                TypeOverride::from_expr(&rhs)?,
-                "type",
-                &name_value.path,
-            )?;
-            Ok(())
-        },
-        "into" => {
-            ensure_not_skipped(field, "into", &name_value.path)?;
-            set_once(&mut field.into, rhs, "into", &name_value.path)?;
-            Ok(())
-        },
-        "from" => {
-            ensure_not_skipped(field, "from", &name_value.path)?;
-            set_once(&mut field.from, rhs, "from", &name_value.path)?;
-            Ok(())
-        },
-        "default" => {
-            ensure_not_skipped(field, "default", &name_value.path)?;
-            set_once(
-                &mut field.default,
-                DefaultExpr::from_expr(&rhs)?,
-                "default",
-                &name_value.path,
-            )?;
-            Ok(())
-        },
-        _ => Err(
-            DarlingError::custom(format!("unknown gpui_form field option `{key}`"))
-                .with_span(&name_value.path),
-        ),
-    }
-}
-
-fn parse_meta_list(_field: &mut ComponentField, list: MetaList) -> darling::Result<()> {
-    let key = meta_path_to_key(&list.path)?;
-    Err(
-        DarlingError::custom(format!("unknown gpui_form field option `{key}`"))
-            .with_span(&list.path),
-    )
-}
-
-fn parse_meta_path_keyword(field: &mut ComponentField, path: syn::Path) -> darling::Result<()> {
-    let Some(ident) = path.get_ident() else {
-        return parse_positional_component(
-            field,
-            Expr::Path(ExprPath {
-                attrs: Vec::new(),
-                qself: None,
-                path,
-            }),
-        );
-    };
-
-    let key = ident.to_string();
-    if key == "skip" {
-        set_skip(field, true, &path)?;
-        return Ok(());
-    }
-
-    parse_positional_component(
-        field,
-        Expr::Path(ExprPath {
-            attrs: Vec::new(),
-            qself: None,
-            path,
-        }),
-    )
 }
 
 fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Result<()> {
@@ -458,12 +409,6 @@ fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
     }
 
     Ok(())
-}
-
-fn meta_path_to_key(path: &syn::Path) -> darling::Result<String> {
-    path.get_ident()
-        .map(|ident| ident.to_string())
-        .ok_or_else(|| DarlingError::unsupported_format("field key").with_span(path))
 }
 
 fn unwrap_grouped_expr(expr: Expr) -> Expr {

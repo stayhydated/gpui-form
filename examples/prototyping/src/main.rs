@@ -304,7 +304,10 @@ fn rustfmt_generated_files(paths: &[PathBuf]) {
 }
 
 fn main() {
-    let output_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("output");
+    let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("prototyping example manifest should live under examples/");
+    let output_dir = examples_dir.join("some-lib-forms/src/forms");
     fs::create_dir_all(&output_dir).expect("Failed to create output directory");
     for entry in fs::read_dir(&output_dir).expect("Failed to read output directory") {
         let entry = entry.expect("Failed to inspect output entry");

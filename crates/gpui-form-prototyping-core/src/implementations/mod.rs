@@ -30,35 +30,33 @@ pub struct ResolvedField<'a> {
 
 impl<'a> ResolvedField<'a> {
     pub fn new(field: &'a FieldVariant) -> PrototypingResult<Self> {
-        let value_type = syn::parse_str::<Type>(field.value_type).map_err(|error| {
+        let value_type = syn::parse_str::<Type>(field.value_type.as_str()).map_err(|error| {
             PrototypingError::InvalidType {
                 field_name: field.field_name.to_string(),
-                value: field.value_type.to_string(),
+                value: field.value_type.as_str().to_string(),
                 error: error.to_string(),
             }
         })?;
 
         let component_type = match field.component_type {
-            Some(component_type) => {
-                Some(syn::parse_str::<Type>(component_type).map_err(|error| {
-                    PrototypingError::InvalidType {
-                        field_name: field.field_name.to_string(),
-                        value: component_type.to_string(),
-                        error: error.to_string(),
-                    }
-                })?)
-            },
+            Some(component_type) => Some(syn::parse_str::<Type>(component_type.as_str()).map_err(
+                |error| PrototypingError::InvalidType {
+                    field_name: field.field_name.to_string(),
+                    value: component_type.as_str().to_string(),
+                    error: error.to_string(),
+                },
+            )?),
             None => None,
         };
 
         let shape_path = match field.shape_path {
-            Some(shape_path) => Some(syn::parse_str::<Path>(shape_path).map_err(|error| {
-                PrototypingError::InvalidPath {
+            Some(shape_path) => Some(syn::parse_str::<Path>(shape_path.as_str()).map_err(
+                |error| PrototypingError::InvalidPath {
                     kind: "component shape path",
-                    value: shape_path.to_string(),
+                    value: shape_path.as_str().to_string(),
                     error: error.to_string(),
-                }
-            })?),
+                },
+            )?),
             None => None,
         };
 
@@ -115,7 +113,9 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn component_type(&self) -> Option<&'a str> {
-        self.field.component_type
+        self.field
+            .component_type
+            .map(|component| component.as_str())
     }
 
     pub fn shape_path(&self) -> Option<&Path> {
@@ -467,7 +467,7 @@ pub fn generate_description_fn_tokens(
 #[cfg(test)]
 mod tests {
     use super::{ResolvedField, generate_description_fn_tokens};
-    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustType};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -476,8 +476,9 @@ mod tests {
     #[test]
     fn description_uses_direct_all_for_non_optional_newtype_errors() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
-        const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("index", "Age", false).with_validations(VALIDATIONS)];
+        const FIELDS: [FieldVariant; 1] = [
+            FieldVariant::new("index", RustType::new("Age"), false).with_validations(VALIDATIONS)
+        ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -497,7 +498,7 @@ mod tests {
     fn description_unwraps_optional_newtype_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("age", "Age", true).with_validations(VALIDATIONS)];
+            [FieldVariant::new("age", RustType::new("Age"), true).with_validations(VALIDATIONS)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -515,7 +516,8 @@ mod tests {
     fn description_unwraps_optional_nested_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NestedValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("address", "Address", true).with_validations(VALIDATIONS)];
+            [FieldVariant::new("address", RustType::new("Address"), true)
+                .with_validations(VALIDATIONS)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");

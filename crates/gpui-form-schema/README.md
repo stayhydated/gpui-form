@@ -10,6 +10,7 @@ prototyping flows around generated form metadata.
 
 - `registry::GpuiFormShape`
 - `registry::FieldVariant`
+- `registry::{RustType, RustPath, RustExpr, ComponentSuffix}`
 - `registry::inventory`
 
 `FieldVariant` records both source-model and form-side value types,
@@ -18,6 +19,11 @@ paths, component shape prototyping suffixes, and opt-in value-binding
 metadata for generators. Helpers such as `field_name_with_behaviour()` keep
 inventory consumers aligned with the field names emitted by
 `#[derive(GpuiForm)]`, with a shape-derived `"shape"` fallback suffix.
+
+Rust fragments in registry metadata use typed string wrappers so generators do
+not accidentally pass a type where a path, expression, or component suffix is
+expected. Call `.as_str()` before parsing a `RustType`, `RustPath`, `RustExpr`,
+or `ComponentSuffix` with `syn`.
 
 ## Example
 

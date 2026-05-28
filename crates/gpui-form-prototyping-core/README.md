@@ -41,7 +41,8 @@ shows the normal flow:
 1. iterate `inventory::iter::<GpuiFormShape>()`
 1. adapt each shape with `FormShapeAdapter`
 1. render a file through a custom `FormLayout`
-1. clear stale generated modules and write the generated form files
+1. clear stale generated modules and write the generated form files into
+   `examples/some-lib-forms/src/forms`
 1. run `rustfmt` over the written files before treating the scaffold as ready
 
 When the layout emits `gpui_storybook::Story`, pass the `cx: &gpui::App`
@@ -50,8 +51,8 @@ form titles follow the active Storybook locale.
 
 Generated infinite-select and file-picker fields use the same runtime helpers
 that hand-written forms use. Generated text inputs use the form-side
-`FieldVariant::value_type` and parse non-`String` values with `FromStr` instead
-of assuming every text field stores `String`.
+`FieldVariant::value_type.as_str()` and parse non-`String` values with
+`FromStr` instead of assuming every text field stores `String`.
 
 Shape-backed fields remain inert by default. If a field's shape opts into
 `value_binding`, the adapter emits generic seed and subscription hooks through

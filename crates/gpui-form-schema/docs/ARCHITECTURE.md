@@ -54,6 +54,17 @@ Important fields:
 - `value_binding`
 - `prototyping_field_suffix`
 
+Rust syntax fragments are stored as typed string wrappers:
+
+- `RustType`: form-side/source value types and component UI types
+- `RustPath`: component shape paths
+- `RustExpr`: default and conversion expressions
+- `ComponentSuffix`: prototyping field/helper suffix metadata
+
+The wrappers preserve `'static` inventory data while preventing accidental
+mixing between types, paths, expressions, and suffixes at registry construction
+sites. Consumers call `.as_str()` before parsing with `syn`.
+
 `FieldVariant::field_name_with_behaviour()` derives the generated component
 field name from precomputed `prototyping_field_suffix` metadata. Inventory
 consumers use this as their generated-code naming policy. The suffix is

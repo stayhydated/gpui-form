@@ -18,7 +18,10 @@ fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
     match expr {
         Some(expr) => {
             let expr_str = expr.to_token_stream().to_string();
-            quote! { Some(#expr_str) }
+            let facade_crate = CratePaths::resolve().gpui_form;
+            quote! {
+                Some(#facade_crate::schema::registry::RustExpr::new(#expr_str))
+            }
         },
         None => quote! { None },
     }
@@ -316,7 +319,9 @@ pub fn expand_gpui_form(
 
                 let default_expr_tokens = rendered.default.map(|expr| {
                     let expr_str = expr.0.to_token_stream().to_string();
-                    quote! { .with_default(#expr_str) }
+                    quote! {
+                        .with_default(#facade_crate::schema::registry::RustExpr::new(#expr_str))
+                    }
                 });
 
                 let component_type_tokens = component_def.component_type_tokens(&base_type);
@@ -330,10 +335,12 @@ pub fn expand_gpui_form(
                 Some(quote! {
                     #facade_crate::schema::registry::FieldVariant::new(
                         #field_name_str,
-                        #field_type_str,
+                        #facade_crate::schema::registry::RustType::new(#field_type_str),
                         #is_optional
                     )
-                    .with_source_value_type(#source_value_type_str)
+                    .with_source_value_type(
+                        #facade_crate::schema::registry::RustType::new(#source_value_type_str)
+                    )
                     .with_requires_value(#requires_value_tokens)
                     .with_conversions(#from_expr_tokens, #into_expr_tokens)
                     .with_validations(&[

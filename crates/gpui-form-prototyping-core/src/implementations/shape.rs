@@ -181,10 +181,16 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
-    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+    use gpui_form_schema::registry::{
+        ComponentSuffix, FieldVariant, GpuiFormShape, RustPath, RustType,
+    };
     use quote::quote;
 
-    const SHAPE_FIELDS: [FieldVariant; 1] = [FieldVariant::new("tags", "Vec<String>", false)];
+    const SHAPE_FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+        "tags",
+        RustType::new("Vec<String>"),
+        false,
+    )];
     const DEMO_SHAPE: GpuiFormShape =
         GpuiFormShape::new("Demo", &SHAPE_FIELDS, "src/demo.rs", false);
 
@@ -266,7 +272,10 @@ mod tests {
     #[test]
     fn shape_generator_emits_component_call_when_component_known() {
         const FIELDS_WITH_COMPONENT: [FieldVariant; 1] =
-            [FieldVariant::new("tags", "Vec<String>", false).with_component_type("TagsInput")];
+            [
+                FieldVariant::new("tags", RustType::new("Vec<String>"), false)
+                    .with_component_type(RustType::new("TagsInput")),
+            ];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS_WITH_COMPONENT, "src/demo.rs", false);
 
@@ -279,10 +288,13 @@ mod tests {
 
     #[test]
     fn shape_generator_wires_shape_value_binding() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "CountryCode", false)
-            .with_requires_value(true)
-            .with_shape_path("crate::shapes::CountryShape")
-            .with_value_binding(true)];
+        const FIELDS: [FieldVariant; 1] =
+            [
+                FieldVariant::new("country", RustType::new("CountryCode"), false)
+                    .with_requires_value(true)
+                    .with_shape_path(RustPath::new("crate::shapes::CountryShape"))
+                    .with_value_binding(true),
+            ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
         let generator = ShapeCodeGenerator;
@@ -315,10 +327,13 @@ mod tests {
 
     #[test]
     fn shape_generator_clear_resets_direct_value_storage() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("code", "String", false)
-            .with_requires_value(false)
-            .with_shape_path("gpui_form_collection::otp_input::OtpInput<String>")
-            .with_value_binding(true)];
+        const FIELDS: [FieldVariant; 1] =
+            [FieldVariant::new("code", RustType::new("String"), false)
+                .with_requires_value(false)
+                .with_shape_path(RustPath::new(
+                    "gpui_form_collection::otp_input::OtpInput<String>",
+                ))
+                .with_value_binding(true)];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
         let generator = ShapeCodeGenerator;
@@ -332,10 +347,13 @@ mod tests {
 
     #[test]
     fn shape_generator_uses_declared_suffix_for_component_names() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "CountryCode", false)
-            .with_shape_path("crate::shapes::CountrySelectShape")
-            .with_prototyping_field_suffix(Some("select"))
-            .with_value_binding(true)];
+        const FIELDS: [FieldVariant; 1] =
+            [
+                FieldVariant::new("country", RustType::new("CountryCode"), false)
+                    .with_shape_path(RustPath::new("crate::shapes::CountrySelectShape"))
+                    .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")))
+                    .with_value_binding(true),
+            ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
         let generator = ShapeCodeGenerator;
@@ -369,9 +387,10 @@ mod tests {
 
     #[test]
     fn shape_generator_renders_generic_component_type() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("tags", "Vec<Tag>", false)
-            .with_component_type("gpui_component::combobox::Combobox<_>")
-            .with_prototyping_field_suffix(Some("combobox"))];
+        const FIELDS: [FieldVariant; 1] =
+            [FieldVariant::new("tags", RustType::new("Vec<Tag>"), false)
+                .with_component_type(RustType::new("gpui_component::combobox::Combobox<_>"))
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("combobox")))];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
 
         let generator = ShapeCodeGenerator;

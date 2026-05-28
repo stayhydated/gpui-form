@@ -74,8 +74,9 @@ need.
 
 ## Field Resolution
 
-The generator parses `FieldVariant::value_type` as a full Rust type, not just a
-bare identifier. That is important because inventory metadata may carry:
+The generator parses `FieldVariant::value_type.as_str()` as a full Rust type,
+not just a bare identifier. That is important because inventory metadata may
+carry:
 
 - crate-qualified enum paths
 - nested module paths
@@ -93,8 +94,8 @@ All component fields are shape-backed:
 - generated local variable, field, and handler names use
   `FieldVariant::field_name_with_behaviour`, which uses precomputed
   component-shape prototyping suffix metadata
-- if `FieldVariant::component_type` is present, the generator parses it as a
-  Rust type and emits `<Component>::new(&entity)`
+- if `FieldVariant::component_type` is present, the generator parses its
+  `RustType` payload as a Rust type and emits `<Component>::new(&entity)`
 - if that metadata is missing, the generator falls back to a placeholder row
 - component subscriptions are generated only when `FieldVariant::value_binding`
   is true; the field's shape must provide the generic

@@ -411,7 +411,9 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("FieldVariant::new(\"birth_date\",\"chrono::NaiveDate\",true"),
+            compact.contains(
+                "FieldVariant::new(\"birth_date\",::gpui_form::schema::registry::RustType::new(\"chrono::NaiveDate\"),true"
+            ),
             "FieldVariant should use override type for metadata"
         );
 
@@ -452,7 +454,9 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("FieldVariant::new(\"amount\",\"rust_decimal::Decimal\",false"),
+            compact.contains(
+                "FieldVariant::new(\"amount\",::gpui_form::schema::registry::RustType::new(\"rust_decimal::Decimal\"),false"
+            ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
         assert!(
@@ -462,7 +466,9 @@ mod gpui_form_tests {
             "Component shape `_` should resolve to the override type in state metadata"
         );
         assert!(
-            compact.contains("with_shape_path(\"crate::NumericShape<rust_decimal::Decimal>\")"),
+            compact.contains(
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"crate::NumericShape<rust_decimal::Decimal>\"))"
+            ),
             "Component shape metadata should preserve the fully-qualified override type"
         );
     }
@@ -661,7 +667,9 @@ mod gpui_form_tests {
         );
 
         assert!(
-            compact.contains("FieldVariant::new(\"bio\",\"String\",false)"),
+            compact.contains(
+                "FieldVariant::new(\"bio\",::gpui_form::schema::registry::RustType::new(\"String\"),false)"
+            ),
             "FieldVariant metadata should be shape-only and omit behaviour metadata"
         );
 
@@ -670,7 +678,9 @@ mod gpui_form_tests {
             "FieldVariant should carry the component type: {compact}"
         );
         assert!(
-            compact.contains("with_shape_path(\"crate::shapes::BioInputShape\")"),
+            compact.contains(
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"crate::shapes::BioInputShape\"))"
+            ),
             "FieldVariant should carry the component shape path: {compact}"
         );
         assert!(
@@ -678,7 +688,9 @@ mod gpui_form_tests {
             "FieldVariant should inherit component value binding metadata from the shape: {compact}"
         );
         assert!(
-            compact.contains("with_prototyping_field_suffix(Some(\"input\"))"),
+            compact.contains(
+                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
+            ),
             "FieldVariant should carry explicit component shape prototyping metadata: {compact}"
         );
     }
@@ -708,7 +720,9 @@ mod gpui_form_tests {
             "field_suffix should control generated FormFields names: {compact}"
         );
         assert!(
-            compact.contains("with_prototyping_field_suffix(Some(\"tags\"))"),
+            compact.contains(
+                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"tags\")))"
+            ),
             "FieldVariant should record explicit prototyping suffix: {compact}"
         );
     }
@@ -756,7 +770,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(<gpui_form_collection::input::Input<String>as::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix)"
+                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::input::Input<String>as::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
             ),
             "positional component inventory metadata should inherit prototyping suffix from the shape"
         );
@@ -871,12 +885,15 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact
-                .contains("FieldVariant::new(\"account_no\",\"crate::types::AccountCode\",false"),
+            compact.contains(
+                "FieldVariant::new(\"account_no\",::gpui_form::schema::registry::RustType::new(\"crate::types::AccountCode\"),false"
+            ),
             "FieldVariant should store the form-side value type: {compact}"
         );
         assert!(
-            compact.contains("with_source_value_type(\"String\")"),
+            compact.contains(
+                "with_source_value_type(::gpui_form::schema::registry::RustType::new(\"String\"))"
+            ),
             "FieldVariant should store the source model value type: {compact}"
         );
         assert!(
@@ -886,7 +903,7 @@ mod gpui_form_tests {
             "FieldVariant should inherit generated required-value policy from the shape: {compact}"
         );
         assert!(
-            compact.contains("with_conversions(Some(\"crate::types::AccountCode::new\"),Some(\"crate::types::AccountCode::into_string\"))"),
+            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::new(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::new(\"crate::types::AccountCode::into_string\")))"),
             "FieldVariant should store source/form conversion expressions: {compact}"
         );
     }
@@ -949,13 +966,13 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix)"
+                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
             ),
             "inventory metadata should inherit prototyping suffix from the shape: {compact}"
         );
         assert!(
             compact.contains(
-                "with_shape_path(\"gpui_form_collection::input::Input<crate::types::AccountCode>\")"
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
             ),
             "component shape metadata should store the resolved shape path: {compact}"
         );
@@ -987,7 +1004,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(<gpui_form_collection::date_picker::DatePickeras::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix)"
+                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::date_picker::DatePickeras::gpui_form_runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
             ),
             "inventory metadata should still inherit prototyping suffix from the shape: {compact}"
         );

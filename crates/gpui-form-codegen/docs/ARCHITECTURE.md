@@ -79,7 +79,7 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- shape-only field metadata (`FieldVariant::new(field_name, value_type, optional)`)
+- shape-only field metadata (`FieldVariant::new(field_name, RustType::new(value_type), optional)`)
 - the resolved component shape path
 - the optional render component type
 - the required-value holder policy

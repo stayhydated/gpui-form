@@ -58,7 +58,6 @@ jobs:
       - name: Check formatting
         run: |
           cargo fmt --check
-          rustfmt --edition 2024 --check examples/prototyping/output/*.rs
 
   clippy:
     runs-on: ubuntu-latest
@@ -80,7 +79,7 @@ jobs:
         uses: ./.github/actions/install-linux-deps
 
       - name: Lint code
-        run: cargo clippy --workspace --all-features
+        run: cargo clippy --workspace --all-features --exclude some-lib-forms
 
   machete:
     runs-on: ubuntu-latest

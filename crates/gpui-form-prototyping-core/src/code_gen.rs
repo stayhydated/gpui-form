@@ -491,7 +491,7 @@ fn source_path_to_use_path(source_path: &str) -> Option<syn::Path> {
 mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
-    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustExpr, RustType};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -516,7 +516,8 @@ mod tests {
 
     #[test]
     fn parts_return_error_for_invalid_field_type_metadata() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "Vec<", false)];
+        const FIELDS: [FieldVariant; 1] =
+            [FieldVariant::new("country", RustType::new("Vec<"), false)];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 
@@ -540,7 +541,8 @@ mod tests {
 
     #[test]
     fn required_imports_only_include_subscription_when_needed() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new("enabled", "bool", false)];
+        const FIELDS: [FieldVariant; 1] =
+            [FieldVariant::new("enabled", RustType::new("bool"), false)];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 
@@ -558,7 +560,10 @@ mod tests {
     #[test]
     fn parts_mark_non_optional_fields_without_defaults_as_fallible() {
         const REQUIRED_FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("name", "String", false).with_requires_value(false)];
+            [
+                FieldVariant::new("name", RustType::new("String"), false)
+                    .with_requires_value(false),
+            ];
         const REQUIRED_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &REQUIRED_FIELDS,
@@ -572,7 +577,8 @@ mod tests {
         assert!(parts.holder_conversion_can_fail);
 
         const DEFAULTED_FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("name", "String", false).with_default("\"Ada\"")];
+            [FieldVariant::new("name", RustType::new("String"), false)
+                .with_default(RustExpr::new("\"Ada\""))];
         const DEFAULTED_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &DEFAULTED_FIELDS,
@@ -585,7 +591,8 @@ mod tests {
             .expect("valid defaulted field shapes should generate parts");
         assert!(!parts.holder_conversion_can_fail);
 
-        const OPTIONAL_FIELDS: [FieldVariant; 1] = [FieldVariant::new("name", "String", true)];
+        const OPTIONAL_FIELDS: [FieldVariant; 1] =
+            [FieldVariant::new("name", RustType::new("String"), true)];
         const OPTIONAL_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &OPTIONAL_FIELDS,

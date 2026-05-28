@@ -591,13 +591,20 @@ impl Components {
 
         let shape = options.resolved_shape(field_type);
         let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+        let schema_crate = CratePaths::resolve().gpui_form;
         if let Some(component) = options.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
-            Some(quote! { .with_component_type(#component_str) })
+            Some(quote! {
+                .with_component_type(
+                    #schema_crate::schema::registry::RustType::new(#component_str)
+                )
+            })
         } else {
             Some(quote! {
                 .with_component_type_opt(
-                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
+                    #schema_crate::schema::registry::RustType::new_opt(
+                        <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
+                    )
                 )
             })
         }
@@ -610,7 +617,10 @@ impl Components {
             .resolved_shape(field_type)
             .to_token_stream()
             .to_string();
-        Some(quote! { .with_shape_path(#shape) })
+        let schema_crate = CratePaths::resolve().gpui_form;
+        Some(quote! {
+            .with_shape_path(#schema_crate::schema::registry::RustPath::new(#shape))
+        })
     }
 
     pub fn value_binding_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
@@ -635,17 +645,23 @@ impl Components {
 
         if let Some(field_suffix) = &options.field_suffix {
             let field_suffix = syn::LitStr::new(field_suffix, proc_macro2::Span::call_site());
+            let schema_crate = CratePaths::resolve().gpui_form;
             Some(quote! {
-                .with_prototyping_field_suffix(Some(#field_suffix))
+                .with_prototyping_field_suffix(Some(
+                    #schema_crate::schema::registry::ComponentSuffix::new(#field_suffix)
+                ))
             })
         } else {
             let shape = options.resolved_shape(field_type);
             let runtime_crate = CratePaths::resolve().gpui_form_runtime;
+            let schema_crate = CratePaths::resolve().gpui_form;
 
             Some(quote! {
                 .with_prototyping_field_suffix(
-                    <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING
-                        .field_suffix
+                    #schema_crate::schema::registry::ComponentSuffix::new_opt(
+                        <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING
+                            .field_suffix
+                    )
                 )
             })
         }
