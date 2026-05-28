@@ -38,18 +38,6 @@ pub trait ComponentShape {
     /// precedence.
     const COMPONENT_TYPE: Option<&'static str> = None;
 
-    /// Whether generated prototyping code should wire this component shape
-    /// through [`ComponentValueBinding`] by default.
-    ///
-    /// This shape-level flag is useful when the component's derive or reusable
-    /// shape owns the metadata and each field should inherit it.
-    const VALUE_BINDING: bool =
-        <Self::ValueBindingPolicy as ComponentValueBindingPolicy>::VALUE_BINDING;
-
-    /// Whether this shape's default value-holder policy requires a present value.
-    const REQUIRES_VALUE: bool =
-        <Self::RequiredValuePolicy as ComponentRequiredValuePolicy>::REQUIRES_VALUE;
-
     /// Metadata used by prototyping generators.
     ///
     /// This is intentionally separate from runtime construction so reusable
@@ -58,14 +46,19 @@ pub trait ComponentShape {
     const PROTOTYPING: ComponentPrototyping = ComponentPrototyping::new();
 }
 
+mod sealed {
+    pub trait RequiredValuePolicy {}
+    pub trait ValueBindingPolicy {}
+}
+
 /// Marker trait for a component shape's generated value-holder storage policy.
-pub trait ComponentRequiredValuePolicy {
+pub trait ComponentRequiredValuePolicy: sealed::RequiredValuePolicy {
     /// Whether a missing generated value-holder value is invalid by default.
     const REQUIRES_VALUE: bool;
 }
 
 /// Marker trait for a component shape's inherited value-binding policy.
-pub trait ComponentValueBindingPolicy {
+pub trait ComponentValueBindingPolicy: sealed::ValueBindingPolicy {
     /// Whether generated prototyping metadata should use value binding.
     const VALUE_BINDING: bool;
 }
@@ -73,12 +66,16 @@ pub trait ComponentValueBindingPolicy {
 /// Do not inherit value binding from the shape.
 pub struct NoComponentValueBinding;
 
+impl sealed::ValueBindingPolicy for NoComponentValueBinding {}
+
 impl ComponentValueBindingPolicy for NoComponentValueBinding {
     const VALUE_BINDING: bool = false;
 }
 
 /// Inherit value binding from the shape.
 pub struct InheritedComponentValueBinding;
+
+impl sealed::ValueBindingPolicy for InheritedComponentValueBinding {}
 
 impl ComponentValueBindingPolicy for InheritedComponentValueBinding {
     const VALUE_BINDING: bool = true;
@@ -108,12 +105,16 @@ where
 /// Store non-optional source fields as `Option<T>` and treat `None` as missing.
 pub struct RequireValue;
 
+impl sealed::RequiredValuePolicy for RequireValue {}
+
 impl ComponentRequiredValuePolicy for RequireValue {
     const REQUIRES_VALUE: bool = true;
 }
 
 /// Store non-optional source fields directly as `T`.
 pub struct AllowMissingValue;
+
+impl sealed::RequiredValuePolicy for AllowMissingValue {}
 
 impl ComponentRequiredValuePolicy for AllowMissingValue {
     const REQUIRES_VALUE: bool = false;
@@ -334,7 +335,7 @@ impl<T> FormValueChange<T> {
 /// Implement this alongside [`ComponentShape`] when generated prototyping code
 /// should seed the component from the form value holder and subscribe to
 /// component events. The form derive opts into this path by inheriting
-/// [`ComponentShape::VALUE_BINDING`] from the shape.
+/// [`ComponentShape::ValueBindingPolicy`] from the shape.
 pub trait ComponentValueBinding<T>: ComponentShape
 where
     Self::State: gpui::EventEmitter<Self::Event>,

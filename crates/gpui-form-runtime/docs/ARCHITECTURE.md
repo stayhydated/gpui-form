@@ -24,8 +24,9 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 Generated inherited value-binding checks dispatch through
 `ComponentShape::ValueBindingPolicy` and `AssertComponentValueBindingPolicy`
 rather than const generics. This keeps generic shape paths such as
-`Input<T>` type-checkable while preserving `ComponentShape::VALUE_BINDING` as
-inventory and prototyping metadata.
+`Input<T>` type-checkable. Schema and prototyping metadata read the sealed
+policy associated types directly so hand-written shapes cannot make const
+metadata disagree with their storage or binding policy.
 
 It should not depend on:
 

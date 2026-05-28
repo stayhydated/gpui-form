@@ -158,7 +158,8 @@ The attribute compiles it as the state-level binding used by component-derived
 shapes that opt in with `#[gpui_form_shape(..., value_binding)]`. For wrapper
 shapes created by `component_shape!`, prefer putting the `ComponentValueBinding<T>`
 impl inside the macro block; nested binding impls are emitted with the shape and
-automatically publish shape-level value-binding metadata.
+automatically publish shape-level value-binding metadata. The impl target must
+be the shape declared by the macro.
 
 Value binding is shape-owned. Use a component-derived shape with explicit
 `value_binding` or a wrapper shape with a nested `ComponentValueBinding<T>` impl

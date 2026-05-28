@@ -70,10 +70,10 @@ field name from precomputed `prototyping_field_suffix` metadata. Inventory
 consumers use this as their generated-code naming policy. The suffix is
 normalized against the field name before falling back to `"shape"`.
 
-`requires_value` is emitted by `gpui-form-codegen` from
-`<Shape as ComponentShape>::REQUIRES_VALUE`. Non-optional shape-backed fields
-inherit the reusable shape's policy, so components that can synthesize missing
-values define that once on the shape.
+`requires_value` is emitted by `gpui-form-codegen` from the shape's
+`RequiredValuePolicy` associated type. Non-optional shape-backed fields inherit
+the reusable shape's policy, so components that can synthesize missing values
+define that once on the shape.
 
 ## Data Flow
 
@@ -106,8 +106,8 @@ This crate should not own:
 When adding or changing a reusable component shape:
 
 1. implement or derive `ComponentShape` for the shape
-1. publish shape-level metadata such as `COMPONENT_TYPE`, `VALUE_BINDING`, and
-   `PROTOTYPING.field_suffix` when generators need it
+1. publish shape-level metadata such as `COMPONENT_TYPE`,
+   `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generators need it
 1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
    crate if runtime support is required
 

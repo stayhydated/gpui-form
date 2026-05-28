@@ -163,7 +163,7 @@ Component-derived shapes publish value-binding metadata only when
 `ComponentValueBinding<T>` through the backing state's
 `ComponentStateValueBinding<T>` implementation. The generated
 `ValueBindingPolicy` associated type drives compile-time inherited binding
-checks, while `VALUE_BINDING` remains metadata for schema and prototyping.
+checks and schema/prototyping metadata.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
@@ -223,7 +223,8 @@ Nested `ComponentValueBinding<T>` impls set the generated
 `ValueBindingPolicy` to `InheritedComponentValueBinding`; otherwise the macro
 uses `NoComponentValueBinding`.
 Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
-contract and automatically publish shape-level value-binding metadata.
+contract and automatically publish shape-level value-binding metadata. The impl
+target must be the shape declared by the macro.
 
 ## Feature Flags
 

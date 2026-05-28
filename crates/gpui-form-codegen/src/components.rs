@@ -84,7 +84,8 @@ impl RequiredValue {
             Self::Shape(shape) => {
                 let runtime_crate = CratePaths::resolve().gpui_form_runtime;
                 quote! {
-                    <#shape as #runtime_crate::shape::ComponentShape>::REQUIRES_VALUE
+                    <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
+                        as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
                 }
             },
         }
@@ -631,7 +632,8 @@ impl Components {
 
         Some(quote! {
             .with_value_binding(
-                <#shape as #runtime_crate::shape::ComponentShape>::VALUE_BINDING
+                <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
+                    as #runtime_crate::shape::ComponentValueBindingPolicy>::VALUE_BINDING
             )
         })
     }

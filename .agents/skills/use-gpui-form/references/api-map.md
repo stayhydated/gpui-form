@@ -249,8 +249,9 @@ gpui_form_derive::component_shape! {
 Use `requires_value = false` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; nested binding impls publish
-shape-level value-binding metadata automatically. Omit nested binding impls to
-leave that metadata disabled.
+shape-level value-binding metadata automatically. The impl target must be the
+shape declared by the macro. Omit nested binding impls to leave that metadata
+disabled.
 
 Manual `ComponentShape` impls must provide both `RequiredValuePolicy` and
 `ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or

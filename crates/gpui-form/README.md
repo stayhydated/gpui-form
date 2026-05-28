@@ -346,7 +346,8 @@ omitted, the macro calls `<State>::new(window, cx)`.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
 impl is emitted with the shape and automatically publishes shape-level
-value-binding metadata.
+value-binding metadata. The impl target must be the shape declared by the
+macro.
 
 Component-backed fields compile against `gpui_form_runtime::shape`; add
 `gpui-form-runtime` as an explicit dependency when using custom or built-in

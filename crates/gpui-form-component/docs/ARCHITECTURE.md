@@ -198,8 +198,8 @@ When adding a new reusable component shape that needs runtime state:
 1. add the runtime helper in this crate
 1. expose it through `ComponentShape` or a helper macro/derive
 1. publish shape metadata such as `COMPONENT_TYPE`, `RequiredValuePolicy`,
-   `VALUE_BINDING`, and `PROTOTYPING.field_suffix` when generated scaffolds or
-   value-holder storage need it
+   `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generated
+   scaffolds or value-holder storage need it
 1. update user-facing docs so applications import `gpui-form-runtime`
    explicitly when generated code references shape helpers
 

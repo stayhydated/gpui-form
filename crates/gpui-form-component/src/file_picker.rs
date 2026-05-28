@@ -23,6 +23,15 @@ use crate::i18n::FilePickerText;
 #[cfg(feature = "component-shape")]
 use gpui_form_runtime::shape::FormValueChange;
 
+#[cfg(feature = "component-shape")]
+fn file_picker_form_value_change(event: &FilePickerEvent) -> FormValueChange<Vec<PathBuf>> {
+    match event {
+        FilePickerEvent::Change(paths) if paths.is_empty() => FormValueChange::Clear,
+        FilePickerEvent::Change(paths) => FormValueChange::Set(paths.clone()),
+        _ => FormValueChange::Unchanged,
+    }
+}
+
 /// Which path kinds a [`FilePicker`] should ask GPUI to select.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum FilePickerMode {
@@ -112,10 +121,7 @@ impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
         _state: &Self::State,
         event: &Self::Event,
     ) -> FormValueChange<Vec<PathBuf>> {
-        match event {
-            FilePickerEvent::Change(paths) => FormValueChange::Set(paths.clone()),
-            _ => FormValueChange::Unchanged,
-        }
+        file_picker_form_value_change(event)
     }
 }
 
@@ -541,5 +547,18 @@ fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
         _ => FilePickerText::PathsSelected { count: paths.len() }
             .default_text()
             .into(),
+    }
+}
+
+#[cfg(all(test, feature = "component-shape"))]
+mod tests {
+    use super::{FilePickerEvent, file_picker_form_value_change};
+    use gpui_form_runtime::shape::FormValueChange;
+
+    #[test]
+    fn empty_file_picker_change_clears_form_value() {
+        let change = file_picker_form_value_change(&FilePickerEvent::Change(Vec::new()));
+
+        assert!(matches!(change, FormValueChange::Clear));
     }
 }

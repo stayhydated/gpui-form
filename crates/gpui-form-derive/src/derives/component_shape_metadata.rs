@@ -134,11 +134,6 @@ impl ComponentShapeMetadata {
                 const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(#component));
             }
         });
-        let value_binding_const = self.value_binding.then(|| {
-            quote! {
-                const VALUE_BINDING: bool = true;
-            }
-        });
         let prototyping_const = self.field_suffix.as_ref().map(|field_suffix| {
             quote! {
                 const PROTOTYPING: #runtime_crate::shape::ComponentPrototyping =
@@ -151,7 +146,6 @@ impl ComponentShapeMetadata {
             #required_value_policy_assoc
             #value_binding_policy_assoc
             #component_type_const
-            #value_binding_const
             #prototyping_const
         }
     }

@@ -121,8 +121,8 @@ When the `inventory` feature is enabled:
 - accepts a constructor expression for `new = ...`; paths and closures receive
   `(window, cx)`, while direct constructor expressions are emitted as written
 - optionally stores a component type for prototyping output
-- sets shape-level `ValueBindingPolicy` and `VALUE_BINDING` metadata only when
-  `value_binding` is present, for `ComponentValueBinding<T>` prototyping hooks, including
+- sets shape-level `ValueBindingPolicy` only when `value_binding` is present,
+  for `ComponentValueBinding<T>` prototyping hooks, including
   `seed_value_binding_state` and `form_value_change`
 - emits component-derived `ComponentValueBinding<T>` delegation through the
   backing state's `ComponentStateValueBinding<T>` implementation only when
@@ -140,8 +140,8 @@ When the `inventory` feature is enabled:
   keys
 - uses semicolon separators between metadata entries
 - accepts nested `impl` items, emits them after the generated `ComponentShape`
-  impl, and infers shape-level `ValueBindingPolicy` / `VALUE_BINDING` when a
-  nested impl targets `ComponentValueBinding<T>`
+  impl, and infers shape-level `ValueBindingPolicy` when a nested impl targets
+  `ComponentValueBinding<T>` for the shape declared by the macro
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign

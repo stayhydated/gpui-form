@@ -85,7 +85,9 @@ impl Parse for ComponentShapeInput {
                 parse_option_separator(&content)?;
             } else if content.peek(Token![impl]) || content.peek(Token![#]) {
                 let impl_item: ItemImpl = content.parse()?;
-                if is_component_value_binding_impl(&impl_item) && !metadata.has_value_binding() {
+                if is_component_value_binding_impl_for_shape(&impl_item, &ident)?
+                    && !metadata.has_value_binding()
+                {
                     metadata.enable_value_binding(&impl_item)?;
                 }
                 impls.push(impl_item);
@@ -108,12 +110,39 @@ impl Parse for ComponentShapeInput {
     }
 }
 
-fn is_component_value_binding_impl(impl_item: &ItemImpl) -> bool {
-    impl_item
+fn is_component_value_binding_impl_for_shape(
+    impl_item: &ItemImpl,
+    shape_ident: &Ident,
+) -> Result<bool> {
+    let is_component_value_binding = impl_item
         .trait_
         .as_ref()
         .and_then(|(_, path, _)| path.segments.last())
-        .is_some_and(|segment| segment.ident == "ComponentValueBinding")
+        .is_some_and(|segment| segment.ident == "ComponentValueBinding");
+
+    if !is_component_value_binding {
+        return Ok(false);
+    }
+
+    let target_ident = match impl_item.self_ty.as_ref() {
+        Type::Path(type_path)
+            if type_path.qself.is_none() && type_path.path.segments.len() == 1 =>
+        {
+            type_path.path.segments.last().map(|segment| &segment.ident)
+        },
+        _ => None,
+    };
+
+    if target_ident == Some(shape_ident) {
+        Ok(true)
+    } else {
+        Err(syn::Error::new_spanned(
+            &impl_item.self_ty,
+            format!(
+                "nested `ComponentValueBinding` impls in `component_shape!` must target `{shape_ident}`"
+            ),
+        ))
+    }
 }
 
 fn parse_option_separator(input: ParseStream<'_>) -> Result<()> {
@@ -318,6 +347,68 @@ mod tests {
         let expanded = expand(input);
 
         insta::assert_snapshot!(pretty_tokens(expanded));
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_nested_binding_for_other_shape() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct InputShape<T> {
+                type State = ::gpui_component::input::InputState;
+
+                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for OtherShape<T> {
+                    type Event = ::gpui_component::input::InputEvent;
+
+                    fn form_value_change(
+                        _state: &Self::State,
+                        _event: &Self::Event,
+                    ) -> ::gpui_form_runtime::shape::FormValueChange<T> {
+                        ::gpui_form_runtime::shape::FormValueChange::Unchanged
+                    }
+                }
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject nested bindings for other shapes"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string().contains(
+                "nested `ComponentValueBinding` impls in `component_shape!` must target `InputShape`"
+            ),
+            "macro should reject binding impls for other shapes clearly: {err}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_nested_binding_for_qualified_target() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct InputShape<T> {
+                type State = ::gpui_component::input::InputState;
+
+                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T>
+                    for crate::other::InputShape<T>
+                {
+                    type Event = ::gpui_component::input::InputEvent;
+
+                    fn form_value_change(
+                        _state: &Self::State,
+                        _event: &Self::Event,
+                    ) -> ::gpui_form_runtime::shape::FormValueChange<T> {
+                        ::gpui_form_runtime::shape::FormValueChange::Unchanged
+                    }
+                }
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject qualified binding targets"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string().contains(
+                "nested `ComponentValueBinding` impls in `component_shape!` must target `InputShape`"
+            ),
+            "macro should reject binding impls for qualified targets clearly: {err}"
+        );
     }
 
     #[test]

@@ -375,7 +375,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "with_requires_value(<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+                "with_requires_value(<<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form_runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
             ),
             "FieldVariant should inherit required-value policy from the shape: {compact}"
         );
@@ -684,7 +684,7 @@ mod gpui_form_tests {
             "FieldVariant should carry the component shape path: {compact}"
         );
         assert!(
-            compact.contains("with_value_binding(<crate::shapes::BioInputShapeas::gpui_form_runtime::shape::ComponentShape>::VALUE_BINDING)"),
+            compact.contains("with_value_binding(<<crate::shapes::BioInputShapeas::gpui_form_runtime::shape::ComponentShape>::ValueBindingPolicyas::gpui_form_runtime::shape::ComponentValueBindingPolicy>::VALUE_BINDING)"),
             "FieldVariant should inherit component value binding metadata from the shape: {compact}"
         );
         assert!(
@@ -764,7 +764,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_requires_value(<gpui_form_collection::switch::Switchas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+                "with_requires_value(<<gpui_form_collection::switch::Switchas::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form_runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
             ),
             "positional component syntax should inherit required-value metadata from the shape"
         );
@@ -898,7 +898,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_requires_value(<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::REQUIRES_VALUE)"
+                "with_requires_value(<<crate::Inputas::gpui_form_runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form_runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
             ),
             "FieldVariant should inherit generated required-value policy from the shape: {compact}"
         );
