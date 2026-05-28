@@ -3,7 +3,7 @@ use gpui_form_codegen::components::{Components, RequiredValue};
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
 use syn::{
-    Expr, ExprAssign, ExprGroup, ExprParen, ExprPath, Ident, Lit, Meta, MetaList, Type, TypePath,
+    Expr, ExprGroup, ExprParen, ExprPath, Ident, Meta, MetaList, Type, TypePath,
     parse::{Parse, ParseStream, Parser as _, discouraged::Speculative as _},
     punctuated::Punctuated,
 };
@@ -19,24 +19,7 @@ impl FromMeta for TypeOverride {
                 path: expr_path.path.clone(),
             }))),
             Expr::Group(group) => Self::from_expr(&group.expr),
-            Expr::Lit(expr_lit) => Self::from_value(&expr_lit.lit),
             _ => Err(DarlingError::unexpected_expr_type(expr)),
-        }
-    }
-
-    fn from_string(value: &str) -> darling::Result<Self> {
-        syn::parse_str::<Type>(value)
-            .map(TypeOverride)
-            .map_err(|_| DarlingError::unknown_value(value))
-    }
-
-    fn from_value(value: &Lit) -> darling::Result<Self> {
-        if let Lit::Str(v) = value {
-            v.parse::<Type>()
-                .map(TypeOverride)
-                .map_err(|_| DarlingError::unknown_value(&v.value()).with_span(v))
-        } else {
-            Err(DarlingError::unexpected_lit_type(value))
         }
     }
 }
@@ -47,19 +30,6 @@ pub struct DefaultExpr(pub Expr);
 impl FromMeta for DefaultExpr {
     fn from_expr(expr: &Expr) -> darling::Result<Self> {
         Ok(DefaultExpr(expr.clone()))
-    }
-
-    fn from_string(value: &str) -> darling::Result<Self> {
-        syn::parse_str::<Expr>(value)
-            .map(DefaultExpr)
-            .map_err(|_| DarlingError::unknown_value(value))
-    }
-
-    fn from_value(value: &Lit) -> darling::Result<Self> {
-        Ok(DefaultExpr(Expr::Lit(syn::ExprLit {
-            attrs: Vec::new(),
-            lit: value.clone(),
-        })))
     }
 }
 
@@ -94,9 +64,8 @@ impl FieldOptionality {
     }
 }
 
-#[derive(Clone, Debug, Default, FromMeta)]
+#[derive(Clone, Debug)]
 pub struct KorumaOptions {
-    #[darling(default)]
     pub fluent: bool,
 }
 
@@ -105,11 +74,33 @@ pub struct KorumaField(pub KorumaOptions);
 
 impl FromMeta for KorumaField {
     fn from_word() -> darling::Result<Self> {
-        Ok(KorumaField(KorumaOptions::default()))
+        Ok(KorumaField(KorumaOptions { fluent: false }))
     }
 
     fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        KorumaOptions::from_list(items).map(KorumaField)
+        let [darling::ast::NestedMeta::Meta(syn::Meta::Path(path))] = items else {
+            return Err(DarlingError::custom(
+                "`koruma(...)` only accepts `fluent`, as in `#[gpui_form(koruma(fluent))]`",
+            ));
+        };
+
+        if path.is_ident("fluent") {
+            Ok(KorumaField(KorumaOptions { fluent: true }))
+        } else {
+            Err(DarlingError::custom(
+                "`koruma(...)` only accepts `fluent`, as in `#[gpui_form(koruma(fluent))]`",
+            )
+            .with_span(path))
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct EmptyForm;
+
+impl FromMeta for EmptyForm {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self)
     }
 }
 
@@ -255,15 +246,7 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
     let expr = unwrap_grouped_expr(expr);
 
     match expr {
-        Expr::Assign(ExprAssign { left, right, .. }) => parse_assignment(field, *left, *right),
         Expr::Path(path) => parse_path_keyword(field, path),
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
-            Err(DarlingError::custom(
-                "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
-                 `component = my::Shape`",
-            )
-            .with_span(&call))
-        },
         _ => {
             let component = Components::from_expr(&expr)?;
             set_component(field, component, &expr)
@@ -299,11 +282,6 @@ fn parse_meta_name_value(
             set_once(&mut field.from, rhs, "from", &name_value.path)?;
             Ok(())
         },
-        "component" => {
-            ensure_not_skipped(field, "component", &name_value.path)?;
-            let component = parse_component_expr(rhs)?;
-            set_component(field, component, &name_value.path)
-        },
         "default" => {
             ensure_not_skipped(field, "default", &name_value.path)?;
             set_once(
@@ -314,60 +292,6 @@ fn parse_meta_name_value(
             )?;
             Ok(())
         },
-        "skip" => {
-            set_skip(field, parse_bool_expr(&rhs)?, &name_value.path)?;
-            Ok(())
-        },
-        _ => Err(
-            DarlingError::custom(format!("unknown gpui_form field option `{key}`")).with_span(&rhs),
-        ),
-    }
-}
-
-fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling::Result<()> {
-    let key = expr_to_key(&lhs)?;
-    let rhs = unwrap_grouped_expr(rhs);
-
-    match key.as_str() {
-        "type" => {
-            ensure_not_skipped(field, "type", &lhs)?;
-            set_once(
-                &mut field.r#type,
-                TypeOverride::from_expr(&rhs)?,
-                "type",
-                &lhs,
-            )?;
-            Ok(())
-        },
-        "into" => {
-            ensure_not_skipped(field, "into", &lhs)?;
-            set_once(&mut field.into, rhs, "into", &lhs)?;
-            Ok(())
-        },
-        "from" => {
-            ensure_not_skipped(field, "from", &lhs)?;
-            set_once(&mut field.from, rhs, "from", &lhs)?;
-            Ok(())
-        },
-        "component" => {
-            ensure_not_skipped(field, "component", &lhs)?;
-            let component = parse_component_expr(rhs)?;
-            set_component(field, component, &lhs)
-        },
-        "default" => {
-            ensure_not_skipped(field, "default", &lhs)?;
-            set_once(
-                &mut field.default,
-                DefaultExpr::from_expr(&rhs)?,
-                "default",
-                &lhs,
-            )?;
-            Ok(())
-        },
-        "skip" => {
-            set_skip(field, parse_bool_expr(&rhs)?, &lhs)?;
-            Ok(())
-        },
         _ => Err(
             DarlingError::custom(format!("unknown gpui_form field option `{key}`")).with_span(&rhs),
         ),
@@ -375,14 +299,6 @@ fn parse_assignment(field: &mut ComponentField, lhs: Expr, rhs: Expr) -> darling
 }
 
 fn parse_meta_list(_field: &mut ComponentField, list: MetaList) -> darling::Result<()> {
-    if list.path.is_ident("component") {
-        return Err(DarlingError::custom(
-            "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
-             `component = my::Shape`",
-        )
-        .with_span(&list.path));
-    }
-
     let key = meta_path_to_key(&list.path)?;
     Err(
         DarlingError::custom(format!("unknown gpui_form field option `{key}`"))
@@ -408,12 +324,6 @@ fn parse_meta_path_keyword(field: &mut ComponentField, path: syn::Path) -> darli
         return Ok(());
     }
 
-    if key == "component" {
-        return Err(DarlingError::custom(
-            "`component` must include a value, for example `component = my::Shape`",
-        ));
-    }
-
     parse_positional_component(
         field,
         Expr::Path(ExprPath {
@@ -437,12 +347,6 @@ fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Re
         return Ok(());
     }
 
-    if key == "component" {
-        return Err(DarlingError::custom(
-            "`component` must include a value, for example `component = my::Shape`",
-        ));
-    }
-
     parse_positional_component(field, Expr::Path(path))
 }
 
@@ -450,20 +354,6 @@ fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling
     ensure_not_skipped(field, "component", &expr)?;
     let component = Components::from_expr(&expr)?;
     set_component(field, component, &expr)
-}
-
-fn parse_component_expr(expr: Expr) -> darling::Result<Components> {
-    let expr = unwrap_grouped_expr(expr);
-    match expr {
-        Expr::Call(call) if is_path_ident(call.func.as_ref(), "component") => {
-            Err(DarlingError::custom(
-                "component(...) syntax was removed; use `#[gpui_form(my::Shape)]` or \
-                 `component = my::Shape`",
-            )
-            .with_span(&call))
-        },
-        _ => Components::from_expr(&expr),
-    }
 }
 
 fn set_component<T: syn::spanned::Spanned>(
@@ -476,8 +366,7 @@ fn set_component<T: syn::spanned::Spanned>(
     if field.component.is_some() {
         return Err(DarlingError::custom(
             "multiple component expressions were provided; keep a single shape \
-             expression, such as `#[gpui_form(my::Shape)]` or \
-             `#[gpui_form(component = my::Shape)]`",
+             expression, such as `#[gpui_form(my::Shape)]`",
         )
         .with_span(span));
     }
@@ -570,35 +459,6 @@ fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
     Ok(())
 }
 
-fn parse_bool_expr(expr: &Expr) -> darling::Result<bool> {
-    if let Expr::Lit(expr_lit) = expr
-        && let syn::Lit::Bool(value) = &expr_lit.lit
-    {
-        return Ok(value.value);
-    }
-
-    Err(DarlingError::unexpected_expr_type(expr))
-}
-
-fn expr_to_key(expr: &Expr) -> darling::Result<String> {
-    if let Expr::Path(path) = expr {
-        path.path
-            .get_ident()
-            .map(|ident| ident.to_string())
-            .ok_or_else(|| DarlingError::unsupported_format("field key"))
-    } else {
-        Err(DarlingError::custom("field key must be an identifier").with_span(expr))
-    }
-}
-
-fn is_path_ident(expr: &Expr, key: &str) -> bool {
-    if let Expr::Path(path) = expr {
-        path.path.is_ident(key)
-    } else {
-        false
-    }
-}
-
 fn meta_path_to_key(path: &syn::Path) -> darling::Result<String> {
     path.get_ident()
         .map(|ident| ident.to_string())
@@ -622,7 +482,7 @@ pub struct ComponentStruct {
     pub ident: Ident,
     pub data: darling::ast::Data<(), ComponentField>,
     #[darling(default)]
-    pub empty: bool,
+    pub empty: Option<EmptyForm>,
     #[darling(default)]
     pub koruma: Option<KorumaField>,
 }

@@ -1,4 +1,4 @@
-use darling::{Error as DarlingError, FromMeta};
+use darling::Error as DarlingError;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
@@ -104,9 +104,6 @@ pub struct ShapeOptions {
     /// UI component type path (e.g. `TagsInput`).
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<syn::Path>,
-    /// Whether prototyping code should wire this component through
-    /// `ComponentValueBinding`.
-    pub value_binding: Option<bool>,
     /// Optional explicit generated field/helper suffix.
     pub field_suffix: Option<String>,
     span: Span,
@@ -120,7 +117,6 @@ impl ShapeOptions {
         Self {
             shape,
             component: None,
-            value_binding: None,
             field_suffix: None,
             span,
         }
@@ -143,13 +139,6 @@ impl ShapeOptions {
         args: &[Expr],
     ) -> darling::Result<()> {
         match method.to_string().as_str() {
-            "value_binding" => {
-                set_metadata_once(
-                    &mut self.value_binding,
-                    expect_optional_bool_arg(method, args)?,
-                    method,
-                )?;
-            },
             "component" => {
                 set_metadata_once(&mut self.component, expect_path_arg(method, args)?, method)?;
             },
@@ -163,7 +152,7 @@ impl ShapeOptions {
             _ => {
                 return Err(DarlingError::custom(format!(
                     "unknown component metadata `{method}`; supported generic methods are \
-                     `value_binding`, `component`, and `field_suffix`; put component-specific \
+                     `component` and `field_suffix`; put component-specific \
                      options in a dedicated ComponentShape wrapper"
                 ))
                 .with_span(method));
@@ -217,22 +206,14 @@ impl ShapeOptions {
         let shape = self.resolved_shape(field_type);
         let span = self.span;
         let runtime_crate = tokens_with_span(&CratePaths::resolve().gpui_form_runtime, span);
-        let value_binding_assertion = match self.value_binding {
-            Some(true) => quote_spanned! {span=>
-                {
-                    #runtime_crate::shape::assert_component_value_binding::<#shape, #field_type>();
-                }
-            },
-            Some(false) => quote! {},
-            None => quote_spanned! {span=>
-                {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
-                        as #runtime_crate::shape::AssertComponentValueBindingPolicy<
-                            #shape,
-                            #field_type,
-                        >>::assert_component_value_binding_policy();
-                }
-            },
+        let value_binding_assertion = quote_spanned! {span=>
+            {
+                <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
+                    as #runtime_crate::shape::AssertComponentValueBindingPolicy<
+                        #shape,
+                        #field_type,
+                    >>::assert_component_value_binding_policy();
+            }
         };
         let value_holder_storage_assertion = if check_value_holder_storage {
             quote_spanned! {span=>
@@ -281,10 +262,9 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
         },
         Expr::Call(call) => analyze_component_call_expr(call),
         Expr::Path(path) => Ok((path.path.clone(), Vec::new())),
-        Expr::Lit(expr_lit) => Err(DarlingError::custom(
-            "component string syntax was removed; use a shape path expression",
-        )
-        .with_span(&expr_lit.lit)),
+        Expr::Lit(expr_lit) => {
+            Err(DarlingError::unexpected_lit_type(&expr_lit.lit).with_span(&expr_lit.lit))
+        },
         _ => Err(DarlingError::custom(
             "component syntax expects a shape path or shape metadata expression",
         )
@@ -348,34 +328,6 @@ fn normalize_shape_path(mut path: Path) -> Path {
     path
 }
 
-fn expect_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
-    let [arg] = args else {
-        return Err(DarlingError::custom(format!(
-            "`{method}` expects exactly one boolean argument"
-        ))
-        .with_span(method));
-    };
-
-    match arg {
-        Expr::Lit(expr_lit) => match &expr_lit.lit {
-            Lit::Bool(value) => Ok(value.value),
-            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
-        },
-        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
-    }
-}
-
-fn expect_optional_bool_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<bool> {
-    match args {
-        [] => Ok(true),
-        [_] => expect_bool_arg(method, args),
-        _ => Err(DarlingError::custom(format!(
-            "`{method}` expects zero arguments or one boolean argument"
-        ))
-        .with_span(method)),
-    }
-}
-
 fn expect_path_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Path> {
     let [arg] = args else {
         return Err(
@@ -386,12 +338,6 @@ fn expect_path_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Path> 
 
     match arg {
         Expr::Path(path) => Ok(path.path.clone()),
-        Expr::Lit(expr_lit) => match &expr_lit.lit {
-            Lit::Str(value) => value
-                .parse::<Path>()
-                .map_err(|err| DarlingError::custom(err.to_string()).with_span(value)),
-            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
-        },
         _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
     }
 }
@@ -496,32 +442,11 @@ pub enum Components {
     Shape(ShapeOptions),
 }
 
-impl FromMeta for Components {
-    fn from_word() -> darling::Result<Self> {
-        Err(DarlingError::custom(
-            "component requires a shape expression, for example \
-             `component = my::Shape`",
-        ))
-    }
-
-    fn from_expr(expr: &Expr) -> darling::Result<Self> {
+impl Components {
+    pub fn from_expr(expr: &Expr) -> darling::Result<Self> {
         ShapeOptions::from_component_expr(expr).map(Self::Shape)
     }
 
-    fn from_string(_value: &str) -> darling::Result<Self> {
-        Err(DarlingError::custom(
-            "component string syntax was removed; use a shape path expression",
-        ))
-    }
-
-    fn from_list(_items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        Err(DarlingError::custom(
-            "component list syntax was removed; use `component = my::Shape`",
-        ))
-    }
-}
-
-impl Components {
     pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         match self {
             Self::Shape(options) => options.required_value(field_type),
@@ -592,16 +517,10 @@ impl Components {
         let shape = options.resolved_shape(field_type);
         let runtime_crate = CratePaths::resolve().gpui_form_runtime;
 
-        Some(match options.value_binding {
-            Some(true) => quote! { .with_value_binding(true) },
-            Some(false) => quote! { .with_value_binding(false) },
-            None => {
-                quote! {
-                    .with_value_binding(
-                        <#shape as #runtime_crate::shape::ComponentShape>::VALUE_BINDING
-                    )
-                }
-            },
+        Some(quote! {
+            .with_value_binding(
+                <#shape as #runtime_crate::shape::ComponentShape>::VALUE_BINDING
+            )
         })
     }
 

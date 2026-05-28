@@ -48,9 +48,9 @@ that crate's `derive` feature is enabled.
 1. Flatten `cfg_attr` wrappers so downstream parsing sees effective
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
-   Field-level component shapes may be written as a positional expression
-   (`#[gpui_form(my::Shape)]`) or as `component = my::Shape`; the parser rejects
-   duplicate component expressions before codegen.
+   Field-level component shapes are written as positional expressions such as
+   `#[gpui_form(my::Shape)]`; the parser rejects duplicate component
+   expressions before codegen.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.
@@ -93,7 +93,7 @@ The derive layer:
 
 - reads normalized validator metadata from `koruma-derive-core`
 - mirrors validators into the holder type
-- preserves shorthand and builder-chain validator forms
+- preserves validator path and builder-chain forms
 - injects required-value behavior where holder optionality would otherwise lose
   source-model required semantics
 
@@ -137,7 +137,7 @@ When the `inventory` feature is enabled:
 - accepts caller generics, where clauses, and outer attributes
 - accepts `new`, `component`, `requires_value`, and `field_suffix` metadata
   keys
-- accepts either semicolon or comma separators between metadata entries
+- uses semicolon separators between metadata entries
 - accepts nested `impl` items, emits them after the generated `ComponentShape`
   impl, and infers shape-level `ValueBindingPolicy` / `VALUE_BINDING` when a
   nested impl targets `ComponentValueBinding<T>`

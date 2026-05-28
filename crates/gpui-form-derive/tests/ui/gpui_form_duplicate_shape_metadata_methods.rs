@@ -1,12 +1,6 @@
 use gpui_form_derive::GpuiForm;
 
 #[derive(GpuiForm)]
-struct DuplicateValueBinding {
-    #[gpui_form(DemoShape.value_binding(false).value_binding())]
-    name: String,
-}
-
-#[derive(GpuiForm)]
 struct DuplicateComponent {
     #[gpui_form(DemoShape.component(crate::Widget).component(crate::OtherWidget))]
     name: String,

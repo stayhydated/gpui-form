@@ -30,10 +30,10 @@ component_shape! {
 }
 
 component_shape! {
-    pub struct CommaConfiguredExternalShape {
-        type State = ExternalState,
-        component = EmailInput,
-        field_suffix = "email",
+    pub struct SuffixedExternalShape {
+        type State = ExternalState;
+        component = EmailInput;
+        field_suffix = "email";
     }
 }
 

@@ -241,7 +241,7 @@ mod tests {
     }
 
     #[test]
-    fn shape_generator_wires_opt_in_value_binding() {
+    fn shape_generator_wires_shape_value_binding() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::new("country", "CountryCode", false)
             .with_requires_value(true)
             .with_shape_path("crate::shapes::CountryShape")

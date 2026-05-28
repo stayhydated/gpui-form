@@ -62,9 +62,7 @@ because generated code references `gpui_form_runtime::shape`.
 #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 #[gpui_form(my::Shape)]
 #[gpui_form(my::Shape.component(my::ui::Widget))]
-#[gpui_form(my::Shape.value_binding())]
 #[gpui_form(my::Shape.field_suffix("input"))]
-#[gpui_form(component = my::Shape)]
 ```
 
 Common field attributes:
@@ -247,8 +245,8 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-`gpui_form_derive::component_shape!` accepts semicolons or commas between
-options. Use `requires_value = false` when the reusable shape can synthesize a
+`gpui_form_derive::component_shape!` uses semicolons between options.
+Use `requires_value = false` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; nested binding impls publish
 shape-level value-binding metadata automatically. Omit nested binding impls to

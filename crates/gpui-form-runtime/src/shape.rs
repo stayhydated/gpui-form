@@ -41,8 +41,7 @@ pub trait ComponentShape {
     /// Whether generated prototyping code should wire this component shape
     /// through [`ComponentValueBinding`] by default.
     ///
-    /// Field-level `Shape.value_binding()` still opts in explicitly. This
-    /// shape-level flag is useful when the component's derive or reusable
+    /// This shape-level flag is useful when the component's derive or reusable
     /// shape owns the metadata and each field should inherit it.
     const VALUE_BINDING: bool =
         <Self::ValueBindingPolicy as ComponentValueBindingPolicy>::VALUE_BINDING;
@@ -67,8 +66,7 @@ pub trait ComponentRequiredValuePolicy {
 
 /// Marker trait for a component shape's inherited value-binding policy.
 pub trait ComponentValueBindingPolicy {
-    /// Whether generated prototyping metadata should use value binding by
-    /// default when the field does not explicitly call `.value_binding(...)`.
+    /// Whether generated prototyping metadata should use value binding.
     const VALUE_BINDING: bool;
 }
 
@@ -335,9 +333,8 @@ impl<T> FormValueChange<T> {
 ///
 /// Implement this alongside [`ComponentShape`] when generated prototyping code
 /// should seed the component from the form value holder and subscribe to
-/// component events. The form derive opts into this path either with
-/// `Shape.value_binding()` or by inheriting [`ComponentShape::VALUE_BINDING`]
-/// from the shape.
+/// component events. The form derive opts into this path by inheriting
+/// [`ComponentShape::VALUE_BINDING`] from the shape.
 pub trait ComponentValueBinding<T>: ComponentShape
 where
     Self::State: gpui::EventEmitter<Self::Event>,

@@ -45,11 +45,10 @@ helpers and component-specific derives explicitly:
    `#[gpui_form(default = ...)]` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
    `#[gpui_form(Shape, type = ..., from = ..., into = ...)]` when the
-   UI edits a form-side type that differs from the model field. The explicit
-   `component = ...` key remains available when it reads better in a multi-line
-   attribute. Do not combine `skip` with component, default, type, from, or
-   into options on the same field. Text input prototyping parses non-`String`
-   form-side types with `FromStr`.
+   UI edits a form-side type that differs from the model field. Do not combine
+   `skip` with component, default, type, from, or into options on the same
+   field. Text input prototyping parses non-`String` form-side types with
+   `FromStr`.
 7. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.

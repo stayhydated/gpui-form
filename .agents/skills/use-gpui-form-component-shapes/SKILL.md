@@ -139,8 +139,8 @@ The macro accepts the same metadata as the derive form, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
-Options may be separated with semicolons or commas. The block may also contain
-`impl` items.
+Separate metadata entries with semicolons. The block may also contain `impl`
+items.
 
 When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
 both policy associated types. Use `NoComponentValueBinding` unless the shape
@@ -158,8 +158,9 @@ shapes. For wrapper shapes created by `component_shape!`, prefer putting the
 emitted with the shape and automatically publish shape-level value-binding
 metadata.
 
-For one-off fields, prefer adding `.value_binding()` in the field shape
-expression instead of making the binding reusable at the shape level.
+Value binding is shape-owned. Use a component-derived shape or a wrapper shape
+with a nested `ComponentValueBinding<T>` impl when generated forms should
+inherit synchronization.
 
 ## Checks
 

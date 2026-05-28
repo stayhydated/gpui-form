@@ -68,7 +68,7 @@ pub fn expand_gpui_form(
 
     let koruma_options = parsed.koruma.as_ref().map(|k| k.0.clone());
 
-    if parsed.empty {
+    if parsed.empty.is_some() {
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
         let empty_fields: Vec<FieldOptionality> = Vec::new();

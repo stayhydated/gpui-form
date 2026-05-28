@@ -5,8 +5,6 @@ es_fluent_manager_embedded::define_i18n_module!();
 
 pub use i18n_manager::{EmbeddedI18n, EmbeddedInitError, LocalizationError};
 
-pub type I18n = EmbeddedI18n;
-
 /// Renders a Fluent message through an explicit caller-owned localizer.
 pub fn localize_message<L, T>(localizer: &L, message: &T) -> String
 where
@@ -87,7 +85,7 @@ mod tests {
 
     #[test]
     fn resolves_runtime_component_messages() {
-        let i18n = I18n::try_new_with_language(langid!("en")).unwrap();
+        let i18n = EmbeddedI18n::try_new_with_language(langid!("en")).unwrap();
         assert_eq!(
             i18n.localize_message(&DatePickerText::SelectDate),
             "Select date"

@@ -42,7 +42,6 @@ Supported component forms:
 
 - `#[gpui_form(my::Shape)]`
 - `#[gpui_form(my::Shape.component(my::ui::Widget))]`
-- `#[gpui_form(my::Shape.value_binding())]`
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
@@ -65,11 +64,10 @@ The `gpui_form_component` shape examples require that crate's
 `InfiniteSelect` derive, available through `gpui-form-component`'s `derive`
 feature or by depending on `gpui-form-component-derive` directly.
 
-The explicit key-value form remains available, for example
-`#[gpui_form(component = my::Shape)]`. Both forms parse the expression as
-attribute metadata; generated runtime construction delegates to
-`ComponentShape::new`. `gpui-form` treats every component as a custom shape
-contract and does not inspect the shape path for built-in component categories.
+The shape expression is parsed as attribute metadata; generated runtime
+construction delegates to `ComponentShape::new`. `gpui-form` treats every
+component as a custom shape contract and does not inspect the shape path for
+built-in component categories.
 
 Supporting field attributes:
 
@@ -101,7 +99,7 @@ Behavior notes:
   emitted for infallible reverse conversions
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
-- `.value_binding()` records that the component shape implements
+- shape-level `ValueBindingPolicy` records that the component shape implements
   `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
   prototyping subscriptions; the adapter seeds component state with
   `seed_value_binding_state` and maps component events to `FormValueChange<T>`
@@ -217,8 +215,7 @@ with `type State = ...` supplying the wrapped state type. If `new` is omitted,
 the generated implementation calls `<State>::new(window, cx)`.
 `requires_value = false` publishes that non-optional fields using this shape can
 store `T` directly because the component can synthesize a missing value.
-Options may be separated with semicolons or commas, and the final separator is
-optional.
+Separate metadata entries with semicolons.
 Nested `ComponentValueBinding<T>` impls set the generated
 `ValueBindingPolicy` to `InheritedComponentValueBinding`; otherwise the macro
 uses `NoComponentValueBinding`.

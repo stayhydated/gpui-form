@@ -56,7 +56,6 @@ Useful runtime types:
 - `InfiniteSelectPathError`
 - `InfiniteSelectState<T>`
 - `InfiniteSelect<T>`
-- `SearchableInfiniteSelectState<T>`
 - `InfiniteSelectEvent<T>`
 - `InfiniteSelectLevel<D>`
 - `InfiniteSelectSnapshot<T, D>`
@@ -230,9 +229,8 @@ cargo run -p gpui-form-component-story
 ## Component Shapes
 
 `gpui_form_runtime::shape::ComponentShape` is the contract used by
-`#[gpui_form(Shape)]` and `#[gpui_form(component = Shape)]`. This crate's
-`component-shape` feature implements that contract for its built-in rendered
-component types.
+`#[gpui_form(Shape)]`. This crate's `component-shape` feature implements that
+contract for its built-in rendered component types.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -272,8 +270,8 @@ pub struct TagsInput {
 ```
 
 `state` and `new` use normal Rust path resolution, so short in-scope names are
-fine. In both forms, `new` accepts a constructor expression. Function paths and
-closures are called with
+fine. `new` accepts a constructor expression in shape declarations. Function
+paths and closures are called with
 `(window, cx)`; full constructor expressions such as
 `TagsState::with_label(window, cx, "tags")` are emitted as written. For
 `gpui_form_derive::component_shape!`, omitting `new` calls
@@ -282,7 +280,7 @@ required and omitting `new` also calls `<State>::new(window, cx)`.
 The `component = ...` option also publishes `COMPONENT_PATH` metadata for
 generated/prototyping render code, so prefer a path that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
-The function-like macro accepts either semicolons or commas between options.
+The function-like macro uses semicolons between options.
 
 For component shapes that should participate in generated prototyping
 subscriptions, put `#[gpui_form_derive::component_value_binding]` on the

@@ -15,7 +15,7 @@ It is designed for three things:
 1. Runtime helpers, metadata, and prototyping support around the derive-based
    workflow.
 
-## Compatibility
+## Upstream Versions
 
 | `gpui-form` | `gpui-component` | `gpui` |
 | :---------- | :--------------- | :----- |
@@ -100,7 +100,6 @@ the shape expression directly in the attribute:
 
 - `#[gpui_form(my::Shape)]`
 - `#[gpui_form(my::Shape.component(my::ui::Widget))]`
-- `#[gpui_form(my::Shape.value_binding())]`
 - `#[gpui_form(my::Shape.field_suffix("input"))]`
 - `#[gpui_form(gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(gpui_form_collection::select::Select::<_>)]`
@@ -123,11 +122,10 @@ The `gpui_form_component` shape entries above require that crate's
 `InfiniteSelect` derive, available through the same crate's `derive` feature or
 by depending on `gpui-form-component-derive` directly.
 
-The explicit key-value form remains available, for example
-`#[gpui_form(component = my::Shape)]`. Both forms parse the expression as
-attribute metadata; generated runtime construction delegates to
-`ComponentShape::new`. `gpui-form` treats every component as a custom shape
-contract and does not inspect the shape path for built-in component categories.
+The shape expression is parsed as attribute metadata; generated runtime
+construction delegates to `ComponentShape::new`. `gpui-form` treats every
+component as a custom shape contract and does not inspect the shape path for
+built-in component categories.
 
 Component shapes own the default required-value policy for non-optional fields.
 Shapes that can safely synthesize a missing value, such as the built-in inputs,
@@ -343,8 +341,7 @@ into Rust's orphan rules.
 It uses `new`, `component`, `requires_value`, and `field_suffix` metadata,
 plus `type State = ...` for the wrapped external state type. If `new` is
 omitted, the macro calls `<State>::new(window, cx)`.
-Options may be separated with semicolons or commas; the final separator is
-optional.
+Separate metadata entries with semicolons.
 The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
 impl is emitted with the shape and automatically publishes shape-level
 value-binding metadata.

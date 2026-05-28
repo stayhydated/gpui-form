@@ -1,7 +1,5 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{
-    ComponentShape, InheritedComponentValueBinding, NoComponentValueBinding, RequireValue,
-};
+use gpui_form_runtime::shape::{ComponentShape, InheritedComponentValueBinding, RequireValue};
 
 struct State;
 
@@ -10,18 +8,6 @@ impl<Event: 'static> gpui::EventEmitter<Event> for State {}
 impl State {
     fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
         Self
-    }
-}
-
-struct MissingBindingShape;
-
-impl ComponentShape for MissingBindingShape {
-    type State = State;
-    type RequiredValuePolicy = RequireValue;
-    type ValueBindingPolicy = NoComponentValueBinding;
-
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
     }
 }
 
@@ -35,12 +21,6 @@ impl ComponentShape for InheritedBindingShape {
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
         State::new(window, cx)
     }
-}
-
-#[derive(GpuiForm)]
-struct Demo {
-    #[gpui_form(MissingBindingShape.value_binding())]
-    name: String,
 }
 
 #[derive(GpuiForm)]

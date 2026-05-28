@@ -12,9 +12,7 @@ use gpui::{
 use gpui_component::{
     IndexPath,
     form::{Field, field},
-    select::{
-        SearchableVec, Select as GpuiSelect, SelectDelegate, SelectEvent, SelectItem, SelectState,
-    },
+    select::{Select as GpuiSelect, SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error as _};
 use std::str::FromStr;
@@ -542,11 +540,6 @@ impl InfiniteSelectPathError {
         self.segment.as_ref()
     }
 
-    /// Alias for `segment()` when callers think in terms of key-or-index input.
-    pub fn key_or_index(&self) -> Option<&InfiniteSelectPathSegment> {
-        self.segment()
-    }
-
     /// Returns the typed failure reason.
     pub fn reason(&self) -> &InfiniteSelectPathErrorReason {
         &self.reason
@@ -927,10 +920,6 @@ where
     _master_subscription: Subscription,
     _child_subscriptions: Vec<Subscription>,
 }
-
-/// Search-enabled state alias for component shapes that render searchable levels.
-pub type SearchableInfiniteSelectState<T> =
-    InfiniteSelectState<T, SearchableVec<InfiniteSelectItem<T>>>;
 
 impl<T, D> Focusable for InfiniteSelectState<T, D>
 where

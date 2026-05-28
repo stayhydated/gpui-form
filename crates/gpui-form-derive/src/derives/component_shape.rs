@@ -117,18 +117,11 @@ fn is_component_value_binding_impl(impl_item: &ItemImpl) -> bool {
 }
 
 fn parse_option_separator(input: ParseStream<'_>) -> Result<()> {
-    if input.is_empty() {
-        return Ok(());
-    }
-
     if input.peek(Token![;]) {
         input.parse::<Token![;]>()?;
         Ok(())
-    } else if input.peek(Token![,]) {
-        input.parse::<Token![,]>()?;
-        Ok(())
     } else {
-        Err(input.error("expected `;` or `,` after component shape option"))
+        Err(input.error("expected `;` after component shape option"))
     }
 }
 
@@ -298,27 +291,6 @@ mod tests {
     }
 
     #[test]
-    fn component_shape_function_macro_accepts_comma_options() {
-        let input: ComponentShapeInput = syn::parse2(quote! {
-            pub struct InputShape {
-                type State = crate::state::InputState,
-                new = crate::state::InputState::new,
-                component = crate::ui::Input,
-                field_suffix = "input",
-            }
-        })
-        .unwrap();
-
-        let expanded = expand(input);
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("ComponentPrototyping::new().field_suffix(\"input\")"),
-            "macro should accept comma-separated options: {compact}"
-        );
-    }
-
-    #[test]
     fn component_shape_function_macro_accepts_required_value_policy() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct SwitchShape {
@@ -383,25 +355,6 @@ mod tests {
         assert!(
             compact.contains("impl<T>::gpui_form_runtime::shape::ComponentValueBinding<T>forInputShape<T>whereT:::std::str::FromStr+::std::string::ToString+'static"),
             "macro should emit nested impl items after the shape contract: {compact}"
-        );
-    }
-
-    #[test]
-    fn component_shape_function_macro_rejects_legacy_value_binding_metadata() {
-        let err = match syn::parse2::<ComponentShapeInput>(quote! {
-            pub struct InputShape {
-                type State = crate::state::InputState;
-                value_binding;
-            }
-        }) {
-            Ok(_) => panic!("component_shape! should reject legacy value_binding metadata"),
-            Err(err) => err,
-        };
-
-        assert!(
-            err.to_string()
-                .contains("expected `type State = ...;`, an `impl` item"),
-            "macro should reject legacy value_binding metadata: {err}"
         );
     }
 

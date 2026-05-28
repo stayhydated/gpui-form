@@ -1,4 +1,4 @@
-use gpui_form_derive::{ComponentShape, GpuiForm, component_shape};
+use gpui_form_derive::{ComponentShape, GpuiForm};
 
 struct State;
 
@@ -14,21 +14,9 @@ impl State {
 #[gpui_form_shape(state = State)]
 struct DerivedShape;
 
-component_shape! {
-    struct WrapperShape {
-        type State = State;
-    }
-}
-
 #[derive(GpuiForm)]
 struct DerivedDemo {
     #[gpui_form(DerivedShape)]
-    name: String,
-}
-
-#[derive(GpuiForm)]
-struct WrapperDemo {
-    #[gpui_form(WrapperShape.value_binding())]
     name: String,
 }
 

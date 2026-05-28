@@ -26,7 +26,7 @@ struct DuplicateDefault {
 
 #[derive(GpuiForm)]
 struct DuplicateSkip {
-    #[gpui_form(skip, skip = true)]
+    #[gpui_form(skip, skip)]
     hidden: bool,
 }
 

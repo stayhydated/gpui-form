@@ -34,7 +34,7 @@ pub enum EnumCountry {
 #[fluent_variants(keys = ["description", "label"])]
 #[gpui_form(koruma(fluent))]
 pub struct User {
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     #[koruma(
         NonEmptyValidation::<_>::builder(),
         PrefixValidation::<_>::builder().prefix("Xx"),
@@ -43,56 +43,56 @@ pub struct User {
     pub username: String,
 
     #[gpui_form(
-        component = gpui_form_collection::input::Input::<_>,
+        gpui_form_collection::input::Input::<_>,
         default = "test@example.com"
     )]
     #[koruma(EmailValidation::<_>::builder())]
     pub email: String,
 
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     #[koruma(RangeValidation::<_>::builder().min(18).max(167))]
     pub age: Option<u32>,
 
     #[gpui_form(
-        component = gpui_form_collection::input::Input::<_>,
+        gpui_form_collection::input::Input::<_>,
         default = 67
     )]
     #[koruma(PositiveValidation::<_>::builder())]
     pub balance: rust_decimal::Decimal,
 
-    #[gpui_form(component = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(gpui_form_collection::input::Input::<_>)]
     #[koruma(NegativeValidation::<_>::builder())]
     pub debt: rust_decimal::Decimal,
 
-    #[gpui_form(component = gpui_form_collection::number_input::NumberInput::<_>)]
+    #[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]
     pub rating: Option<u32>,
 
-    #[gpui_form(component = gpui_form_collection::slider::Slider)]
+    #[gpui_form(gpui_form_collection::slider::Slider)]
     pub attention_level: f32,
 
-    #[gpui_form(component = gpui_form_collection::color_picker::ColorPicker)]
+    #[gpui_form(gpui_form_collection::color_picker::ColorPicker)]
     pub brand_color: Option<gpui::Hsla>,
 
-    #[gpui_form(component = gpui_form_collection::otp_input::OtpInput::<_>)]
+    #[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]
     pub otp_code: String,
 
-    #[gpui_form(component = gpui_form_component::file_picker::FilePicker)]
+    #[gpui_form(gpui_form_component::file_picker::FilePicker)]
     pub uploaded_files: Vec<std::path::PathBuf>,
 
-    #[gpui_form(component = gpui_form_collection::date_picker::DateRangePicker)]
+    #[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]
     pub holiday_range: Option<(chrono::NaiveDate, chrono::NaiveDate)>,
 
-    #[gpui_form(component = gpui_form_collection::switch::Switch)]
+    #[gpui_form(gpui_form_collection::switch::Switch)]
     pub subscribe_newsletter: bool,
 
-    #[gpui_form(component = gpui_form_collection::checkbox::Checkbox)]
+    #[gpui_form(gpui_form_collection::checkbox::Checkbox)]
     pub enable_notifications: bool,
 
-    #[gpui_form(component = gpui_form_collection::select::Select::<_>)]
+    #[gpui_form(gpui_form_collection::select::Select::<_>)]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(
-        component = gpui_form_collection::select::Select::<_>,
+        gpui_form_collection::select::Select::<_>,
         default = EnumCountry::France
     )]
     pub country: Option<EnumCountry>,
@@ -101,7 +101,7 @@ pub struct User {
         type = chrono::NaiveDate,
         from = to_form_datetime,
         into = to_model_timestamp,
-        component = gpui_form_collection::date_picker::DatePicker
+        gpui_form_collection::date_picker::DatePicker
     )]
     pub birth_date: Option<Timestamp>,
 

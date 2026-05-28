@@ -30,12 +30,6 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let requires_value = value.parse()?;
                 shape.set_requires_value(requires_value, &meta.path)
-            } else if meta.path.is_ident("value_binding") {
-                Err(meta.error(
-                    "`value_binding` is inferred for component-derived shapes; \
-                     implement the backing state's binding with \
-                     `#[gpui_form_derive::component_value_binding]`",
-                ))
             } else if meta.path.is_ident("field_suffix") {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
@@ -264,57 +258,6 @@ mod tests {
             !compact
                 .contains("(crate::state::TagsState::with_mode(window,cx,Mode::Tags))(window,cx)"),
             "direct constructor calls should not receive window/cx twice: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_value_binding_flag() {
-        let input: DeriveInput = syn::parse2(quote! {
-            #[derive(ComponentShape)]
-            #[gpui_form_shape(state = crate::state::TagsState, value_binding)]
-            struct TagsInput;
-        })
-        .unwrap();
-
-        let err = expand(input).unwrap_err();
-
-        assert!(
-            err.to_string().contains("`value_binding` is inferred"),
-            "derive should reject legacy value_binding metadata: {err}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_value_binding_bool() {
-        let input: DeriveInput = syn::parse2(quote! {
-            #[derive(ComponentShape)]
-            #[gpui_form_shape(state = crate::state::TagsState, value_binding = true)]
-            struct TagsInput;
-        })
-        .unwrap();
-
-        let err = expand(input).unwrap_err();
-
-        assert!(
-            err.to_string().contains("`value_binding` is inferred"),
-            "derive should reject legacy value_binding assignment: {err}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_disabled_value_binding_bool() {
-        let input: DeriveInput = syn::parse2(quote! {
-            #[derive(ComponentShape)]
-            #[gpui_form_shape(state = crate::state::TagsState, value_binding = false)]
-            struct TagsInput;
-        })
-        .unwrap();
-
-        let err = expand(input).unwrap_err();
-
-        assert!(
-            err.to_string().contains("`value_binding` is inferred"),
-            "derive should reject disabled value_binding assignment: {err}"
         );
     }
 

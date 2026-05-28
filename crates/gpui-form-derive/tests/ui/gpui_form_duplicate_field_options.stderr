@@ -25,5 +25,5 @@ error: duplicate `default` option in `gpui_form` field attribute; remove the dup
 error: duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry
   --> tests/ui/gpui_form_duplicate_field_options.rs:29:23
    |
-29 |     #[gpui_form(skip, skip = true)]
+29 |     #[gpui_form(skip, skip)]
    |                       ^^^^

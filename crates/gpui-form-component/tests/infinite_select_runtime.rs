@@ -223,16 +223,13 @@ fn build_from_path_reports_typed_errors() {
     let error =
         build_from_path::<Country>(&InfiniteSelectPath::new()).expect_err("empty path should fail");
     assert_eq!(error.depth(), 0);
-    assert_eq!(error.key_or_index(), None);
+    assert_eq!(error.segment(), None);
     assert_eq!(error.reason(), &InfiniteSelectPathErrorReason::EmptyPath);
 
     let invalid_path = InfiniteSelectPath::with_indices(vec![0, 99]);
     let error = build_from_path::<Country>(&invalid_path).expect_err("invalid child should fail");
     assert_eq!(error.depth(), 1);
-    assert_eq!(
-        error.key_or_index(),
-        Some(&InfiniteSelectPathSegment::Index(99))
-    );
+    assert_eq!(error.segment(), Some(&InfiniteSelectPathSegment::Index(99)));
     assert_eq!(
         error.reason(),
         &InfiniteSelectPathErrorReason::InvalidIndex { option_count: 3 }
@@ -250,7 +247,7 @@ fn build_from_key_path_reports_typed_errors() {
 
     assert_eq!(error.depth(), 2);
     assert_eq!(
-        error.key_or_index(),
+        error.segment(),
         Some(&InfiniteSelectPathSegment::Key("MoonBase".to_string()))
     );
     let InfiniteSelectPathErrorReason::UnknownKey { available_keys } = error.reason() else {
