@@ -129,9 +129,6 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
     /// Concrete generated value-holder field storage.
     type Storage;
 
-    /// Construct a missing/default value-holder field.
-    fn default_storage() -> Self::Storage;
-
     /// Construct storage from a present form value.
     fn present(value: T) -> Self::Storage;
 
@@ -179,12 +176,18 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
     fn is_present(storage: &Self::Storage) -> bool;
 }
 
+/// Storage policies that can synthesize missing/default value-holder storage.
+#[diagnostic::on_unimplemented(
+    message = "gpui-form cannot synthesize direct storage for `{T}` with this component shape policy",
+    note = "add `#[gpui_form(default = ...)]`, make `{T}` implement `Default`, or make the shape use `requires_value = true`"
+)]
+pub trait ValueHolderDefaultStorage<T>: ValueHolderStorage<T> {
+    /// Construct a missing/default value-holder field.
+    fn default_storage() -> Self::Storage;
+}
+
 impl<T> ValueHolderStorage<T> for RequireValue {
     type Storage = Option<T>;
-
-    fn default_storage() -> Self::Storage {
-        None
-    }
 
     fn present(value: T) -> Self::Storage {
         Some(value)
@@ -239,12 +242,14 @@ impl<T> ValueHolderStorage<T> for RequireValue {
     }
 }
 
-impl<T: Default> ValueHolderStorage<T> for AllowMissingValue {
-    type Storage = T;
-
+impl<T> ValueHolderDefaultStorage<T> for RequireValue {
     fn default_storage() -> Self::Storage {
-        T::default()
+        None
     }
+}
+
+impl<T> ValueHolderStorage<T> for AllowMissingValue {
+    type Storage = T;
 
     fn present(value: T) -> Self::Storage {
         value
@@ -296,11 +301,47 @@ impl<T: Default> ValueHolderStorage<T> for AllowMissingValue {
     }
 }
 
+impl<T: Default> ValueHolderDefaultStorage<T> for AllowMissingValue {
+    fn default_storage() -> Self::Storage {
+        T::default()
+    }
+}
+
 /// Shape-owned metadata for prototyping generators.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentPrototyping {
     /// Preferred generated field/helper suffix, such as `"input"` or `"select"`.
     pub field_suffix: Option<&'static str>,
+}
+
+/// Returns whether a prototyping field suffix is a non-empty ASCII identifier
+/// suffix.
+pub const fn is_valid_component_field_suffix(suffix: &str) -> bool {
+    let bytes = suffix.as_bytes();
+    if bytes.is_empty() || (bytes.len() == 1 && bytes[0] == b'_') {
+        return false;
+    }
+    if !is_ascii_ident_start(bytes[0]) {
+        return false;
+    }
+
+    let mut idx = 1;
+    while idx < bytes.len() {
+        if !is_ascii_ident_continue(bytes[idx]) {
+            return false;
+        }
+        idx += 1;
+    }
+
+    true
+}
+
+const fn is_ascii_ident_start(byte: u8) -> bool {
+    byte == b'_' || byte >= b'a' && byte <= b'z' || byte >= b'A' && byte <= b'Z'
+}
+
+const fn is_ascii_ident_continue(byte: u8) -> bool {
+    is_ascii_ident_start(byte) || byte >= b'0' && byte <= b'9'
 }
 
 impl ComponentPrototyping {
@@ -309,6 +350,10 @@ impl ComponentPrototyping {
     }
 
     pub const fn field_suffix(mut self, suffix: &'static str) -> Self {
+        assert!(
+            is_valid_component_field_suffix(suffix),
+            "`field_suffix` must be a non-empty ASCII identifier suffix"
+        );
         self.field_suffix = Some(suffix);
         self
     }
@@ -438,4 +483,30 @@ where
     ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
 {
     Shape::form_value_change(state, event)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ComponentPrototyping, is_valid_component_field_suffix};
+
+    #[test]
+    fn component_field_suffix_validator_accepts_identifier_suffixes() {
+        assert!(is_valid_component_field_suffix("input"));
+        assert!(is_valid_component_field_suffix("_input"));
+        assert!(is_valid_component_field_suffix("input_2"));
+    }
+
+    #[test]
+    fn component_field_suffix_validator_rejects_non_identifier_suffixes() {
+        assert!(!is_valid_component_field_suffix(""));
+        assert!(!is_valid_component_field_suffix("_"));
+        assert!(!is_valid_component_field_suffix("2input"));
+        assert!(!is_valid_component_field_suffix("input-field"));
+    }
+
+    #[test]
+    #[should_panic(expected = "`field_suffix` must be a non-empty ASCII identifier suffix")]
+    fn component_prototyping_rejects_invalid_field_suffixes() {
+        let _ = ComponentPrototyping::new().field_suffix("input-field");
+    }
 }

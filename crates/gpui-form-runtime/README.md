@@ -58,6 +58,12 @@ gpui_form_derive::component_shape! {
 }
 ```
 
+`field_suffix = "..."` metadata and manual
+`shape::ComponentPrototyping::field_suffix(...)` calls use the same runtime
+contract: the suffix must be a non-empty ASCII identifier suffix. The manual
+runtime API validates this in const evaluation so invalid suffixes fail at the
+shape implementation.
+
 ## Value Binding
 
 Implement `shape::ComponentValueBinding<T>` when generated prototyping code

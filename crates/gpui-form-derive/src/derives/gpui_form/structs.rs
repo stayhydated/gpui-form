@@ -1,5 +1,5 @@
 use darling::{Error as DarlingError, FromField, FromMeta};
-use gpui_form_codegen::components::{Components, RequiredValue};
+use gpui_form_codegen::components::{RequiredValue, ShapeOptions};
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::TokenStream;
 use syn::{
@@ -166,7 +166,7 @@ struct RenderedOptions {
     r#type: Option<TypeOverride>,
     into: Option<Expr>,
     from: Option<Expr>,
-    component: Option<Components>,
+    component: Option<ShapeOptions>,
     default: Option<DefaultExpr>,
 }
 
@@ -219,7 +219,7 @@ pub struct RenderedField<'a> {
     pub r#type: Option<&'a TypeOverride>,
     pub into: Option<&'a Expr>,
     pub from: Option<&'a Expr>,
-    pub component: Option<&'a Components>,
+    pub component: Option<&'a ShapeOptions>,
     pub default: Option<&'a DefaultExpr>,
 }
 
@@ -320,7 +320,7 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
     match expr {
         Expr::Path(path) => parse_path_keyword(field, path),
         _ => {
-            let component = Components::from_expr(&expr)?;
+            let component = ShapeOptions::from_expr(&expr)?;
             set_component(field, component, &expr)
         },
     }
@@ -364,13 +364,13 @@ fn is_upper_camel_ident(ident: &Ident) -> bool {
 }
 
 fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling::Result<()> {
-    let component = Components::from_expr(&expr)?;
+    let component = ShapeOptions::from_expr(&expr)?;
     set_component(field, component, &expr)
 }
 
 fn set_component<T: syn::spanned::Spanned>(
     field: &mut ComponentField,
-    component: Components,
+    component: ShapeOptions,
     span: &T,
 ) -> darling::Result<()> {
     let options = rendered_options_mut(field, "component", span)?;

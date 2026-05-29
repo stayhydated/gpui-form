@@ -102,7 +102,9 @@ Behavior notes:
   missing. Generated `validate()` reports missing required shape values.
   Fallible holder-to-model paths implement `TryFrom` and expose
   `holder.try_into_original()`; infallible paths implement `From` and expose
-  `holder.into_original()`
+  `holder.into_original()`. Inherited shape policies without a field default are
+  conservative: the derive emits `try_into_original()` even when a concrete
+  value-synthesizing shape cannot fail at runtime.
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements
@@ -233,7 +235,7 @@ type. If `new` is omitted, the generated implementation calls
 `requires_value = false` publishes that non-optional fields using this shape can
 store `T` directly because the component can synthesize a missing value.
 `component = ...` must be path-like, and `field_suffix = "..."` must be a
-non-empty identifier suffix.
+non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
 Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
 contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to

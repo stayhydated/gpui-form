@@ -242,8 +242,8 @@ impl ShapeOptions {
     pub fn type_check_tokens(
         &self,
         field_type: &syn::Type,
-        check_value_holder_storage: bool,
-    ) -> Option<TokenStream> {
+        check_value_holder_default_storage: bool,
+    ) -> TokenStream {
         let shape = self.resolved_shape(field_type);
         let span = self.span;
         let crate_paths = CratePaths::resolve();
@@ -257,15 +257,18 @@ impl ShapeOptions {
                     >>::assert_component_value_binding_policy();
             }
         };
-        let value_holder_storage_assertion = if check_value_holder_storage {
+        let value_holder_storage_assertion = if check_value_holder_default_storage {
             quote_spanned! {span=>
                 {
-                    fn __gpui_form_assert_value_holder_storage<Policy, Value>()
+                    fn __gpui_form_assert_add_default_make_type_default_or_requires_value_true<
+                        Policy,
+                        Value,
+                    >()
                     where
-                        Policy: #runtime_crate::shape::ValueHolderStorage<Value>,
+                        Policy: #runtime_crate::shape::ValueHolderDefaultStorage<Value>,
                     {}
 
-                    __gpui_form_assert_value_holder_storage::<
+                    __gpui_form_assert_add_default_make_type_default_or_requires_value_true::<
                         <#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy,
                         #field_type,
                     >();
@@ -275,21 +278,21 @@ impl ShapeOptions {
             quote! {}
         };
 
-        Some(quote_spanned! {span=>
+        quote_spanned! {span=>
             {
                 fn __gpui_form_assert_component_shape<Shape: #runtime_crate::shape::ComponentShape>() {}
                 __gpui_form_assert_component_shape::<#shape>();
                 #value_binding_assertion
                 #value_holder_storage_assertion
             }
-        })
+        }
     }
 
     pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         RequiredValue::shape(self.resolved_shape(field_type))
     }
 
-    fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
+    pub fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
         if !is_combobox_with_inferred_item(&self.shape) {
             return Ok(());
         }
@@ -593,20 +596,9 @@ impl ComponentOption for ShapeOptions {}
 
 pub struct ShapeComponent(pub FieldInformation<ShapeOptions>);
 
-#[derive(Clone, Debug)]
-pub enum Components {
-    Shape(ShapeOptions),
-}
-
-impl Components {
+impl ShapeOptions {
     pub fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        ShapeOptions::from_component_expr(expr).map(Self::Shape)
-    }
-
-    pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
-        match self {
-            Self::Shape(options) => options.required_value(field_type),
-        }
+        Self::from_component_expr(expr)
     }
 
     pub fn generate_field_layout(
@@ -618,20 +610,16 @@ impl Components {
         let mut field_structure_tokens = TokenStream::new();
         let mut field_base_declarations_tokens = TokenStream::new();
 
-        match self {
-            Self::Shape(options) => {
-                let options = options.clone().with_field_type(&field_type);
-                let component = ShapeComponent(FieldInformation::new(
-                    options,
-                    field_name,
-                    field_type.clone(),
-                ));
-                component.field_tokens(
-                    &mut field_structure_tokens,
-                    &mut field_base_declarations_tokens,
-                );
-            },
-        }
+        let options = self.clone().with_field_type(&field_type);
+        let component = ShapeComponent(FieldInformation::new(
+            options,
+            field_name,
+            field_type.clone(),
+        ));
+        component.field_tokens(
+            &mut field_structure_tokens,
+            &mut field_base_declarations_tokens,
+        );
 
         GeneratedFieldLayout {
             field_structure_tokens,
@@ -640,106 +628,76 @@ impl Components {
         }
     }
 
-    pub fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
-        match self {
-            Self::Shape(options) => options.validate_field_type(field_type),
-        }
-    }
-
-    pub fn component_type_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Shape(options) = self;
-
-        let shape = options.resolved_shape(field_type);
+    pub fn component_type_tokens(&self, field_type: &syn::Type) -> TokenStream {
+        let shape = self.resolved_shape(field_type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
         let schema_crate = crate_paths.gpui_form;
-        if let Some(component) = options.component.as_ref() {
+        if let Some(component) = self.component.as_ref() {
             let component_str = component.to_token_stream().to_string();
-            Some(quote! {
+            quote! {
                 .with_component_type(
                     #schema_crate::schema::registry::RustType::new_unchecked(#component_str)
                 )
-            })
+            }
         } else {
-            Some(quote! {
+            quote! {
                 .with_component_type_opt(
                     #schema_crate::schema::registry::RustType::new_opt_unchecked(
                         <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
                     )
                 )
-            })
+            }
         }
     }
 
-    pub fn shape_path_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Shape(options) = self;
-
-        let shape = options
+    pub fn shape_path_tokens(&self, field_type: &syn::Type) -> TokenStream {
+        let shape = self
             .resolved_shape(field_type)
             .to_token_stream()
             .to_string();
         let schema_crate = CratePaths::resolve().gpui_form;
-        Some(quote! {
+        quote! {
             .with_shape_path(#schema_crate::schema::registry::RustPath::new_unchecked(#shape))
-        })
+        }
     }
 
-    pub fn value_binding_tokens(&self, field_type: &syn::Type) -> Option<TokenStream> {
-        let Self::Shape(options) = self;
-
-        let shape = options.resolved_shape(field_type);
+    pub fn value_binding_tokens(&self, field_type: &syn::Type) -> TokenStream {
+        let shape = self.resolved_shape(field_type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
 
-        Some(quote! {
+        quote! {
             .with_value_binding(
                 <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
                     as #runtime_crate::shape::ComponentValueBindingPolicy>::VALUE_BINDING
             )
-        })
+        }
     }
 
-    pub fn prototyping_tokens(
-        &self,
-        _field_name: &str,
-        field_type: &syn::Type,
-    ) -> Option<TokenStream> {
-        let Self::Shape(options) = self;
-
-        if let Some(field_suffix) = &options.field_suffix {
+    pub fn prototyping_tokens(&self, field_type: &syn::Type) -> TokenStream {
+        if let Some(field_suffix) = &self.field_suffix {
             let field_suffix = syn::LitStr::new(field_suffix, proc_macro2::Span::call_site());
             let schema_crate = CratePaths::resolve().gpui_form;
-            Some(quote! {
+            quote! {
                 .with_prototyping_field_suffix(Some(
                     #schema_crate::schema::registry::ComponentSuffix::new(#field_suffix)
                 ))
-            })
+            }
         } else {
-            let shape = options.resolved_shape(field_type);
+            let shape = self.resolved_shape(field_type);
             let crate_paths = CratePaths::resolve();
             let runtime_crate = crate_paths.gpui_form_facade_runtime();
             let schema_crate = crate_paths.gpui_form;
 
-            Some(quote! {
+            quote! {
                 .with_prototyping_field_suffix(
                     #schema_crate::schema::registry::ComponentSuffix::new_opt(
                         <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING
                             .field_suffix
                     )
                 )
-            })
-        }
-    }
-
-    pub fn type_check_tokens(
-        &self,
-        field_type: &syn::Type,
-        check_value_holder_storage: bool,
-    ) -> Option<TokenStream> {
-        match self {
-            Self::Shape(options) => {
-                options.type_check_tokens(field_type, check_value_holder_storage)
-            },
+            }
         }
     }
 }

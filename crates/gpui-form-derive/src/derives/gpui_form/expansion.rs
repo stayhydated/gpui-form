@@ -360,8 +360,7 @@ pub fn expand_gpui_form(
                 let component_type_tokens = component_def.component_type_tokens(&base_type);
                 let shape_path_tokens = component_def.shape_path_tokens(&base_type);
                 let value_binding_tokens = component_def.value_binding_tokens(&base_type);
-                let prototyping_tokens =
-                    component_def.prototyping_tokens(&field_name_str, &base_type);
+                let prototyping_tokens = component_def.prototyping_tokens(&base_type);
                 let from_expr_tokens = option_expr_string_tokens(&rendered.from.cloned());
                 let into_expr_tokens = option_expr_string_tokens(&rendered.into.cloned());
 
@@ -405,7 +404,9 @@ pub fn expand_gpui_form(
                 .map(|ty| extract_option_inner_type(&ty.0).1)
                 .unwrap_or(original_inner_type);
 
-            component_def.type_check_tokens(&base_type, !was_optional)
+            let check_value_holder_default_storage = !was_optional && rendered.default.is_none();
+
+            Some(component_def.type_check_tokens(&base_type, check_value_holder_default_storage))
         })
         .collect();
 

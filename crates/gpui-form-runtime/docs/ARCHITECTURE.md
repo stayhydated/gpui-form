@@ -33,6 +33,11 @@ policy-owned holder field currently contains a value. `RequireValue` reports
 `None` as missing; `AllowMissingValue` always reports present because its
 storage is direct `T`.
 
+`ComponentPrototyping::field_suffix(...)` validates suffixes with the same
+const ASCII identifier rules used by derive-generated paths. This keeps manual
+runtime implementations from publishing invalid prototyping metadata while
+preserving the runtime crate's no-schema-dependency boundary.
+
 It should not depend on:
 
 - `gpui-form-component`, which owns concrete reusable widgets

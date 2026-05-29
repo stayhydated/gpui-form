@@ -702,7 +702,7 @@ mod gpui_form_tests {
             compact.contains(
                 "FieldVariant::new(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),false)"
             ),
-            "FieldVariant metadata should be shape-only and omit behaviour metadata"
+            "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
 
         assert!(

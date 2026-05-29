@@ -16,7 +16,7 @@ prototyping flows around generated form metadata.
 `FieldVariant` records both source-model and form-side value types,
 required-value holder behavior, conversion expressions, component shape
 paths, component shape prototyping suffixes, and opt-in value-binding
-metadata for generators. Helpers such as `field_name_with_behaviour()` keep
+metadata for generators. Helpers such as `field_name_with_component_suffix()` keep
 inventory consumers aligned with the field names emitted by
 `#[derive(GpuiForm)]`, with a shape-derived `"shape"` fallback suffix.
 
@@ -36,7 +36,7 @@ for shape in inventory::iter::<GpuiFormShape>() {
     println!("form: {}", shape.struct_name);
 
     for field in shape.components {
-        println!("  {} -> {}", field.field_name, field.field_name_with_behaviour());
+        println!("  {} -> {}", field.field_name, field.field_name_with_component_suffix());
     }
 }
 ```

@@ -117,14 +117,15 @@ Common patterns:
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices.
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly.
 - Component shapes own the default required-value policy for non-optional fields. Use plain built-in value-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
-- Convert generated holders with `holder.try_into_original()` when conversion can fail, `holder.into_original()` when it is infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit.
+- Convert generated holders with `holder.try_into_original()` when conversion can fail, `holder.into_original()` when it is infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. Shape-policy inheritance is conservative: a required non-optional field with no field default can expose `try_into_original()` even when its concrete value-synthesizing shape cannot fail.
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`. Generated form identifiers use field-level
   `.field_suffix(...)` first, then the explicit component type or shape type name; field-level
-  suffixes must be non-empty identifier suffixes. Inventory scaffolds use shape-level prototyping
-  suffix metadata and otherwise fall back to `shape`.
+  suffixes must be non-empty ASCII identifier suffixes. Inventory scaffolds use shape-level
+  prototyping suffix metadata and otherwise fall back to `shape`; manual
+  `ComponentPrototyping::field_suffix(...)` calls validate the same suffix contract.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Storybook-style GPUI scaffolds that localize generated labels or messages should call `gpui_es_fluent::localize_label` and `gpui_es_fluent::localize_message` with the active `gpui::App` context.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

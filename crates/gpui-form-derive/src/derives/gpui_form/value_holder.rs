@@ -270,7 +270,7 @@ fn generate_default_impl(
                         let runtime_crate = runtime_crate_path();
                         quote! {
                             #field_name: <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
-                                as #runtime_crate::shape::ValueHolderStorage<#base_type>>::default_storage()
+                                as #runtime_crate::shape::ValueHolderDefaultStorage<#base_type>>::default_storage()
                         }
                     },
                 }

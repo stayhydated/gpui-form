@@ -49,7 +49,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
     ) -> TokenStream {
-        let field_in_struct_name_ident = field.field_ident_with_behaviour();
+        let field_in_struct_name_ident = field.field_ident_with_component_suffix();
 
         // When the component type is known, emit <Component>::new(&entity). The
         // bracketed form works for generic component types such as Combobox<_>.
@@ -90,7 +90,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 
         let shape = field.runtime_shape_path()?;
         let field_type = field.value_type();
-        let field_var_name_ident = field.field_ident_with_behaviour();
+        let field_var_name_ident = field.field_ident_with_component_suffix();
         let field_name_ident = field.field_ident();
         let event_handler_fn_name_ident = field.component_event_handler_ident();
         let state_type = quote! { ComponentStateOf<#shape> };
@@ -156,7 +156,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 
         let shape = field.runtime_shape_path()?;
         let field_type = field.value_type();
-        let field_var_name_ident = field.field_ident_with_behaviour();
+        let field_var_name_ident = field.field_ident_with_component_suffix();
         let field_name_ident = field.field_ident();
         let value_tokens = if field.value_holder_uses_option() {
             quote! { current_data.#field_name_ident.as_ref() }

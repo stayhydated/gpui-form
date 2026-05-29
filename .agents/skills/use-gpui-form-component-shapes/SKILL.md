@@ -86,8 +86,9 @@ Metadata rules:
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
-  generated field/helper suffix. The suffix must be a non-empty identifier
-  suffix.
+  generated field/helper suffix. The suffix must be a non-empty ASCII
+  identifier suffix; manual `ComponentPrototyping::field_suffix(...)` calls
+  validate the same contract.
 
 ## External State Pattern
 
@@ -146,9 +147,9 @@ The macro accepts `new`, `component`, `requires_value`, `value_binding`, and
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
-Use a path-like `component = ...` value and a non-empty identifier suffix for
-`field_suffix = "..."`. Separate metadata entries with semicolons. The block
-may also contain `impl` items.
+Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
+for `field_suffix = "..."`. Separate metadata entries with semicolons. The
+block may also contain `impl` items.
 
 When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
 both policy associated types. Use `NoComponentValueBinding` unless the shape

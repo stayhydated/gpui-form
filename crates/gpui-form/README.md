@@ -137,7 +137,10 @@ conversion back to the source model fails when the value is missing. Those
 fallible holder-to-model paths implement `TryFrom` and expose
 `holder.try_into_original()`; infallible paths implement `From` and expose
 `holder.into_original()`. Define this behavior on the reusable component shape
-with `requires_value = false`.
+with `requires_value = false`. When a non-optional field inherits its
+required-value policy from a shape and has no field default, the derive is
+conservative and emits the fallible `try_into_original()` path even if that
+specific shape policy stores values directly.
 
 Common field-level helpers:
 
@@ -160,8 +163,9 @@ Common field-level helpers:
   when supplied; otherwise they derive a suffix from the explicit component
   type or shape type name, such as `birth_date_date_picker`. Shape-level
   `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
-  prototyping output. Field-level suffixes must be non-empty identifier
-  suffixes.
+  prototyping output. Field-level and shape-level suffixes must be non-empty
+  ASCII identifier suffixes; manual `ComponentPrototyping::field_suffix(...)`
+  calls validate the same contract in const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.
@@ -351,7 +355,7 @@ It uses `new`, `component`, `requires_value`, `value_binding`, and
 `field_suffix` metadata, plus `type State = ...` for the wrapped external
 state type. If `new` is omitted, the macro calls `<State>::new(window, cx)`.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
-a non-empty identifier suffix.
+a non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
 impl is emitted with the shape. Add `value_binding;` when that wrapper should

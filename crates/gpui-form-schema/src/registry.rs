@@ -459,12 +459,12 @@ impl FieldVariant {
         self.field_name.to_pascal_case()
     }
 
-    pub fn field_name_with_behaviour(&self) -> String {
+    pub fn field_name_with_component_suffix(&self) -> String {
         format!("{}_{}", self.field_name, self.component_suffix())
     }
 
     pub fn kebab_id(&self) -> String {
-        self.field_name_with_behaviour().to_kebab_case()
+        self.field_name_with_component_suffix().to_kebab_case()
     }
 
     /// Returns the validation rule identifiers attached to this field.
@@ -537,7 +537,7 @@ mod tests {
         let field = FieldVariant::new("country", RustType::new_unchecked("Country"), false)
             .with_shape_path(RustPath::new_unchecked("crate::fields::CountrySelectShape"));
 
-        assert_eq!(field.field_name_with_behaviour(), "country_shape");
+        assert_eq!(field.field_name_with_component_suffix(), "country_shape");
         assert_eq!(field.kebab_id(), "country-shape");
     }
 
@@ -549,7 +549,7 @@ mod tests {
             ))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")));
 
-        assert_eq!(field.field_name_with_behaviour(), "country_select");
+        assert_eq!(field.field_name_with_component_suffix(), "country_select");
     }
 
     #[test]
@@ -558,7 +558,7 @@ mod tests {
             .with_shape_path(RustPath::new_unchecked("crate::fields::TextInputShape"))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input")));
 
-        assert_eq!(field.field_name_with_behaviour(), "email_input");
+        assert_eq!(field.field_name_with_component_suffix(), "email_input");
     }
 
     #[test]
@@ -567,7 +567,7 @@ mod tests {
             .with_shape_path(RustPath::new_unchecked("crate::fields::TagsInputShape"))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags")));
 
-        assert_eq!(field.field_name_with_behaviour(), "tags_shape");
+        assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }
 
     #[test]
@@ -575,7 +575,7 @@ mod tests {
         let field = FieldVariant::new("email", RustType::new_unchecked("String"), false)
             .with_shape_path(RustPath::new_unchecked("crate::fields::EmailInputShape"));
 
-        assert_eq!(field.field_name_with_behaviour(), "email_shape");
+        assert_eq!(field.field_name_with_component_suffix(), "email_shape");
     }
 
     #[test]
@@ -585,7 +585,7 @@ mod tests {
                 "gpui_form_component::infinite_select::InfiniteSelect<Country>",
             ));
 
-        assert_eq!(field.field_name_with_behaviour(), "location_shape");
+        assert_eq!(field.field_name_with_component_suffix(), "location_shape");
     }
 
     #[test]
@@ -593,7 +593,7 @@ mod tests {
         let field = FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
             .with_shape_path(RustPath::new_unchecked("crate::state::TagsState"));
 
-        assert_eq!(field.field_name_with_behaviour(), "tags_shape");
+        assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }
 
     #[test]

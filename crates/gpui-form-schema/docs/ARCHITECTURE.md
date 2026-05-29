@@ -74,7 +74,7 @@ analysis that chooses the generated value-holder conversion methods. Downstream
 generators consume that flag instead of recomputing conversion fallibility from
 field-level metadata.
 
-`FieldVariant::field_name_with_behaviour()` derives the generated component
+`FieldVariant::field_name_with_component_suffix()` derives the generated component
 field name from precomputed `prototyping_field_suffix` metadata. Inventory
 consumers use this as their generated-code naming policy. The suffix is
 normalized against the field name before falling back to `"shape"`.

@@ -88,7 +88,10 @@ impl<'a> FormShapeAdapter<'a> {
             .map(|field| {
                 parse_ident("field name", field.field_name)?;
                 parse_ident("field pascal ident", &field.field_name_pascal())?;
-                parse_ident("field component ident", &field.field_name_with_behaviour())?;
+                parse_ident(
+                    "field component ident",
+                    &field.field_name_with_component_suffix(),
+                )?;
 
                 let resolved = ResolvedField::new(field)?;
                 let generator = field_generator();

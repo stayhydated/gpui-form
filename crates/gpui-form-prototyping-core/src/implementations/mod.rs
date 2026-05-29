@@ -21,7 +21,7 @@ pub struct ResolvedField<'a> {
     field: &'a FieldVariant,
     field_ident: Ident,
     field_ident_pascal: Ident,
-    field_ident_with_behaviour: Ident,
+    field_ident_with_component_suffix: Ident,
     value_type: Type,
     component_ident: Ident,
     shape_path: Option<Path>,
@@ -64,7 +64,10 @@ impl<'a> ResolvedField<'a> {
             field,
             field_ident: format_ident!("{}", field.field_name),
             field_ident_pascal: format_ident!("{}", field.field_name_pascal()),
-            field_ident_with_behaviour: format_ident!("{}", field.field_name_with_behaviour()),
+            field_ident_with_component_suffix: format_ident!(
+                "{}",
+                field.field_name_with_component_suffix()
+            ),
             value_type,
             component_ident: format_ident!("Shape"),
             shape_path,
@@ -88,8 +91,8 @@ impl<'a> ResolvedField<'a> {
         &self.field_ident_pascal
     }
 
-    pub fn field_ident_with_behaviour(&self) -> &Ident {
-        &self.field_ident_with_behaviour
+    pub fn field_ident_with_component_suffix(&self) -> &Ident {
+        &self.field_ident_with_component_suffix
     }
 
     pub fn value_type(&self) -> &Type {
@@ -157,7 +160,7 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn component_event_handler_ident(&self) -> Ident {
-        format_ident!("on_{}_event", self.field_ident_with_behaviour)
+        format_ident!("on_{}_event", self.field_ident_with_component_suffix)
     }
 }
 
@@ -260,7 +263,7 @@ pub fn generate_entity_creation(
     component: &GpuiFormShape,
 ) -> TokenStream {
     let form_components_struct_ident = component.struct_form_components_ident();
-    let var_name_ident = field.field_ident_with_behaviour().clone();
+    let var_name_ident = field.field_ident_with_component_suffix().clone();
     let fn_name_ident = var_name_ident.clone();
 
     quote! {
@@ -270,19 +273,19 @@ pub fn generate_entity_creation(
 }
 
 pub fn generate_entity_field_initializer(field: &ResolvedField<'_>) -> TokenStream {
-    let field_var_name_ident = field.field_ident_with_behaviour();
+    let field_var_name_ident = field.field_ident_with_component_suffix();
     quote! { #field_var_name_ident, }
 }
 
 pub fn generate_entity_focus(field: &ResolvedField<'_>) -> TokenStream {
-    let field_var_name_ident = field.field_ident_with_behaviour();
+    let field_var_name_ident = field.field_ident_with_component_suffix();
     quote! {
         self.fields.#field_var_name_ident.focus_handle(cx),
     }
 }
 
 pub fn generate_text_value_prefill(field: &ResolvedField<'_>) -> TokenStream {
-    let field_var_name_ident = field.field_ident_with_behaviour();
+    let field_var_name_ident = field.field_ident_with_component_suffix();
     let field_name_ident = field.field_ident();
 
     if field.value_holder_uses_option() {
@@ -325,7 +328,7 @@ pub fn render_component_entity_field(
     component: &GpuiFormShape,
 ) -> TokenStream {
     let component_gpui_type = field.component_ident();
-    let field_in_struct_name_ident = field.field_ident_with_behaviour();
+    let field_in_struct_name_ident = field.field_ident_with_component_suffix();
 
     render_standard_field(
         field,
