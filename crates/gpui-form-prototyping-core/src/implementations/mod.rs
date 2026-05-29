@@ -4,7 +4,7 @@ use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
 use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Ident, Path, Type};
+use syn::{Expr, Ident, Path, Type};
 
 use crate::{
     error::{PrototypingError, PrototypingResult},
@@ -25,6 +25,7 @@ pub struct ResolvedField<'a> {
     value_type: Type,
     shape_path: Option<Path>,
     component_type: Option<Type>,
+    default_expr: Option<Expr>,
 }
 
 impl<'a> ResolvedField<'a> {
@@ -59,6 +60,17 @@ impl<'a> ResolvedField<'a> {
             None => None,
         };
 
+        let default_expr = match field.default_expr {
+            Some(default_expr) => Some(syn::parse_str::<Expr>(default_expr.as_str()).map_err(
+                |error| PrototypingError::InvalidExpression {
+                    field_name: field.field_name.to_string(),
+                    value: default_expr.as_str().to_string(),
+                    error: error.to_string(),
+                },
+            )?),
+            None => None,
+        };
+
         Ok(Self {
             field,
             field_ident: format_ident!("{}", field.field_name),
@@ -70,6 +82,7 @@ impl<'a> ResolvedField<'a> {
             value_type,
             shape_path,
             component_type,
+            default_expr,
         })
     }
 
@@ -125,6 +138,10 @@ impl<'a> ResolvedField<'a> {
 
     pub fn component_type_parsed(&self) -> Option<&Type> {
         self.component_type.as_ref()
+    }
+
+    pub fn default_expr(&self) -> Option<&Expr> {
+        self.default_expr.as_ref()
     }
 
     pub fn kebab_id(&self) -> String {

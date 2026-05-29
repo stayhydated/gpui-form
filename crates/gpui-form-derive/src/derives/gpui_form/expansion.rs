@@ -53,6 +53,22 @@ fn phantom_type_tokens(generics: &syn::Generics) -> TokenStream {
     }
 }
 
+fn marker_field_tokens(generics: &syn::Generics) -> TokenStream {
+    if generics
+        .params
+        .iter()
+        .any(|param| matches!(param, GenericParam::Type(_) | GenericParam::Lifetime(_)))
+    {
+        let phantom_type = phantom_type_tokens(generics);
+        quote! {
+            #[doc(hidden)]
+            pub __gpui_form_marker: ::core::marker::PhantomData<fn() -> #phantom_type>,
+        }
+    } else {
+        quote! {}
+    }
+}
+
 pub fn expand_gpui_form(
     derive_input: DeriveInput,
     options: GpuiFormOptions,
@@ -70,6 +86,8 @@ pub fn expand_gpui_form(
     let components_holder_name = format_ident!("{}FormFields", struct_name);
     let components_base_declarations_name = format_ident!("{}FormComponents", struct_name);
     let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
+    let declaration_generics = &original_input.generics;
+    let form_fields_marker = marker_field_tokens(&original_input.generics);
 
     let koruma_options = parsed.koruma.as_ref().map(|k| k.0.clone());
 
@@ -98,14 +116,29 @@ pub fn expand_gpui_form(
         } else {
             quote! {}
         };
+        let empty_struct_declarations = if original_input.generics.params.is_empty() {
+            quote! {
+                pub struct #components_holder_name;
+                pub struct #components_base_declarations_name;
+            }
+        } else {
+            quote! {
+                pub struct #components_holder_name #declaration_generics #where_clause {
+                    #form_fields_marker
+                }
+
+                pub struct #components_base_declarations_name #declaration_generics #where_clause {
+                    #form_fields_marker
+                }
+            }
+        };
 
         return quote! {
             #value_holder_tokens
-            pub struct #components_holder_name;
 
             #shape_impl
 
-            pub struct #components_base_declarations_name;
+            #empty_struct_declarations
         };
     }
 
@@ -455,9 +488,10 @@ pub fn expand_gpui_form(
     } else {
         let phantom_type = phantom_type_tokens(&original_input.generics);
         quote! {
-            pub struct #components_base_declarations_name #impl_generics(
-                ::core::marker::PhantomData<fn() -> #phantom_type>
-            ) #where_clause;
+            pub struct #components_base_declarations_name #declaration_generics #where_clause {
+                #[doc(hidden)]
+                pub __gpui_form_marker: ::core::marker::PhantomData<fn() -> #phantom_type>,
+            }
 
             impl #impl_generics #components_base_declarations_name #ty_generics #where_clause {
               #(#field_base_declarations_tokens)*
@@ -468,8 +502,9 @@ pub fn expand_gpui_form(
     let expanded = quote! {
         #value_holder_tokens
 
-        pub struct #components_holder_name #impl_generics #where_clause {
+        pub struct #components_holder_name #declaration_generics #where_clause {
             #(#field_structure_tokens)*
+            #form_fields_marker
         }
 
         #component_type_checks

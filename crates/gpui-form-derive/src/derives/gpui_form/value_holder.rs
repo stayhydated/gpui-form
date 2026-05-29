@@ -1045,6 +1045,8 @@ pub fn generate_value_holder(
         })
         .collect();
 
+    let declaration_generics = &original_input.generics;
+
     let to_wrapped_fields: Vec<TokenStream> = fields
         .iter()
         .filter(|f| !f.skip)
@@ -1214,7 +1216,7 @@ pub fn generate_value_holder(
         #required_policy_validator
         #derive_output
         #builder_attr
-        pub struct #wrapped_ident #impl_generics #holder_where_clause {
+        pub struct #wrapped_ident #declaration_generics #holder_where_clause {
             #(#field_definitions),*
         }
 

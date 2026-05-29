@@ -26,6 +26,8 @@ fn gpui_form_accepts_generic_shape_backed_forms() {
     let tests = trybuild::TestCases::new();
     tests.pass("tests/ui/gpui_form_combobox_explicit_item_pass.rs");
     tests.pass("tests/ui/gpui_form_generic_shape_pass.rs");
+    tests.pass("tests/ui/gpui_form_plain_generic_pass.rs");
+    tests.pass("tests/ui/gpui_form_partial_generic_component_pass.rs");
 }
 
 #[test]

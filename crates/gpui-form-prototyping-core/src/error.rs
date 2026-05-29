@@ -19,6 +19,11 @@ pub enum PrototypingError {
         value: String,
         error: String,
     },
+    InvalidExpression {
+        field_name: String,
+        value: String,
+        error: String,
+    },
 }
 
 impl fmt::Display for PrototypingError {
@@ -47,6 +52,16 @@ impl fmt::Display for PrototypingError {
                 write!(
                     f,
                     "invalid value type `{value}` for field `{field_name}` in prototyping metadata: {error}"
+                )
+            },
+            Self::InvalidExpression {
+                field_name,
+                value,
+                error,
+            } => {
+                write!(
+                    f,
+                    "invalid default expression `{value}` for field `{field_name}` in prototyping metadata: {error}"
                 )
             },
         }

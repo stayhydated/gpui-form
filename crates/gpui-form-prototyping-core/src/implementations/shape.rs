@@ -99,6 +99,8 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         };
         let clear_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = None; }
+        } else if let Some(default_expr) = field.default_expr() {
+            quote! { self.current_data.#field_name_ident = #default_expr; }
         } else {
             quote! { self.current_data.#field_name_ident = ::core::default::Default::default(); }
         };
@@ -174,7 +176,7 @@ mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
     use gpui_form_schema::registry::{
-        ComponentSuffix, FieldVariant, GpuiFormShape, RustPath, RustType,
+        ComponentSuffix, FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType,
     };
     use quote::quote;
 
@@ -329,6 +331,29 @@ mod tests {
             [
                 FieldVariant::new("code", RustType::new_unchecked("String"), false)
                     .with_requires_value(false)
+                    .with_shape_path(RustPath::new_unchecked(
+                        "gpui_form_collection::otp_input::OtpInput<String>",
+                    ))
+                    .with_value_binding(true),
+            ];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound direct-storage fields should generate subscriptions");
+
+        insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
+    }
+
+    #[test]
+    fn shape_generator_clear_resets_direct_value_storage_to_declared_default() {
+        const FIELDS: [FieldVariant; 1] =
+            [
+                FieldVariant::new("code", RustType::new_unchecked("String"), false)
+                    .with_requires_value(false)
+                    .with_default(RustExpr::new_unchecked("String::from(\"123456\")"))
                     .with_shape_path(RustPath::new_unchecked(
                         "gpui_form_collection::otp_input::OtpInput<String>",
                     ))

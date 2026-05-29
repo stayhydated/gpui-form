@@ -102,7 +102,8 @@ Common struct attributes:
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
   `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
-  `Vec<Item>` fields reset to `Vec::default()`.
+  `Vec<Item>` fields reset to their declared `#[gpui_form(default = ...)]`
+  when present, otherwise `Vec::default()`.
 - Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
   input with step buttons.
 - Use `gpui_form_collection::slider::Slider` for continuous numeric values.

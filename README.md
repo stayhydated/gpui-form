@@ -301,7 +301,8 @@ generic is the selected item type, so a `Vec<Country>` field uses
 `Combobox::<Country>`. The collection combobox publishes
 `requires_value = false`: an empty selection is emitted as
 `FormValueChange::Clear`, so optional fields clear to `None` and
-non-optional `Vec<T>` fields reset to `Vec::default()`.
+non-optional `Vec<T>` fields reset to their declared
+`#[gpui_form(default = ...)]` when present, otherwise `Vec::default()`.
 
 ### 2. Derive on an owned component
 

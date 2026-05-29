@@ -3,7 +3,7 @@ use gpui_form_schema::registry::validate_component_suffix;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
-use syn::{Expr, Lit, Path, Type};
+use syn::{Expr, Lit, LitStr, Path, Type};
 
 use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
@@ -143,7 +143,7 @@ pub struct ShapeOptions {
     /// When provided, the prototyping code generator emits `Component::new(&entity)`.
     pub component: Option<Type>,
     /// Optional explicit generated field/helper suffix.
-    pub field_suffix: Option<String>,
+    pub field_suffix: Option<LitStr>,
     span: Span,
 }
 
@@ -211,7 +211,7 @@ impl ShapeOptions {
         if let Some(field_suffix) = &self.field_suffix {
             return gpui_form_schema::registry::component_suffix_from_suffix(
                 field_name,
-                field_suffix,
+                &field_suffix.value(),
             )
             .unwrap_or_else(|| "shape".to_string());
         }
@@ -413,11 +413,11 @@ fn expect_type_arg(
     }
 }
 
-fn expect_string_arg(
+fn expect_string_lit_arg(
     method: ShapeMetadataMethod,
     span: &syn::Ident,
     args: &[Expr],
-) -> darling::Result<String> {
+) -> darling::Result<LitStr> {
     let [arg] = args else {
         return Err(DarlingError::custom(format!(
             "`{}` expects exactly one string literal argument",
@@ -428,7 +428,7 @@ fn expect_string_arg(
 
     match arg {
         Expr::Lit(expr_lit) => match &expr_lit.lit {
-            Lit::Str(value) => Ok(value.value()),
+            Lit::Str(value) => Ok(value.clone()),
             lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
         },
         _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
@@ -439,10 +439,10 @@ fn expect_field_suffix_arg(
     method: ShapeMetadataMethod,
     span: &syn::Ident,
     args: &[Expr],
-) -> darling::Result<String> {
-    let value = expect_string_arg(method, span, args)?;
-    validate_component_suffix(&value)
-        .map_err(|err| DarlingError::custom(err.to_string()).with_span(span))?;
+) -> darling::Result<LitStr> {
+    let value = expect_string_lit_arg(method, span, args)?;
+    validate_component_suffix(&value.value())
+        .map_err(|err| DarlingError::custom(err.to_string()).with_span(&value))?;
     Ok(value)
 }
 
@@ -527,7 +527,7 @@ fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Typ
         },
         syn::Type::Reference(reference) => {
             let mut reference = reference.clone();
-            reference.elem = Box::new(substitute_infer_in_type(&reference.elem, replacement));
+            *reference.elem = substitute_infer_in_type(&reference.elem, replacement);
             syn::Type::Reference(reference)
         },
         _ => ty.clone(),
@@ -536,7 +536,7 @@ fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Typ
 
 fn substitute_infer_in_return_type(return_type: &mut syn::ReturnType, replacement: &syn::Type) {
     if let syn::ReturnType::Type(_, ty) = return_type {
-        *ty = Box::new(substitute_infer_in_type(ty, replacement));
+        **ty = substitute_infer_in_type(ty, replacement);
     }
 }
 
@@ -689,7 +689,6 @@ impl ShapeOptions {
 
     pub fn prototyping_tokens(&self, field_type: &syn::Type) -> TokenStream {
         if let Some(field_suffix) = &self.field_suffix {
-            let field_suffix = syn::LitStr::new(field_suffix, proc_macro2::Span::call_site());
             let schema_crate = CratePaths::resolve().gpui_form;
             quote! {
                 .with_prototyping_field_suffix(Some(
