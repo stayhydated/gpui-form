@@ -19,7 +19,8 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 
 `gpui-form-runtime` may depend on `gpui` because `ComponentShape::new`,
 `ComponentValueBinding`, and `ComponentStateValueBinding` use `Window`,
-`Context`, and `EventEmitter`.
+`Context`, and `EventEmitter`. It may also depend on `gpui-form-core` for
+UI-neutral helper rules such as shared component suffix validation.
 
 Generated inherited value-binding checks dispatch through
 `ComponentShape::ValueBindingPolicy` and `AssertComponentValueBindingPolicy`
@@ -33,10 +34,11 @@ policy-owned holder field currently contains a value. `RequireValue` reports
 `None` as missing; `AllowMissingValue` always reports present because its
 storage is direct `T`.
 
-`ComponentPrototyping::field_suffix(...)` validates suffixes with the same
-const ASCII identifier rules used by derive-generated paths. This keeps manual
-runtime implementations from publishing invalid prototyping metadata while
-preserving the runtime crate's no-schema-dependency boundary.
+`ComponentPrototyping::field_suffix(...)` validates suffixes through
+`gpui-form-core`, using the same const ASCII identifier rules as schema
+metadata. This keeps manual runtime implementations from publishing invalid
+prototyping metadata while preserving the runtime crate's no-schema-dependency
+boundary.
 
 It should not depend on:
 

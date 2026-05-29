@@ -23,7 +23,6 @@ pub struct ResolvedField<'a> {
     field_ident_pascal: Ident,
     field_ident_with_component_suffix: Ident,
     value_type: Type,
-    component_ident: Ident,
     shape_path: Option<Path>,
     component_type: Option<Type>,
 }
@@ -69,7 +68,6 @@ impl<'a> ResolvedField<'a> {
                 field.field_name_with_component_suffix()
             ),
             value_type,
-            component_ident: format_ident!("Shape"),
             shape_path,
             component_type,
         })
@@ -97,10 +95,6 @@ impl<'a> ResolvedField<'a> {
 
     pub fn value_type(&self) -> &Type {
         &self.value_type
-    }
-
-    pub fn component_ident(&self) -> &Ident {
-        &self.component_ident
     }
 
     pub fn optional(&self) -> bool {
@@ -199,12 +193,6 @@ pub trait FieldCodeGenerator {
         component: &GpuiFormShape,
     ) -> TokenStream;
 
-    fn generate_focusable_cycle(
-        &self,
-        field: &ResolvedField<'_>,
-        component: &GpuiFormShape,
-    ) -> Option<TokenStream>;
-
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,
@@ -277,34 +265,6 @@ pub fn generate_entity_field_initializer(field: &ResolvedField<'_>) -> TokenStre
     quote! { #field_var_name_ident, }
 }
 
-pub fn generate_entity_focus(field: &ResolvedField<'_>) -> TokenStream {
-    let field_var_name_ident = field.field_ident_with_component_suffix();
-    quote! {
-        self.fields.#field_var_name_ident.focus_handle(cx),
-    }
-}
-
-pub fn generate_text_value_prefill(field: &ResolvedField<'_>) -> TokenStream {
-    let field_var_name_ident = field.field_ident_with_component_suffix();
-    let field_name_ident = field.field_ident();
-
-    if field.value_holder_uses_option() {
-        quote! {
-            if let Some(value) = current_data.#field_name_ident.as_ref() {
-                #field_var_name_ident.update(cx, |state, cx| {
-                    state.set_value(value.to_string(), window, cx);
-                });
-            }
-        }
-    } else {
-        quote! {
-            #field_var_name_ident.update(cx, |state, cx| {
-                state.set_value(current_data.#field_name_ident.to_string(), window, cx);
-            });
-        }
-    }
-}
-
 pub fn render_standard_field(
     field: &ResolvedField<'_>,
     component: &GpuiFormShape,
@@ -321,20 +281,6 @@ pub fn render_standard_field(
                 .child(#child_tokens)
         )
     }
-}
-
-pub fn render_component_entity_field(
-    field: &ResolvedField<'_>,
-    component: &GpuiFormShape,
-) -> TokenStream {
-    let component_gpui_type = field.component_ident();
-    let field_in_struct_name_ident = field.field_ident_with_component_suffix();
-
-    render_standard_field(
-        field,
-        component,
-        quote! { #component_gpui_type::new(&self.fields.#field_in_struct_name_ident) },
-    )
 }
 
 pub fn generate_label_tokens(

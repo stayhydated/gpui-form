@@ -134,13 +134,12 @@ selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
 generated value-holder storage as `T`. Shapes that require a present value use
 `Option<T>` storage; generated `validate()` reports a missing value and
 conversion back to the source model fails when the value is missing. Those
-fallible holder-to-model paths implement `TryFrom` and expose
-`holder.try_into_original()`; infallible paths implement `From` and expose
-`holder.into_original()`. Define this behavior on the reusable component shape
-with `requires_value = false`. When a non-optional field inherits its
-required-value policy from a shape and has no field default, the derive is
-conservative and emits the fallible `try_into_original()` path even if that
-specific shape policy stores values directly.
+fallible holder-to-model paths expose `holder.try_into_original()`; infallible
+paths expose `holder.into_original()` and implement `From` when the derive can
+prove infallibility directly. Define this behavior on the reusable component
+shape with `requires_value = false`. Shape-backed fields that inherit an
+infallible value-synthesizing policy also expose `holder.into_original()` for
+clean holder-to-model conversion.
 
 Common field-level helpers:
 

@@ -16,9 +16,15 @@ proc-macro = true
 
 [dependencies]
 darling = { workspace = true }
+proc-macro-crate = { workspace = true }
 proc-macro-error2 = { workspace = true }
 quote = { workspace = true }
 syn = { features = [ "full" ], workspace = true }
+
+[dev-dependencies]
+gpui = { workspace = true }
+gpui-component = { workspace = true }
+trybuild = "1.0"
 
 [lints]
 workspace = true

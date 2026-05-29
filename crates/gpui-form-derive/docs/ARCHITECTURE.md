@@ -84,12 +84,12 @@ Important behaviors:
 - skipped fields are normalized as skipped intent and reject component,
   default, and conversion metadata during field parsing
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
-  missing without a default; `From` is reserved for infallible holders
-- shape-policy inheritance is intentionally conservative: a non-optional
-  shape-backed field with no field default gets the fallible
-  `try_into_original()` surface whenever requiredness is inherited from the
-  shape policy, even if a specific value-synthesizing shape stores values
-  directly
+  missing without a default; `From` is reserved for holders the derive can prove
+  infallible directly
+- shape-policy holder conversion keeps the checked `try_into_original()` path
+  when requiredness is inherited from the shape policy, and also emits an
+  inherent `into_original()` convenience path when no non-shape field can fail
+  conversion
 - non-optional shape-backed fields whose `RequiredValuePolicy` can represent
   missing values also get generated Koruma validators so `validate()` reports
   missing shape-required values before holder-to-model conversion

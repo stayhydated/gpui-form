@@ -12,6 +12,7 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
+gpui-form-core = { workspace = true }
 heck = { workspace = true }
 inventory = { workspace = true }
 syn = { features = [ "full", "parsing" ], workspace = true }

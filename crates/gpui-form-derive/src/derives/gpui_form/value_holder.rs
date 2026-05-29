@@ -111,6 +111,50 @@ pub(super) fn holder_conversion_can_fail(fields: &[FieldOptionality]) -> bool {
         .any(field_conversion_can_fail)
 }
 
+fn field_conversion_requires_try_path(field: &FieldOptionality) -> bool {
+    field_conversion_can_fail(field)
+        && !matches!(field_storage(field), FieldStorage::ShapePolicy(_))
+}
+
+fn holder_conversion_has_hard_fallible_field(fields: &[FieldOptionality]) -> bool {
+    fields
+        .iter()
+        .filter(|field| !field.skip)
+        .any(field_conversion_requires_try_path)
+}
+
+fn holder_conversion_can_fail_tokens(fields: &[FieldOptionality]) -> TokenStream {
+    let mut predicates = Vec::new();
+    let runtime_crate = runtime_crate_path();
+
+    for field in fields.iter().filter(|field| !field.skip) {
+        if field.default_expr.is_some() {
+            continue;
+        }
+
+        match field_storage(field) {
+            FieldStorage::RequiredValue => predicates.push(quote! { true }),
+            FieldStorage::ShapePolicy(shape) => predicates.push(quote! {
+                <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
+                    as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
+            }),
+            FieldStorage::OriginallyOptional | FieldStorage::Plain => {},
+        }
+    }
+
+    if predicates.is_empty() {
+        quote! { false }
+    } else {
+        quote! { false #(|| #predicates)* }
+    }
+}
+
+pub(super) fn holder_conversion_can_fail_metadata_tokens(
+    fields: &[FieldOptionality],
+) -> TokenStream {
+    holder_conversion_can_fail_tokens(fields)
+}
+
 fn try_from_field_tokens(
     field: &FieldOptionality,
     source: TokenStream,
@@ -1026,6 +1070,7 @@ pub fn generate_value_holder(
         .collect();
 
     let from_where_clause = holder_where_clause.clone();
+    let shape_policy_into_original_where_clause = holder_where_clause.clone();
 
     let skipped_params: Vec<TokenStream> = fields
         .iter()
@@ -1048,6 +1093,23 @@ pub fn generate_value_holder(
             }
         })
         .collect();
+
+    let shape_policy_into_original_impl = if reverse_conversion_can_fail
+        && !holder_conversion_has_hard_fallible_field(fields)
+    {
+        quote! {
+            impl #impl_generics #wrapped_ident #ty_generics #shape_policy_into_original_where_clause {
+                pub fn into_original(self) -> #original_ident #ty_generics {
+                    let from = self;
+                    #original_ident {
+                        #(#from_wrapped_fields),*
+                    }
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
 
     let skipped_fields_impl = if has_skipped_fields {
         quote! {
@@ -1112,6 +1174,8 @@ pub fn generate_value_holder(
                     >>::try_from(self)
                 }
             }
+
+            #shape_policy_into_original_impl
         }
     } else {
         quote! {

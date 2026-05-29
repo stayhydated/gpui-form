@@ -1,4 +1,6 @@
-use gpui_form::runtime::shape::{ComponentShape, NoComponentValueBinding, RequireValue};
+use gpui_form::runtime::shape::{
+    AllowMissingValue, ComponentShape, NoComponentValueBinding, RequireValue,
+};
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
 
@@ -25,6 +27,18 @@ impl ComponentShape for RequiredShape {
     }
 }
 
+struct AllowShape;
+
+impl ComponentShape for AllowShape {
+    type State = State;
+    type RequiredValuePolicy = AllowMissingValue;
+    type ValueBindingPolicy = NoComponentValueBinding;
+
+    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
+        State::new(window, cx)
+    }
+}
+
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]
 struct RequiredDemo {
@@ -36,6 +50,12 @@ struct RequiredDemo {
 struct DefaultedDemo {
     #[gpui_form(RequiredShape, default = NonDefault("fallback".to_string()))]
     value: NonDefault,
+}
+
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+struct AllowMissingDemo {
+    #[gpui_form(AllowShape)]
+    value: String,
 }
 
 #[test]
@@ -69,6 +89,21 @@ fn defaulted_required_shape_value_remains_infallible() {
         model,
         DefaultedDemo {
             value: NonDefault("fallback".to_string())
+        }
+    );
+}
+
+#[test]
+fn allow_missing_shape_value_exposes_infallible_into_original() {
+    let model = AllowMissingDemoFormValueHolder {
+        value: "ready".to_string(),
+    }
+    .into_original();
+
+    assert_eq!(
+        model,
+        AllowMissingDemo {
+            value: "ready".to_string()
         }
     );
 }

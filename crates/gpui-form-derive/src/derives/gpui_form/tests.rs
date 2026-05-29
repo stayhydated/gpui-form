@@ -390,8 +390,10 @@ mod gpui_form_tests {
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
-            compact.contains("with_holder_conversion_can_fail(true)"),
-            "Inventory metadata should publish the generated holder conversion API shape: {compact}"
+            compact.contains(
+                "with_holder_conversion_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
+            ),
+            "Inventory metadata should inherit holder conversion fallibility from the shape policy: {compact}"
         );
         assert!(
             compact.contains(

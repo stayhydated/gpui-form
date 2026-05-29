@@ -129,7 +129,8 @@ Common struct attributes:
   fields. Put `requires_value = false` on the reusable shape definition when it
   can synthesize missing values; field attributes do not accept
   `.requires_value(...)`. Required shape-backed values are reported by
-  generated `validate()` and by fallible holder-to-model conversion.
+  generated `validate()` and by fallible holder-to-model conversion, while
+  value-synthesizing policies expose `holder.into_original()`.
 
 ## Generated Names
 
@@ -158,7 +159,9 @@ pub enum Country {
 }
 ```
 
-Add `#[select_item(fluent)]` when the enum derives `EsFluent` and the app will
+`SelectItem` uses enum variant names as fallback labels by default. Add
+`#[select_item(display)]` only when `title()` should call `Display`, or
+`#[select_item(fluent)]` when the enum derives `EsFluent` and the app will
 handle localized labels outside the `SelectItem::title()` call.
 
 ## Infinite Select Pattern

@@ -100,11 +100,11 @@ Behavior notes:
   fields; shapes that can synthesize a missing value keep generated value-holder
   storage as `T`, while required shapes use `Option<T>` and fail conversion when
   missing. Generated `validate()` reports missing required shape values.
-  Fallible holder-to-model paths implement `TryFrom` and expose
-  `holder.try_into_original()`; infallible paths implement `From` and expose
-  `holder.into_original()`. Inherited shape policies without a field default are
-  conservative: the derive emits `try_into_original()` even when a concrete
-  value-synthesizing shape cannot fail at runtime.
+  Fallible holder-to-model paths expose `holder.try_into_original()`;
+  infallible paths expose `holder.into_original()` and implement `From` when
+  the derive can prove infallibility directly. Inherited shape policies without
+  a field default also expose an inherent `into_original()` convenience path
+  when no non-shape field can fail conversion.
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements

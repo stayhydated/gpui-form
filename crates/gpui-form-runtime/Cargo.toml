@@ -13,6 +13,7 @@ readme = "README.md"
 
 [dependencies]
 gpui = { workspace = true }
+gpui-form-core = { workspace = true }
 
 [lints]
 workspace = true

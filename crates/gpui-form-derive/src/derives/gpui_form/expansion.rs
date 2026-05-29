@@ -13,7 +13,7 @@ use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::structs::{ComponentStruct, FieldOptionality, GpuiFormOptions};
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 use crate::derives::gpui_form::value_holder::{
-    generate_value_holder, holder_conversion_can_fail, parse_field_default,
+    generate_value_holder, holder_conversion_can_fail_metadata_tokens, parse_field_default,
 };
 
 fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
@@ -117,17 +117,22 @@ pub fn expand_gpui_form(
     let has_skipped_fields = fields_iter.iter().any(|field| field.skip());
 
     let parsed_koruma_fields: HashMap<String, KorumaFieldInfo> = match &derive_input.data {
-        syn::Data::Struct(data_struct) => data_struct
-            .fields
-            .iter()
-            .filter_map(|field| {
-                let ident = field.ident.as_ref()?.to_string();
+        syn::Data::Struct(data_struct) => {
+            let mut fields = HashMap::new();
+            for field in &data_struct.fields {
+                let Some(ident) = field.ident.as_ref() else {
+                    continue;
+                };
                 match koruma_derive_core::parse_field(field, 0) {
-                    ParseFieldResult::Valid(info) => Some((ident, *info)),
-                    ParseFieldResult::Skip | ParseFieldResult::Error(_) => None,
+                    ParseFieldResult::Valid(info) => {
+                        fields.insert(ident.to_string(), *info);
+                    },
+                    ParseFieldResult::Skip => {},
+                    ParseFieldResult::Error(error) => return error.to_compile_error(),
                 }
-            })
-            .collect(),
+            }
+            fields
+        },
         _ => HashMap::new(),
     };
 
@@ -266,7 +271,7 @@ pub fn expand_gpui_form(
         effective_enable_koruma,
         enable_koruma_fluent,
     );
-    let conversion_can_fail = holder_conversion_can_fail(&field_optionality);
+    let conversion_can_fail = holder_conversion_can_fail_metadata_tokens(&field_optionality);
 
     let field_variant_construction_code: Vec<TokenStream> = fields_iter
         .iter()

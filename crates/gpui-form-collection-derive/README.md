@@ -31,10 +31,15 @@ pub enum Country {
 
 Optional attribute:
 
-- `#[select_item(fluent)]` uses fallback variant names when the enum implements
-  `EsFluent` and should avoid a `Display` bound. The generated
-  `SelectItem::title()` output remains plain fallback text because this contract
-  has no localizer argument.
+- By default, `SelectItem::title()` uses the enum variant name as fallback text
+  and does not require `Display`.
+- `#[select_item(display)]` uses `self.to_string()` when the enum intentionally
+  provides display text.
+- `#[select_item(fluent)]` is accepted for enums that also derive `EsFluent`;
+  the generated `SelectItem::title()` output remains plain fallback text
+  because this contract has no localizer argument.
+
+`display` and `fluent` are mutually exclusive.
 
 ## Most Users Should Use Instead
 

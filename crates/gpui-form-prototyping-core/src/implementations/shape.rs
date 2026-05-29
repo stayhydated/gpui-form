@@ -71,14 +71,6 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         render_standard_field(field, component, child_tokens)
     }
 
-    fn generate_focusable_cycle(
-        &self,
-        _field: &ResolvedField<'_>,
-        _component: &GpuiFormShape,
-    ) -> Option<TokenStream> {
-        None
-    }
-
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,

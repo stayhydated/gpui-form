@@ -12,9 +12,11 @@ Today this crate is intentionally small and focused:
 
 - `numeric::validate_signed_numeric`
 - `numeric::validate_unsigned_numeric`
+- `component_suffix::is_valid_ascii_identifier_suffix`
 
 These helpers are available for custom numeric input wrappers that want shared
-text-entry validation without depending on GPUI runtime crates.
+text-entry validation and for integration tooling that wants the same component
+suffix validation rules without depending on GPUI runtime crates.
 
 ## Example
 
