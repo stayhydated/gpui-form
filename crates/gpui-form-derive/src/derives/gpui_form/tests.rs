@@ -390,6 +390,10 @@ mod gpui_form_tests {
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
+            compact.contains("with_holder_conversion_can_fail(true)"),
+            "Inventory metadata should publish the generated holder conversion API shape: {compact}"
+        );
+        assert!(
             compact.contains(
                 "pubfntry_into_original(self)->Result<TestForm,TestFormFormValueHolderConversionError>"
             ),
@@ -428,7 +432,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"birth_date\",::gpui_form::schema::registry::RustType::new(\"chrono::NaiveDate\"),true"
+                "FieldVariant::new(\"birth_date\",::gpui_form::schema::registry::RustType::new_unchecked(\"chrono::NaiveDate\"),true"
             ),
             "FieldVariant should use override type for metadata"
         );
@@ -445,6 +449,10 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubfninto_original(self)->TestForm"),
             "Infallible holders should expose into_original(self): {compact}"
+        );
+        assert!(
+            compact.contains("with_holder_conversion_can_fail(false)"),
+            "Inventory metadata should publish infallible holder conversion API shape: {compact}"
         );
         assert!(
             !compact.contains("pubfntry_from("),
@@ -479,7 +487,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"amount\",::gpui_form::schema::registry::RustType::new(\"rust_decimal::Decimal\"),false"
+                "FieldVariant::new(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),false"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -491,7 +499,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"crate::NumericShape<rust_decimal::Decimal>\"))"
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::NumericShape<rust_decimal::Decimal>\"))"
             ),
             "Component shape metadata should preserve the fully-qualified override type"
         );
@@ -692,7 +700,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"bio\",::gpui_form::schema::registry::RustType::new(\"String\"),false)"
+                "FieldVariant::new(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),false)"
             ),
             "FieldVariant metadata should be shape-only and omit behaviour metadata"
         );
@@ -703,7 +711,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"crate::shapes::BioInputShape\"))"
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::shapes::BioInputShape\"))"
             ),
             "FieldVariant should carry the component shape path: {compact}"
         );
@@ -910,13 +918,13 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"account_no\",::gpui_form::schema::registry::RustType::new(\"crate::types::AccountCode\"),false"
+                "FieldVariant::new(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),false"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );
         assert!(
             compact.contains(
-                "with_source_value_type(::gpui_form::schema::registry::RustType::new(\"String\"))"
+                "with_source_value_type(::gpui_form::schema::registry::RustType::new_unchecked(\"String\"))"
             ),
             "FieldVariant should store the source model value type: {compact}"
         );
@@ -927,7 +935,7 @@ mod gpui_form_tests {
             "FieldVariant should inherit generated required-value policy from the shape: {compact}"
         );
         assert!(
-            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::new(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::new(\"crate::types::AccountCode::into_string\")))"),
+            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::into_string\")))"),
             "FieldVariant should store source/form conversion expressions: {compact}"
         );
     }
@@ -996,7 +1004,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
+                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
             ),
             "component shape metadata should store the resolved shape path: {compact}"
         );

@@ -106,6 +106,7 @@ gpui_form_derive::component_shape! {
         component = gpui_form_collection::number_input::NumberInputField;
         requires_value = false;
         field_suffix = "number_input";
+        value_binding;
 
         impl<T> ComponentValueBinding<T> for NumberInput<T>
         where

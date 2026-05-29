@@ -6,14 +6,93 @@ inventory::collect!(GpuiFormShape);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RustType(&'static str);
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RustSyntaxKind {
+    Type,
+    Path,
+    Expr,
+}
+
+impl RustSyntaxKind {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Type => "type",
+            Self::Path => "path",
+            Self::Expr => "expression",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RustSyntaxError {
+    kind: RustSyntaxKind,
+    value: String,
+    error: String,
+}
+
+impl RustSyntaxError {
+    pub const fn kind(&self) -> RustSyntaxKind {
+        self.kind
+    }
+
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+
+    pub fn source_error(&self) -> &str {
+        &self.error
+    }
+}
+
+impl std::fmt::Display for RustSyntaxError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "invalid Rust {} metadata `{}`: {}",
+            self.kind.label(),
+            self.value,
+            self.error
+        )
+    }
+}
+
+impl std::error::Error for RustSyntaxError {}
+
+fn rust_syntax_error(kind: RustSyntaxKind, value: &str, error: syn::Error) -> RustSyntaxError {
+    RustSyntaxError {
+        kind,
+        value: value.to_string(),
+        error: error.to_string(),
+    }
+}
+
 impl RustType {
-    pub const fn new(value: &'static str) -> Self {
+    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
+        syn::parse_str::<syn::Type>(value)
+            .map(|_| Self(value))
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Type, value, error))
+    }
+
+    pub fn new_opt(value: Option<&'static str>) -> Result<Option<Self>, RustSyntaxError> {
+        match value {
+            Some(value) => Self::new(value).map(Some),
+            None => Ok(None),
+        }
+    }
+
+    /// Construct metadata without validation.
+    ///
+    /// This is intended for macro-generated inventory, where the derive layer
+    /// just stringified syntax that was already parsed by `syn`.
+    #[doc(hidden)]
+    pub const fn new_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
-    pub const fn new_opt(value: Option<&'static str>) -> Option<Self> {
+    #[doc(hidden)]
+    pub const fn new_opt_unchecked(value: Option<&'static str>) -> Option<Self> {
         match value {
-            Some(value) => Some(Self::new(value)),
+            Some(value) => Some(Self::new_unchecked(value)),
             None => None,
         }
     }
@@ -28,7 +107,18 @@ impl RustType {
 pub struct RustPath(&'static str);
 
 impl RustPath {
-    pub const fn new(value: &'static str) -> Self {
+    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
+        syn::parse_str::<syn::Path>(value)
+            .map(|_| Self(value))
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Path, value, error))
+    }
+
+    /// Construct metadata without validation.
+    ///
+    /// This is intended for macro-generated inventory, where the derive layer
+    /// just stringified syntax that was already parsed by `syn`.
+    #[doc(hidden)]
+    pub const fn new_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
@@ -42,7 +132,18 @@ impl RustPath {
 pub struct RustExpr(&'static str);
 
 impl RustExpr {
-    pub const fn new(value: &'static str) -> Self {
+    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
+        syn::parse_str::<syn::Expr>(value)
+            .map(|_| Self(value))
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Expr, value, error))
+    }
+
+    /// Construct metadata without validation.
+    ///
+    /// This is intended for macro-generated inventory, where the derive layer
+    /// just stringified syntax that was already parsed by `syn`.
+    #[doc(hidden)]
+    pub const fn new_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
@@ -151,6 +252,12 @@ pub struct GpuiFormShape {
     /// When true, generated `FormValueHolder` cannot be converted back into the
     /// original struct without additional skipped-field values.
     pub has_skipped_fields: bool,
+    /// Whether the generated holder-to-model conversion API is fallible.
+    ///
+    /// This is emitted by `#[derive(GpuiForm)]` from the same analysis used for
+    /// the generated value-holder methods, so downstream generators do not need
+    /// to reconstruct conversion behavior from field-level metadata.
+    pub holder_conversion_can_fail: bool,
 }
 
 impl GpuiFormShape {
@@ -166,12 +273,23 @@ impl GpuiFormShape {
             source_path,
             koruma_enabled,
             has_skipped_fields: false,
+            holder_conversion_can_fail: false,
         }
     }
 
     /// Marks whether the original struct has any `#[gpui_form(skip)]` fields.
     pub const fn with_skipped_fields(mut self, has_skipped_fields: bool) -> Self {
         self.has_skipped_fields = has_skipped_fields;
+        self
+    }
+
+    /// Marks whether generated holder-to-model conversion uses the fallible
+    /// `try_into_original()` shape.
+    pub const fn with_holder_conversion_can_fail(
+        mut self,
+        holder_conversion_can_fail: bool,
+    ) -> Self {
+        self.holder_conversion_can_fail = holder_conversion_can_fail;
         self
     }
 
@@ -191,6 +309,12 @@ impl GpuiFormShape {
     /// Returns true when at least one source field is marked `#[gpui_form(skip)]`.
     pub const fn has_skipped_fields(&self) -> bool {
         self.has_skipped_fields
+    }
+
+    /// Returns true when generated holder-to-model conversion exposes
+    /// `try_into_original()` for non-skipped fields.
+    pub const fn holder_conversion_can_fail(&self) -> bool {
+        self.holder_conversion_can_fail
     }
 }
 
@@ -374,14 +498,44 @@ pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<St
 #[cfg(test)]
 mod tests {
     use super::{
-        ComponentSuffix, FieldVariant, RustPath, RustType, is_valid_component_suffix,
-        validate_component_suffix,
+        ComponentSuffix, FieldVariant, RustExpr, RustPath, RustSyntaxKind, RustType,
+        is_valid_component_suffix, validate_component_suffix,
     };
 
     #[test]
+    fn rust_metadata_constructors_validate_syntax() {
+        assert_eq!(
+            RustType::new("Vec<String>").unwrap().as_str(),
+            "Vec<String>"
+        );
+        assert_eq!(
+            RustPath::new("crate::fields::EmailInputShape")
+                .unwrap()
+                .as_str(),
+            "crate::fields::EmailInputShape"
+        );
+        assert_eq!(
+            RustExpr::new("|value| value.to_string()").unwrap().as_str(),
+            "|value| value.to_string()"
+        );
+
+        let type_error = RustType::new("Vec<").unwrap_err();
+        assert_eq!(type_error.kind(), RustSyntaxKind::Type);
+        assert_eq!(type_error.value(), "Vec<");
+
+        let path_error = RustPath::new("crate::").unwrap_err();
+        assert_eq!(path_error.kind(), RustSyntaxKind::Path);
+        assert_eq!(path_error.value(), "crate::");
+
+        let expr_error = RustExpr::new("let").unwrap_err();
+        assert_eq!(expr_error.kind(), RustSyntaxKind::Expr);
+        assert_eq!(expr_error.value(), "let");
+    }
+
+    #[test]
     fn shape_name_without_prototyping_suffix_falls_back_to_shape() {
-        let field = FieldVariant::new("country", RustType::new("Country"), false)
-            .with_shape_path(RustPath::new("crate::fields::CountrySelectShape"));
+        let field = FieldVariant::new("country", RustType::new_unchecked("Country"), false)
+            .with_shape_path(RustPath::new_unchecked("crate::fields::CountrySelectShape"));
 
         assert_eq!(field.field_name_with_behaviour(), "country_shape");
         assert_eq!(field.kebab_id(), "country-shape");
@@ -389,8 +543,10 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_drives_component_suffix() {
-        let field = FieldVariant::new("country", RustType::new("Country"), false)
-            .with_shape_path(RustPath::new("crate::fields::CountrySelectorState"))
+        let field = FieldVariant::new("country", RustType::new_unchecked("Country"), false)
+            .with_shape_path(RustPath::new_unchecked(
+                "crate::fields::CountrySelectorState",
+            ))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")));
 
         assert_eq!(field.field_name_with_behaviour(), "country_select");
@@ -398,8 +554,8 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::new("email", RustType::new("String"), false)
-            .with_shape_path(RustPath::new("crate::fields::TextInputShape"))
+        let field = FieldVariant::new("email", RustType::new_unchecked("String"), false)
+            .with_shape_path(RustPath::new_unchecked("crate::fields::TextInputShape"))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input")));
 
         assert_eq!(field.field_name_with_behaviour(), "email_input");
@@ -407,8 +563,8 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::new("tags", RustType::new("Vec<String>"), false)
-            .with_shape_path(RustPath::new("crate::fields::TagsInputShape"))
+        let field = FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
+            .with_shape_path(RustPath::new_unchecked("crate::fields::TagsInputShape"))
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags")));
 
         assert_eq!(field.field_name_with_behaviour(), "tags_shape");
@@ -416,25 +572,26 @@ mod tests {
 
     #[test]
     fn shape_path_does_not_drive_field_suffix() {
-        let field = FieldVariant::new("email", RustType::new("String"), false)
-            .with_shape_path(RustPath::new("crate::fields::EmailInputShape"));
+        let field = FieldVariant::new("email", RustType::new_unchecked("String"), false)
+            .with_shape_path(RustPath::new_unchecked("crate::fields::EmailInputShape"));
 
         assert_eq!(field.field_name_with_behaviour(), "email_shape");
     }
 
     #[test]
     fn multiword_shape_name_without_prototyping_suffix_uses_shape() {
-        let field = FieldVariant::new("location", RustType::new("Country"), false).with_shape_path(
-            RustPath::new("gpui_form_component::infinite_select::InfiniteSelect<Country>"),
-        );
+        let field = FieldVariant::new("location", RustType::new_unchecked("Country"), false)
+            .with_shape_path(RustPath::new_unchecked(
+                "gpui_form_component::infinite_select::InfiniteSelect<Country>",
+            ));
 
         assert_eq!(field.field_name_with_behaviour(), "location_shape");
     }
 
     #[test]
     fn exact_duplicate_shape_name_falls_back_to_shape_suffix() {
-        let field = FieldVariant::new("tags", RustType::new("Vec<String>"), false)
-            .with_shape_path(RustPath::new("crate::state::TagsState"));
+        let field = FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
+            .with_shape_path(RustPath::new_unchecked("crate::state::TagsState"));
 
         assert_eq!(field.field_name_with_behaviour(), "tags_shape");
     }

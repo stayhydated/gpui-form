@@ -21,6 +21,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::select::Select<_>;
         requires_value = false;
         field_suffix = "select";
+        value_binding;
 
         impl<T, D> ComponentValueBinding<T> for Select<T, D>
         where

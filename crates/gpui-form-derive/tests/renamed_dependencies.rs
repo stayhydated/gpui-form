@@ -173,6 +173,7 @@ gpui_form_derive::component_shape! {
         component = MacroComponent;
         requires_value = false;
         field_suffix = "macro";
+        value_binding;
 
         impl ComponentValueBinding<String> for MacroShape {
             type Event = MacroEvent;

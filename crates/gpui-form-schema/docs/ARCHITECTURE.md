@@ -33,6 +33,7 @@ Important fields:
 - `source_path`
 - `koruma_enabled`
 - `has_skipped_fields`
+- `holder_conversion_can_fail`
 
 ### `FieldVariant`
 
@@ -63,7 +64,15 @@ Rust syntax fragments are stored as typed string wrappers:
 
 The wrappers preserve `'static` inventory data while preventing accidental
 mixing between types, paths, expressions, and suffixes at registry construction
-sites. Consumers call `.as_str()` before parsing with `syn`.
+sites. Their public `new` constructors validate Rust syntax with `syn`;
+unchecked const constructors are reserved for macro-generated inventory, where
+the derive layer stringifies syntax it already parsed. Consumers call
+`.as_str()` before parsing with `syn`.
+
+`holder_conversion_can_fail` is emitted by `gpui-form-derive` from the same
+analysis that chooses the generated value-holder conversion methods. Downstream
+generators consume that flag instead of recomputing conversion fallibility from
+field-level metadata.
 
 `FieldVariant::field_name_with_behaviour()` derives the generated component
 field name from precomputed `prototyping_field_suffix` metadata. Inventory

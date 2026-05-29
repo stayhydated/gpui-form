@@ -128,6 +128,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::input::Input;
         requires_value = false;
         field_suffix = "input";
+        value_binding;
 
         impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
         where
@@ -140,8 +141,8 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-The macro accepts the same metadata as the derive form, except derive-only
-`value_binding`, plus `type State = ...`.
+The macro accepts `new`, `component`, `requires_value`, `value_binding`, and
+`field_suffix` metadata, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `requires_value = false` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `.requires_value(...)`.
@@ -162,13 +163,13 @@ put `#[gpui_form_derive::component_value_binding]` on a
 The attribute compiles it as the state-level binding used by component-derived
 shapes that opt in with `#[gpui_form_shape(..., value_binding)]`. For wrapper
 shapes created by `component_shape!`, prefer putting the `ComponentValueBinding<T>`
-impl inside the macro block; nested binding impls are emitted with the shape and
-automatically publish shape-level value-binding metadata. The impl target must
-be the shape declared by the macro.
+impl inside the macro block and add `value_binding;` to the macro metadata when
+the wrapper should publish shape-level value-binding metadata.
 
 Value binding is shape-owned. Use a component-derived shape with explicit
-`value_binding` or a wrapper shape with a nested `ComponentValueBinding<T>` impl
-when generated forms should inherit synchronization.
+`value_binding` or a wrapper shape with both `value_binding;` and a
+`ComponentValueBinding<T>` impl when generated forms should inherit
+synchronization.
 
 ## Checks
 

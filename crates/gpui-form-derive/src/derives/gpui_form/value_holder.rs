@@ -103,7 +103,7 @@ fn field_conversion_can_fail(field: &FieldOptionality) -> bool {
     )
 }
 
-fn holder_conversion_can_fail(fields: &[FieldOptionality]) -> bool {
+pub(super) fn holder_conversion_can_fail(fields: &[FieldOptionality]) -> bool {
     fields
         .iter()
         .filter(|field| !field.skip)

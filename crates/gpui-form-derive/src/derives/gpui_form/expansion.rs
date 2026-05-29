@@ -12,7 +12,9 @@ use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
 use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::structs::{ComponentStruct, FieldOptionality, GpuiFormOptions};
 use crate::derives::gpui_form::utils::extract_option_inner_type;
-use crate::derives::gpui_form::value_holder::{generate_value_holder, parse_field_default};
+use crate::derives::gpui_form::value_holder::{
+    generate_value_holder, holder_conversion_can_fail, parse_field_default,
+};
 
 fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
     match expr {
@@ -20,7 +22,7 @@ fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
             let expr_str = expr.to_token_stream().to_string();
             let facade_crate = CratePaths::resolve().gpui_form;
             quote! {
-                Some(#facade_crate::schema::registry::RustExpr::new(#expr_str))
+                Some(#facade_crate::schema::registry::RustExpr::new_unchecked(#expr_str))
             }
         },
         None => quote! { None },
@@ -90,6 +92,7 @@ pub fn expand_gpui_form(
                         file!(),
                         #enable_koruma
                     ).with_skipped_fields(false)
+                    .with_holder_conversion_can_fail(false)
                 }
             }
         } else {
@@ -263,6 +266,7 @@ pub fn expand_gpui_form(
         effective_enable_koruma,
         enable_koruma_fluent,
     );
+    let conversion_can_fail = holder_conversion_can_fail(&field_optionality);
 
     let field_variant_construction_code: Vec<TokenStream> = fields_iter
         .iter()
@@ -349,7 +353,7 @@ pub fn expand_gpui_form(
                 let default_expr_tokens = rendered.default.map(|expr| {
                     let expr_str = expr.0.to_token_stream().to_string();
                     quote! {
-                        .with_default(#facade_crate::schema::registry::RustExpr::new(#expr_str))
+                        .with_default(#facade_crate::schema::registry::RustExpr::new_unchecked(#expr_str))
                     }
                 });
 
@@ -364,11 +368,11 @@ pub fn expand_gpui_form(
                 Some(quote! {
                     #facade_crate::schema::registry::FieldVariant::new(
                         #field_name_str,
-                        #facade_crate::schema::registry::RustType::new(#field_type_str),
+                        #facade_crate::schema::registry::RustType::new_unchecked(#field_type_str),
                         #is_optional
                     )
                     .with_source_value_type(
-                        #facade_crate::schema::registry::RustType::new(#source_value_type_str)
+                        #facade_crate::schema::registry::RustType::new_unchecked(#source_value_type_str)
                     )
                     .with_requires_value(#requires_value_tokens)
                     .with_conversions(#from_expr_tokens, #into_expr_tokens)
@@ -429,6 +433,7 @@ pub fn expand_gpui_form(
                     file!(),
                     #effective_enable_koruma
                 ).with_skipped_fields(#has_skipped_fields)
+                .with_holder_conversion_can_fail(#conversion_can_fail)
             }
         }
     } else {

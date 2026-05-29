@@ -69,6 +69,7 @@ gpui_form_derive::component_shape! {
         component = gpui_form_collection::checkbox::CheckboxField;
         requires_value = false;
         field_suffix = "checkbox";
+        value_binding;
 
         impl ComponentValueBinding<bool> for Checkbox {
             type Event = CheckboxEvent;

@@ -9,14 +9,14 @@ use syn::{
 
 use super::component_shape_metadata::ComponentShapeMetadata;
 
-const FUNCTION_SHAPE_OPTIONS: &str =
-    "`new = ...`, `component = ...`, `requires_value = ...`, or `field_suffix = ...`";
+const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `requires_value = ...`, `value_binding`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
     syn::custom_keyword!(requires_value);
+    syn::custom_keyword!(value_binding);
 }
 
 struct ComponentShapeInput {
@@ -78,6 +78,10 @@ impl Parse for ComponentShapeInput {
                 content.parse::<Token![=]>()?;
                 metadata.set_requires_value(content.parse()?, key)?;
                 parse_option_separator(&content)?;
+            } else if content.peek(kw::value_binding) {
+                let key = content.parse::<kw::value_binding>()?;
+                metadata.enable_value_binding(key)?;
+                parse_option_separator(&content)?;
             } else if content.peek(kw::field_suffix) {
                 let key = content.parse::<kw::field_suffix>()?;
                 content.parse::<Token![=]>()?;
@@ -85,11 +89,6 @@ impl Parse for ComponentShapeInput {
                 parse_option_separator(&content)?;
             } else if content.peek(Token![impl]) || content.peek(Token![#]) {
                 let impl_item: ItemImpl = content.parse()?;
-                if is_component_value_binding_impl_for_shape(&impl_item, &ident)?
-                    && !metadata.has_value_binding()
-                {
-                    metadata.enable_value_binding(&impl_item)?;
-                }
                 impls.push(impl_item);
             } else {
                 return Err(content.error(format!(
@@ -107,41 +106,6 @@ impl Parse for ComponentShapeInput {
             metadata,
             impls,
         })
-    }
-}
-
-fn is_component_value_binding_impl_for_shape(
-    impl_item: &ItemImpl,
-    shape_ident: &Ident,
-) -> Result<bool> {
-    let is_component_value_binding = impl_item
-        .trait_
-        .as_ref()
-        .and_then(|(_, path, _)| path.segments.last())
-        .is_some_and(|segment| segment.ident == "ComponentValueBinding");
-
-    if !is_component_value_binding {
-        return Ok(false);
-    }
-
-    let target_ident = match impl_item.self_ty.as_ref() {
-        Type::Path(type_path)
-            if type_path.qself.is_none() && type_path.path.segments.len() == 1 =>
-        {
-            type_path.path.segments.last().map(|segment| &segment.ident)
-        },
-        _ => None,
-    };
-
-    if target_ident == Some(shape_ident) {
-        Ok(true)
-    } else {
-        Err(syn::Error::new_spanned(
-            &impl_item.self_ty,
-            format!(
-                "nested `ComponentValueBinding` impls in `component_shape!` must target `{shape_ident}`"
-            ),
-        ))
     }
 }
 
@@ -318,6 +282,7 @@ mod tests {
             {
                 type State = ::gpui_component::input::InputState;
                 component = ::gpui_component::input::Input;
+                value_binding;
 
                 impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T>
                 where
@@ -350,12 +315,12 @@ mod tests {
     }
 
     #[test]
-    fn component_shape_function_macro_rejects_nested_binding_for_other_shape() {
-        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+    fn component_shape_function_macro_requires_explicit_value_binding_metadata() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape<T> {
                 type State = ::gpui_component::input::InputState;
 
-                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for OtherShape<T> {
+                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T> {
                     type Event = ::gpui_component::input::InputEvent;
 
                     fn form_value_change(
@@ -366,48 +331,39 @@ mod tests {
                     }
                 }
             }
-        }) {
-            Ok(_) => panic!("component_shape! should reject nested bindings for other shapes"),
-            Err(err) => err,
-        };
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            err.to_string().contains(
-                "nested `ComponentValueBinding` impls in `component_shape!` must target `InputShape`"
+            compact.contains(
+                "typeValueBindingPolicy=::gpui_form_runtime::shape::NoComponentValueBinding"
             ),
-            "macro should reject binding impls for other shapes clearly: {err}"
+            "nested binding impls should not publish metadata without explicit value_binding: {compact}"
         );
     }
 
     #[test]
-    fn component_shape_function_macro_rejects_nested_binding_for_qualified_target() {
-        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+    fn component_shape_function_macro_ignores_unrelated_component_value_binding_names() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape<T> {
                 type State = ::gpui_component::input::InputState;
 
-                impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T>
-                    for crate::other::InputShape<T>
-                {
-                    type Event = ::gpui_component::input::InputEvent;
-
-                    fn form_value_change(
-                        _state: &Self::State,
-                        _event: &Self::Event,
-                    ) -> ::gpui_form_runtime::shape::FormValueChange<T> {
-                        ::gpui_form_runtime::shape::FormValueChange::Unchanged
-                    }
-                }
+                impl<T> unrelated::ComponentValueBinding<T> for InputShape<T> {}
             }
-        }) {
-            Ok(_) => panic!("component_shape! should reject qualified binding targets"),
-            Err(err) => err,
-        };
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            err.to_string().contains(
-                "nested `ComponentValueBinding` impls in `component_shape!` must target `InputShape`"
+            compact.contains(
+                "typeValueBindingPolicy=::gpui_form_runtime::shape::NoComponentValueBinding"
             ),
-            "macro should reject binding impls for qualified targets clearly: {err}"
+            "unrelated traits with a matching final segment should not publish metadata: {compact}"
         );
     }
 

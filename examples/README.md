@@ -49,7 +49,8 @@ Generator example that walks `GpuiFormShape` inventory data and emits scaffolded
 form files into `examples/some-lib-forms/src/forms`, then formats them with
 `rustfmt`. Generated Storybook form titles use the example app's active locale.
 Value-bound shape-backed fields keep readable prototyping metadata names such as
-`email_input` and `on_email_input_event`.
+`email_input` and `on_email_input_event`. Holder conversion debug rows use the
+derive-emitted inventory flag for `into_original` versus `try_into_original`.
 
 Run it with:
 

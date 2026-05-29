@@ -123,6 +123,10 @@ The shape expression is parsed as attribute metadata; generated runtime
 construction delegates to `ComponentShape::new`. `gpui-form` treats every
 component as a custom shape contract and does not inspect the shape path for
 built-in component categories.
+Single-segment local shape identifiers should be UpperCamel, such as
+`EmailInputShape`; lowercase bare words are reserved for field options, and the
+only supported bare option is `skip`. Use a qualified path such as
+`my::Shape` when the shape is not a local single-segment type.
 
 Component shapes own the default required-value policy for non-optional fields.
 Shapes that can safely synthesize a missing value, such as the built-in inputs,
@@ -343,16 +347,15 @@ pub struct ContactForm {
 `component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
-It uses `new`, `component`, `requires_value`, and `field_suffix` metadata,
-plus `type State = ...` for the wrapped external state type. If `new` is
-omitted, the macro calls `<State>::new(window, cx)`.
+It uses `new`, `component`, `requires_value`, `value_binding`, and
+`field_suffix` metadata, plus `type State = ...` for the wrapped external
+state type. If `new` is omitted, the macro calls `<State>::new(window, cx)`.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
 a non-empty identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. A nested `ComponentValueBinding<T>`
-impl is emitted with the shape and automatically publishes shape-level
-value-binding metadata. The impl target must be the shape declared by the
-macro.
+impl is emitted with the shape. Add `value_binding;` when that wrapper should
+publish shape-level value-binding metadata for prototyping subscriptions.
 
 Generated `GpuiForm` component fields compile against
 `gpui_form::runtime::shape`, which is re-exported by the facade crate. Normal
@@ -389,6 +392,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
+        value_binding;
 
         impl gpui_form_runtime::shape::ComponentValueBinding<String> for EmailInputShape {
             type Event = gpui_component::input::InputEvent;
@@ -487,7 +491,9 @@ use the GPUI app context so they follow the active Storybook locale through
 `gpui-es-fluent`. Value-bound shape-backed fields use helper functions and
 runtime aliases from `gpui_form::runtime::shape` for state and event
 projections, keeping handler signatures based on names such as
-`on_email_input_event`.
+`on_email_input_event`. The adapter uses the derive-emitted
+`holder_conversion_can_fail` inventory flag so generated debug output matches
+the holder's `into_original` or `try_into_original` API.
 
 ## Examples
 

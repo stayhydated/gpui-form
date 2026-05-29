@@ -68,6 +68,10 @@ The shape expression is parsed as attribute metadata; generated runtime
 construction delegates to `ComponentShape::new`. `gpui-form` treats every
 component as a custom shape contract and does not inspect the shape path for
 built-in component categories.
+Single-segment local shape identifiers should be UpperCamel, such as
+`EmailInputShape`; lowercase bare words are reserved for field options, and the
+only supported bare option is `skip`. Use a qualified path such as
+`my::Shape` when the shape is not a local single-segment type.
 
 Supporting field attributes:
 
@@ -206,6 +210,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::input::Input;
         requires_value = false;
         field_suffix = "input";
+        value_binding;
 
         impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
         where
@@ -221,20 +226,19 @@ gpui_form_derive::component_shape! {
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation and the
 wrapper's reusable `ComponentValueBinding<T>` impls.
-It accepts `new`, `component`, `requires_value`, and `field_suffix` metadata,
-with `type State = ...` supplying the wrapped state type. If `new` is omitted,
-the generated implementation calls `<State>::new(window, cx)`.
+It accepts `new`, `component`, `requires_value`, `value_binding`, and
+`field_suffix` metadata, with `type State = ...` supplying the wrapped state
+type. If `new` is omitted, the generated implementation calls
+`<State>::new(window, cx)`.
 `requires_value = false` publishes that non-optional fields using this shape can
 store `T` directly because the component can synthesize a missing value.
 `component = ...` must be path-like, and `field_suffix = "..."` must be a
 non-empty identifier suffix.
 Separate metadata entries with semicolons.
-Nested `ComponentValueBinding<T>` impls set the generated
-`ValueBindingPolicy` to `InheritedComponentValueBinding`; otherwise the macro
-uses `NoComponentValueBinding`.
 Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
-contract and automatically publish shape-level value-binding metadata. The impl
-target must be the shape declared by the macro.
+contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
+`InheritedComponentValueBinding`; otherwise the macro uses
+`NoComponentValueBinding`.
 
 ## Feature Flags
 

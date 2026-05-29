@@ -23,6 +23,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::combobox::Combobox<_>;
         requires_value = false;
         field_suffix = "combobox";
+        value_binding;
 
         impl<T, D> ComponentValueBinding<Vec<T>> for Combobox<T, D>
         where

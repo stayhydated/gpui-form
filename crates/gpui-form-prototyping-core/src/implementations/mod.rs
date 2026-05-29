@@ -476,9 +476,11 @@ mod tests {
     #[test]
     fn description_uses_direct_all_for_non_optional_newtype_errors() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
-        const FIELDS: [FieldVariant; 1] = [
-            FieldVariant::new("index", RustType::new("Age"), false).with_validations(VALIDATIONS)
-        ];
+        const FIELDS: [FieldVariant; 1] =
+            [
+                FieldVariant::new("index", RustType::new_unchecked("Age"), false)
+                    .with_validations(VALIDATIONS),
+            ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -498,7 +500,10 @@ mod tests {
     fn description_unwraps_optional_newtype_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NewtypeValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("age", RustType::new("Age"), true).with_validations(VALIDATIONS)];
+            [
+                FieldVariant::new("age", RustType::new_unchecked("Age"), true)
+                    .with_validations(VALIDATIONS),
+            ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
@@ -516,8 +521,10 @@ mod tests {
     fn description_unwraps_optional_nested_inner_errors_before_all() {
         const VALIDATIONS: &[&str] = &["NestedValidation"];
         const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("address", RustType::new("Address"), true)
-                .with_validations(VALIDATIONS)];
+            [
+                FieldVariant::new("address", RustType::new_unchecked("Address"), true)
+                    .with_validations(VALIDATIONS),
+            ];
         const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");

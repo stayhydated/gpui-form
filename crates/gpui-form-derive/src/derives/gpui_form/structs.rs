@@ -327,19 +327,40 @@ fn parse_gpui_form_expression(field: &mut ComponentField, expr: Expr) -> darling
 }
 
 fn parse_path_keyword(field: &mut ComponentField, path: ExprPath) -> darling::Result<()> {
-    let key = match path.path.get_ident() {
-        Some(ident) => ident.to_string(),
-        None => {
-            return parse_positional_component(field, Expr::Path(path));
-        },
-    };
+    if let Some(ident) = single_segment_path_ident(&path) {
+        if ident == "skip" {
+            set_skip(field, true, &path)?;
+            return Ok(());
+        }
 
-    if key == "skip" {
-        set_skip(field, true, &path)?;
-        return Ok(());
+        if !is_upper_camel_ident(ident) {
+            return Err(DarlingError::custom(format!(
+                "unknown gpui_form field option `{ident}`; bare field options only support `skip`; \
+                 use an UpperCamel shape identifier such as `MyShape` or a qualified shape path \
+                 such as `my::Shape`"
+            ))
+            .with_span(ident));
+        }
     }
 
     parse_positional_component(field, Expr::Path(path))
+}
+
+fn single_segment_path_ident(path: &ExprPath) -> Option<&Ident> {
+    if path.qself.is_none() && path.path.segments.len() == 1 {
+        path.path.segments.last().map(|segment| &segment.ident)
+    } else {
+        None
+    }
+}
+
+fn is_upper_camel_ident(ident: &Ident) -> bool {
+    let ident = ident.to_string();
+    let ident = ident.strip_prefix("r#").unwrap_or(&ident);
+    ident
+        .chars()
+        .next()
+        .is_some_and(|ch| ch.is_ascii_uppercase())
 }
 
 fn parse_positional_component(field: &mut ComponentField, expr: Expr) -> darling::Result<()> {

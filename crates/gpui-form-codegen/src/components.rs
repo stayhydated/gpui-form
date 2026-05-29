@@ -99,9 +99,40 @@ impl RequiredValue {
 }
 
 #[derive(Clone, Debug)]
-pub struct ComponentMethod {
-    pub method: syn::Ident,
-    pub args: Vec<Expr>,
+struct ComponentMethod {
+    method: ShapeMetadataMethod,
+    span: syn::Ident,
+    args: Vec<Expr>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ShapeMetadataMethod {
+    Component,
+    FieldSuffix,
+}
+
+impl ShapeMetadataMethod {
+    const SUPPORTED: &'static str = "`component` and `field_suffix`";
+
+    fn parse(method: &syn::Ident) -> darling::Result<Self> {
+        match method.to_string().as_str() {
+            "component" => Ok(Self::Component),
+            "field_suffix" => Ok(Self::FieldSuffix),
+            _ => Err(DarlingError::custom(format!(
+                "unknown component metadata `{method}`; supported generic methods are {}; \
+                 put component-specific options in a dedicated ComponentShape wrapper",
+                Self::SUPPORTED
+            ))
+            .with_span(method)),
+        }
+    }
+
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Component => "component",
+            Self::FieldSuffix => "field_suffix",
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -134,35 +165,29 @@ impl ShapeOptions {
         let mut options = Self::from_shape(shape);
 
         for method in &methods {
-            options.apply_component_method(&method.method, &method.args)?;
+            options.apply_component_method(method)?;
         }
 
         Ok(options)
     }
 
-    fn apply_component_method(
-        &mut self,
-        method: &syn::Ident,
-        args: &[Expr],
-    ) -> darling::Result<()> {
-        match method.to_string().as_str() {
-            "component" => {
-                set_metadata_once(&mut self.component, expect_type_arg(method, args)?, method)?;
-            },
-            "field_suffix" => {
+    fn apply_component_method(&mut self, method: &ComponentMethod) -> darling::Result<()> {
+        match method.method {
+            ShapeMetadataMethod::Component => {
                 set_metadata_once(
-                    &mut self.field_suffix,
-                    expect_field_suffix_arg(method, args)?,
-                    method,
+                    &mut self.component,
+                    expect_type_arg(method.method, &method.span, &method.args)?,
+                    method.method,
+                    &method.span,
                 )?;
             },
-            _ => {
-                return Err(DarlingError::custom(format!(
-                    "unknown component metadata `{method}`; supported generic methods are \
-                     `component` and `field_suffix`; put component-specific \
-                     options in a dedicated ComponentShape wrapper"
-                ))
-                .with_span(method));
+            ShapeMetadataMethod::FieldSuffix => {
+                set_metadata_once(
+                    &mut self.field_suffix,
+                    expect_field_suffix_arg(method.method, &method.span, &method.args)?,
+                    method.method,
+                    &method.span,
+                )?;
             },
         }
 
@@ -353,7 +378,8 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
         Expr::MethodCall(method_call) => {
             let (shape, mut methods) = analyze_component_expr(&method_call.receiver)?;
             methods.push(ComponentMethod {
-                method: method_call.method.clone(),
+                method: ShapeMetadataMethod::parse(&method_call.method)?,
+                span: method_call.method.clone(),
                 args: method_call.args.iter().cloned().collect(),
             });
             Ok((shape, methods))
@@ -391,7 +417,8 @@ fn analyze_component_call_expr(
     Ok((
         shape,
         vec![ComponentMethod {
-            method,
+            method: ShapeMetadataMethod::parse(&method)?,
+            span: method,
             args: call.args.iter().cloned().collect(),
         }],
     ))
@@ -426,12 +453,17 @@ fn normalize_shape_path(mut path: Path) -> Path {
     path
 }
 
-fn expect_type_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Type> {
+fn expect_type_arg(
+    method: ShapeMetadataMethod,
+    span: &syn::Ident,
+    args: &[Expr],
+) -> darling::Result<Type> {
     let [arg] = args else {
-        return Err(
-            DarlingError::custom(format!("`{method}` expects exactly one type argument"))
-                .with_span(method),
-        );
+        return Err(DarlingError::custom(format!(
+            "`{}` expects exactly one type argument",
+            method.name()
+        ))
+        .with_span(span));
     };
 
     match arg {
@@ -447,12 +479,17 @@ fn expect_type_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Type> 
     }
 }
 
-fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<String> {
+fn expect_string_arg(
+    method: ShapeMetadataMethod,
+    span: &syn::Ident,
+    args: &[Expr],
+) -> darling::Result<String> {
     let [arg] = args else {
         return Err(DarlingError::custom(format!(
-            "`{method}` expects exactly one string literal argument"
+            "`{}` expects exactly one string literal argument",
+            method.name()
         ))
-        .with_span(method));
+        .with_span(span));
     };
 
     match arg {
@@ -464,23 +501,30 @@ fn expect_string_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<Stri
     }
 }
 
-fn expect_field_suffix_arg(method: &syn::Ident, args: &[Expr]) -> darling::Result<String> {
-    let value = expect_string_arg(method, args)?;
+fn expect_field_suffix_arg(
+    method: ShapeMetadataMethod,
+    span: &syn::Ident,
+    args: &[Expr],
+) -> darling::Result<String> {
+    let value = expect_string_arg(method, span, args)?;
     validate_component_suffix(&value)
-        .map_err(|err| DarlingError::custom(err.to_string()).with_span(method))?;
+        .map_err(|err| DarlingError::custom(err.to_string()).with_span(span))?;
     Ok(value)
 }
 
 fn set_metadata_once<T>(
     slot: &mut Option<T>,
     value: T,
-    method: &syn::Ident,
+    method: ShapeMetadataMethod,
+    span: &syn::Ident,
 ) -> darling::Result<()> {
     if slot.is_some() {
         return Err(DarlingError::custom(format!(
-            "duplicate `{method}` component metadata method; remove the duplicate `.{method}(...)` call"
+            "duplicate `{}` component metadata method; remove the duplicate `.{}(...)` call",
+            method.name(),
+            method.name()
         ))
-        .with_span(method));
+        .with_span(span));
     }
 
     *slot = Some(value);
@@ -613,13 +657,13 @@ impl Components {
             let component_str = component.to_token_stream().to_string();
             Some(quote! {
                 .with_component_type(
-                    #schema_crate::schema::registry::RustType::new(#component_str)
+                    #schema_crate::schema::registry::RustType::new_unchecked(#component_str)
                 )
             })
         } else {
             Some(quote! {
                 .with_component_type_opt(
-                    #schema_crate::schema::registry::RustType::new_opt(
+                    #schema_crate::schema::registry::RustType::new_opt_unchecked(
                         <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
                     )
                 )
@@ -636,7 +680,7 @@ impl Components {
             .to_string();
         let schema_crate = CratePaths::resolve().gpui_form;
         Some(quote! {
-            .with_shape_path(#schema_crate::schema::registry::RustPath::new(#shape))
+            .with_shape_path(#schema_crate::schema::registry::RustPath::new_unchecked(#shape))
         })
     }
 

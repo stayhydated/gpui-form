@@ -1,0 +1,5 @@
+error: unknown gpui_form field option `skpi`; bare field options only support `skip`; use an UpperCamel shape identifier such as `MyShape` or a qualified shape path such as `my::Shape`
+ --> tests/ui/gpui_form_malformed_attribute_bare_lowercase.rs:5:17
+  |
+5 |     #[gpui_form(skpi)]
+  |                 ^^^^

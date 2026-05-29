@@ -66,5 +66,6 @@ form value holder.
 Component-derived shapes delegate through
 `shape::ComponentStateValueBinding<T>` on their backing state.
 Wrapper shapes declared with `gpui_form_derive::component_shape!` can place the
-`ComponentValueBinding<T>` impl inside the macro block; nested binding impls
-automatically publish shape-level value-binding metadata.
+`ComponentValueBinding<T>` impl inside the macro block; add `value_binding;` to
+the macro metadata when the wrapper should publish shape-level value-binding
+metadata.

@@ -3113,6 +3113,7 @@ version = "0.5.1"
 dependencies = [
  "heck 0.5.0",
  "inventory",
+ "syn 2.0.117",
 ]
 
 [[package]]

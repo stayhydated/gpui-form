@@ -295,7 +295,8 @@ subscriptions, add `value_binding` to `#[gpui_form_shape(...)]` and put
 through.
 For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
 `ComponentValueBinding<T>` impl inside the macro block to emit the impl with
-the shape and publish shape-level value-binding metadata automatically.
+the shape, and add `value_binding;` to publish shape-level value-binding
+metadata for generated prototyping subscriptions.
 
 Reusable shapes can also publish `ComponentPrototyping` metadata through the
 shape contract.

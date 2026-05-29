@@ -34,6 +34,7 @@ gpui_form_derive::component_shape! {
         component = gpui_form_collection::otp_input::OtpInputField;
         requires_value = false;
         field_suffix = "otp_input";
+        value_binding;
 
         impl<T> ComponentValueBinding<T> for OtpInput<T>
         where

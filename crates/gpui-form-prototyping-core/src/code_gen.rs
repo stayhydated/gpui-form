@@ -170,10 +170,7 @@ impl<'a> FormShapeAdapter<'a> {
             }
         })?;
         let has_skipped_fields = data.has_skipped_fields();
-        let holder_conversion_can_fail = data
-            .components
-            .iter()
-            .any(|field| !field.optional && field.default_expr.is_none());
+        let holder_conversion_can_fail = data.holder_conversion_can_fail();
 
         let is_empty = data.components.is_empty();
         let has_koruma = data.has_koruma();
@@ -498,7 +495,7 @@ fn source_path_to_use_path(source_path: &str) -> Option<syn::Path> {
 mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
-    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustExpr, RustType};
+    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustType};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -523,8 +520,11 @@ mod tests {
 
     #[test]
     fn parts_return_error_for_invalid_field_type_metadata() {
-        const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("country", RustType::new("Vec<"), false)];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+            "country",
+            RustType::new_unchecked("Vec<"),
+            false,
+        )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 
@@ -548,8 +548,11 @@ mod tests {
 
     #[test]
     fn required_imports_only_include_subscription_when_needed() {
-        const FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("enabled", RustType::new("bool"), false)];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+            "enabled",
+            RustType::new_unchecked("bool"),
+            false,
+        )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
 
@@ -565,51 +568,40 @@ mod tests {
     }
 
     #[test]
-    fn parts_mark_non_optional_fields_without_defaults_as_fallible() {
+    fn parts_use_inventory_conversion_fallibility_metadata() {
         const REQUIRED_FIELDS: [FieldVariant; 1] =
             [
-                FieldVariant::new("name", RustType::new("String"), false)
+                FieldVariant::new("name", RustType::new_unchecked("String"), false)
                     .with_requires_value(false),
             ];
-        const REQUIRED_SHAPE: GpuiFormShape = GpuiFormShape::new(
+        const INFALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &REQUIRED_FIELDS,
             "examples/some-lib/src/demo.rs",
             false,
         );
 
-        let parts = FormShapeAdapter::new(&REQUIRED_SHAPE)
+        let parts = FormShapeAdapter::new(&INFALLIBLE_SHAPE)
             .parts()
-            .expect("valid required field shapes should generate parts");
-        assert!(parts.holder_conversion_can_fail);
-
-        const DEFAULTED_FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("name", RustType::new("String"), false)
-                .with_default(RustExpr::new("\"Ada\""))];
-        const DEFAULTED_SHAPE: GpuiFormShape = GpuiFormShape::new(
-            "Demo",
-            &DEFAULTED_FIELDS,
-            "examples/some-lib/src/demo.rs",
-            false,
-        );
-
-        let parts = FormShapeAdapter::new(&DEFAULTED_SHAPE)
-            .parts()
-            .expect("valid defaulted field shapes should generate parts");
+            .expect("valid infallible shape metadata should generate parts");
         assert!(!parts.holder_conversion_can_fail);
 
-        const OPTIONAL_FIELDS: [FieldVariant; 1] =
-            [FieldVariant::new("name", RustType::new("String"), true)];
-        const OPTIONAL_SHAPE: GpuiFormShape = GpuiFormShape::new(
+        const OPTIONAL_FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+            "name",
+            RustType::new_unchecked("String"),
+            true,
+        )];
+        const FALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &OPTIONAL_FIELDS,
             "examples/some-lib/src/demo.rs",
             false,
-        );
+        )
+        .with_holder_conversion_can_fail(true);
 
-        let parts = FormShapeAdapter::new(&OPTIONAL_SHAPE)
+        let parts = FormShapeAdapter::new(&FALLIBLE_SHAPE)
             .parts()
-            .expect("valid optional field shapes should generate parts");
-        assert!(!parts.holder_conversion_can_fail);
+            .expect("valid fallible shape metadata should generate parts");
+        assert!(parts.holder_conversion_can_fail);
     }
 }

@@ -69,6 +69,7 @@ gpui_form_derive::component_shape! {
         component = gpui_form_collection::switch::SwitchField;
         requires_value = false;
         field_suffix = "switch";
+        value_binding;
 
         impl ComponentValueBinding<bool> for Switch {
             type Event = SwitchEvent;

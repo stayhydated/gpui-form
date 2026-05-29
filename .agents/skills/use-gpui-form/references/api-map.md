@@ -259,11 +259,10 @@ gpui_form_derive::component_shape! {
 `gpui_form_derive::component_shape!` uses semicolons between options.
 Use `requires_value = false` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
-the wrapper shape owns reusable synchronization; nested binding impls publish
-shape-level value-binding metadata automatically. The impl target must be the
-shape declared by the macro. `component = ...` must be a path-like type, and
-`field_suffix = "..."` must be a non-empty identifier suffix. Omit nested
-binding impls to leave that metadata disabled.
+the wrapper shape owns reusable synchronization; add `value_binding;` when the
+wrapper should publish shape-level value-binding metadata. `component = ...`
+must be a path-like type, and `field_suffix = "..."` must be a non-empty
+identifier suffix. Omit `value_binding;` to leave that metadata disabled.
 
 Manual `ComponentShape` impls must provide both `RequiredValuePolicy` and
 `ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or

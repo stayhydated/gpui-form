@@ -58,6 +58,11 @@ It contains:
 - flags such as `is_empty`, `has_koruma`, `has_skipped_fields`, and
   `holder_conversion_can_fail`
 
+`holder_conversion_can_fail` comes directly from `GpuiFormShape` inventory
+metadata. The derive layer owns the conversion API decision, and prototyping
+layouts consume that source of truth instead of reconstructing it from
+individual fields.
+
 This allows callers to define different layout styles without reimplementing
 field analysis.
 

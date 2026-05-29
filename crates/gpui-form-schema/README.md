@@ -22,8 +22,10 @@ inventory consumers aligned with the field names emitted by
 
 Rust fragments in registry metadata use typed string wrappers so generators do
 not accidentally pass a type where a path, expression, or component suffix is
-expected. Call `.as_str()` before parsing a `RustType`, `RustPath`, `RustExpr`,
-or `ComponentSuffix` with `syn`.
+expected. `RustType::new`, `RustPath::new`, and `RustExpr::new` validate the
+fragment with `syn`; macro-generated inventory uses explicit unchecked const
+constructors because the derive layer stringifies syntax it already parsed.
+Call `.as_str()` before parsing a wrapper with `syn`.
 
 ## Example
 

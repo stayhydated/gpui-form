@@ -8,6 +8,7 @@ gpui_form_derive::component_shape! {
         type State = ColorPickerState;
         component = gpui_component::color_picker::ColorPicker;
         field_suffix = "color_picker";
+        value_binding;
 
         impl ComponentValueBinding<Hsla> for ColorPicker {
             type Event = ColorPickerEvent;

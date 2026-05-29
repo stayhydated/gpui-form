@@ -19,6 +19,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::input::Input;
         requires_value = false;
         field_suffix = "input";
+        value_binding;
 
         impl<T> ComponentValueBinding<T> for Input<T>
         where

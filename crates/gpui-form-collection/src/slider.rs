@@ -10,6 +10,7 @@ gpui_form_derive::component_shape! {
         component = gpui_component::slider::Slider;
         requires_value = false;
         field_suffix = "slider";
+        value_binding;
 
         impl ComponentValueBinding<SliderValue> for Slider {
             type Event = SliderEvent;

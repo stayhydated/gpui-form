@@ -12,6 +12,7 @@ gpui_form_derive::component_shape! {
         type State = DatePickerState;
         component = gpui_component::date_picker::DatePicker;
         field_suffix = "date_picker";
+        value_binding;
 
         impl ComponentValueBinding<NaiveDate> for DatePicker {
             type Event = DatePickerEvent;
@@ -43,6 +44,7 @@ gpui_form_derive::component_shape! {
         new = DatePickerState::range;
         component = gpui_component::date_picker::DatePicker;
         field_suffix = "date_range_picker";
+        value_binding;
 
         impl ComponentValueBinding<(NaiveDate, NaiveDate)> for DateRangePicker {
             type Event = DatePickerEvent;

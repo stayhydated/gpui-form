@@ -42,6 +42,9 @@ Important parse-time responsibilities:
   `#[gpui_form(type = ...)]` override
 - `component(...)` records render-component metadata for prototyping output and
   must be path-like
+- component metadata method names are parsed into a small typed enum before
+  argument validation, so diagnostics and duplicate checks share one supported
+  method list
 - non-optional shape-backed fields inherit the shape's required-value policy by
   default
 - shape-level `ValueBindingPolicy` records whether generated prototyping code
@@ -83,7 +86,8 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- shape-only field metadata (`FieldVariant::new(field_name, RustType::new(value_type), optional)`)
+- shape-only field metadata
+  (`FieldVariant::new(field_name, RustType::new_unchecked(value_type), optional)`)
 - the resolved component shape path
 - the optional render component type
 - the required-value holder policy

@@ -63,6 +63,9 @@ for field and handler suffixes, such as `email_input` and
 Value-bound scaffolds use `seed_value_binding_state`, `form_value_change`,
 `FormValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.
+The adapter also consumes `GpuiFormShape::holder_conversion_can_fail()` from
+inventory metadata, so generated debug rows use the same `into_original` versus
+`try_into_original` shape as the derive-generated value holder.
 
 ## Feature Flags
 

@@ -141,12 +141,12 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `requires_value`, and `field_suffix` metadata
-  keys
+- accepts `new`, `component`, `requires_value`, `value_binding`, and
+  `field_suffix` metadata keys
 - uses semicolon separators between metadata entries
-- accepts nested `impl` items, emits them after the generated `ComponentShape`
-  impl, and infers shape-level `ValueBindingPolicy` when a nested impl targets
-  `ComponentValueBinding<T>` for the shape declared by the macro
+- accepts nested `impl` items and emits them after the generated
+  `ComponentShape` impl
+- sets shape-level `ValueBindingPolicy` only when `value_binding;` is present
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
