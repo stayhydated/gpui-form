@@ -66,19 +66,19 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub username: Option<String>,
 
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub age: Option<u32>,
 
     #[gpui_form(
-        shape = gpui_form_collection::select::Select::<_>,
+        component(shape = gpui_form_collection::select::Select::<_>),
         default = Country::France
     )]
     pub country: Country,
 
-    #[gpui_form(shape = gpui_form_collection::checkbox::Checkbox)]
+    #[gpui_form(component(shape = gpui_form_collection::checkbox::Checkbox))]
     pub subscribe: bool,
 }
 ```
@@ -93,31 +93,31 @@ pub struct UserProfile {
 ## Component Syntax
 
 `gpui-form` parses contract-backed component expressions. The short form places
-the component shape with the explicit `shape = ...` key:
+the component shape with the explicit `component(shape = ...)` key:
 
-- `#[gpui_form(shape = my::Shape)]`
-- `#[gpui_form(shape = gpui_form_collection::input::Input::<_>)]`
-- `#[gpui_form(shape = gpui_form_collection::select::Select::<_>)]`
-- `#[gpui_form(shape = gpui_form_collection::combobox::Combobox::<Country>)]`
-- `#[gpui_form(shape = gpui_form_collection::checkbox::Checkbox)]`
-- `#[gpui_form(shape = gpui_form_collection::switch::Switch)]`
-- `#[gpui_form(shape = gpui_form_collection::number_input::NumberInput::<_>)]`
-- `#[gpui_form(shape = gpui_form_collection::slider::Slider)]`
-- `#[gpui_form(shape = gpui_form_collection::color_picker::ColorPicker)]`
-- `#[gpui_form(shape = gpui_form_collection::date_picker::DatePicker)]`
-- `#[gpui_form(shape = gpui_form_collection::date_picker::DateRangePicker)]`
-- `#[gpui_form(shape = gpui_form_collection::otp_input::OtpInput::<_>)]`
-- `#[gpui_form(shape = gpui_form_component::date_picker::DatePicker)]`
-- `#[gpui_form(shape = gpui_form_component::date_picker::DateRangePicker)]`
-- `#[gpui_form(shape = gpui_form_component::file_picker::FilePicker)]`
-- `#[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]`
+- `#[gpui_form(component(shape = my::Shape))]`
+- `#[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]`
+- `#[gpui_form(component(shape = gpui_form_collection::select::Select::<_>))]`
+- `#[gpui_form(component(shape = gpui_form_collection::combobox::Combobox::<Country>))]`
+- `#[gpui_form(component(shape = gpui_form_collection::checkbox::Checkbox))]`
+- `#[gpui_form(component(shape = gpui_form_collection::switch::Switch))]`
+- `#[gpui_form(component(shape = gpui_form_collection::number_input::NumberInput::<_>))]`
+- `#[gpui_form(component(shape = gpui_form_collection::slider::Slider))]`
+- `#[gpui_form(component(shape = gpui_form_collection::color_picker::ColorPicker))]`
+- `#[gpui_form(component(shape = gpui_form_collection::date_picker::DatePicker))]`
+- `#[gpui_form(component(shape = gpui_form_collection::date_picker::DateRangePicker))]`
+- `#[gpui_form(component(shape = gpui_form_collection::otp_input::OtpInput::<_>))]`
+- `#[gpui_form(component(shape = gpui_form_component::date_picker::DatePicker))]`
+- `#[gpui_form(component(shape = gpui_form_component::date_picker::DateRangePicker))]`
+- `#[gpui_form(component(shape = gpui_form_component::file_picker::FilePicker))]`
+- `#[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
 `InfiniteSelect` derive, available through the same crate's `derive` feature or
 by depending on `gpui-form-component-derive` directly.
 
-The `shape = ...` value is parsed as a Rust type path; generated runtime
+The `component(shape = ...)` value is parsed as a Rust type path; generated runtime
 construction delegates to `ComponentShape::new`. The shape type must be
 declared with `gpui_form_derive::component_shape!` or
 `#[derive(gpui_form_derive::ComponentShape)]`; hand-written `ComponentShape`
@@ -146,18 +146,18 @@ Common field-level helpers:
   generating a GPUI component.
 - `#[gpui_form(hidden, default = <expr>)]` seeds a hidden generated value holder
   field.
-- `#[gpui_form(shape = <shape>, default = <expr>)]` seeds a component-backed generated
-  value holder field.
+- `#[gpui_form(component(shape = <shape>), default = <expr>)]` seeds a
+  component-backed generated value holder field.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
   allowing prefill from the original model. It cannot be combined with
   component, hidden, default, or conversion options on the same field.
-- `#[gpui_form(type = <form_type>, from = <expr>, into = <expr>)]` lets the
-  generated form edit a type that differs from the original field type; combine
-  it with either a component shape or `hidden`.
+- `#[gpui_form(type = <form_type>, source_to_form = <expr>, form_to_source = <expr>)]`
+  lets the generated form edit a type that differs from the original field type;
+  combine it with either a component shape or `hidden`.
 - `gpui_form_collection::input::Input::<_>` and
   `gpui_form_collection::number_input::NumberInput::<_>` parse non-`String`
   form-side value types with `FromStr` in prototyping output, so value objects
-  can use `type`, `from`, and `into` while the source model keeps its storage
+  can use `type`, `source_to_form`, and `form_to_source` while the source model keeps its storage
   type. `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr`
   for non-`String` form-side value types.
 - Generic component expressions use Rust expression turbofish syntax, such as
@@ -171,8 +171,8 @@ Common field-level helpers:
   `ComponentPrototyping::field_suffix(...)` calls validate the same contract in
   const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
-  onto the generated value holder, including fields that use `type`, `from`,
-  and `into` to validate a form-side type.
+  onto the generated value holder, including fields that use `type`,
+  `source_to_form`, and `form_to_source` to validate a form-side type.
 
 `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
 field type to derive `gpui_form_component::InfiniteSelect`, which implements
@@ -265,11 +265,11 @@ use koruma_collection::{
 #[derive(Clone, Debug, GpuiForm, Koruma, KorumaAllFluent)]
 #[gpui_form(koruma(fluent))]
 pub struct Signup {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     #[koruma(NonEmptyValidation::<_>::builder())]
     pub username: String,
 
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     #[koruma(RangeValidation::<_>::builder().min(18).max(120))]
     pub age: Option<u32>,
 }
@@ -294,7 +294,7 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct Account {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub code: AccountCode,
 }
 ```
@@ -324,7 +324,7 @@ pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(shape = TagsInput)]
+    #[gpui_form(component(shape = TagsInput))]
     pub tags: Option<Vec<String>>,
 }
 ```
@@ -349,7 +349,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct ContactForm {
-    #[gpui_form(shape = EmailInputShape)]
+    #[gpui_form(component(shape = EmailInputShape))]
     pub email: String,
 }
 ```
@@ -450,22 +450,23 @@ FilePicker::new(&picker)
 ```
 
 Enable `gpui-form-component`'s `component-shape` feature when using
-`FilePicker` directly in `#[gpui_form(shape = gpui_form_component::file_picker::FilePicker)]`; the shape stores
-`FilePickerState` as its backing entity state.
+`FilePicker` directly in
+`#[gpui_form(component(shape = gpui_form_component::file_picker::FilePicker))]`;
+the shape stores `FilePickerState` as its backing entity state.
 
 ## Date Conversion
 
 `date_picker` fields can edit a different form-side type than the original model
-field by combining `type`, `from`, and `into`:
+field by combining `type`, `source_to_form`, and `form_to_source`:
 
 ```rs
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        shape = gpui_form_collection::date_picker::DatePicker,
+        component(shape = gpui_form_collection::date_picker::DatePicker),
         type = chrono::NaiveDate,
-        from = to_form_date,
-        into = to_model_timestamp
+        source_to_form = to_form_date,
+        form_to_source = to_model_timestamp
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -506,6 +507,10 @@ projections, keeping handler signatures based on names such as
 `on_email_input_event`. The adapter uses the derive-emitted
 `holder_conversion_can_fail` inventory flag so generated debug output matches
 the holder's `into_original` or `try_into_original` API.
+Generic forms are not registered in inventory because inventory metadata must
+name one concrete source type and module path. When the `inventory` feature is
+enabled, add `#[gpui_form(no_inventory)]` to generic forms that should still
+derive holders/components without registering prototyping metadata.
 
 ## Examples
 

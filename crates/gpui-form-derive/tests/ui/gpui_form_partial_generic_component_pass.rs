@@ -1,4 +1,5 @@
 #[derive(gpui_form::GpuiForm)]
+#[gpui_form(no_inventory)]
 struct PartialGenericComponent<T = String, U = usize>
 where
     T: std::fmt::Debug + Clone + Default + std::str::FromStr + ToString + 'static,
@@ -9,7 +10,7 @@ where
         T,
     >>::Storage: std::fmt::Debug + Clone + Default,
 {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     component: T,
     #[gpui_form(hidden)]
     plain: U,

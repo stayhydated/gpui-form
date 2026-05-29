@@ -187,7 +187,7 @@ impl FormLayout for StorybookLayout {
         let fields_init = if *is_empty {
             quote! { _fields: #form_fields_ident, }
         } else {
-            fields_init.clone()
+            fields_init.to_token_stream()
         };
 
         let new_window_arg = if *is_empty {

@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape_state.rs
-assertion_line: 234
 expression: pretty_tokens(expanded)
 ---
 impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
@@ -14,5 +13,13 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
     const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(crate ::ui::TagsInput));
+}
+impl TagsInput {
+    #[allow(dead_code)]
+    fn __gpui_form_assert_render_component_contract(
+        entity: &::gpui::Entity<crate::state::TagsState>,
+    ) -> crate::ui::TagsInput {
+        <crate::ui::TagsInput>::new(entity)
+    }
 }
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for TagsInput {}

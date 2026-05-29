@@ -2,7 +2,7 @@ use gpui_form_derive::GpuiForm;
 
 #[derive(GpuiForm)]
 struct Demo {
-    #[gpui_form(shape = crate::InputShape, component = _)]
+    #[gpui_form(component(shape = crate::InputShape), component = _)]
     name: String,
 }
 

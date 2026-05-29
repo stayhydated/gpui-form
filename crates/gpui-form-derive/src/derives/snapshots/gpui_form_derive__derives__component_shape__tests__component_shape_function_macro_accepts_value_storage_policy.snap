@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape.rs
-assertion_line: 330
 expression: pretty_tokens(expanded)
 ---
 pub struct SwitchShape(::core::marker::PhantomData<fn() -> ()>);
@@ -15,4 +14,5 @@ impl ::gpui_form_runtime::shape::ComponentShape for SwitchShape {
     type ValueStoragePolicy = ::gpui_form_runtime::shape::DirectValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
 }
+impl SwitchShape {}
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for SwitchShape {}

@@ -45,22 +45,22 @@ shapes with `gpui_form_derive` shape macros or `component_value_binding`.
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
-#[gpui_form(shape = gpui_form_collection::select::Select::<_>)]
-#[gpui_form(shape = gpui_form_collection::combobox::Combobox::<Item>)]
-#[gpui_form(shape = gpui_form_collection::number_input::NumberInput::<_>)]
-#[gpui_form(shape = gpui_form_collection::slider::Slider)]
-#[gpui_form(shape = gpui_form_collection::color_picker::ColorPicker)]
-#[gpui_form(shape = gpui_form_collection::date_picker::DatePicker)]
-#[gpui_form(shape = gpui_form_collection::date_picker::DateRangePicker)]
-#[gpui_form(shape = gpui_form_collection::otp_input::OtpInput::<_>)]
-#[gpui_form(shape = gpui_form_component::date_picker::DatePicker)]
-#[gpui_form(shape = gpui_form_component::date_picker::DateRangePicker)]
-#[gpui_form(shape = gpui_form_component::file_picker::FilePicker)]
-#[gpui_form(shape = gpui_form_collection::checkbox::Checkbox)]
-#[gpui_form(shape = gpui_form_collection::switch::Switch)]
-#[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
-#[gpui_form(shape = my::Shape)]
+#[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
+#[gpui_form(component(shape = gpui_form_collection::select::Select::<_>))]
+#[gpui_form(component(shape = gpui_form_collection::combobox::Combobox::<Item>))]
+#[gpui_form(component(shape = gpui_form_collection::number_input::NumberInput::<_>))]
+#[gpui_form(component(shape = gpui_form_collection::slider::Slider))]
+#[gpui_form(component(shape = gpui_form_collection::color_picker::ColorPicker))]
+#[gpui_form(component(shape = gpui_form_collection::date_picker::DatePicker))]
+#[gpui_form(component(shape = gpui_form_collection::date_picker::DateRangePicker))]
+#[gpui_form(component(shape = gpui_form_collection::otp_input::OtpInput::<_>))]
+#[gpui_form(component(shape = gpui_form_component::date_picker::DatePicker))]
+#[gpui_form(component(shape = gpui_form_component::date_picker::DateRangePicker))]
+#[gpui_form(component(shape = gpui_form_component::file_picker::FilePicker))]
+#[gpui_form(component(shape = gpui_form_collection::checkbox::Checkbox))]
+#[gpui_form(component(shape = gpui_form_collection::switch::Switch))]
+#[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]
+#[gpui_form(component(shape = my::Shape))]
 ```
 
 Custom `my::Shape` types must be declared with
@@ -72,19 +72,19 @@ Custom `my::Shape` types must be declared with
 Common field attributes:
 
 ```rust
-#[gpui_form(shape = <shape>)]
+#[gpui_form(component(shape = <shape>))]
 #[gpui_form(hidden)]
-#[gpui_form(shape = <shape>, default = <expr>)]
+#[gpui_form(component(shape = <shape>), default = <expr>)]
 #[gpui_form(hidden, default = <expr>)]
 #[gpui_form(skip)]
 #[gpui_form(type = <form_type>)]
-#[gpui_form(from = <expr>)]
-#[gpui_form(into = <expr>)]
+#[gpui_form(source_to_form = <expr>)]
+#[gpui_form(form_to_source = <expr>)]
 ```
 
 Every field must choose exactly one intent: component, `hidden`, or `skip`.
 Use `hidden` for value-holder-only fields. `skip` cannot be combined with
-component, hidden, default, type, from, or into options on the same field.
+component, hidden, default, type, source_to_form, or form_to_source options on the same field.
 
 Common struct attributes:
 
@@ -127,8 +127,8 @@ Common struct attributes:
 - Define a custom component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.
-- Use `#[gpui_form(shape = my::Shape)]` when the app owns the state/widget contract.
-- Treat `shape = ...` as the only component field intent in
+- Use `#[gpui_form(component(shape = my::Shape))]` when the app owns the state/widget contract.
+- Treat `component(shape = ...)` as the only component field intent in
   `#[gpui_form(...)]`; runtime construction still uses `ComponentShape::new`.
 - Component shapes own the default value-storage policy for non-optional
   fields. Put `value_storage = direct` on the reusable shape definition when it
@@ -190,7 +190,7 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+    #[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]
     pub location: Country,
 }
 ```
@@ -199,17 +199,17 @@ Helper state is available from `gpui_form_component::infinite_select`.
 
 ## Type Conversion Pattern
 
-Use `type`, `from`, and `into` when the UI edits a different type than the
+Use `type`, `source_to_form`, and `form_to_source` when the UI edits a different type than the
 model stores:
 
 ```rust
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        shape = gpui_form_collection::date_picker::DatePicker,
+        component(shape = gpui_form_collection::date_picker::DatePicker),
         type = chrono::NaiveDate,
-        from = to_form_date,
-        into = to_model_timestamp
+        source_to_form = to_form_date,
+        form_to_source = to_model_timestamp
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -241,7 +241,7 @@ pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(shape = TagsInput)]
+    #[gpui_form(component(shape = TagsInput))]
     pub tags: Option<Vec<String>>,
 }
 ```
@@ -275,6 +275,6 @@ wrapper should publish shape-level value-binding metadata. `component = ...`
 must be a path-like type, and `field_suffix = "..."` must be a non-empty ASCII
 identifier suffix. Omit `value_binding;` to leave that metadata disabled.
 
-Do not hand-write `ComponentShape` for `#[gpui_form(shape = ...)]` fields.
+Do not hand-write `ComponentShape` for `#[gpui_form(component(shape = ...))]` fields.
 `#[derive(GpuiForm)]` requires the `DeclaredComponentShape` marker emitted by
 `#[derive(ComponentShape)]` or `component_shape!`.

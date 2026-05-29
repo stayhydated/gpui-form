@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape_state.rs
-assertion_line: 368
 expression: pretty_tokens(expanded)
 ---
 impl<T, D> ::gpui_form_runtime::shape::ComponentShape for Picker<T, D> {
@@ -17,4 +16,5 @@ impl<T, D> ::gpui_form_runtime::shape::ComponentShape for Picker<T, D> {
         concat!(module_path!(), "::", stringify!(Picker < _, _ >)),
     );
 }
+impl<T, D> Picker<T, D> {}
 impl<T, D> ::gpui_form_runtime::shape::DeclaredComponentShape for Picker<T, D> {}

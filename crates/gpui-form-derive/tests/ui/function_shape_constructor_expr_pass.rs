@@ -4,6 +4,12 @@ pub struct EmailInput;
 
 pub struct ExternalState;
 
+impl EmailInput {
+    fn new(_entity: &gpui::Entity<ExternalState>) -> Self {
+        Self
+    }
+}
+
 impl ExternalState {
     fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
         Self

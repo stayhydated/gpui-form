@@ -2,6 +2,7 @@ pub mod cfg_attr;
 pub mod components;
 pub mod expansion;
 pub mod koruma;
+pub mod planner;
 pub mod structs;
 pub mod tests;
 pub mod utils;

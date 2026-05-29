@@ -138,12 +138,13 @@ Responsibilities:
 ### Date picker
 
 1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
-   `DatePicker` and `DateRangePicker` usable directly in `#[gpui_form(shape = ...)]`
+   `DatePicker` and `DateRangePicker` usable directly in `#[gpui_form(component(shape = ...))]`
    while generated fields store their backing state entities.
 1. Runtime date selection emits `DatePickerEvent::Change`.
 1. Shape-owned value adapters convert selected `jiff::civil::Date` values into
-   `chrono::NaiveDate` holder field values, with any `type`/`into` conversion
-   hooks handled by the generated form value holder.
+   `chrono::NaiveDate` holder field values, with any `type`,
+   `source_to_form`, and `form_to_source` conversion hooks handled by the
+   generated form value holder.
 1. Manual range-picking UI can store `Entity<DateRangePickerState>`, render
    `DateRangePicker`, and subscribe to `DateRangePickerEvent::Change`.
 
@@ -156,7 +157,7 @@ Responsibilities:
 1. Subscribers receive changed path lists, cancellation, or platform-dialog
    errors through `FilePickerEvent`.
 1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
-   `FilePicker` usable directly in `#[gpui_form(shape = ...)]` while generated fields
+   `FilePicker` usable directly in `#[gpui_form(component(shape = ...))]` while generated fields
    store `Entity<FilePickerState>`; state-level value binding maps `Change`
    events to `Vec<std::path::PathBuf>`.
 

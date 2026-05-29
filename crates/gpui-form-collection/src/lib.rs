@@ -1,5 +1,7 @@
 //! Curated component shapes for `gpui-form`.
 
+extern crate self as gpui_form_collection;
+
 pub mod checkbox;
 pub mod color_picker;
 pub mod combobox;

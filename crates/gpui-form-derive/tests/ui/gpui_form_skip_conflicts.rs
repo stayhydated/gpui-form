@@ -2,13 +2,13 @@ use gpui_form_derive::GpuiForm;
 
 #[derive(GpuiForm)]
 struct SkipWithComponent {
-    #[gpui_form(skip, shape = crate::InputShape)]
+    #[gpui_form(skip, component(shape = crate::InputShape))]
     field: String,
 }
 
 #[derive(GpuiForm)]
 struct ComponentWithSkip {
-    #[gpui_form(shape = crate::InputShape, skip)]
+    #[gpui_form(component(shape = crate::InputShape), skip)]
     field: String,
 }
 
@@ -20,19 +20,19 @@ struct SkipWithDefault {
 
 #[derive(GpuiForm)]
 struct SkipWithConversion {
-    #[gpui_form(skip, type = usize, from = |value| value.len(), into = |value| value.to_string())]
+    #[gpui_form(skip, type = usize, source_to_form = |value| value.len(), form_to_source = |value| value.to_string())]
     field: String,
 }
 
 #[derive(GpuiForm)]
 struct HiddenWithComponent {
-    #[gpui_form(hidden, shape = crate::InputShape)]
+    #[gpui_form(hidden, component(shape = crate::InputShape))]
     field: String,
 }
 
 #[derive(GpuiForm)]
 struct ComponentWithHidden {
-    #[gpui_form(shape = crate::InputShape, hidden)]
+    #[gpui_form(component(shape = crate::InputShape), hidden)]
     field: String,
 }
 

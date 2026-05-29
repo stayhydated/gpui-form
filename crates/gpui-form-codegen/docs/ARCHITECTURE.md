@@ -29,7 +29,7 @@ crate.
 
 `components.rs` models component shape metadata accepted by the derive:
 
-- `#[gpui_form(shape = my::Shape)]`
+- `#[gpui_form(component(shape = my::Shape))]`
 
 Important parse-time responsibilities:
 

@@ -41,16 +41,19 @@ helpers and component-specific derives explicitly:
 5. Use generated types named from the source struct, such as
    `UserProfileFormFields`, `UserProfileFormComponents`, and
    `UserProfileFormValueHolder`.
-6. Put the component shape in `#[gpui_form(shape = ...)]`, use
+6. Put the component shape in `#[gpui_form(component(shape = ...))]`, use
    `#[gpui_form(hidden)]` for value-holder-only fields,
    `#[gpui_form(default = ...)]` with either a component or `hidden` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
-   `#[gpui_form(shape = Shape, type = ..., from = ..., into = ...)]` when the
+   `#[gpui_form(component(shape = Shape), type = ..., source_to_form = ..., form_to_source = ...)]` when the
    UI edits a form-side type that differs from the model field. Do not combine
-   `skip` with component, hidden, default, type, from, or into options on the same
+   `skip` with component, hidden, default, type, source_to_form, or form_to_source options on the same
    field. Text input prototyping parses non-`String` form-side types with
    `FromStr`.
-7. Use paths such as `gpui_form_component::date_picker`,
+7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
+   `inventory` feature is enabled; generic forms cannot register concrete
+   prototyping metadata.
+8. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
    Generated `GpuiForm` component fields use the facade path
@@ -99,14 +102,14 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub username: Option<String>,
 
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub age: Option<u32>,
 
     #[gpui_form(
-        shape = gpui_form_collection::select::Select::<_>,
+        component(shape = gpui_form_collection::select::Select::<_>),
         default = Country::France
     )]
     pub country: Country,
@@ -116,7 +119,7 @@ pub struct UserProfile {
 Common patterns:
 
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices. `SelectItem` uses variant-name fallback labels by default and only needs `Display` with `#[select_item(display)]`.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]` directly.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly.
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - Convert generated holders with `holder.try_into_original()` when conversion can fail, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. Required shape-backed fields without a declared default keep only the fallible holder-to-model path.
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their declared `#[gpui_form(default = ...)]` when present, otherwise `Vec::default()`.

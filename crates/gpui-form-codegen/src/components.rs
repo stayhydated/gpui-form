@@ -108,6 +108,10 @@ pub struct ShapeOptions {
 impl ShapeOptions {
     pub fn from_shape(shape: Path) -> Self {
         let span = shape.span();
+        Self::from_shape_with_span(shape, span)
+    }
+
+    pub fn from_shape_with_span(shape: Path, span: Span) -> Self {
         let shape = normalize_shape_path(shape);
 
         Self { shape, span }

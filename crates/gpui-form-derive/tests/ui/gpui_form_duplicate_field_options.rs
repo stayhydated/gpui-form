@@ -8,13 +8,13 @@ struct DuplicateType {
 
 #[derive(GpuiForm)]
 struct DuplicateFrom {
-    #[gpui_form(from = |value| value, from = std::convert::identity)]
+    #[gpui_form(source_to_form = |value| value, source_to_form = std::convert::identity)]
     name: String,
 }
 
 #[derive(GpuiForm)]
 struct DuplicateInto {
-    #[gpui_form(into = |value| value, into = std::convert::identity)]
+    #[gpui_form(form_to_source = |value| value, form_to_source = std::convert::identity)]
     name: String,
 }
 

@@ -49,11 +49,12 @@ that crate's `derive` feature is enabled.
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
    Field-level component shapes are parsed into a typed shape path from
-   `#[gpui_form(shape = my::Shape)]`;
-   arbitrary Rust expressions are only parsed for `default`, `from`, and
-   `into`. The parser rejects duplicate component expressions before codegen
-   and rejects field-level component metadata such as `component = ...` or
-   `field_suffix = ...`; those belong on the shape declaration.
+   `#[gpui_form(component(shape = my::Shape))]`;
+   arbitrary Rust expressions are only parsed for `default`, `source_to_form`,
+   and `form_to_source`. The parser rejects duplicate component expressions
+   before codegen and rejects field-level component metadata such as
+   `component = ...` or `field_suffix = ...`; those belong on the shape
+   declaration.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.
@@ -70,7 +71,7 @@ that crate's `derive` feature is enabled.
 
 - optionality normalization between model fields and editable form state
 - default-value seeding
-- `type`/`from`/`into` conversions
+- `type`/`source_to_form`/`form_to_source` conversions
 - `#[gpui_form(skip)]` reconstruction behavior
 - Koruma mirroring for holder validation
 
@@ -121,10 +122,11 @@ The derive layer:
 
 When the `inventory` feature is enabled:
 
-1. `GpuiForm` emits one `GpuiFormShape` per non-generic derived struct.
-   Generic source structs skip inventory registration because inventory items
-   cannot reference source type parameters at item scope; their generated form
-   code still carries the source generics.
+1. `GpuiForm` emits one `GpuiFormShape` per non-generic derived struct, and
+   generic source structs must opt out with `#[gpui_form(no_inventory)]` when
+   the `inventory` feature is enabled. Inventory items must name one concrete
+   source type and module path; the generated form code still carries the source
+   generics.
 1. Each field becomes a `FieldVariant` with component contract metadata from
    `gpui-form-codegen`.
 1. Metadata includes validation rule identifiers, defaults, full value type

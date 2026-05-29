@@ -1,6 +1,8 @@
 pub mod shape;
 
-use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType};
+use gpui_form_schema::registry::{
+    FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType, ValidationRuleId,
+};
 use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -124,18 +126,18 @@ impl<'a> ResolvedField<'a> {
         self.field.kebab_id()
     }
 
-    pub fn validation_rules(&self) -> &'static [&'static str] {
+    pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
         self.field.validation_rules()
     }
 
-    pub fn has_validation_rule(&self, rule: &str) -> bool {
+    pub fn has_validation_rule(&self, rule: ValidationRuleId) -> bool {
         self.validation_rules().contains(&rule)
     }
 
     pub fn uses_optional_inner_validation_errors(&self) -> bool {
         self.optional()
-            && (self.has_validation_rule("NewtypeValidation")
-                || self.has_validation_rule("NestedValidation"))
+            && (self.has_validation_rule(ValidationRuleId::Newtype)
+                || self.has_validation_rule(ValidationRuleId::Nested))
     }
 
     pub fn suffixed_ident(&self, suffix: &str) -> Ident {
@@ -360,7 +362,7 @@ pub fn generate_description_fn_tokens(
             gpui_es_fluent::localize_message(cx, v)
         };
         #[cfg(not(feature = "fluent"))]
-        let conversion_tokens = quote! { v.to_string() };
+        let conversion_tokens = quote! { v.as_str().to_string() };
 
         if uses_optional_inner_validation_errors {
             quote! {
@@ -439,7 +441,9 @@ pub fn generate_description_fn_tokens(
 #[cfg(test)]
 mod tests {
     use super::{ResolvedField, generate_description_fn_tokens};
-    use gpui_form_schema::registry::{FieldValuePresence, FieldVariant, GpuiFormShape, RustType};
+    use gpui_form_schema::registry::{
+        FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType, ValidationRuleId,
+    };
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -447,14 +451,15 @@ mod tests {
 
     #[test]
     fn description_uses_direct_all_for_non_optional_newtype_errors() {
-        const VALIDATIONS: &[&str] = &["NewtypeValidation"];
+        const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Newtype];
         const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "index",
             RustType::new_unchecked("Age"),
             FieldValuePresence::RequiresValue,
         )
         .with_validations(VALIDATIONS)];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
@@ -471,14 +476,15 @@ mod tests {
 
     #[test]
     fn description_unwraps_optional_newtype_inner_errors_before_all() {
-        const VALIDATIONS: &[&str] = &["NewtypeValidation"];
+        const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Newtype];
         const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "age",
             RustType::new_unchecked("Age"),
             FieldValuePresence::Optional,
         )
         .with_validations(VALIDATIONS)];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
@@ -493,14 +499,15 @@ mod tests {
 
     #[test]
     fn description_unwraps_optional_nested_inner_errors_before_all() {
-        const VALIDATIONS: &[&str] = &["NestedValidation"];
+        const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Nested];
         const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "address",
             RustType::new_unchecked("Address"),
             FieldValuePresence::Optional,
         )
         .with_validations(VALIDATIONS)];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", true);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), true);
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());

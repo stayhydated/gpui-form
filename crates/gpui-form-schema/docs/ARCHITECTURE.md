@@ -33,7 +33,7 @@ Important fields:
 
 - `struct_name`
 - `components`
-- `source_path`
+- `source_module_path`
 - `koruma_enabled`
 - `has_skipped_fields`
 - `holder_conversion_can_fail`

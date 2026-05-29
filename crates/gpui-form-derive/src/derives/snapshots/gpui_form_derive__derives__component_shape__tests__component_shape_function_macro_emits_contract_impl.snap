@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape.rs
-assertion_line: 257
 expression: pretty_tokens(expanded)
 ---
 pub struct InputShape<T>(::core::marker::PhantomData<fn() -> (T)>);
@@ -22,6 +21,17 @@ where
     );
     const PROTOTYPING: ::gpui_form_runtime::shape::ComponentPrototyping = ::gpui_form_runtime::shape::ComponentPrototyping::new()
         .field_suffix("input");
+}
+impl<T> InputShape<T>
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+{
+    #[allow(dead_code)]
+    fn __gpui_form_assert_render_component_contract(
+        entity: &::gpui::Entity<::gpui_component::input::InputState>,
+    ) -> ::gpui_component::input::Input {
+        <::gpui_component::input::Input>::new(entity)
+    }
 }
 impl<T> ::gpui_form_runtime::shape::DeclaredComponentShape for InputShape<T>
 where

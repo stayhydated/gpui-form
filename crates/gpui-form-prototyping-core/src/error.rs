@@ -11,9 +11,6 @@ pub enum PrototypingError {
         value: String,
         error: String,
     },
-    InvalidSourcePath {
-        source_path: String,
-    },
     InvalidType {
         field_name: String,
         value: String,
@@ -36,12 +33,6 @@ impl fmt::Display for PrototypingError {
                 write!(
                     f,
                     "invalid {kind} `{value}` in prototyping metadata: {error}"
-                )
-            },
-            Self::InvalidSourcePath { source_path } => {
-                write!(
-                    f,
-                    "failed to derive a Rust module path from source path `{source_path}`"
                 )
             },
             Self::InvalidType {

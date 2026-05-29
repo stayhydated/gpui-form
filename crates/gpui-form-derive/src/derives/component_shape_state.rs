@@ -69,10 +69,11 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let default_constructor = quote! { <#state>::new(window, cx) };
     let constructor_body = meta.constructor_body_or(default_constructor);
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
+    let gpui_crate = CratePaths::resolve().gpui;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
+    let render_component_contract = meta.render_component_contract_tokens(&gpui_crate, &state);
     let component_shape_for_impls = meta.value_impl_tokens(&runtime_crate, ident, &input.generics);
-    let gpui_crate = CratePaths::resolve().gpui;
     let inferred_component_type = if input.generics.params.is_empty() {
         quote! { #ident }
     } else {
@@ -151,6 +152,10 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
 
             #metadata_impl_items
             #inferred_component_const
+        }
+
+        impl #impl_generics #ident #ty_generics #where_clause {
+            #render_component_contract
         }
 
         impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}

@@ -32,19 +32,19 @@ gpui_form_derive::component_shape! {
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]
 struct RequiredDemo {
-    #[gpui_form(shape = RequiredShape)]
+    #[gpui_form(component(shape = RequiredShape))]
     value: NonDefault,
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DefaultedDemo {
-    #[gpui_form(shape = RequiredShape, default = NonDefault("fallback".to_string()))]
+    #[gpui_form(component(shape = RequiredShape), default = NonDefault("fallback".to_string()))]
     value: NonDefault,
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DirectStorageDemo {
-    #[gpui_form(shape = AllowShape)]
+    #[gpui_form(component(shape = AllowShape))]
     value: String,
 }
 

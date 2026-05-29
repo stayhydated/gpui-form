@@ -227,9 +227,8 @@ impl ComponentSuffix {
 pub struct GpuiFormShape {
     pub struct_name: &'static str,
     pub components: &'static [FieldVariant],
-    /// The source file path where the struct with #[derive(GpuiForm)] is declared.
-    /// This is the full path from file!() macro, useful for generating imports.
-    pub source_path: &'static str,
+    /// Rust module path where the struct with #[derive(GpuiForm)] is declared.
+    pub source_module_path: RustPath,
     /// Whether the struct has koruma validation enabled at the struct level.
     pub koruma_enabled: bool,
     /// Whether the original struct contains any `#[gpui_form(skip)]` fields.
@@ -249,13 +248,13 @@ impl GpuiFormShape {
     pub const fn new(
         struct_name: &'static str,
         components: &'static [FieldVariant],
-        source_path: &'static str,
+        source_module_path: RustPath,
         koruma_enabled: bool,
     ) -> Self {
         Self {
             struct_name,
             components,
-            source_path,
+            source_module_path,
             koruma_enabled,
             has_skipped_fields: false,
             holder_conversion_can_fail: false,
@@ -324,6 +323,29 @@ impl FieldValuePresence {
 
     pub const fn value_holder_uses_option(self) -> bool {
         matches!(self, Self::Optional | Self::RequiresValue)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ValidationRuleId {
+    Required,
+    Newtype,
+    Nested,
+    Custom(&'static str),
+}
+
+impl ValidationRuleId {
+    pub const fn custom(name: &'static str) -> Self {
+        Self::Custom(name)
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Required => "RequiredValidation",
+            Self::Newtype => "NewtypeValidation",
+            Self::Nested => "NestedValidation",
+            Self::Custom(name) => name,
+        }
     }
 }
 
@@ -404,7 +426,7 @@ pub struct FieldVariant {
     source_value_type: RustType,
     value_presence: FieldValuePresence,
     /// List of validation rule identifiers applied to this field (for diagnostics/rendering).
-    validations: &'static [&'static str],
+    validations: &'static [ValidationRuleId],
     /// Default value expression as a string, if one was specified.
     default_expr: Option<RustExpr>,
     /// Source-to-form conversion expression, if one was specified.
@@ -573,12 +595,12 @@ impl FieldVariant {
     }
 
     /// Returns the validation rule identifiers attached to this field.
-    pub fn validation_rules(&self) -> &'static [&'static str] {
+    pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
         self.validations
     }
 
     /// Attach validation rule identifiers to this field metadata.
-    pub const fn with_validations(mut self, validations: &'static [&'static str]) -> Self {
+    pub const fn with_validations(mut self, validations: &'static [ValidationRuleId]) -> Self {
         self.validations = validations;
         self
     }

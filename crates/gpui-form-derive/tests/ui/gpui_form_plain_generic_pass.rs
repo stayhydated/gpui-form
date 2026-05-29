@@ -1,4 +1,5 @@
 #[derive(gpui_form::GpuiForm)]
+#[gpui_form(no_inventory)]
 struct PlainGeneric<T = String>
 where
     T: Default,

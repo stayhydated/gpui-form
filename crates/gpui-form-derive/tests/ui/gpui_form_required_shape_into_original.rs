@@ -21,7 +21,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(GpuiForm)]
 struct Demo {
-    #[gpui_form(shape = RequiredShape)]
+    #[gpui_form(component(shape = RequiredShape))]
     value: NonDefault,
 }
 

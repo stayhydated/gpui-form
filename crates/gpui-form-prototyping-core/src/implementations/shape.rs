@@ -207,8 +207,12 @@ mod tests {
         FieldValuePresence::RequiresValue,
         "crate::shapes::TagsInputShape",
     )];
-    const DEMO_SHAPE: GpuiFormShape =
-        GpuiFormShape::new("Demo", &SHAPE_FIELDS, "src/demo.rs", false);
+    const DEMO_SHAPE: GpuiFormShape = GpuiFormShape::new(
+        "Demo",
+        &SHAPE_FIELDS,
+        RustPath::new_unchecked("demo"),
+        false,
+    );
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -294,8 +298,12 @@ mod tests {
             FieldComponentVariant::new(RustPath::new_unchecked("crate::shapes::TagsInputShape"))
                 .with_component_type(RustType::new_unchecked("TagsInput")),
         )];
-        const SHAPE: GpuiFormShape =
-            GpuiFormShape::new("Demo", &FIELDS_WITH_COMPONENT, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS_WITH_COMPONENT,
+            RustPath::new_unchecked("demo"),
+            false,
+        );
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS_WITH_COMPONENT[0]).unwrap();
@@ -319,7 +327,8 @@ mod tests {
             FieldComponentVariant::new(RustPath::new_unchecked("crate::shapes::CountryShape"))
                 .with_value_binding(true),
         )];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), false);
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
@@ -360,7 +369,8 @@ mod tests {
             ))
             .with_value_binding(true),
         )];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), false);
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
@@ -383,7 +393,8 @@ mod tests {
             .with_value_binding(true),
         )
         .with_default(RustExpr::new_unchecked("String::from(\"123456\")"))];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), false);
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
@@ -406,7 +417,8 @@ mod tests {
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")))
             .with_value_binding(true),
         )];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), false);
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
@@ -449,7 +461,8 @@ mod tests {
                 ))
                 .with_prototyping_field_suffix(Some(ComponentSuffix::new("combobox"))),
         )];
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &FIELDS, "src/demo.rs", false);
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &FIELDS, RustPath::new_unchecked("demo"), false);
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();

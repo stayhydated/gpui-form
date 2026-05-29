@@ -184,6 +184,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let gpui_crate = CratePaths::resolve().gpui;
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
+    let render_component_contract = metadata.render_component_contract_tokens(&gpui_crate, &state);
     let component_shape_for_impls = if has_explicit_component_shape_for_impl(&impls) {
         None
     } else {
@@ -207,6 +208,10 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             }
 
             #metadata_impl_items
+        }
+
+        impl #impl_generics #ident #ty_generics #where_clause {
+            #render_component_contract
         }
 
         impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}

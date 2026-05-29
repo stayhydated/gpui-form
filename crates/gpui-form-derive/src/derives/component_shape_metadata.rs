@@ -198,6 +198,29 @@ impl ComponentShapeMetadata {
             .unwrap_or(default_body)
     }
 
+    pub(super) fn render_component_contract_tokens(
+        &self,
+        gpui_crate: &Path,
+        state: &Type,
+    ) -> TokenStream {
+        let Some(component) = &self.component else {
+            return quote! {};
+        };
+
+        if type_contains_infer(component) {
+            return quote! {};
+        }
+
+        quote! {
+            #[allow(dead_code)]
+            fn __gpui_form_assert_render_component_contract(
+                entity: &#gpui_crate::Entity<#state>,
+            ) -> #component {
+                <#component>::new(entity)
+            }
+        }
+    }
+
     pub(super) fn impl_items_tokens(&self, runtime_crate: &Path) -> TokenStream {
         let value_storage_policy = match self
             .value_storage
@@ -238,6 +261,40 @@ impl ComponentShapeMetadata {
             #component_type_const
             #prototyping_const
         }
+    }
+}
+
+fn type_contains_infer(ty: &Type) -> bool {
+    match ty {
+        Type::Infer(_) => true,
+        Type::Path(path) => path.path.segments.iter().any(|segment| match &segment.arguments {
+            syn::PathArguments::AngleBracketed(args) => args.args.iter().any(|arg| match arg {
+                syn::GenericArgument::Type(ty) => type_contains_infer(ty),
+                syn::GenericArgument::AssocType(assoc) => type_contains_infer(&assoc.ty),
+                syn::GenericArgument::Constraint(constraint) => constraint
+                    .bounds
+                    .iter()
+                    .any(|bound| matches!(bound, syn::TypeParamBound::Trait(_))),
+                _ => false,
+            }),
+            syn::PathArguments::Parenthesized(args) => {
+                args.inputs.iter().any(type_contains_infer)
+                    || matches!(&args.output, syn::ReturnType::Type(_, ty) if type_contains_infer(ty))
+            },
+            syn::PathArguments::None => false,
+        }),
+        Type::Array(array) => type_contains_infer(&array.elem),
+        Type::BareFn(function) => {
+            function.inputs.iter().any(|input| type_contains_infer(&input.ty))
+                || matches!(&function.output, syn::ReturnType::Type(_, ty) if type_contains_infer(ty))
+        },
+        Type::Group(group) => type_contains_infer(&group.elem),
+        Type::Paren(paren) => type_contains_infer(&paren.elem),
+        Type::Ptr(ptr) => type_contains_infer(&ptr.elem),
+        Type::Reference(reference) => type_contains_infer(&reference.elem),
+        Type::Slice(slice) => type_contains_infer(&slice.elem),
+        Type::Tuple(tuple) => tuple.elems.iter().any(type_contains_infer),
+        _ => false,
     }
 }
 

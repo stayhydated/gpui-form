@@ -13,7 +13,7 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, GpuiForm)]
 pub struct Account {
-    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
     pub code: AccountCode,
 }
 ```

@@ -1,11 +1,11 @@
-error: unknown gpui_form field option `component`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
- --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:7:9
+error: expected parentheses
+ --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:7:19
   |
 7 |         component = crate::Widget,
-  |         ^^^^^^^^^
+  |                   ^
 
-error: unknown gpui_form field option `field_suffix`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
-  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:36
+error: unknown gpui_form field option `field_suffix`; component-backed fields must use `component(shape = MyShape)` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:47
    |
-15 |     #[gpui_form(shape = DemoShape, field_suffix = "input", field_suffix = "field")]
-   |                                    ^^^^^^^^^^^^
+15 |     #[gpui_form(component(shape = DemoShape), field_suffix = "input", field_suffix = "field")]
+   |                                               ^^^^^^^^^^^^

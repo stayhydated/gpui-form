@@ -1,5 +1,5 @@
-error: unknown gpui_form field option `component`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
- --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:44
+error: expected parentheses
+ --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:65
   |
-5 |     #[gpui_form(shape = crate::InputShape, component = _)]
-  |                                            ^^^^^^^^^
+5 |     #[gpui_form(component(shape = crate::InputShape), component = _)]
+  |                                                                 ^

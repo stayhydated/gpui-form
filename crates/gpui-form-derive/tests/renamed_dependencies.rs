@@ -59,7 +59,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(gpui_form::GpuiForm)]
 pub struct Demo {
-    #[gpui_form(shape = RenamedRuntimeShape)]
+    #[gpui_form(component(shape = RenamedRuntimeShape))]
     pub name: String,
 }
 
@@ -168,6 +168,12 @@ impl MacroState {
 
 pub struct MacroComponent;
 pub struct MacroEvent;
+
+impl MacroComponent {
+    fn new(_entity: &renamed_gpui::Entity<MacroState>) -> Self {
+        Self
+    }
+}
 
 impl renamed_gpui::EventEmitter<MacroEvent> for MacroState {}
 

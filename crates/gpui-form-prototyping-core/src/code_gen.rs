@@ -1,13 +1,57 @@
 use gpui_form_schema::registry::GpuiFormShape;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use std::path::Path;
 
 use crate::error::{PrototypingError, PrototypingResult};
 use crate::implementations::{
     GeneratedSubscription, ResolvedField, ShapeIdentities as _, field_generator,
 };
 use crate::imports::{Alias, ImportItem, ImportSet};
+
+macro_rules! semantic_fragment {
+    ($name:ident) => {
+        #[derive(Clone, Debug, Default)]
+        pub struct $name(TokenStream);
+
+        impl $name {
+            pub fn is_empty(&self) -> bool {
+                self.0.is_empty()
+            }
+
+            pub fn to_token_stream(&self) -> TokenStream {
+                self.0.clone()
+            }
+        }
+
+        impl From<TokenStream> for $name {
+            fn from(tokens: TokenStream) -> Self {
+                Self(tokens)
+            }
+        }
+
+        impl quote::ToTokens for $name {
+            fn to_tokens(&self, tokens: &mut TokenStream) {
+                tokens.extend(self.0.clone());
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+    };
+}
+
+semantic_fragment!(ImportPlan);
+semantic_fragment!(ComponentEntityInit);
+semantic_fragment!(FieldInitializerPlan);
+semantic_fragment!(RenderFieldPlan);
+semantic_fragment!(EventHandlerPlan);
+semantic_fragment!(SubscriptionPlan);
+semantic_fragment!(PostSubscriptionInitPlan);
+semantic_fragment!(ValidationPlan);
+semantic_fragment!(ConditionalFragment);
 
 /// Imports required by prototyping-core's own generated fragments.
 ///
@@ -72,11 +116,13 @@ impl<'a> FormShapeAdapter<'a> {
             &format!("{}FormValueHolder", data.struct_name),
         )?;
 
-        source_path_to_use_path(data.source_path).ok_or_else(|| {
-            PrototypingError::InvalidSourcePath {
-                source_path: data.source_path.to_string(),
-            }
-        })?;
+        data.source_module_path
+            .parse()
+            .map_err(|error| PrototypingError::InvalidPath {
+                kind: "source module path",
+                value: error.value().to_string(),
+                error: error.source_error().to_string(),
+            })?;
 
         for field in data.components {
             parse_ident("field name", field.field_name())?;
@@ -183,11 +229,14 @@ impl<'a> FormShapeAdapter<'a> {
         )?;
         let form_id_literal = data.form_id_literal();
         let context_str = format!("{}Form", data.struct_name);
-        let source_module_path = source_path_to_use_path(data.source_path).ok_or_else(|| {
-            PrototypingError::InvalidSourcePath {
-                source_path: data.source_path.to_string(),
-            }
-        })?;
+        let source_module_path =
+            data.source_module_path
+                .parse()
+                .map_err(|error| PrototypingError::InvalidPath {
+                    kind: "source module path",
+                    value: error.value().to_string(),
+                    error: error.source_error().to_string(),
+                })?;
         let has_skipped_fields = data.has_skipped_fields();
         let holder_conversion_can_fail = data.holder_conversion_can_fail();
 
@@ -347,22 +396,22 @@ impl<'a> FormShapeAdapter<'a> {
             has_koruma,
             has_skipped_fields,
             holder_conversion_can_fail,
-            imports,
-            component_creations,
-            field_initializers,
-            render_children,
-            event_handlers,
-            subscription_calls,
-            post_subscription_init,
-            validation_binding,
-            subscriptions_field,
-            subscriptions_init,
-            current_data_field,
-            current_data_let,
-            current_data_init,
-            fields_init,
-            debug_child,
-            replace_current_data_fn,
+            imports: imports.into(),
+            component_creations: component_creations.into(),
+            field_initializers: field_initializers.into(),
+            render_children: render_children.into(),
+            event_handlers: event_handlers.into(),
+            subscription_calls: subscription_calls.into(),
+            post_subscription_init: post_subscription_init.into(),
+            validation_binding: validation_binding.into(),
+            subscriptions_field: subscriptions_field.into(),
+            subscriptions_init: subscriptions_init.into(),
+            current_data_field: current_data_field.into(),
+            current_data_let: current_data_let.into(),
+            current_data_init: current_data_init.into(),
+            fields_init: fields_init.into(),
+            debug_child: debug_child.into(),
+            replace_current_data_fn: replace_current_data_fn.into(),
         })
     }
 
@@ -425,41 +474,41 @@ pub struct FormParts {
     /// shape-backed value can be missing and no field default was declared.
     pub holder_conversion_can_fail: bool,
 
-    // ── Raw generated fragments ───────────────────────────────────────────────
+    // ── Semantic generated fragments ──────────────────────────────────────────
     /// Grouped `use` statements (source module glob + framework base + per-component items).
-    pub imports: TokenStream,
+    pub imports: ImportPlan,
     /// `cx.new(|cx| FormComponents::field(window, cx))` calls.
-    pub component_creations: TokenStream,
+    pub component_creations: ComponentEntityInit,
     /// Field name tokens for the `FormFields { ... }` struct literal.
-    pub field_initializers: TokenStream,
+    pub field_initializers: FieldInitializerPlan,
     /// `.child(field().label(...).child(...))` chains for the form body.
-    pub render_children: TokenStream,
+    pub render_children: RenderFieldPlan,
     /// Event handler `fn` items to place in an `impl` block.
-    pub event_handlers: TokenStream,
+    pub event_handlers: EventHandlerPlan,
     /// `let mut _subscriptions = vec![...]` binding.
-    pub subscription_calls: TokenStream,
+    pub subscription_calls: SubscriptionPlan,
     /// Post-subscription setup (e.g. populating initial field values).
-    pub post_subscription_init: TokenStream,
+    pub post_subscription_init: PostSubscriptionInitPlan,
     /// `let validation_errors = ...` binding; empty when koruma is disabled.
-    pub validation_binding: TokenStream,
+    pub validation_binding: ValidationPlan,
 
     // ── Derived conditional fragments ─────────────────────────────────────────
     /// `_subscriptions: Vec<Subscription>,` struct field; empty when no subscriptions.
-    pub subscriptions_field: TokenStream,
+    pub subscriptions_field: ConditionalFragment,
     /// `_subscriptions,` in `Self { ... }`; empty when no subscriptions.
-    pub subscriptions_init: TokenStream,
+    pub subscriptions_init: ConditionalFragment,
     /// `current_data: FormValueHolder,` struct field; empty for empty forms.
-    pub current_data_field: TokenStream,
+    pub current_data_field: ConditionalFragment,
     /// `let current_data = FormValueHolder::default();` binding; empty for empty forms.
-    pub current_data_let: TokenStream,
+    pub current_data_let: ConditionalFragment,
     /// `current_data,` in `Self { ... }`; empty for empty forms.
-    pub current_data_init: TokenStream,
+    pub current_data_init: ConditionalFragment,
     /// `fields: FormFields { #field_initializers }` initializer block.
-    pub fields_init: TokenStream,
+    pub fields_init: ConditionalFragment,
     /// Debug rows for value-holder and into-original status; empty for empty forms.
-    pub debug_child: TokenStream,
+    pub debug_child: ConditionalFragment,
     /// `replace_current_data(...)` helper method; empty for empty forms.
-    pub replace_current_data_fn: TokenStream,
+    pub replace_current_data_fn: ConditionalFragment,
 }
 
 // ── FormLayout ────────────────────────────────────────────────────────────────
@@ -472,57 +521,22 @@ pub trait FormLayout {
     fn generate_file(&self, parts: &FormParts) -> syn::File;
 }
 
-/// Converts a `file!()` source path like
-/// `examples/some-lib/src/structs/user.rs` into a use-path like
-/// `some_lib::structs::user` for the glob import at the top of each generated file.
-fn source_path_to_use_path(source_path: &str) -> Option<syn::Path> {
-    let path = Path::new(source_path);
-    let components: Vec<_> = path.components().collect();
-
-    let src_index = components
-        .iter()
-        .position(|c| matches!(c, std::path::Component::Normal(s) if s.to_str() == Some("src")))?;
-
-    if src_index == 0 {
-        return None;
-    }
-    let crate_name = match &components[src_index - 1] {
-        std::path::Component::Normal(s) => s.to_str()?.replace('-', "_"),
-        _ => return None,
-    };
-
-    let mut path_segments = vec![crate_name];
-    for component in &components[src_index + 1..] {
-        if let std::path::Component::Normal(s) = component {
-            let segment = s.to_str()?;
-            if segment == "mod.rs" {
-                continue;
-            }
-            path_segments.push(
-                segment
-                    .strip_suffix(".rs")
-                    .unwrap_or(segment)
-                    .replace('-', "_"),
-            );
-        }
-    }
-
-    syn::parse_str(&path_segments.join("::")).ok()
-}
-
 #[cfg(test)]
 mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
-    use gpui_form_schema::registry::{FieldValuePresence, FieldVariant, GpuiFormShape, RustType};
+    use gpui_form_schema::registry::{
+        FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType,
+    };
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
     #[test]
-    fn parts_return_error_for_invalid_source_path() {
-        const SHAPE: GpuiFormShape = GpuiFormShape::new("Demo", &[], "demo.rs", false);
+    fn parts_return_error_for_invalid_source_module_path() {
+        const SHAPE: GpuiFormShape =
+            GpuiFormShape::new("Demo", &[], RustPath::new_unchecked("demo::"), false);
 
         let error = match FormShapeAdapter::new(&SHAPE).parts() {
             Ok(_) => panic!("invalid source paths should return an error"),
@@ -531,8 +545,10 @@ mod tests {
 
         assert_eq!(
             error,
-            PrototypingError::InvalidSourcePath {
-                source_path: "demo.rs".to_string(),
+            PrototypingError::InvalidPath {
+                kind: "source module path",
+                value: "demo::".to_string(),
+                error: "unexpected end of input, expected identifier".to_string(),
             }
         );
     }
@@ -544,8 +560,12 @@ mod tests {
             RustType::new_unchecked("Vec<"),
             FieldValuePresence::RequiresValue,
         )];
-        const SHAPE: GpuiFormShape =
-            GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::new_unchecked("some_lib::demo"),
+            false,
+        );
 
         let error = match FormShapeAdapter::new(&SHAPE).parts() {
             Ok(_) => panic!("invalid field types should return an error"),
@@ -572,8 +592,12 @@ mod tests {
             RustType::new_unchecked("bool"),
             FieldValuePresence::RequiresValue,
         )];
-        const SHAPE: GpuiFormShape =
-            GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::new_unchecked("some_lib::demo"),
+            false,
+        );
 
         let parts = FormShapeAdapter::new(&SHAPE)
             .parts()
@@ -596,7 +620,7 @@ mod tests {
         const INFALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &REQUIRED_FIELDS,
-            "examples/some-lib/src/demo.rs",
+            RustPath::new_unchecked("some_lib::demo"),
             false,
         );
 
@@ -613,7 +637,7 @@ mod tests {
         const FALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &OPTIONAL_FIELDS,
-            "examples/some-lib/src/demo.rs",
+            RustPath::new_unchecked("some_lib::demo"),
             false,
         )
         .with_holder_conversion_can_fail(true);

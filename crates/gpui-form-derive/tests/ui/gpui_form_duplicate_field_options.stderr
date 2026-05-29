@@ -4,17 +4,17 @@ error: duplicate `type` option in `gpui_form` field attribute; remove the duplic
 5 |     #[gpui_form(type = String, type = std::string::String)]
   |                                ^^^^
 
-error: duplicate `from` option in `gpui_form` field attribute; remove the duplicate `from` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:11:39
+error: duplicate `source_to_form` option in `gpui_form` field attribute; remove the duplicate `source_to_form` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:11:49
    |
-11 |     #[gpui_form(from = |value| value, from = std::convert::identity)]
-   |                                       ^^^^
+11 |     #[gpui_form(source_to_form = |value| value, source_to_form = std::convert::identity)]
+   |                                                 ^^^^^^^^^^^^^^
 
-error: duplicate `into` option in `gpui_form` field attribute; remove the duplicate `into` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:17:39
+error: duplicate `form_to_source` option in `gpui_form` field attribute; remove the duplicate `form_to_source` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:17:49
    |
-17 |     #[gpui_form(into = |value| value, into = std::convert::identity)]
-   |                                       ^^^^
+17 |     #[gpui_form(form_to_source = |value| value, form_to_source = std::convert::identity)]
+   |                                                 ^^^^^^^^^^^^^^
 
 error: duplicate `default` option in `gpui_form` field attribute; remove the duplicate `default` entry
   --> tests/ui/gpui_form_duplicate_field_options.rs:23:42

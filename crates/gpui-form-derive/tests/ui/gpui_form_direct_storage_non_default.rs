@@ -22,7 +22,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(GpuiForm)]
 struct Demo {
-    #[gpui_form(shape = DirectStorageShape)]
+    #[gpui_form(component(shape = DirectStorageShape))]
     value: NonDefault,
 }
 

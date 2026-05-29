@@ -2,6 +2,12 @@ use gpui_form_derive::ComponentShape;
 
 struct TagsInput;
 
+impl TagsInput {
+    fn new(_entity: &gpui::Entity<TagsState>) -> Self {
+        Self
+    }
+}
+
 #[derive(ComponentShape)]
 #[gpui_form_shape(
     state = TagsState,

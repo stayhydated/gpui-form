@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape_state.rs
-assertion_line: 293
 expression: pretty_tokens(expanded)
 ---
 impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
@@ -19,5 +18,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
         concat!(module_path!(), "::", stringify!(TagsInput)),
     );
 }
+impl TagsInput {}
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for TagsInput {}
 impl ::gpui_form_runtime::shape::ComponentShapeFor<Vec<String>> for TagsInput {}

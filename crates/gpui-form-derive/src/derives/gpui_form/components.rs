@@ -5,14 +5,14 @@ use crate::derives::gpui_form::utils::extract_option_inner_type;
 fn extract_default_expr(field: &ComponentField) -> Option<syn::Expr> {
     field
         .rendered()
-        .and_then(|rendered| rendered.default.map(|expr| expr.0.clone()))
+        .and_then(|rendered| rendered.default.map(|expr| expr.value.0.clone()))
 }
 
 pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent {
     let Some(rendered) = field.component() else {
         unreachable!("generate_component_field should only be called for component fields");
     };
-    let field_type = rendered.r#type.map(|ty| &ty.0).unwrap_or(&field.ty);
+    let field_type = rendered.r#type.map(|ty| &ty.value.0).unwrap_or(&field.ty);
     let field_type = extract_option_inner_type(field_type).1;
 
     let layout = rendered.component.generate_field_layout(
