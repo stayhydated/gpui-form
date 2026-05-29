@@ -86,7 +86,7 @@ impl<'a> FormShapeAdapter<'a> {
             .components
             .iter()
             .map(|field| {
-                parse_ident("field name", field.field_name)?;
+                parse_ident("field name", field.field_name())?;
                 parse_ident("field pascal ident", &field.field_name_pascal())?;
                 parse_ident(
                     "field component ident",

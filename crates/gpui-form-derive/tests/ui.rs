@@ -43,6 +43,12 @@ fn gpui_form_accepts_required_shape_non_default_values() {
 }
 
 #[test]
+fn gpui_form_rejects_required_shape_infallible_conversion() {
+    let tests = trybuild::TestCases::new();
+    tests.compile_fail("tests/ui/gpui_form_required_shape_into_original.rs");
+}
+
+#[test]
 fn gpui_form_compiles_koruma_builder_attrs_end_to_end() {
     let tests = trybuild::TestCases::new();
     tests.pass("tests/ui/koruma_builder_attrs_pass.rs");

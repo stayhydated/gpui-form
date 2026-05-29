@@ -137,9 +137,9 @@ conversion back to the source model fails when the value is missing. Those
 fallible holder-to-model paths expose `holder.try_into_original()`; infallible
 paths expose `holder.into_original()` and implement `From` when the derive can
 prove infallibility directly. Define this behavior on the reusable component
-shape with `requires_value = false`. Shape-backed fields that inherit an
-infallible value-synthesizing policy also expose `holder.into_original()` for
-clean holder-to-model conversion.
+shape with `requires_value = false`. Required shape-backed fields without a
+declared field default keep only `try_into_original()` so missing values cannot
+be hidden behind a panic-capable infallible API.
 
 Common field-level helpers:
 
@@ -160,11 +160,12 @@ Common field-level helpers:
   the field's form-side type.
 - generated form field/helper suffixes use field-level `.field_suffix(...)`
   when supplied; otherwise they derive a suffix from the explicit component
-  type or shape type name, such as `birth_date_date_picker`. Shape-level
-  `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
-  prototyping output. Field-level and shape-level suffixes must be non-empty
-  ASCII identifier suffixes; manual `ComponentPrototyping::field_suffix(...)`
-  calls validate the same contract in const evaluation.
+  type or shape type name, such as `birth_date_date_picker`. Derive-generated
+  inventory records that resolved suffix so prototyping output uses the same
+  field and handler names. Field-level and shape-level suffixes must be
+  non-empty ASCII identifier suffixes; manual
+  `ComponentPrototyping::field_suffix(...)` calls validate the same contract in
+  const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use `type`, `from`,
   and `into` to validate a form-side type.

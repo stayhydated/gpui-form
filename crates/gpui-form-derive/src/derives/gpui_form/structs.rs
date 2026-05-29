@@ -8,6 +8,13 @@ use syn::{
     punctuated::Punctuated,
 };
 
+mod kw {
+    syn::custom_keyword!(default);
+    syn::custom_keyword!(from);
+    syn::custom_keyword!(into);
+    syn::custom_keyword!(skip);
+}
+
 #[derive(Clone, Debug)]
 pub struct TypeOverride(pub Type);
 
@@ -90,11 +97,11 @@ impl FromMeta for EmptyForm {
 
 #[derive(Debug)]
 enum GpuiFormFieldOption {
-    Skip { span: Ident },
+    Skip { span: kw::skip },
     Type { span: Token![type], ty: Type },
-    Into { span: Ident, expr: Expr },
-    From { span: Ident, expr: Expr },
-    Default { span: Ident, expr: Expr },
+    Into { span: kw::into, expr: Expr },
+    From { span: kw::from, expr: Expr },
+    Default { span: kw::default, expr: Expr },
     Component(Expr),
 }
 
@@ -109,44 +116,47 @@ impl Parse for GpuiFormFieldOption {
             });
         }
 
+        if input.peek(kw::into) {
+            let key = input.parse::<kw::into>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Into {
+                span: key,
+                expr: input.parse()?,
+            });
+        }
+
+        if input.peek(kw::from) {
+            let key = input.parse::<kw::from>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::From {
+                span: key,
+                expr: input.parse()?,
+            });
+        }
+
+        if input.peek(kw::default) {
+            let key = input.parse::<kw::default>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Default {
+                span: key,
+                expr: input.parse()?,
+            });
+        }
+
+        if input.peek(kw::skip) {
+            let key = input.parse::<kw::skip>()?;
+            return Ok(Self::Skip { span: key });
+        }
+
         if input.peek(Ident) {
             let fork = input.fork();
             let key: Ident = fork.parse()?;
 
-            if fork.peek(Token![=]) {
-                let key: Ident = input.parse()?;
-                input.parse::<Token![=]>()?;
-
-                return match key.to_string().as_str() {
-                    "into" => Ok(Self::Into {
-                        span: key,
-                        expr: input.parse()?,
-                    }),
-                    "from" => Ok(Self::From {
-                        span: key,
-                        expr: input.parse()?,
-                    }),
-                    "default" => Ok(Self::Default {
-                        span: key,
-                        expr: input.parse()?,
-                    }),
-                    other => Err(syn::Error::new_spanned(
-                        key,
-                        format!("unknown gpui_form field option `{other}`"),
-                    )),
-                };
-            }
-
-            if fork.peek(syn::token::Paren) {
+            if fork.peek(Token![=]) || fork.peek(syn::token::Paren) {
                 return Err(syn::Error::new_spanned(
                     key.clone(),
                     format!("unknown gpui_form field option `{key}`"),
                 ));
-            }
-
-            if key == "skip" {
-                input.parse::<Ident>()?;
-                return Ok(Self::Skip { span: key });
             }
         }
 

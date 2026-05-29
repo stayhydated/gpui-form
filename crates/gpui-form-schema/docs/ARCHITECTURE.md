@@ -39,21 +39,12 @@ Important fields:
 
 Per-field metadata for one generated component entry.
 
-Important fields:
-
-- `field_name`
-- `value_type`
-- `source_value_type`
-- `optional`
-- `requires_value`
-- `validations`
-- `default_expr`
-- `from_expr`
-- `into_expr`
-- `shape_path`
-- `component_type`
-- `value_binding`
-- `prototyping_field_suffix`
+`FieldVariant` has private fields and exposes const builders/accessors. Value
+presence is stored as `FieldValuePresence` instead of independent
+`optional`/`requires_value` booleans, so metadata cannot represent an
+optional-but-required field. Component-only metadata is stored behind
+`FieldComponentVariant`, so builders cannot represent value binding,
+component type, or component suffix metadata without a shape path.
 
 Rust syntax fragments are stored as typed string wrappers:
 
@@ -74,10 +65,11 @@ analysis that chooses the generated value-holder conversion methods. Downstream
 generators consume that flag instead of recomputing conversion fallibility from
 field-level metadata.
 
-`FieldVariant::field_name_with_component_suffix()` derives the generated component
-field name from precomputed `prototyping_field_suffix` metadata. Inventory
-consumers use this as their generated-code naming policy. The suffix is
-normalized against the field name before falling back to `"shape"`.
+`FieldVariant::field_name_with_component_suffix()` derives the generated
+component field name from resolved component suffix metadata emitted by derive
+or another registry producer. Inventory consumers use this as their
+generated-code naming policy. The suffix is normalized against the field name
+before falling back to `"shape"`.
 
 `requires_value` is emitted by `gpui-form-codegen` from the shape's
 `RequiredValuePolicy` associated type. Non-optional shape-backed fields inherit
@@ -115,8 +107,8 @@ This crate should not own:
 When adding or changing a reusable component shape:
 
 1. implement or derive `ComponentShape` for the shape
-1. publish shape-level metadata such as `COMPONENT_TYPE`,
-   `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generators need it
+1. publish shape-level metadata such as `COMPONENT_TYPE`, `ValueBindingPolicy`,
+   and `PROTOTYPING.field_suffix` when non-derive inventory producers need it
 1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
    crate if runtime support is required
 

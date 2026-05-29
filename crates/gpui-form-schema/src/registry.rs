@@ -294,42 +294,108 @@ impl GpuiFormShape {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FieldValuePresence {
+    /// Source field is `Option<T>` and generated storage is optional.
+    Optional,
+    /// Source field is non-optional and generated storage may be missing.
+    RequiresValue,
+    /// Source field is non-optional and generated storage is direct `T`.
+    DirectStorage,
+}
+
+impl FieldValuePresence {
+    pub const fn from_optional(optional: bool) -> Self {
+        if optional {
+            Self::Optional
+        } else {
+            Self::RequiresValue
+        }
+    }
+
+    pub const fn with_requires_value(self, requires_value: bool) -> Self {
+        match self {
+            Self::Optional => Self::Optional,
+            Self::RequiresValue | Self::DirectStorage => {
+                if requires_value {
+                    Self::RequiresValue
+                } else {
+                    Self::DirectStorage
+                }
+            },
+        }
+    }
+
+    pub const fn optional(self) -> bool {
+        matches!(self, Self::Optional)
+    }
+
+    pub const fn requires_value(self) -> bool {
+        matches!(self, Self::RequiresValue)
+    }
+
+    pub const fn value_holder_uses_option(self) -> bool {
+        matches!(self, Self::Optional | Self::RequiresValue)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FieldComponentVariant {
+    shape_path: RustPath,
+    component_type: Option<RustType>,
+    value_binding: bool,
+    prototyping_field_suffix: Option<ComponentSuffix>,
+}
+
+impl FieldComponentVariant {
+    pub const fn new(shape_path: RustPath) -> Self {
+        Self {
+            shape_path,
+            component_type: None,
+            value_binding: false,
+            prototyping_field_suffix: None,
+        }
+    }
+
+    pub const fn shape_path(&self) -> RustPath {
+        self.shape_path
+    }
+
+    pub const fn component_type(&self) -> Option<RustType> {
+        self.component_type
+    }
+
+    pub const fn value_binding(&self) -> bool {
+        self.value_binding
+    }
+
+    pub const fn prototyping_field_suffix(&self) -> Option<ComponentSuffix> {
+        self.prototyping_field_suffix
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldVariant {
-    pub field_name: &'static str,
+    field_name: &'static str,
     /// Rust type path for the field's value type.
     ///
     /// This is the form-side base value type, not including any generated
     /// `Option<...>` wrapper. It is a full Rust type string (for example
     /// `Country` or `some_lib::country::Country`), not just a bare identifier.
-    pub value_type: RustType,
+    value_type: RustType,
     /// Rust type path for the source model's base value type before any
     /// `#[gpui_form(type = ...)]` override is applied.
-    pub source_value_type: RustType,
-    pub optional: bool,
-    /// Whether a missing generated value-holder value is invalid for this field.
-    /// Source `Option<T>` fields are tracked by [`FieldVariant::optional`] and
-    /// do not require a value.
-    pub requires_value: bool,
+    source_value_type: RustType,
+    value_presence: FieldValuePresence,
     /// List of validation rule identifiers applied to this field (for diagnostics/rendering).
-    pub validations: &'static [&'static str],
+    validations: &'static [&'static str],
     /// Default value expression as a string, if one was specified.
-    pub default_expr: Option<RustExpr>,
+    default_expr: Option<RustExpr>,
     /// Source-to-form conversion expression, if one was specified.
-    pub from_expr: Option<RustExpr>,
+    from_expr: Option<RustExpr>,
     /// Form-to-source conversion expression, if one was specified.
-    pub into_expr: Option<RustExpr>,
-    /// Shape type path implementing the component shape contract.
-    pub shape_path: Option<RustPath>,
-    /// UI component type (e.g. "TagsInput" or "Combobox<_>").
-    /// Used by the prototyping code generator to emit `<Component>::new(&entity)`.
-    pub component_type: Option<RustType>,
-    /// Whether the component shape opted into `ComponentValueBinding`
-    /// generation.
-    pub value_binding: bool,
-    /// Preferred generated field/helper suffix supplied by the shape's
-    /// prototyping metadata.
-    pub prototyping_field_suffix: Option<ComponentSuffix>,
+    into_expr: Option<RustExpr>,
+    component: Option<FieldComponentVariant>,
 }
 
 impl FieldVariant {
@@ -338,16 +404,76 @@ impl FieldVariant {
             field_name,
             value_type,
             source_value_type: value_type,
-            optional,
-            requires_value: !optional,
+            value_presence: FieldValuePresence::from_optional(optional),
             validations: &[],
             default_expr: None,
             from_expr: None,
             into_expr: None,
-            shape_path: None,
-            component_type: None,
-            value_binding: false,
-            prototyping_field_suffix: None,
+            component: None,
+        }
+    }
+
+    pub const fn field_name(&self) -> &'static str {
+        self.field_name
+    }
+
+    pub const fn value_type(&self) -> RustType {
+        self.value_type
+    }
+
+    pub const fn source_value_type(&self) -> RustType {
+        self.source_value_type
+    }
+
+    pub const fn optional(&self) -> bool {
+        self.value_presence.optional()
+    }
+
+    pub const fn requires_value(&self) -> bool {
+        self.value_presence.requires_value()
+    }
+
+    pub const fn default_expr(&self) -> Option<RustExpr> {
+        self.default_expr
+    }
+
+    pub const fn from_expr(&self) -> Option<RustExpr> {
+        self.from_expr
+    }
+
+    pub const fn into_expr(&self) -> Option<RustExpr> {
+        self.into_expr
+    }
+
+    pub const fn component(&self) -> Option<&FieldComponentVariant> {
+        self.component.as_ref()
+    }
+
+    pub const fn shape_path(&self) -> Option<RustPath> {
+        match self.component {
+            Some(component) => Some(component.shape_path),
+            None => None,
+        }
+    }
+
+    pub const fn component_type(&self) -> Option<RustType> {
+        match self.component {
+            Some(component) => component.component_type,
+            None => None,
+        }
+    }
+
+    pub const fn value_binding(&self) -> bool {
+        match self.component {
+            Some(component) => component.value_binding,
+            None => false,
+        }
+    }
+
+    pub const fn prototyping_field_suffix(&self) -> Option<ComponentSuffix> {
+        match self.component {
+            Some(component) => component.prototyping_field_suffix,
+            None => None,
         }
     }
 
@@ -359,7 +485,7 @@ impl FieldVariant {
 
     /// Attach the required-value policy for generated value-holder conversion.
     pub const fn with_requires_value(mut self, requires_value: bool) -> Self {
-        self.requires_value = requires_value && !self.optional;
+        self.value_presence = self.value_presence.with_requires_value(requires_value);
         self
     }
 
@@ -382,7 +508,11 @@ impl FieldVariant {
 
     /// Attach a UI component type to this field metadata.
     pub const fn with_component_type(mut self, component: RustType) -> Self {
-        self.component_type = Some(component);
+        let Some(mut variant) = self.component else {
+            panic!("FieldVariant::with_component_type requires with_shape_path first");
+        };
+        variant.component_type = Some(component);
+        self.component = Some(variant);
         self
     }
 
@@ -392,40 +522,58 @@ impl FieldVariant {
     /// `ComponentShape::COMPONENT_TYPE` constant rather than an explicit
     /// field attribute value.
     pub const fn with_component_type_opt(mut self, component: Option<RustType>) -> Self {
-        self.component_type = component;
+        let Some(mut variant) = self.component else {
+            panic!("FieldVariant::with_component_type_opt requires with_shape_path first");
+        };
+        variant.component_type = component;
+        self.component = Some(variant);
         self
     }
 
     /// Attach the component shape type path.
     pub const fn with_shape_path(mut self, shape: RustPath) -> Self {
-        self.shape_path = Some(shape);
+        self.component = Some(match self.component {
+            Some(mut variant) => {
+                variant.shape_path = shape;
+                variant
+            },
+            None => FieldComponentVariant::new(shape),
+        });
         self
     }
 
     /// Marks this component shape as value-bound for generated prototyping code.
     pub const fn with_value_binding(mut self, enabled: bool) -> Self {
-        self.value_binding = enabled;
+        let Some(mut variant) = self.component else {
+            panic!("FieldVariant::with_value_binding requires with_shape_path first");
+        };
+        variant.value_binding = enabled;
+        self.component = Some(variant);
         self
     }
 
     /// Attach the component shape's preferred prototyping field suffix.
     pub const fn with_prototyping_field_suffix(mut self, suffix: Option<ComponentSuffix>) -> Self {
-        self.prototyping_field_suffix = suffix;
+        let Some(mut variant) = self.component else {
+            panic!("FieldVariant::with_prototyping_field_suffix requires with_shape_path first");
+        };
+        variant.prototyping_field_suffix = suffix;
+        self.component = Some(variant);
         self
     }
 
     /// Returns true when the generated value holder stores this field as `Option<T>`.
     pub const fn value_holder_uses_option(&self) -> bool {
-        self.optional || self.requires_value
+        self.value_presence.value_holder_uses_option()
     }
 
     /// Returns true when generated code should subscribe to this field.
     pub const fn subscribable(&self) -> bool {
-        self.value_binding
+        self.value_binding()
     }
 
     pub fn component_suffix(&self) -> String {
-        self.prototyping_field_suffix
+        self.prototyping_field_suffix()
             .and_then(|suffix| component_suffix_from_suffix(self.field_name, suffix.as_str()))
             .filter(|suffix| !suffix.is_empty())
             .unwrap_or_else(|| "shape".to_string())
@@ -544,6 +692,23 @@ mod tests {
             .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags")));
 
         assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
+    }
+
+    #[test]
+    fn optional_fields_cannot_be_marked_required() {
+        let field = FieldVariant::new("email", RustType::new_unchecked("String"), true)
+            .with_requires_value(true);
+
+        assert!(field.optional());
+        assert!(!field.requires_value());
+        assert!(field.value_holder_uses_option());
+    }
+
+    #[test]
+    #[should_panic(expected = "FieldVariant::with_value_binding requires with_shape_path first")]
+    fn value_binding_requires_shape_path() {
+        let _ = FieldVariant::new("email", RustType::new_unchecked("String"), false)
+            .with_value_binding(true);
     }
 
     #[test]

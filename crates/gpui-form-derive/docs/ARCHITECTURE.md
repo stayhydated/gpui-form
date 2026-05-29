@@ -87,9 +87,9 @@ Important behaviors:
   missing without a default; `From` is reserved for holders the derive can prove
   infallible directly
 - shape-policy holder conversion keeps the checked `try_into_original()` path
-  when requiredness is inherited from the shape policy, and also emits an
-  inherent `into_original()` convenience path when no non-shape field can fail
-  conversion
+  when requiredness is inherited from the shape policy. A field-level default
+  makes that field statically infallible and lets the normal infallible holder
+  path apply.
 - non-optional shape-backed fields whose `RequiredValuePolicy` can represent
   missing values also get generated Koruma validators so `validate()` reports
   missing shape-required values before holder-to-model conversion

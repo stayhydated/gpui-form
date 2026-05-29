@@ -64,6 +64,7 @@ pub trait ComponentValueBindingPolicy: sealed::ValueBindingPolicy {
 }
 
 /// Do not inherit value binding from the shape.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct NoComponentValueBinding;
 
 impl sealed::ValueBindingPolicy for NoComponentValueBinding {}
@@ -73,6 +74,7 @@ impl ComponentValueBindingPolicy for NoComponentValueBinding {
 }
 
 /// Inherit value binding from the shape.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct InheritedComponentValueBinding;
 
 impl sealed::ValueBindingPolicy for InheritedComponentValueBinding {}
@@ -103,6 +105,7 @@ where
 }
 
 /// Store non-optional source fields as `Option<T>` and treat `None` as missing.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct RequireValue;
 
 impl sealed::RequiredValuePolicy for RequireValue {}
@@ -112,6 +115,7 @@ impl ComponentRequiredValuePolicy for RequireValue {
 }
 
 /// Store non-optional source fields directly as `T`.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct AllowMissingValue;
 
 impl sealed::RequiredValuePolicy for AllowMissingValue {}
@@ -184,6 +188,15 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
 pub trait ValueHolderDefaultStorage<T>: ValueHolderStorage<T> {
     /// Construct a missing/default value-holder field.
     fn default_storage() -> Self::Storage;
+}
+
+/// Storage policies whose holder-to-model conversion cannot fail because the
+/// storage representation always contains a value.
+pub trait ValueHolderInfallibleStorage<T>: ValueHolderStorage<T> {
+    /// Convert storage into an output value without a missing-value fallback.
+    fn map_into_value<Output, Present>(storage: Self::Storage, present: Present) -> Output
+    where
+        Present: FnOnce(T) -> Output;
 }
 
 impl<T> ValueHolderStorage<T> for RequireValue {
@@ -304,6 +317,15 @@ impl<T> ValueHolderStorage<T> for AllowMissingValue {
 impl<T: Default> ValueHolderDefaultStorage<T> for AllowMissingValue {
     fn default_storage() -> Self::Storage {
         T::default()
+    }
+}
+
+impl<T> ValueHolderInfallibleStorage<T> for AllowMissingValue {
+    fn map_into_value<Output, Present>(storage: Self::Storage, present: Present) -> Output
+    where
+        Present: FnOnce(T) -> Output,
+    {
+        present(storage)
     }
 }
 

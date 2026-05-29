@@ -24,6 +24,8 @@ component constructor. Shapes also publish a `RequiredValuePolicy`, which lets
 generated value holders inherit whether a non-optional field should use direct
 `T` storage or missing-aware `Option<T>` storage. Missing-aware storage is
 visible to generated `validate()` and fallible holder-to-model conversion.
+`ValueHolderInfallibleStorage<T>` marks policies, currently `AllowMissingValue`,
+whose storage representation always contains a value.
 Manual implementations also publish a `ValueBindingPolicy`: use
 `NoComponentValueBinding` by default, or `InheritedComponentValueBinding` when
 fields should inherit shape-level `ComponentValueBinding<T>` synchronization.

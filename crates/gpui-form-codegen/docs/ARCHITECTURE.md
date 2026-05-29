@@ -70,11 +70,12 @@ that use component-backed fields depend on `gpui-form` plus the crate that owns
 the concrete shape type; they do not need a direct `gpui-form-runtime`
 dependency for generated field code.
 
-Generated identifiers use an explicit field-level `field_suffix` first, then an
-explicit component type, then the resolved component shape's final segment. The
-path fallback strips `Shape` or `State`, removes a duplicate field prefix, and
-falls back to `shape` when the suffix exactly matches the field name. Explicit
-suffix metadata goes through the same field-name normalization. For example,
+Generated identifiers and derive-emitted inventory suffix metadata share one
+resolution path: an explicit field-level `field_suffix` first, then an explicit
+component type, then the resolved component shape's final segment. The path
+fallback strips `Shape` or `State`, removes a duplicate field prefix, and falls
+back to `shape` when the suffix exactly matches the field name. Explicit suffix
+metadata goes through the same field-name normalization. For example,
 `birth_date: DatePicker` becomes `birth_date_date_picker`, while
 `tags: TagsState` falls back to `tags_shape`.
 
@@ -92,7 +93,7 @@ Inventory/prototyping metadata records:
 - the optional render component type
 - the required-value holder policy
 - the value-binding flag
-- the optional component-shape prototyping field suffix
+- the resolved component field suffix used by generated form fields
 
 `gpui-form-prototyping-core` consumes this metadata through the same contract,
 so adding a new widget family does not require changing this crate.

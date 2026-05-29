@@ -30,18 +30,18 @@ pub struct ResolvedField<'a> {
 
 impl<'a> ResolvedField<'a> {
     pub fn new(field: &'a FieldVariant) -> PrototypingResult<Self> {
-        let value_type = syn::parse_str::<Type>(field.value_type.as_str()).map_err(|error| {
+        let value_type = syn::parse_str::<Type>(field.value_type().as_str()).map_err(|error| {
             PrototypingError::InvalidType {
-                field_name: field.field_name.to_string(),
-                value: field.value_type.as_str().to_string(),
+                field_name: field.field_name().to_string(),
+                value: field.value_type().as_str().to_string(),
                 error: error.to_string(),
             }
         })?;
 
-        let component_type = match field.component_type {
+        let component_type = match field.component_type() {
             Some(component_type) => Some(syn::parse_str::<Type>(component_type.as_str()).map_err(
                 |error| PrototypingError::InvalidType {
-                    field_name: field.field_name.to_string(),
+                    field_name: field.field_name().to_string(),
                     value: component_type.as_str().to_string(),
                     error: error.to_string(),
                 },
@@ -49,7 +49,7 @@ impl<'a> ResolvedField<'a> {
             None => None,
         };
 
-        let shape_path = match field.shape_path {
+        let shape_path = match field.shape_path() {
             Some(shape_path) => Some(syn::parse_str::<Path>(shape_path.as_str()).map_err(
                 |error| PrototypingError::InvalidPath {
                     kind: "component shape path",
@@ -60,10 +60,10 @@ impl<'a> ResolvedField<'a> {
             None => None,
         };
 
-        let default_expr = match field.default_expr {
+        let default_expr = match field.default_expr() {
             Some(default_expr) => Some(syn::parse_str::<Expr>(default_expr.as_str()).map_err(
                 |error| PrototypingError::InvalidExpression {
-                    field_name: field.field_name.to_string(),
+                    field_name: field.field_name().to_string(),
                     value: default_expr.as_str().to_string(),
                     error: error.to_string(),
                 },
@@ -73,7 +73,7 @@ impl<'a> ResolvedField<'a> {
 
         Ok(Self {
             field,
-            field_ident: format_ident!("{}", field.field_name),
+            field_ident: format_ident!("{}", field.field_name()),
             field_ident_pascal: format_ident!("{}", field.field_name_pascal()),
             field_ident_with_component_suffix: format_ident!(
                 "{}",
@@ -91,7 +91,7 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn field_name(&self) -> &'a str {
-        self.field.field_name
+        self.field.field_name()
     }
 
     pub fn field_ident(&self) -> &Ident {
@@ -111,7 +111,7 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn optional(&self) -> bool {
-        self.field.optional
+        self.field.optional()
     }
 
     pub fn value_holder_uses_option(&self) -> bool {
@@ -119,12 +119,12 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn value_binding(&self) -> bool {
-        self.field.value_binding
+        self.field.value_binding()
     }
 
     pub fn component_type(&self) -> Option<&'a str> {
         self.field
-            .component_type
+            .component_type()
             .map(|component| component.as_str())
     }
 
@@ -163,11 +163,11 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn suffixed_ident(&self, suffix: &str) -> Ident {
-        format_ident!("{}_{}", self.field.field_name, suffix)
+        format_ident!("{}_{}", self.field.field_name(), suffix)
     }
 
     pub fn prefixed_ident(&self, prefix: &str) -> Ident {
-        format_ident!("{}_{}", prefix, self.field.field_name)
+        format_ident!("{}_{}", prefix, self.field.field_name())
     }
 
     pub fn component_event_handler_ident(&self) -> Ident {

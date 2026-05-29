@@ -386,7 +386,7 @@ mod gpui_form_tests {
             "shape-inherited requiredness should use the policy-aware validator and conditional metadata: {compact}"
         );
         assert!(
-            compact.contains("impl::core::convert::TryFrom<TestFormFormValueHolder>forTestForm"),
+            compact.contains("impl<__GpuiFormNameRequiredValuePolicy>::core::convert::TryFrom<__TestFormFormValueHolderStorage<__GpuiFormNameRequiredValuePolicy>>forTestForm"),
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
@@ -540,7 +540,7 @@ mod gpui_form_tests {
             "skip + from should no longer emit a compile_error"
         );
         assert!(
-            compact.contains("impl::core::convert::From<TestForm>forTestFormFormValueHolder"),
+            compact.contains("::core::convert::From<TestForm>for__TestFormFormValueHolderStorage",),
             "From<Original> for FormValueHolder should be generated even with skipped fields"
         );
         assert!(
@@ -548,7 +548,8 @@ mod gpui_form_tests {
             "From<Original> for FormValueHolder should still apply `from` conversion"
         );
         assert!(
-            !compact.contains("impl::core::convert::From<TestFormFormValueHolder>forTestForm"),
+            !compact
+                .contains("::core::convert::From<__TestFormFormValueHolderStorage>forTestForm",),
             "Reverse From<FormValueHolder> for Original should remain disabled when skipped fields exist"
         );
         assert!(
@@ -652,7 +653,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("impl::core::convert::From<TestForm>forTestFormFormValueHolder"),
+            compact.contains("::core::convert::From<TestForm>for__TestFormFormValueHolderStorage",),
             "Skipped-field forms should still generate From<Original> for value holder"
         );
         assert!(
@@ -830,9 +831,9 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::input::Input<String>as::gpui_form::runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
+                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
             ),
-            "positional component inventory metadata should inherit prototyping suffix from the shape"
+            "positional component inventory metadata should use the resolved generated suffix"
         );
     }
 
@@ -1026,9 +1027,9 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form::runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
+                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
             ),
-            "inventory metadata should inherit prototyping suffix from the shape: {compact}"
+            "inventory metadata should use the resolved generated suffix: {compact}"
         );
         assert!(
             compact.contains(
@@ -1064,9 +1065,9 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_prototyping_field_suffix(::gpui_form::schema::registry::ComponentSuffix::new_opt(<gpui_form_collection::date_picker::DatePickeras::gpui_form::runtime::shape::ComponentShape>::PROTOTYPING.field_suffix))"
+                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"date_picker\")))"
             ),
-            "inventory metadata should still inherit prototyping suffix from the shape: {compact}"
+            "inventory metadata should use the resolved generated suffix: {compact}"
         );
     }
 

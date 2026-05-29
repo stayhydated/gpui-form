@@ -102,9 +102,8 @@ Behavior notes:
   missing. Generated `validate()` reports missing required shape values.
   Fallible holder-to-model paths expose `holder.try_into_original()`;
   infallible paths expose `holder.into_original()` and implement `From` when
-  the derive can prove infallibility directly. Inherited shape policies without
-  a field default also expose an inherent `into_original()` convenience path
-  when no non-shape field can fail conversion.
+  the derive can prove infallibility directly. Required shape-backed fields
+  without a field default keep only the checked `try_into_original()` path.
 - set `requires_value = false` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements
@@ -125,10 +124,9 @@ Behavior notes:
   the path and resolves `_` to the field's form-side type
 - generated `FormFields` and `FormComponents` suffixes use field-level
   `.field_suffix(...)` when supplied; otherwise they derive a suffix from the
-  explicit component type or shape type name. Shape-level
-  `ComponentShape::PROTOTYPING.field_suffix` remains inventory metadata for
-  prototyping output. Field-level suffixes must be non-empty identifier
-  suffixes
+  explicit component type or shape type name. Derive-generated inventory records
+  the same resolved suffix for prototyping output. Field-level suffixes must be
+  non-empty identifier suffixes
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model

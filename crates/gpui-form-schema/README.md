@@ -15,10 +15,12 @@ prototyping flows around generated form metadata.
 
 `FieldVariant` records both source-model and form-side value types,
 required-value holder behavior, conversion expressions, component shape
-paths, component shape prototyping suffixes, and opt-in value-binding
-metadata for generators. Helpers such as `field_name_with_component_suffix()` keep
-inventory consumers aligned with the field names emitted by
-`#[derive(GpuiForm)]`, with a shape-derived `"shape"` fallback suffix.
+metadata, resolved component suffixes, and opt-in value-binding metadata for
+generators. Its fields are private; use the const builders and accessors so
+metadata cannot represent states such as optional-but-required or
+value-bound-without-shape. Helpers such as
+`field_name_with_component_suffix()` keep inventory consumers aligned with the
+field names emitted by `#[derive(GpuiForm)]`, with a `"shape"` fallback suffix.
 
 Rust fragments in registry metadata use typed string wrappers so generators do
 not accidentally pass a type where a path, expression, or component suffix is
@@ -36,7 +38,7 @@ for shape in inventory::iter::<GpuiFormShape>() {
     println!("form: {}", shape.struct_name);
 
     for field in shape.components {
-        println!("  {} -> {}", field.field_name, field.field_name_with_component_suffix());
+        println!("  {} -> {}", field.field_name(), field.field_name_with_component_suffix());
     }
 }
 ```

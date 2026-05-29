@@ -395,10 +395,10 @@ pub fn expand_gpui_form(
                     }
                 });
 
-                let component_type_tokens = component_def.component_type_tokens(&base_type);
                 let shape_path_tokens = component_def.shape_path_tokens(&base_type);
+                let component_type_tokens = component_def.component_type_tokens(&base_type);
                 let value_binding_tokens = component_def.value_binding_tokens(&base_type);
-                let prototyping_tokens = component_def.prototyping_tokens(&base_type);
+                let prototyping_tokens = component_def.prototyping_tokens(&base_type, &field_name_str);
                 let from_expr_tokens = option_expr_string_tokens(&rendered.from.cloned());
                 let into_expr_tokens = option_expr_string_tokens(&rendered.into.cloned());
 
@@ -415,8 +415,8 @@ pub fn expand_gpui_form(
                     .with_conversions(#from_expr_tokens, #into_expr_tokens)
                     .with_validations(#validation_rules_tokens)
                     #default_expr_tokens
-                    #component_type_tokens
                     #shape_path_tokens
+                    #component_type_tokens
                     #value_binding_tokens
                     #prototyping_tokens
                 })

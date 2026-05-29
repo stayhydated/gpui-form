@@ -15,7 +15,7 @@ pub struct ShapeCodeGenerator;
 
 impl FieldCodeGenerator for ShapeCodeGenerator {
     fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
-        if field.value_binding {
+        if field.value_binding() {
             vec![
                 ImportItem::path("gpui_form::runtime::shape::ComponentEventOf"),
                 ImportItem::path("gpui_form::runtime::shape::ComponentStateOf"),
@@ -102,7 +102,13 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         } else if let Some(default_expr) = field.default_expr() {
             quote! { self.current_data.#field_name_ident = #default_expr; }
         } else {
-            quote! { self.current_data.#field_name_ident = ::core::default::Default::default(); }
+            quote! {
+                self.current_data.#field_name_ident =
+                    <<#shape as gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy
+                        as gpui_form::runtime::shape::ValueHolderDefaultStorage<
+                            #field_type
+                        >>::default_storage();
+            }
         };
 
         let handler = quote! {
@@ -268,6 +274,7 @@ mod tests {
         const FIELDS_WITH_COMPONENT: [FieldVariant; 1] =
             [
                 FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
+                    .with_shape_path(RustPath::new_unchecked("crate::shapes::TagsInputShape"))
                     .with_component_type(RustType::new_unchecked("TagsInput")),
             ];
         const SHAPE: GpuiFormShape =
@@ -415,6 +422,7 @@ mod tests {
         const FIELDS: [FieldVariant; 1] =
             [
                 FieldVariant::new("tags", RustType::new_unchecked("Vec<Tag>"), false)
+                    .with_shape_path(RustPath::new_unchecked("crate::shapes::TagsComboboxShape"))
                     .with_component_type(RustType::new_unchecked(
                         "gpui_component::combobox::Combobox<_>",
                     ))

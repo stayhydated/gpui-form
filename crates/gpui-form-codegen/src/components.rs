@@ -3,7 +3,10 @@ use gpui_form_schema::registry::validate_component_suffix;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{ToTokens as _, quote, quote_spanned};
 use syn::spanned::Spanned as _;
-use syn::{Expr, Lit, LitStr, Path, Type};
+use syn::{
+    Expr, Lit, LitStr, Path, Type,
+    parse::{Parse, ParseStream},
+};
 
 use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
@@ -105,7 +108,12 @@ struct ComponentMethod {
     args: Vec<Expr>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+mod kw {
+    syn::custom_keyword!(component);
+    syn::custom_keyword!(field_suffix);
+}
+
+#[derive(Clone, Copy, Debug)]
 enum ShapeMetadataMethod {
     Component,
     FieldSuffix,
@@ -115,16 +123,14 @@ impl ShapeMetadataMethod {
     const SUPPORTED: &'static str = "`component` and `field_suffix`";
 
     fn parse(method: &syn::Ident) -> darling::Result<Self> {
-        match method.to_string().as_str() {
-            "component" => Ok(Self::Component),
-            "field_suffix" => Ok(Self::FieldSuffix),
-            _ => Err(DarlingError::custom(format!(
+        syn::parse2(method.to_token_stream()).map_err(|_| {
+            DarlingError::custom(format!(
                 "unknown component metadata `{method}`; supported generic methods are {}; \
                  put component-specific options in a dedicated ComponentShape wrapper",
                 Self::SUPPORTED
             ))
-            .with_span(method)),
-        }
+            .with_span(method)
+        })
     }
 
     const fn name(self) -> &'static str {
@@ -132,6 +138,25 @@ impl ShapeMetadataMethod {
             Self::Component => "component",
             Self::FieldSuffix => "field_suffix",
         }
+    }
+}
+
+impl Parse for ShapeMetadataMethod {
+    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        if input.peek(kw::component) {
+            input.parse::<kw::component>()?;
+            return Ok(Self::Component);
+        }
+
+        if input.peek(kw::field_suffix) {
+            input.parse::<kw::field_suffix>()?;
+            return Ok(Self::FieldSuffix);
+        }
+
+        Err(input.error(format!(
+            "expected component metadata method {}",
+            Self::SUPPORTED
+        )))
     }
 }
 
@@ -687,28 +712,16 @@ impl ShapeOptions {
         }
     }
 
-    pub fn prototyping_tokens(&self, field_type: &syn::Type) -> TokenStream {
-        if let Some(field_suffix) = &self.field_suffix {
-            let schema_crate = CratePaths::resolve().gpui_form;
-            quote! {
-                .with_prototyping_field_suffix(Some(
-                    #schema_crate::schema::registry::ComponentSuffix::new(#field_suffix)
-                ))
-            }
-        } else {
-            let shape = self.resolved_shape(field_type);
-            let crate_paths = CratePaths::resolve();
-            let runtime_crate = crate_paths.gpui_form_facade_runtime();
-            let schema_crate = crate_paths.gpui_form;
-
-            quote! {
-                .with_prototyping_field_suffix(
-                    #schema_crate::schema::registry::ComponentSuffix::new_opt(
-                        <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING
-                            .field_suffix
-                    )
-                )
-            }
+    pub fn prototyping_tokens(&self, field_type: &syn::Type, field_name: &str) -> TokenStream {
+        let suffix = self
+            .clone()
+            .with_field_type(field_type)
+            .component_suffix(field_name);
+        let schema_crate = CratePaths::resolve().gpui_form;
+        quote! {
+            .with_prototyping_field_suffix(Some(
+                #schema_crate::schema::registry::ComponentSuffix::new(#suffix)
+            ))
         }
     }
 }
