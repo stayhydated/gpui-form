@@ -1,17 +1,15 @@
 use darling::{Error as DarlingError, FromField, FromMeta};
 use gpui_form_codegen::components::{RequiredValue, ShapeOptions};
 use koruma_derive_core::ValidationInfo;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use syn::{
-    Expr, Ident, LitStr, Path, Token, Type,
+    Expr, Ident, Path, Token, Type,
     parse::{Parse, ParseStream, Parser as _},
     punctuated::Punctuated,
 };
 
 mod kw {
     syn::custom_keyword!(default);
-    syn::custom_keyword!(component);
-    syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(from);
     syn::custom_keyword!(hidden);
     syn::custom_keyword!(into);
@@ -201,40 +199,13 @@ impl FromMeta for EmptyForm {
 
 #[derive(Debug)]
 enum GpuiFormFieldOption {
-    Skip {
-        span: kw::skip,
-    },
-    Hidden {
-        span: kw::hidden,
-    },
-    Type {
-        span: Token![type],
-        ty: Type,
-    },
-    Into {
-        span: kw::into,
-        expr: Expr,
-    },
-    From {
-        span: kw::from,
-        expr: Expr,
-    },
-    Default {
-        span: kw::default,
-        expr: Expr,
-    },
-    Shape {
-        span: kw::shape,
-        path: Path,
-    },
-    Component {
-        span: kw::component,
-        ty: Type,
-    },
-    FieldSuffix {
-        span: kw::field_suffix,
-        suffix: LitStr,
-    },
+    Skip { span: kw::skip },
+    Hidden { span: kw::hidden },
+    Type { span: Token![type], ty: Type },
+    Into { span: kw::into, expr: Expr },
+    From { span: kw::from, expr: Expr },
+    Default { span: kw::default, expr: Expr },
+    Shape { span: kw::shape, path: Path },
 }
 
 impl Parse for GpuiFormFieldOption {
@@ -284,24 +255,6 @@ impl Parse for GpuiFormFieldOption {
             });
         }
 
-        if input.peek(kw::component) {
-            let key = input.parse::<kw::component>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::Component {
-                span: key,
-                ty: input.parse()?,
-            });
-        }
-
-        if input.peek(kw::field_suffix) {
-            let key = input.parse::<kw::field_suffix>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::FieldSuffix {
-                span: key,
-                suffix: input.parse()?,
-            });
-        }
-
         if input.peek(kw::skip) {
             let key = input.parse::<kw::skip>()?;
             return Ok(Self::Skip { span: key });
@@ -320,7 +273,9 @@ impl Parse for GpuiFormFieldOption {
                 key.clone(),
                 format!(
                     "unknown gpui_form field option `{key}`; component-backed fields must use \
-                     `shape = MyShape`"
+                     `shape = MyShape` where `MyShape` is declared with \
+                     `gpui_form_derive::component_shape!` or \
+                     `#[derive(gpui_form_derive::ComponentShape)]`"
                 ),
             ));
         }
@@ -363,8 +318,6 @@ impl FieldOptions {
 struct ParsedFieldIntent {
     kind: Option<FieldIntentKind>,
     options: Box<FieldOptions>,
-    pending_component: Option<(Type, Span)>,
-    pending_field_suffix: Option<(LitStr, Span)>,
 }
 
 #[derive(Debug)]
@@ -379,8 +332,6 @@ impl ParsedFieldIntent {
         Self {
             kind: None,
             options: Box::default(),
-            pending_component: None,
-            pending_field_suffix: None,
         }
     }
 
@@ -397,8 +348,6 @@ impl ParsedFieldIntent {
 
     fn has_component_configuration(&self) -> bool {
         matches!(self.kind, Some(FieldIntentKind::Component(_)))
-            || self.pending_component.is_some()
-            || self.pending_field_suffix.is_some()
     }
 }
 
@@ -563,8 +512,6 @@ fn parse_gpui_form_item(
             set_once(&mut options.default, DefaultExpr(expr), "default", &span)
         },
         GpuiFormFieldOption::Shape { span, path } => set_shape(field, path, &span),
-        GpuiFormFieldOption::Component { span, ty } => set_component_type(field, ty, &span),
-        GpuiFormFieldOption::FieldSuffix { span, suffix } => set_field_suffix(field, suffix, &span),
     }
 }
 
@@ -589,61 +536,9 @@ fn set_shape<S: syn::spanned::Spanned>(
         None => {},
     }
 
-    let component = field
-        .intent
-        .pending_component
-        .take()
-        .map(|(component, _)| component);
-    let field_suffix = field
-        .intent
-        .pending_field_suffix
-        .take()
-        .map(|(field_suffix, _)| field_suffix);
-    let component = ShapeOptions::from_explicit_metadata(shape, component, field_suffix)?;
+    let component = ShapeOptions::from_shape(shape);
     field.intent.kind = Some(FieldIntentKind::Component(component));
     Ok(())
-}
-
-fn set_component_type<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    component: Type,
-    span: &S,
-) -> darling::Result<()> {
-    match &mut field.intent.kind {
-        Some(FieldIntentKind::Component(shape)) => shape.set_component(component, span),
-        Some(FieldIntentKind::Hidden) => {
-            Err(intent_conflict_error("hidden", "component").with_span(span))
-        },
-        Some(FieldIntentKind::Skipped) => Err(skip_conflict_error("component").with_span(span)),
-        None => set_pending_once(
-            &mut field.intent.pending_component,
-            component,
-            span.span(),
-            "component",
-            span,
-        ),
-    }
-}
-
-fn set_field_suffix<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    field_suffix: LitStr,
-    span: &S,
-) -> darling::Result<()> {
-    match &mut field.intent.kind {
-        Some(FieldIntentKind::Component(shape)) => shape.set_field_suffix(field_suffix, span),
-        Some(FieldIntentKind::Hidden) => {
-            Err(intent_conflict_error("hidden", "field_suffix").with_span(span))
-        },
-        Some(FieldIntentKind::Skipped) => Err(skip_conflict_error("field_suffix").with_span(span)),
-        None => set_pending_once(
-            &mut field.intent.pending_field_suffix,
-            field_suffix,
-            span.span(),
-            "field_suffix",
-            span,
-        ),
-    }
 }
 
 fn set_hidden<S: syn::spanned::Spanned>(
@@ -688,24 +583,6 @@ fn set_once<T, S: syn::spanned::Spanned>(
     }
 
     *slot = Some(value);
-    Ok(())
-}
-
-fn set_pending_once<T, S: syn::spanned::Spanned>(
-    slot: &mut Option<(T, Span)>,
-    value: T,
-    value_span: Span,
-    key: &str,
-    span: &S,
-) -> darling::Result<()> {
-    if slot.is_some() {
-        return Err(DarlingError::custom(format!(
-            "duplicate `{key}` option in `gpui_form` field attribute; remove the duplicate `{key}` entry"
-        ))
-        .with_span(span));
-    }
-
-    *slot = Some((value, value_span));
     Ok(())
 }
 
@@ -773,14 +650,6 @@ fn field_options_mut<'a, S: syn::spanned::Spanned>(
 fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
     if field.intent.kind.is_some() {
         return Ok(());
-    }
-
-    if field.intent.pending_component.is_some() || field.intent.pending_field_suffix.is_some() {
-        return Err(DarlingError::custom(format!(
-            "field `{}` has component metadata but no shape; add `shape = ...`",
-            field.ident
-        ))
-        .with_span(&field.ident));
     }
 
     Err(DarlingError::custom(format!(

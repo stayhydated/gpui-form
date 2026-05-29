@@ -671,11 +671,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    shape = crate::shapes::BioInputShape,
-                    component = crate::ui::BioInput,
-                    field_suffix = "input"
-                )]
+                #[gpui_form(shape = crate::ui::BioInput)]
                 bio: String,
             }
         };
@@ -693,49 +689,48 @@ mod gpui_form_tests {
         assert!(
             compact.contains("pubbio_input:::gpui::Entity<")
                 && compact.contains(
-                    "<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::State"
+                    "<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::State"
                 ),
-            "Component shape field should use the declared suffix and shape state type"
+            "Component shape field should use the shape-derived suffix and shape state type"
         );
 
         assert!(
             compact.contains(
-                "<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::new(window,cx)"
+                "<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::new(window,cx)"
             ),
             "Component shape constructor should delegate to shape::new"
         );
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
+                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
 
         assert!(
-            compact.contains("with_component_type("),
-            "FieldVariant should carry the component type: {compact}"
+            compact.contains("with_component_type_opt("),
+            "FieldVariant should inherit the component type from the shape: {compact}"
         );
         assert!(
             compact.contains(
-                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::shapes::BioInputShape\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::ui::BioInput\"))"
             ),
             "FieldVariant should carry the component shape path: {compact}"
         );
         assert!(
-            compact.contains("with_value_binding(<<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::ValueBindingPolicyas::gpui_form::runtime::shape::ComponentValueBindingPolicy>::VALUE_BINDING)"),
+            compact.contains("with_value_binding(<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueBindingPolicyas::gpui_form::runtime::shape::ComponentValueBindingPolicy>::VALUE_BINDING)"),
             "FieldVariant should inherit component value binding metadata from the shape: {compact}"
         );
         assert!(
-            compact.contains(
-                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
-            ),
-            "FieldVariant should carry explicit component shape prototyping metadata: {compact}"
+            compact.contains("PROTOTYPING.field_suffix")
+                && compact.contains("ComponentSuffix::new(\"input\")"),
+            "FieldVariant should inherit shape prototyping metadata with a generated fallback: {compact}"
         );
     }
 
     #[test]
-    fn test_component_shape_field_suffix_override() {
+    fn test_component_shape_rejects_field_level_field_suffix() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -755,14 +750,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("publabels_tags:::gpui::Entity<"),
-            "field_suffix should control generated FormFields names: {compact}"
-        );
-        assert!(
-            compact.contains(
-                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"tags\")))"
-            ),
-            "FieldVariant should record explicit prototyping suffix: {compact}"
+            compact.contains("unknowngpui_formfieldoption`field_suffix`"),
+            "field-level field_suffix should be rejected: {compact}"
         );
     }
 
@@ -835,10 +824,9 @@ mod gpui_form_tests {
             "explicit component syntax should inherit required-value metadata from the shape"
         );
         assert!(
-            compact.contains(
-                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
-            ),
-            "explicit component inventory metadata should use the resolved generated suffix"
+            compact.contains("PROTOTYPING.field_suffix")
+                && compact.contains("ComponentSuffix::new(\"input\")"),
+            "component inventory metadata should inherit shape prototyping metadata with a generated fallback"
         );
     }
 
@@ -1031,12 +1019,11 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains("pubaccount_no_input:::gpui::Entity<"),
-            "generated FormFields identifiers should use the component shape name suffix without a field-level override: {compact}"
+            "generated FormFields identifiers should use the component shape name suffix: {compact}"
         );
         assert!(
-            compact.contains(
-                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
-            ),
+            compact.contains("PROTOTYPING.field_suffix")
+                && compact.contains("ComponentSuffix::new(\"input\")"),
             "inventory metadata should use the resolved generated suffix: {compact}"
         );
         assert!(
@@ -1072,9 +1059,8 @@ mod gpui_form_tests {
             "multiword shape names should produce component-suffixed generated fields: {compact}"
         );
         assert!(
-            compact.contains(
-                "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"date_picker\")))"
-            ),
+            compact.contains("PROTOTYPING.field_suffix")
+                && compact.contains("ComponentSuffix::new(\"date_picker\")"),
             "inventory metadata should use the resolved generated suffix: {compact}"
         );
     }
@@ -1158,8 +1144,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("field_suffix`mustbeanon-emptyASCIIidentifiersuffix"),
-            "invalid field suffix should fail at the field attribute boundary: {compact}"
+            compact.contains("unknowngpui_formfieldoption`field_suffix`"),
+            "field-level field_suffix should be rejected before value parsing: {compact}"
         );
     }
 }

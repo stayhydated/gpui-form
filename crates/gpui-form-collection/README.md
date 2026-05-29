@@ -45,12 +45,13 @@ Currently provided components:
 `gpui_component::select::SelectItem`; derive that trait with
 `#[derive(SelectItem)]` from `gpui-form-collection-derive`. The provided shape
 uses the default `Vec<T>` delegate. If an application needs search or other
-select-specific configuration, define a small `ComponentShape` wrapper whose
+select-specific configuration, declare a small `component_shape!` wrapper whose
 `new` function configures the underlying `SelectState`.
 
-Collection components implement `ComponentShape` and add value adapters where
-the component can synchronize form state generically. `GpuiForm` generated code
-uses these contracts through the facade path `gpui_form::runtime::shape`.
+Collection components are declared component shapes and add value adapters
+where the component can synchronize form state generically. `GpuiForm`
+generated code uses these contracts through the facade path
+`gpui_form::runtime::shape`.
 Components that synthesize a default value, such as input, select, combobox,
 checkbox, switch, number input, slider, and OTP input, publish direct `T`
 value-holder storage as their default value-storage policy. For combobox,

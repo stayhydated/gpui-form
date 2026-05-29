@@ -109,7 +109,7 @@ Enable this crate's `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
 
 If a form needs non-default infinite-select options such as search or a depth
-limit, define a small `ComponentShape` wrapper whose `new` function calls
+limit, declare a small `component_shape!` wrapper whose `new` function calls
 `InfiniteSelectState::new_with_options(...)`.
 
 Derived `InfiniteSelect` enums expose:
@@ -229,11 +229,14 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`ComponentShape` is the contract used by `#[gpui_form(shape = Shape)]`. Generated
-`GpuiForm` field code reaches it through `gpui_form::runtime::shape`; crates
-that define shapes directly may use `gpui_form_runtime::shape`. This crate's
-`component-shape` feature implements that contract for its built-in rendered
-component types.
+`ComponentShape` is the runtime contract used by `#[gpui_form(shape = Shape)]`.
+Generated `GpuiForm` field code also requires `DeclaredComponentShape`, emitted
+by `gpui_form_derive::component_shape!` and
+`#[derive(gpui_form_derive::ComponentShape)]`. Field shapes should be declared
+with one of those macros. Generated field code reaches runtime contracts
+through `gpui_form::runtime::shape`; crates that define shapes directly may use
+`gpui_form_runtime::shape`. This crate's `component-shape` feature derives that
+contract for its built-in rendered component types.
 
 For common external widgets, prefer the reusable shapes in
 [`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
@@ -305,13 +308,14 @@ metadata for generated prototyping subscriptions.
 
 Reusable shapes can also publish `ComponentPrototyping` metadata through the
 shape contract.
-Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`,
-or `#[gpui_form_shape(...)]` so prototyping generators can emit names such as
-`email_input` without deriving that suffix from the shape type. Generated
-value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
+Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`, or
+`#[gpui_form_shape(...)]` so inventory and prototyping generators can emit
+names such as `email_input` without deriving that suffix from the shape type.
+Generated form field identifiers still derive from the shape type name.
+Generated value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
 `seed_value_binding_state`, and `form_value_change` to avoid repeating
 associated-type projections at every call site.
-Manual `ComponentPrototyping::field_suffix(...)` calls validate the same
+Direct `ComponentPrototyping::field_suffix(...)` calls validate the same
 non-empty ASCII identifier suffix contract in const evaluation.
 
 Set `value_storage = direct` on a reusable shape when the component can

@@ -209,6 +209,8 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             #metadata_impl_items
         }
 
+        impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}
+
         #(#impls)*
         #component_shape_for_impls
     }

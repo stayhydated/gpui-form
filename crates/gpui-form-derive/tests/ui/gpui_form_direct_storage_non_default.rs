@@ -1,7 +1,4 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{
-    DirectValueStorage, ComponentShape, ComponentShapeFor, NoComponentValueBinding,
-};
 
 #[derive(Clone, Debug)]
 struct NonDefault(String);
@@ -14,19 +11,14 @@ impl State {
     }
 }
 
-struct DirectStorageShape;
+gpui_form_derive::component_shape! {
+    struct DirectStorageShape {
+        type State = State;
+        value_storage = direct;
 
-impl ComponentShape for DirectStorageShape {
-    type State = State;
-    type ValueStoragePolicy = DirectValueStorage;
-    type ValueBindingPolicy = NoComponentValueBinding;
-
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for DirectStorageShape {}
     }
 }
-
-impl<T> ComponentShapeFor<T> for DirectStorageShape {}
 
 #[derive(GpuiForm)]
 struct Demo {

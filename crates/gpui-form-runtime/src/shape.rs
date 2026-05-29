@@ -1,7 +1,8 @@
 //! Runtime contract for component shapes used by `#[derive(GpuiForm)]`.
 //!
-//! Users define a zero-sized "shape" type that implements [`ComponentShape`].
-//! The derive macro uses that shape to generate:
+//! Users declare a "shape" type with `gpui_form_derive::component_shape!` or
+//! `#[derive(gpui_form_derive::ComponentShape)]`. The form derive uses that
+//! shape to generate:
 //! - `FormFields` entity state type
 //! - `FormComponents` constructor function body
 //!
@@ -34,8 +35,6 @@ pub trait ComponentShape {
     /// emit `Component::new(&entity)` without requiring component UI metadata to
     /// be repeated on every field annotation.
     ///
-    /// A field-level `component = ...` override always takes
-    /// precedence.
     const COMPONENT_TYPE: Option<&'static str> = None;
 
     /// Metadata used by prototyping generators.
@@ -45,6 +44,18 @@ pub trait ComponentShape {
     /// downstream fields can inherit those preferences.
     const PROTOTYPING: ComponentPrototyping = ComponentPrototyping::new();
 }
+
+/// Marker for component shapes declared through gpui-form shape macros.
+///
+/// `#[derive(GpuiForm)]` requires this marker in addition to [`ComponentShape`]
+/// and [`ComponentShapeFor`]. The `gpui_form_derive::component_shape!` macro
+/// and `#[derive(gpui_form_derive::ComponentShape)]` derive emit it
+/// automatically.
+#[diagnostic::on_unimplemented(
+    message = "gpui-form component shape `{Self}` must be declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`",
+    note = "hand-written `ComponentShape` implementations are not accepted by `#[derive(GpuiForm)]`"
+)]
+pub trait DeclaredComponentShape: ComponentShape {}
 
 /// Marker that a component shape supports a form value type.
 ///

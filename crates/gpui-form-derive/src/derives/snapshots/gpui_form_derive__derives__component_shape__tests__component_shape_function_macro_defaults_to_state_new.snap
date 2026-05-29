@@ -1,5 +1,6 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape.rs
+assertion_line: 271
 expression: pretty_tokens(expanded)
 ---
 pub struct LocalInputShape(::core::marker::PhantomData<fn() -> ()>);
@@ -14,3 +15,4 @@ impl ::gpui_form_runtime::shape::ComponentShape for LocalInputShape {
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
 }
+impl ::gpui_form_runtime::shape::DeclaredComponentShape for LocalInputShape {}

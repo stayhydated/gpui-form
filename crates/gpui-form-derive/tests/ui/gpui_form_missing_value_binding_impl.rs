@@ -1,7 +1,4 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{
-    ComponentShape, ComponentShapeFor, InheritedComponentValueBinding, RequiredValueStorage,
-};
 
 struct State;
 
@@ -13,19 +10,14 @@ impl State {
     }
 }
 
-struct InheritedBindingShape;
+gpui_form_derive::component_shape! {
+    struct InheritedBindingShape {
+        type State = State;
+        value_binding;
 
-impl ComponentShape for InheritedBindingShape {
-    type State = State;
-    type ValueStoragePolicy = RequiredValueStorage;
-    type ValueBindingPolicy = InheritedComponentValueBinding;
-
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InheritedBindingShape {}
     }
 }
-
-impl<T> ComponentShapeFor<T> for InheritedBindingShape {}
 
 #[derive(GpuiForm)]
 struct InheritedDemo {

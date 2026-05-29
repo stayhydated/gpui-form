@@ -1,11 +1,11 @@
-error: duplicate `component` option in `gpui_form` field attribute; remove the duplicate `component` entry
- --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:8:9
+error: unknown gpui_form field option `component`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
+ --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:7:9
   |
-8 |         component = crate::OtherWidget
+7 |         component = crate::Widget,
   |         ^^^^^^^^^
 
-error: duplicate `field_suffix` option in `gpui_form` field attribute; remove the duplicate `field_suffix` entry
-  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:60
+error: unknown gpui_form field option `field_suffix`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:36
    |
 15 |     #[gpui_form(shape = DemoShape, field_suffix = "input", field_suffix = "field")]
-   |                                                            ^^^^^^^^^^^^
+   |                                    ^^^^^^^^^^^^

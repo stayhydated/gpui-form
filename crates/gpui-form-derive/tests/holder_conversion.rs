@@ -1,7 +1,3 @@
-use gpui_form::runtime::shape::{
-    ComponentShape, ComponentShapeFor, DirectValueStorage, NoComponentValueBinding,
-    RequiredValueStorage,
-};
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
 
@@ -16,33 +12,22 @@ impl State {
     }
 }
 
-struct RequiredShape;
+gpui_form_derive::component_shape! {
+    struct RequiredShape {
+        type State = State;
 
-impl ComponentShape for RequiredShape {
-    type State = State;
-    type ValueStoragePolicy = RequiredValueStorage;
-    type ValueBindingPolicy = NoComponentValueBinding;
-
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for RequiredShape {}
     }
 }
 
-impl<T> ComponentShapeFor<T> for RequiredShape {}
+gpui_form_derive::component_shape! {
+    struct AllowShape {
+        type State = State;
+        value_storage = direct;
 
-struct AllowShape;
-
-impl ComponentShape for AllowShape {
-    type State = State;
-    type ValueStoragePolicy = DirectValueStorage;
-    type ValueBindingPolicy = NoComponentValueBinding;
-
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for AllowShape {}
     }
 }
-
-impl<T> ComponentShapeFor<T> for AllowShape {}
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]

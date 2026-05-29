@@ -11,9 +11,9 @@ Use this skill for user-facing app or integration code that wires custom
 components into `#[derive(GpuiForm)]` through `ComponentShape`.
 Normal generated `GpuiForm` component fields reach runtime contracts through
 `gpui_form::runtime::shape`, but crates that define custom shapes with
-`#[derive(ComponentShape)]`, `component_shape!`, `component_value_binding`, or
-manual runtime trait impls should depend on `gpui-form-runtime` directly
-because those lower-level surfaces emit direct runtime paths.
+`#[derive(ComponentShape)]`, `component_shape!`, or `component_value_binding`
+should depend on `gpui-form-runtime` directly because those lower-level
+surfaces emit direct runtime paths.
 
 Use `use-gpui-form` for ordinary forms built from existing built-in,
 collection, or component-owned shapes. Use this skill when the work crosses
@@ -36,7 +36,7 @@ First classify the component ownership:
   another crate, declare a local wrapper shape with the function-like
   `gpui_form_derive::component_shape!` proc macro. This avoids orphan-rule
   problems and gives the local crate a type that owns the `ComponentShape`
-  implementation.
+  and `DeclaredComponentShape` implementations.
 - Existing collection shape: when a suitable `gpui_form_collection::*` shape
   already exists, use it directly instead of wrapping it again.
 
@@ -88,8 +88,9 @@ Metadata rules:
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
-  generated field/helper suffix. The suffix must be a non-empty ASCII
-  identifier suffix; manual `ComponentPrototyping::field_suffix(...)` calls
+  generated prototyping suffix. Generated form field identifiers still derive
+  from the shape type name. The suffix must be a non-empty ASCII identifier
+  suffix; direct `ComponentPrototyping::field_suffix(...)` calls
   validate the same contract.
 
 ## External State Pattern
@@ -158,11 +159,10 @@ Use `value = ...` / `values(...)` for simple compatibility impls, or omit value
 metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
 shape needs custom bounds or diagnostics.
 
-When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
-`ComponentShapeFor<Value>` impls for the supported form-side value types and
-both policy associated types. Use `NoComponentValueBinding` unless the shape
-should inherit reusable `ComponentValueBinding<T>` impls by default; use
-`InheritedComponentValueBinding` for that inherited path.
+Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
+`#[gpui_form(shape = ...)]` field shape. `#[derive(GpuiForm)]` requires the
+`DeclaredComponentShape` marker emitted by `#[derive(ComponentShape)]` or
+`component_shape!`.
 
 ## Value Binding
 

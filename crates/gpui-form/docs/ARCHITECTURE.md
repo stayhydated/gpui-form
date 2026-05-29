@@ -30,9 +30,9 @@ This crate exists to:
 `gpui-form-collection`, `gpui-form-component-derive`, or
 `gpui-form-collection-derive`. Application crates that use concrete component
 helpers, collection shapes, `InfiniteSelect`, or `SelectItem` depend on and
-import those crates explicitly. Lower-level crates that define component shape
-macros or manual runtime contracts may also depend on `gpui-form-runtime`
-directly.
+import those crates explicitly. Lower-level crates that declare component
+shapes with `#[derive(ComponentShape)]`, `component_shape!`, or
+`component_value_binding` may also depend on `gpui-form-runtime` directly.
 
 ## Feature Flags
 
@@ -89,7 +89,7 @@ those component APIs explicitly.
 - Numeric helpers live under `gpui_form::core::numeric`.
 - Generated shape contract paths live under `gpui_form::runtime::shape`.
   Direct `gpui-form-runtime` dependencies are reserved for lower-level shape
-  integration crates and manual implementations.
+  integration crates that declare shapes or value bindings.
 - Component module paths such as `date_picker`, `file_picker`, and
   `infinite_select` belong to `gpui-form-component`, not this facade.
 

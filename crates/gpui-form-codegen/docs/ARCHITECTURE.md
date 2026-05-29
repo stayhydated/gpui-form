@@ -7,7 +7,7 @@ layer used by `gpui-form-derive`.
 
 This crate exists to:
 
-1. parse explicit component shape metadata into a typed internal model
+1. parse component shape paths into a typed internal model
 1. emit generated `FormFields` and `FormComponents` tokens from a
    `ComponentShape`
 1. emit schema metadata aligned with the same component-shape contract
@@ -27,31 +27,26 @@ crate.
 
 ## Parse-Time Component Model
 
-`components.rs` models explicit component shape metadata accepted by the derive:
+`components.rs` models component shape metadata accepted by the derive:
 
 - `#[gpui_form(shape = my::Shape)]`
-- `#[gpui_form(shape = my::Shape, component = my::Widget)]`
-- `#[gpui_form(shape = my::Shape, field_suffix = "input")]`
 
 Important parse-time responsibilities:
 
-- field shape syntax reaches this crate as a parsed shape path plus optional
-  `component = ...` and `field_suffix = "..."` metadata
+- field shape syntax reaches this crate as a parsed shape path
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- `component = ...` records render-component metadata for prototyping output and
-  must be path-like
-- duplicate component metadata is rejected at the field attribute boundary
-- generated type checks assert `ComponentShapeFor<Value>` so shape crates own
-  component-specific value compatibility diagnostics
+- generated type checks assert `DeclaredComponentShape` and
+  `ComponentShapeFor<Value>` so only macro/derive-declared shapes are accepted
+  and shape crates own component-specific value compatibility diagnostics
 - non-optional shape-backed fields inherit the shape's value-storage policy by
   default
 - shape-level `ValueBindingPolicy` records whether generated prototyping code
   should use `ComponentValueBinding`
-- `field_suffix = "..."` records a field-level prototyping name override and
-  must be a non-empty identifier suffix
+- shape-level `PROTOTYPING.field_suffix` records reusable prototyping suffix
+  metadata and must be a non-empty identifier suffix
 
 Component-specific settings and value compatibility rules belong inside the
 shape's `ComponentShape::new` implementation, `ComponentShapeFor<Value>` impls,
@@ -72,14 +67,14 @@ that use component-backed fields depend on `gpui-form` plus the crate that owns
 the concrete shape type; they do not need a direct `gpui-form-runtime`
 dependency for generated field code.
 
-Generated identifiers and derive-emitted inventory suffix metadata share one
-resolution path: an explicit field-level `field_suffix` first, then an explicit
-component type, then the resolved component shape's final segment. The path
-fallback strips `Shape` or `State`, removes a duplicate field prefix, and falls
-back to `shape` when the suffix exactly matches the field name. Explicit suffix
-metadata goes through the same field-name normalization. For example,
-`birth_date: DatePicker` becomes `birth_date_date_picker`, while
-`tags: TagsState` falls back to `tags_shape`.
+Generated identifiers derive their suffix from the resolved component shape's
+final segment. The path fallback strips `Shape` or `State`, removes a duplicate
+field prefix, and falls back to `shape` when the suffix exactly matches the
+field name. For example, `birth_date: DatePicker` becomes
+`birth_date_date_picker`, while `tags: TagsState` falls back to `tags_shape`.
+Derive-emitted inventory suffix metadata reads
+`ComponentShape::PROTOTYPING.field_suffix` when the declared shape publishes a
+suffix and otherwise uses the same path fallback.
 
 No `gpui-component` UI component is hard-coded here. Reusable gpui-component-backed
 representations live in `gpui-form-collection`; application-specific widgets
@@ -92,9 +87,9 @@ Inventory/prototyping metadata records:
 - explicit component field metadata via `FieldVariant::component(...)`
 - the field value-presence policy as `FieldValuePresence`
 - the resolved component shape path in `FieldComponentVariant`
-- the optional render component type
+- the optional render component type inherited from `ComponentShape::COMPONENT_TYPE`
 - the value-binding flag
-- the resolved component field suffix used by generated form fields
+- the shape-level prototyping suffix, or the resolved component field suffix
 
 `gpui-form-prototyping-core` consumes this metadata through the same contract,
 so adding a new widget family does not require changing this crate.

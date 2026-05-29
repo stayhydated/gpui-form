@@ -153,6 +153,8 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             #inferred_component_const
         }
 
+        impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}
+
         #binding_impl
 
         #component_shape_for_impls

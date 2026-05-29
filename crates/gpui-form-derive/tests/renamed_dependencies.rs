@@ -28,8 +28,12 @@ edition = "2024"
 [dependencies]
 gpui = {{ git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }}
 gpui-form = {{ path = "{gpui_form}", default-features = false, features = ["derive"] }}
+gpui-form-derive = {{ path = "{derive}" }}
+gpui-form-runtime = {{ path = "{runtime}" }}
 "#,
             gpui_form = workspace.join("crates/gpui-form").display(),
+            derive = workspace.join("crates/gpui-form-derive").display(),
+            runtime = workspace.join("crates/gpui-form-runtime").display(),
         ),
     )
     .expect("write renamed dependency test manifest");
@@ -37,10 +41,6 @@ gpui-form = {{ path = "{gpui_form}", default-features = false, features = ["deri
     fs::write(
         src_dir.join("lib.rs"),
         r#"
-use gpui_form::runtime::shape::{
-    ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequiredValueStorage,
-};
-
 struct State;
 
 impl State {
@@ -48,19 +48,14 @@ impl State {
         Self
     }
 }
-struct RenamedRuntimeShape;
 
-impl ComponentShape for RenamedRuntimeShape {
-    type State = State;
-    type ValueStoragePolicy = RequiredValueStorage;
-    type ValueBindingPolicy = NoComponentValueBinding;
+gpui_form_derive::component_shape! {
+    struct RenamedRuntimeShape {
+        type State = State;
 
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
-        State::new(window, cx)
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for RenamedRuntimeShape {}
     }
 }
-
-impl<T> ComponentShapeFor<T> for RenamedRuntimeShape {}
 
 #[derive(gpui_form::GpuiForm)]
 pub struct Demo {
@@ -123,7 +118,9 @@ renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}"
     fs::write(
         src_dir.join("lib.rs"),
         r#"
-use renamed_gpui_form_runtime::shape::{ComponentShape, ComponentValueBinding, FormValueChange};
+use renamed_gpui_form_runtime::shape::{
+    ComponentShape, ComponentValueBinding, DeclaredComponentShape, FormValueChange,
+};
 
 pub struct DerivedState;
 
@@ -197,7 +194,7 @@ gpui_form_derive::component_shape! {
 }
 
 pub fn assert_shapes() {
-    fn assert_shape<Shape: ComponentShape>() {}
+    fn assert_shape<Shape: ComponentShape + DeclaredComponentShape>() {}
     fn assert_binding<Shape, Event>()
     where
         Shape: ComponentValueBinding<String, Event = Event>,

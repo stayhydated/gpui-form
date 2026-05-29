@@ -1,13 +1,12 @@
-use darling::Error as DarlingError;
 use gpui_form_schema::registry::validate_component_suffix;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use quote::{quote, quote_spanned};
+use syn::Path;
 use syn::spanned::Spanned as _;
-use syn::{LitStr, Path, Type};
 
 use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
-use crate::metadata::{rust_path_tokens, rust_type_tokens};
+use crate::metadata::rust_path_tokens;
 
 fn tokens_with_span<T: quote::ToTokens>(value: &T, span: Span) -> TokenStream {
     value
@@ -103,64 +102,15 @@ impl RequiredValue {
 pub struct ShapeOptions {
     /// Path to a type implementing `gpui_form::runtime::shape::ComponentShape`.
     pub shape: syn::Path,
-    /// UI component type (e.g. `TagsInput` or `Combobox<_>`).
-    /// When provided, the prototyping code generator emits `Component::new(&entity)`.
-    pub component: Option<Type>,
-    /// Optional explicit generated field/helper suffix.
-    pub field_suffix: Option<LitStr>,
     span: Span,
 }
 
 impl ShapeOptions {
-    fn from_shape(shape: Path) -> Self {
+    pub fn from_shape(shape: Path) -> Self {
         let span = shape.span();
         let shape = normalize_shape_path(shape);
 
-        Self {
-            shape,
-            component: None,
-            field_suffix: None,
-            span,
-        }
-    }
-
-    pub fn from_explicit_metadata(
-        shape: Path,
-        component: Option<Type>,
-        field_suffix: Option<LitStr>,
-    ) -> darling::Result<Self> {
-        let mut options = Self::from_shape(shape);
-
-        if let Some(component) = component {
-            let span = component.span();
-            options.set_component(component, &span)?;
-        }
-
-        if let Some(field_suffix) = field_suffix {
-            let span = field_suffix.span();
-            options.set_field_suffix(field_suffix, &span)?;
-        }
-
-        Ok(options)
-    }
-
-    pub fn set_component<S: syn::spanned::Spanned>(
-        &mut self,
-        component: Type,
-        span: &S,
-    ) -> darling::Result<()> {
-        let component = normalize_component_type(component, span)?;
-        set_metadata_once(&mut self.component, component, "component", span)
-    }
-
-    pub fn set_field_suffix<S: syn::spanned::Spanned>(
-        &mut self,
-        field_suffix: LitStr,
-        span: &S,
-    ) -> darling::Result<()> {
-        validate_shape_field_suffix(&field_suffix.value())
-            .map_err(|message| DarlingError::custom(message).with_span(&field_suffix))?;
-        set_metadata_once(&mut self.field_suffix, field_suffix, "field_suffix", span)
+        Self { shape, span }
     }
 
     pub fn resolved_shape(&self, field_type: &syn::Type) -> syn::Path {
@@ -177,19 +127,7 @@ impl ShapeOptions {
     }
 
     pub fn component_suffix(&self, field_name: &str) -> String {
-        if let Some(field_suffix) = &self.field_suffix {
-            return gpui_form_schema::registry::component_suffix_from_suffix(
-                field_name,
-                &field_suffix.value(),
-            )
-            .unwrap_or_else(|| "shape".to_string());
-        }
-
-        let suffix_source = self
-            .component
-            .as_ref()
-            .and_then(type_suffix_source)
-            .or_else(|| path_suffix_source(&self.shape));
+        let suffix_source = path_suffix_source(&self.shape);
 
         suffix_source
             .and_then(|source| {
@@ -226,7 +164,7 @@ impl ShapeOptions {
         quote_spanned! {span=>
             {
                 fn __gpui_form_assert_component_shape<
-                    Shape: #runtime_crate::shape::ComponentShape
+                    Shape: #runtime_crate::shape::DeclaredComponentShape
                         + #runtime_crate::shape::ComponentShapeFor<Value>,
                     Value,
                 >() {}
@@ -239,14 +177,6 @@ impl ShapeOptions {
     pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         RequiredValue::shape(self.resolved_shape(field_type))
     }
-}
-
-fn type_suffix_source(ty: &Type) -> Option<String> {
-    let Type::Path(type_path) = ty else {
-        return None;
-    };
-
-    path_suffix_source(&type_path.path)
 }
 
 fn path_suffix_source(path: &Path) -> Option<String> {
@@ -267,43 +197,6 @@ fn normalize_shape_path(mut path: Path) -> Path {
     }
 
     path
-}
-
-fn normalize_component_type<S: syn::spanned::Spanned>(
-    component: Type,
-    span: &S,
-) -> darling::Result<Type> {
-    match component {
-        Type::Path(mut type_path) => {
-            type_path.path = normalize_shape_path(type_path.path);
-            Ok(Type::Path(type_path))
-        },
-        Type::Infer(infer) => Err(DarlingError::custom(
-            "component type cannot be inferred with bare `_`; use an explicit component type",
-        )
-        .with_span(&infer)),
-        _ => Err(DarlingError::custom(
-            "component metadata must be a path-like type, such as `my_crate::Input`",
-        )
-        .with_span(span)),
-    }
-}
-
-fn set_metadata_once<T, S: syn::spanned::Spanned>(
-    slot: &mut Option<T>,
-    value: T,
-    option: &str,
-    span: &S,
-) -> darling::Result<()> {
-    if slot.is_some() {
-        return Err(DarlingError::custom(format!(
-            "duplicate `{option}` option in `gpui_form` field attribute; remove the duplicate `{option}` entry",
-        ))
-        .with_span(span));
-    }
-
-    *slot = Some(value);
-    Ok(())
 }
 
 fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Type {
@@ -503,21 +396,13 @@ impl ShapeOptions {
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
         let schema_crate = crate_paths.gpui_form;
-        if let Some(component) = self.component.as_ref() {
-            let component_type = rust_type_tokens(&schema_crate, component);
-            quote! {
-                .with_component_type(
-                    #component_type
+
+        quote! {
+            .with_component_type_opt(
+                #schema_crate::schema::registry::RustType::new_opt_unchecked(
+                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
                 )
-            }
-        } else {
-            quote! {
-                .with_component_type_opt(
-                    #schema_crate::schema::registry::RustType::new_opt_unchecked(
-                        <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
-                    )
-                )
-            }
+            )
         }
     }
 
@@ -535,15 +420,25 @@ impl ShapeOptions {
     }
 
     fn prototyping_tokens(&self, field_type: &syn::Type, field_name: &str) -> TokenStream {
+        let shape = self.resolved_shape(field_type);
         let suffix = self
             .clone()
             .with_field_type(field_type)
             .component_suffix(field_name);
-        let schema_crate = CratePaths::resolve().gpui_form;
+        let crate_paths = CratePaths::resolve();
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
+        let schema_crate = crate_paths.gpui_form;
         quote! {
-            .with_prototyping_field_suffix(Some(
-                #schema_crate::schema::registry::ComponentSuffix::new(#suffix)
-            ))
+            .with_prototyping_field_suffix(
+                match <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING.field_suffix {
+                    Some(suffix) => Some(
+                        #schema_crate::schema::registry::ComponentSuffix::new(suffix)
+                    ),
+                    None => Some(
+                        #schema_crate::schema::registry::ComponentSuffix::new(#suffix)
+                    ),
+                }
+            )
         }
     }
 }

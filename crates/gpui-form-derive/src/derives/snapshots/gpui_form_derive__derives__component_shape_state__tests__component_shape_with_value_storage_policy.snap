@@ -1,5 +1,6 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape_state.rs
+assertion_line: 311
 expression: pretty_tokens(expanded)
 ---
 impl ::gpui_form_runtime::shape::ComponentShape for SwitchInput {
@@ -16,3 +17,4 @@ impl ::gpui_form_runtime::shape::ComponentShape for SwitchInput {
         concat!(module_path!(), "::", stringify!(SwitchInput)),
     );
 }
+impl ::gpui_form_runtime::shape::DeclaredComponentShape for SwitchInput {}

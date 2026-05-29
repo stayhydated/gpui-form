@@ -1,39 +1,37 @@
 use gpui_form_derive::GpuiForm;
 
-struct NumericShape;
-struct InputShape;
 struct NumericState;
 struct InputState;
 
-impl gpui_form_runtime::shape::ComponentShape for NumericShape {
-    type State = NumericState;
-    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
-    type ValueBindingPolicy = gpui_form_runtime::shape::NoComponentValueBinding;
-
-    fn new(
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<'_, Self::State>,
-    ) -> Self::State {
-        NumericState
+impl NumericState {
+    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+        Self
     }
 }
 
-impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for NumericShape {}
-
-impl gpui_form_runtime::shape::ComponentShape for InputShape {
-    type State = InputState;
-    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
-    type ValueBindingPolicy = gpui_form_runtime::shape::NoComponentValueBinding;
-
-    fn new(
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<'_, Self::State>,
-    ) -> Self::State {
-        InputState
+impl InputState {
+    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+        Self
     }
 }
 
-impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
+gpui_form_derive::component_shape! {
+    struct NumericShape {
+        type State = NumericState;
+        value_storage = direct;
+
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for NumericShape {}
+    }
+}
+
+gpui_form_derive::component_shape! {
+    struct InputShape {
+        type State = InputState;
+        value_storage = direct;
+
+        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
+    }
+}
 
 #[derive(GpuiForm, koruma::Koruma)]
 #[gpui_form(koruma)]

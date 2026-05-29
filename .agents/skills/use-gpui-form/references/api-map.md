@@ -40,8 +40,7 @@ Useful runtime/helper paths:
 
 Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
 the facade. Add `gpui-form-runtime` directly only when defining lower-level
-shapes with `gpui_form_derive` shape macros, `component_value_binding`, or
-manual runtime trait impls.
+shapes with `gpui_form_derive` shape macros or `component_value_binding`.
 
 ## Supported Component Syntax
 
@@ -62,12 +61,13 @@ manual runtime trait impls.
 #[gpui_form(shape = gpui_form_collection::switch::Switch)]
 #[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 #[gpui_form(shape = my::Shape)]
-#[gpui_form(shape = my::Shape, component = my::ui::Widget)]
-#[gpui_form(shape = my::Shape, field_suffix = "input")]
 ```
 
-The `component = ...` override must be path-like, and `field_suffix = "..."`
-must be a non-empty ASCII identifier suffix.
+Custom `my::Shape` types must be declared with
+`gpui_form_derive::component_shape!` or
+`#[derive(gpui_form_derive::ComponentShape)]`. Put `component = ...` and
+`field_suffix = "..."` metadata on the shape declaration, not on
+`#[gpui_form(...)]`.
 
 Common field attributes:
 
@@ -128,8 +128,8 @@ Common struct attributes:
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.
 - Use `#[gpui_form(shape = my::Shape)]` when the app owns the state/widget contract.
-- Treat `shape = ...`, `component = ...`, and `field_suffix = "..."`
-  as derive metadata; runtime construction still uses `ComponentShape::new`.
+- Treat `shape = ...` as the only component field intent in
+  `#[gpui_form(...)]`; runtime construction still uses `ComponentShape::new`.
 - Component shapes own the default value-storage policy for non-optional
   fields. Put `value_storage = direct` on the reusable shape definition when it
   can synthesize default values; field attributes do not accept
@@ -248,10 +248,9 @@ pub struct PostEditor {
 
 `new` accepts a constructor path or closure and is called with `(window, cx)`;
 if omitted, the derive calls `<State>::new(window, cx)`.
-Crates that use `#[derive(ComponentShape)]`, `component_shape!`,
-`component_value_binding`, or manual `ComponentShape` impls should depend on
-`gpui-form-runtime` directly because those lower-level surfaces emit direct
-runtime paths.
+Crates that use `#[derive(ComponentShape)]`, `component_shape!`, or
+`component_value_binding` should depend on `gpui-form-runtime` directly because
+those lower-level surfaces emit direct runtime paths.
 
 Or declare a reusable shape:
 
@@ -276,8 +275,6 @@ wrapper should publish shape-level value-binding metadata. `component = ...`
 must be a path-like type, and `field_suffix = "..."` must be a non-empty ASCII
 identifier suffix. Omit `value_binding;` to leave that metadata disabled.
 
-Manual `ComponentShape` impls must provide `ComponentShapeFor<Value>` impls for
-the supported form-side value types plus both `ValueStoragePolicy` and
-`ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or
-`InheritedComponentValueBinding` when the shape should inherit reusable
-`ComponentValueBinding<T>` impls.
+Do not hand-write `ComponentShape` for `#[gpui_form(shape = ...)]` fields.
+`#[derive(GpuiForm)]` requires the `DeclaredComponentShape` marker emitted by
+`#[derive(ComponentShape)]` or `component_shape!`.

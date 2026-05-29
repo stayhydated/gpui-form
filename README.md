@@ -96,8 +96,6 @@ pub struct UserProfile {
 the component shape with the explicit `shape = ...` key:
 
 - `#[gpui_form(shape = my::Shape)]`
-- `#[gpui_form(shape = my::Shape, component = my::ui::Widget)]`
-- `#[gpui_form(shape = my::Shape, field_suffix = "input")]`
 - `#[gpui_form(shape = gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(shape = gpui_form_collection::select::Select::<_>)]`
 - `#[gpui_form(shape = gpui_form_collection::combobox::Combobox::<Country>)]`
@@ -120,11 +118,12 @@ The `gpui_form_component` shape entries above require that crate's
 by depending on `gpui-form-component-derive` directly.
 
 The `shape = ...` value is parsed as a Rust type path; generated runtime
-construction delegates to `ComponentShape::new`. `component = ...` records an
-optional render component type for prototyping, and `field_suffix = "..."`
-records an optional generated field/helper suffix. `gpui-form` treats every
-component as a custom shape contract and does not inspect the shape path for
-built-in component categories.
+construction delegates to `ComponentShape::new`. The shape type must be
+declared with `gpui_form_derive::component_shape!` or
+`#[derive(gpui_form_derive::ComponentShape)]`; hand-written `ComponentShape`
+impls are not accepted by `#[derive(GpuiForm)]`. Put render component metadata
+and prototyping suffix metadata on the shape declaration, not on the
+`#[gpui_form(...)]` field attribute.
 
 Component shapes own the default value-storage policy for non-optional fields.
 Shapes that can safely synthesize a default value, such as the built-in inputs,
@@ -165,12 +164,11 @@ Common field-level helpers:
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`. The derive normalizes that path and resolves `_` to
   the field's form-side type.
-- generated form field/helper suffixes use field-level `field_suffix = "..."`
-  when supplied; otherwise they derive a suffix from the explicit component
-  type or shape type name, such as `birth_date_date_picker`. Derive-generated
-  inventory records that resolved suffix so prototyping output uses the same
-  field and handler names. Field-level and shape-level suffixes must be
-  non-empty ASCII identifier suffixes; manual
+- generated form field/helper identifiers derive a suffix from the shape type
+  name, such as `birth_date_date_picker`. Derive-generated inventory inherits
+  shape-level `field_suffix = "..."` metadata when available and otherwise
+  records that resolved suffix for prototyping output. Shape-level suffixes
+  must be non-empty ASCII identifier suffixes; direct
   `ComponentPrototyping::field_suffix(...)` calls validate the same contract in
   const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
@@ -376,14 +374,13 @@ Generated `GpuiForm` component fields compile against
 application crates do not add `gpui-form-runtime` just because a field uses a
 component shape. Add `gpui-form-runtime` directly only for lower-level shape
 crates that use `#[derive(ComponentShape)]`, `component_shape!`,
-`component_value_binding`, or manual runtime trait implementations; those
-macros emit direct runtime paths and resolve renamed runtime dependencies.
+or `component_value_binding`; those macros emit direct runtime paths and
+resolve renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from the derive or `component_shape!`,
 provide manual `ComponentShapeFor<Value>` impls for each supported form-side
-value type. If you implement `ComponentShape` manually, also provide those
-compatibility impls and set both policy associated types:
-`ValueStoragePolicy` controls value-holder storage, and `ValueBindingPolicy`
-is usually `NoComponentValueBinding` unless the shape should inherit
+value type. The shape declaration owns both policy associated types:
+`ValueStoragePolicy` controls value-holder storage, and `ValueBindingPolicy` is
+usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.
 
 Component-derived shapes can opt into generated value synchronization by adding

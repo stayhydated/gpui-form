@@ -48,14 +48,12 @@ that crate's `derive` feature is enabled.
 1. Flatten `cfg_attr` wrappers so downstream parsing sees effective
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
-   Field-level component shapes are parsed into a typed shape path plus
-   explicit metadata such as
-   `#[gpui_form(shape = my::Shape, field_suffix = "input")]`;
+   Field-level component shapes are parsed into a typed shape path from
+   `#[gpui_form(shape = my::Shape)]`;
    arbitrary Rust expressions are only parsed for `default`, `from`, and
-   `into`. The parser rejects duplicate component expressions before codegen.
-   Component metadata is validated at the macro boundary: `component = ...`
-   must be path-like and `field_suffix = "..."` must be a non-empty identifier
-   suffix.
+   `into`. The parser rejects duplicate component expressions before codegen
+   and rejects field-level component metadata such as `component = ...` or
+   `field_suffix = ...`; those belong on the shape declaration.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.

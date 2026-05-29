@@ -1,5 +1,5 @@
-error: component type cannot be inferred with bare `_`; use an explicit component type
- --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:56
+error: unknown gpui_form field option `component`; component-backed fields must use `shape = MyShape` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
+ --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:44
   |
 5 |     #[gpui_form(shape = crate::InputShape, component = _)]
-  |                                                        ^
+  |                                            ^^^^^^^^^

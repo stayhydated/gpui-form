@@ -41,8 +41,6 @@ pub struct UserProfile {
 Supported component forms:
 
 - `#[gpui_form(shape = my::Shape)]`
-- `#[gpui_form(shape = my::Shape, component = my::ui::Widget)]`
-- `#[gpui_form(shape = my::Shape, field_suffix = "input")]`
 - `#[gpui_form(shape = gpui_form_collection::input::Input::<_>)]`
 - `#[gpui_form(shape = gpui_form_collection::select::Select::<_>)]`
 - `#[gpui_form(shape = gpui_form_collection::combobox::Combobox::<Country>)]`
@@ -65,11 +63,11 @@ The `gpui_form_component` shape examples require that crate's
 feature or by depending on `gpui-form-component-derive` directly.
 
 The `shape = ...` value is parsed as a Rust type path; generated runtime
-construction delegates to `ComponentShape::new`. `component = ...` records an
-optional render component type for prototyping, and `field_suffix = "..."`
-records an optional generated field/helper suffix. `gpui-form` treats every
-component as a custom shape contract and does not inspect the shape path for
-built-in component categories.
+construction delegates to `ComponentShape::new`. The shape type must be
+declared with `component_shape!` or `#[derive(ComponentShape)]`; hand-written
+`ComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put render
+component metadata and prototyping suffix metadata on the shape declaration,
+not on the `#[gpui_form(...)]` field attribute.
 
 Supporting field attributes:
 
@@ -128,11 +126,11 @@ Behavior notes:
   `String`s
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
-- generated `FormFields` and `FormComponents` suffixes use field-level
-  `field_suffix = "..."` when supplied; otherwise they derive a suffix from the
-  explicit component type or shape type name. Derive-generated inventory records
-  the same resolved suffix for prototyping output. Field-level suffixes must be
-  non-empty identifier suffixes
+- generated `FormFields` and `FormComponents` suffixes derive from the shape
+  type name. Derive-generated inventory inherits shape-level
+  `field_suffix = "..."` metadata when available and otherwise records the
+  resolved shape-name suffix for prototyping output. Shape-level suffixes must
+  be non-empty identifier suffixes
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model
@@ -144,12 +142,13 @@ Behavior notes:
 
 ## `#[derive(ComponentShape)]`
 
-Implements `gpui_form_runtime::shape::ComponentShape` for a rendered component
-with separate backing state. Crates that use this derive need an explicit
-`gpui-form-runtime` dependency; generated paths resolve renamed runtime
-dependencies. Add `value = T` or `values(T, U)` when the derive should emit
-`ComponentShapeFor<T>` compatibility impls for supported form-side value types;
-omit value metadata when you will implement `ComponentShapeFor<Value>` manually.
+Implements `gpui_form_runtime::shape::ComponentShape` and
+`DeclaredComponentShape` for a rendered component with separate backing state.
+Crates that use this derive need an explicit `gpui-form-runtime` dependency;
+generated paths resolve renamed runtime dependencies. Add `value = T` or
+`values(T, U)` when the derive should emit `ComponentShapeFor<T>`
+compatibility impls for supported form-side value types; omit value metadata
+when you will implement `ComponentShapeFor<Value>` manually.
 
 ```rs
 use crate::state::{TagsState, build};
@@ -236,8 +235,9 @@ gpui_form_derive::component_shape! {
 ```
 
 Use this when the component and state live in another crate. The macro creates
-the local wrapper type that owns the `ComponentShape` implementation and the
-wrapper's reusable `ComponentValueBinding<T>` impls.
+the local wrapper type that owns the `ComponentShape` and
+`DeclaredComponentShape` implementations plus the wrapper's reusable
+`ComponentValueBinding<T>` impls.
 It accepts `new`, `component`, `value = ...`, `values(...)`,
 `value_storage = require_value|direct`, `value_binding`, and `field_suffix`
 metadata, with `type State = ...` supplying the wrapped state type. If `new` is
