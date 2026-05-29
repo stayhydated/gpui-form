@@ -1,7 +1,8 @@
 use gpui_form_codegen::{CratePaths, components::RequiredValue};
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, quote_spanned};
 use std::collections::HashMap;
+use syn::spanned::Spanned as _;
 use syn::{DeriveInput, Type};
 
 use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
@@ -262,13 +263,17 @@ fn generate_default_impl(
                         }
                     },
                     FieldStorage::Plain => {
-                        quote! {
-                            #field_name: ::core::default::Default::default()
+                        let runtime_crate = runtime_crate_path();
+                        quote_spanned! {field_name.span()=>
+                            #field_name: <#runtime_crate::shape::AllowMissingValue
+                                as #runtime_crate::shape::ValueHolderDefaultStorage<
+                                    #base_type
+                                >>::default_storage()
                         }
                     },
                     FieldStorage::ShapePolicy(shape) => {
                         let runtime_crate = runtime_crate_path();
-                        quote! {
+                        quote_spanned! {shape.span()=>
                             #field_name: <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
                                 as #runtime_crate::shape::ValueHolderDefaultStorage<#base_type>>::default_storage()
                         }

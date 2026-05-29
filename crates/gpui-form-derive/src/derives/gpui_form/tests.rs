@@ -760,6 +760,32 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn test_component_shape_rejects_associated_function_metadata_syntax() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(crate::state::TagsState::field_suffix("tags"))]
+                labels: Vec<String>,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("componentmetadatamustusemethod-callsyntax"),
+            "associated-function metadata syntax should be rejected: {compact}"
+        );
+    }
+
+    #[test]
     fn test_component_shape_generates_fields() {
         let tokens = quote! {
             #[derive(GpuiForm)]
@@ -1048,7 +1074,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    gpui_form_collection::select::Select::<_>::searchable(true)
+                    gpui_form_collection::select::Select::<_>.searchable(true)
                 )]
                 country: crate::types::Country,
             }
@@ -1076,7 +1102,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable_with_max_depth(3)
+                    gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable_with_max_depth(3)
                 )]
                 location: crate::types::Country,
             }

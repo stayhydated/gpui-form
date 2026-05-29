@@ -397,16 +397,14 @@ pub fn expand_gpui_form(
 
             let rendered = field.rendered()?;
             let component_def = rendered.component?;
-            let (was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
+            let (_, original_inner_type) = extract_option_inner_type(&field.ty);
             let base_type = field
                 .rendered()
                 .and_then(|rendered| rendered.r#type)
                 .map(|ty| extract_option_inner_type(&ty.0).1)
                 .unwrap_or(original_inner_type);
 
-            let check_value_holder_default_storage = !was_optional && rendered.default.is_none();
-
-            Some(component_def.type_check_tokens(&base_type, check_value_holder_default_storage))
+            Some(component_def.type_check_tokens(&base_type))
         })
         .collect();
 

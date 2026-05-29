@@ -396,6 +396,10 @@ impl<T> FormValueChange<T> {
 /// should seed the component from the form value holder and subscribe to
 /// component events. The form derive opts into this path by inheriting
 /// [`ComponentShape::ValueBindingPolicy`] from the shape.
+#[diagnostic::on_unimplemented(
+    message = "gpui-form component shape `{Self}` does not implement value binding for `{T}`",
+    note = "add `value_binding` shape metadata with a `ComponentValueBinding<T>` impl, or use `NoComponentValueBinding` if the shape should not inherit value binding"
+)]
 pub trait ComponentValueBinding<T>: ComponentShape
 where
     Self::State: gpui::EventEmitter<Self::Event>,
@@ -433,6 +437,10 @@ where
 /// Component-owned shapes can implement [`ComponentValueBinding`] by delegating
 /// to this state-level contract, keeping render element types separate from
 /// their GPUI entity state.
+#[diagnostic::on_unimplemented(
+    message = "gpui-form component state `{Self}` does not implement value binding for `{T}`",
+    note = "implement `ComponentStateValueBinding<T>` for the backing state, usually with `#[gpui_form_derive::component_value_binding]`"
+)]
 pub trait ComponentStateValueBinding<T>: gpui::EventEmitter<Self::Event> {
     /// Event emitted by the backing component state.
     type Event: 'static;

@@ -239,11 +239,7 @@ impl ShapeOptions {
         }
     }
 
-    pub fn type_check_tokens(
-        &self,
-        field_type: &syn::Type,
-        check_value_holder_default_storage: bool,
-    ) -> TokenStream {
+    pub fn type_check_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.resolved_shape(field_type);
         let span = self.span;
         let crate_paths = CratePaths::resolve();
@@ -257,33 +253,12 @@ impl ShapeOptions {
                     >>::assert_component_value_binding_policy();
             }
         };
-        let value_holder_storage_assertion = if check_value_holder_default_storage {
-            quote_spanned! {span=>
-                {
-                    fn __gpui_form_assert_add_default_make_type_default_or_requires_value_true<
-                        Policy,
-                        Value,
-                    >()
-                    where
-                        Policy: #runtime_crate::shape::ValueHolderDefaultStorage<Value>,
-                    {}
-
-                    __gpui_form_assert_add_default_make_type_default_or_requires_value_true::<
-                        <#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy,
-                        #field_type,
-                    >();
-                }
-            }
-        } else {
-            quote! {}
-        };
 
         quote_spanned! {span=>
             {
                 fn __gpui_form_assert_component_shape<Shape: #runtime_crate::shape::ComponentShape>() {}
                 __gpui_form_assert_component_shape::<#shape>();
                 #value_binding_assertion
-                #value_holder_storage_assertion
             }
         }
     }
@@ -387,7 +362,10 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
             });
             Ok((shape, methods))
         },
-        Expr::Call(call) => analyze_component_call_expr(call),
+        Expr::Call(call) => Err(DarlingError::custom(
+            "component metadata must use method-call syntax, such as `Shape.field_suffix(\"input\")`",
+        )
+        .with_span(call)),
         Expr::Path(path) => Ok((path.path.clone(), Vec::new())),
         Expr::Lit(expr_lit) => {
             Err(DarlingError::unexpected_lit_type(&expr_lit.lit).with_span(&expr_lit.lit))
@@ -397,53 +375,6 @@ fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMe
         )
         .with_span(expr)),
     }
-}
-
-fn analyze_component_call_expr(
-    call: &syn::ExprCall,
-) -> darling::Result<(Path, Vec<ComponentMethod>)> {
-    let func = match &*call.func {
-        Expr::Group(group) => &group.expr,
-        Expr::Paren(paren) => &paren.expr,
-        other => other,
-    };
-
-    let Expr::Path(path_expr) = func else {
-        return Err(DarlingError::custom(
-            "component call must be an associated function on the shape path",
-        )
-        .with_span(func));
-    };
-
-    let mut shape = path_expr.path.clone();
-    let method = pop_component_method(&mut shape)?;
-    Ok((
-        shape,
-        vec![ComponentMethod {
-            method: ShapeMetadataMethod::parse(&method)?,
-            span: method,
-            args: call.args.iter().cloned().collect(),
-        }],
-    ))
-}
-
-fn pop_component_method(path: &mut Path) -> darling::Result<syn::Ident> {
-    let method = path
-        .segments
-        .last()
-        .map(|segment| segment.ident.clone())
-        .ok_or_else(|| DarlingError::custom("component expression requires a shape path"))?;
-
-    path.segments.pop();
-    path.segments.pop_punct();
-    if path.segments.is_empty() {
-        return Err(DarlingError::custom(
-            "component expression requires a shape path before the metadata method",
-        )
-        .with_span(&method));
-    }
-
-    Ok(method)
 }
 
 fn normalize_shape_path(mut path: Path) -> Path {
@@ -542,6 +473,39 @@ fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Typ
             type_path.path = substitute_infer_in_path(&type_path.path, replacement);
             syn::Type::Path(type_path)
         },
+        syn::Type::Array(array) => {
+            let mut array = array.clone();
+            array.elem = Box::new(substitute_infer_in_type(&array.elem, replacement));
+            syn::Type::Array(array)
+        },
+        syn::Type::Slice(slice) => {
+            let mut slice = slice.clone();
+            slice.elem = Box::new(substitute_infer_in_type(&slice.elem, replacement));
+            syn::Type::Slice(slice)
+        },
+        syn::Type::Ptr(ptr) => {
+            let mut ptr = ptr.clone();
+            ptr.elem = Box::new(substitute_infer_in_type(&ptr.elem, replacement));
+            syn::Type::Ptr(ptr)
+        },
+        syn::Type::BareFn(bare_fn) => {
+            let mut bare_fn = bare_fn.clone();
+            for input in &mut bare_fn.inputs {
+                input.ty = substitute_infer_in_type(&input.ty, replacement);
+            }
+            substitute_infer_in_return_type(&mut bare_fn.output, replacement);
+            syn::Type::BareFn(bare_fn)
+        },
+        syn::Type::TraitObject(trait_object) => {
+            let mut trait_object = trait_object.clone();
+            substitute_infer_in_bounds(&mut trait_object.bounds, replacement);
+            syn::Type::TraitObject(trait_object)
+        },
+        syn::Type::ImplTrait(impl_trait) => {
+            let mut impl_trait = impl_trait.clone();
+            substitute_infer_in_bounds(&mut impl_trait.bounds, replacement);
+            syn::Type::ImplTrait(impl_trait)
+        },
         syn::Type::Tuple(tuple) => {
             let mut tuple = tuple.clone();
             tuple.elems = tuple
@@ -570,26 +534,74 @@ fn substitute_infer_in_type(ty: &syn::Type, replacement: &syn::Type) -> syn::Typ
     }
 }
 
+fn substitute_infer_in_return_type(return_type: &mut syn::ReturnType, replacement: &syn::Type) {
+    if let syn::ReturnType::Type(_, ty) = return_type {
+        *ty = Box::new(substitute_infer_in_type(ty, replacement));
+    }
+}
+
+fn substitute_infer_in_bounds(
+    bounds: &mut syn::punctuated::Punctuated<syn::TypeParamBound, syn::Token![+]>,
+    replacement: &syn::Type,
+) {
+    for bound in bounds {
+        if let syn::TypeParamBound::Trait(trait_bound) = bound {
+            trait_bound.path = substitute_infer_in_path(&trait_bound.path, replacement);
+        }
+    }
+}
+
 fn substitute_infer_in_path(path: &syn::Path, replacement: &syn::Type) -> syn::Path {
     let mut path = path.clone();
 
     for segment in &mut path.segments {
-        if let syn::PathArguments::AngleBracketed(args) = &mut segment.arguments {
-            for arg in &mut args.args {
-                match arg {
-                    syn::GenericArgument::Type(ty) => {
-                        *ty = substitute_infer_in_type(ty, replacement);
-                    },
-                    syn::GenericArgument::AssocType(assoc_type) => {
-                        assoc_type.ty = substitute_infer_in_type(&assoc_type.ty, replacement);
-                    },
-                    _ => {},
-                }
-            }
-        }
+        substitute_infer_in_path_arguments(&mut segment.arguments, replacement);
     }
 
     path
+}
+
+fn substitute_infer_in_path_arguments(arguments: &mut syn::PathArguments, replacement: &syn::Type) {
+    match arguments {
+        syn::PathArguments::AngleBracketed(args) => {
+            substitute_infer_in_angle_bracketed_arguments(args, replacement);
+        },
+        syn::PathArguments::Parenthesized(args) => {
+            args.inputs = args
+                .inputs
+                .iter()
+                .map(|ty| substitute_infer_in_type(ty, replacement))
+                .collect();
+            substitute_infer_in_return_type(&mut args.output, replacement);
+        },
+        syn::PathArguments::None => {},
+    }
+}
+
+fn substitute_infer_in_angle_bracketed_arguments(
+    args: &mut syn::AngleBracketedGenericArguments,
+    replacement: &syn::Type,
+) {
+    for arg in &mut args.args {
+        match arg {
+            syn::GenericArgument::Type(ty) => {
+                *ty = substitute_infer_in_type(ty, replacement);
+            },
+            syn::GenericArgument::AssocType(assoc_type) => {
+                if let Some(generics) = &mut assoc_type.generics {
+                    substitute_infer_in_angle_bracketed_arguments(generics, replacement);
+                }
+                assoc_type.ty = substitute_infer_in_type(&assoc_type.ty, replacement);
+            },
+            syn::GenericArgument::Constraint(constraint) => {
+                if let Some(generics) = &mut constraint.generics {
+                    substitute_infer_in_angle_bracketed_arguments(generics, replacement);
+                }
+                substitute_infer_in_bounds(&mut constraint.bounds, replacement);
+            },
+            _ => {},
+        }
+    }
 }
 
 impl ComponentOption for ShapeOptions {}
@@ -699,5 +711,49 @@ impl ShapeOptions {
                 )
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quote::ToTokens as _;
+
+    fn compact_type(ty: &syn::Type) -> String {
+        ty.to_token_stream()
+            .to_string()
+            .chars()
+            .filter(|ch| !ch.is_whitespace())
+            .collect()
+    }
+
+    #[test]
+    fn substitutes_infer_in_arrays_slices_pointers_and_bare_fns() {
+        let ty: syn::Type = syn::parse_quote! {
+            fn([_; 2], &[_], *const _, *mut _) -> Option<_>
+        };
+        let replacement: syn::Type = syn::parse_quote!(String);
+
+        let substituted = substitute_infer_in_type(&ty, &replacement);
+
+        assert_eq!(
+            compact_type(&substituted),
+            "fn([String;2],&[String],*constString,*mutString)->Option<String>"
+        );
+    }
+
+    #[test]
+    fn substitutes_infer_in_trait_objects_and_generic_constraints() {
+        let ty: syn::Type = syn::parse_quote! {
+            dyn crate::Shape<Assoc: Iterator<Item = _>> + FnOnce(_) -> _
+        };
+        let replacement: syn::Type = syn::parse_quote!(String);
+
+        let substituted = substitute_infer_in_type(&ty, &replacement);
+
+        assert_eq!(
+            compact_type(&substituted),
+            "dyncrate::Shape<Assoc:Iterator<Item=String>>+FnOnce(String)->String"
+        );
     }
 }

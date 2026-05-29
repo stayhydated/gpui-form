@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `State: ComponentStateValueBinding<std::string::String>` is not satisfied
+error[E0277]: gpui-form component state `State` does not implement value binding for `std::string::String`
   --> tests/ui/gpui_form_missing_component_shape_contracts.rs:19:17
    |
 19 |     #[gpui_form(DerivedShape)]
@@ -9,6 +9,7 @@ help: the trait `ComponentStateValueBinding<std::string::String>` is not impleme
    |
  3 | struct State;
    | ^^^^^^^^^^^^
+   = note: implement `ComponentStateValueBinding<T>` for the backing state, usually with `#[gpui_form_derive::component_value_binding]`
 help: the trait `AssertComponentValueBindingPolicy<Shape, Value>` is implemented for `InheritedComponentValueBinding`
   --> $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
    |
