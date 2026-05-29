@@ -120,11 +120,11 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma(fluent))]
             struct TestForm {
-                #[gpui_form(crate::Input)]
+                #[gpui_form(shape = crate::Input)]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::general::RequiredValidation::<Option<_>>::builder()))]
                 name: String,
 
-                #[gpui_form(crate::NumericShape)]
+                #[gpui_form(shape = crate::NumericShape)]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::numeric::PositiveValidation::<_>::builder()))]
                 age: u32,
             }
@@ -197,7 +197,7 @@ mod gpui_form_tests {
             #[cfg_attr(feature = "ui", derive(GpuiForm))]
             #[cfg_attr(feature = "ui", gpui_form(koruma(fluent)))]
             pub struct CommonVRead {
-                #[cfg_attr(feature = "ui", gpui_form(crate::NumericShape))]
+                #[cfg_attr(feature = "ui", gpui_form(shape = crate::NumericShape))]
                 #[cfg_attr(feature = "validation", koruma(newtype))]
                 pub index: CommonVariableIndex,
             }
@@ -300,7 +300,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(crate::NumericShape)]
+                #[gpui_form(shape = crate::NumericShape)]
                 #[koruma(koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167))]
                 age: u32,
             }
@@ -330,7 +330,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(crate::NumericShape)]
+                #[gpui_form(shape = crate::NumericShape)]
                 #[koruma(koruma_collection::numeric::PositiveValidation::<_>::builder())]
                 age: u32,
             }
@@ -360,7 +360,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(crate::Input)]
+                #[gpui_form(shape = crate::Input)]
                 name: String,
             }
         };
@@ -377,23 +377,23 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
+                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
-            "FieldVariant should inherit required-value policy from the shape: {compact}"
+            "FieldVariant should inherit value-storage policy from the shape: {compact}"
         );
         assert!(
-            compact.contains("__TestFormFormValueHolderRequiredValuePolicyValidation")
-                && compact.contains("ValueHolderStorage<Value>>::is_present(value)")
+            compact.contains("__TestFormFormValueHolderValueStoragePolicyValidation")
+                && compact.contains("ValueStorage<Value>>::is_present(value)")
                 && compact.contains("&[\"RequiredValidation\",]"),
             "shape-inherited requiredness should use the policy-aware validator and conditional metadata: {compact}"
         );
         assert!(
-            compact.contains("impl<__GpuiFormNameRequiredValuePolicy>::core::convert::TryFrom<__TestFormFormValueHolderStorage<__GpuiFormNameRequiredValuePolicy>>forTestForm"),
+            compact.contains("impl<__GpuiFormNameValueStoragePolicy>::core::convert::TryFrom<__TestFormFormValueHolderStorage<__GpuiFormNameValueStoragePolicy>>forTestForm"),
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
             compact.contains(
-                "with_holder_conversion_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
+                "with_holder_conversion_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE)"
             ),
             "Inventory metadata should inherit holder conversion fallibility from the shape policy: {compact}"
         );
@@ -418,7 +418,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    crate::DatePickerState
+                    shape = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
             }
@@ -473,7 +473,7 @@ mod gpui_form_tests {
                     type = rust_decimal::Decimal,
                     from = |value| value,
                     into = |value| value,
-                    crate::NumericShape::<_>
+                    shape = crate::NumericShape::<_>
                 )]
                 amount: f64,
             }
@@ -491,7 +491,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE"
+                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -518,7 +518,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     from = |ts| to_form(ts),
                     into = |dt| to_model(dt),
-                    crate::DatePickerState
+                    shape = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -570,7 +570,7 @@ mod gpui_form_tests {
                 #[gpui_form(
                     type = chrono::NaiveDate,
                     into = |dt| to_model(dt),
-                    crate::DatePickerState
+                    shape = crate::DatePickerState
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -610,7 +610,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::Input, default = "test@example.com")]
+                #[gpui_form(shape = crate::Input, default = "test@example.com")]
                 email: String,
             }
         };
@@ -636,7 +636,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::Input, default = "test@example.com")]
+                #[gpui_form(shape = crate::Input, default = "test@example.com")]
                 email: String,
 
                 #[gpui_form(skip)]
@@ -671,9 +671,11 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::shapes::BioInputShape
-                    .component(crate::ui::BioInput)
-                    .field_suffix("input"))]
+                #[gpui_form(
+                    shape = crate::shapes::BioInputShape,
+                    component = crate::ui::BioInput,
+                    field_suffix = "input"
+                )]
                 bio: String,
             }
         };
@@ -705,7 +707,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy"
+                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
@@ -737,7 +739,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::state::TagsState.field_suffix("tags"))]
+                #[gpui_form(shape = crate::state::TagsState, field_suffix = "tags")]
                 labels: Vec<String>,
             }
         };
@@ -785,8 +787,9 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("componentmetadatamustusemethod-callsyntax"),
-            "associated-function metadata syntax should be rejected: {compact}"
+            compact.contains("component-backedfieldsmustuse`shape=MyShape`")
+                || compact.contains("expectedgpui_formfieldoption"),
+            "old positional metadata syntax should be rejected: {compact}"
         );
     }
 
@@ -795,10 +798,10 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::input::Input::<_>, default = "test@example.com")]
+                #[gpui_form(shape = gpui_form_collection::input::Input::<_>, default = "test@example.com")]
                 email: String,
 
-                #[gpui_form(gpui_form_collection::switch::Switch)]
+                #[gpui_form(shape = gpui_form_collection::switch::Switch)]
                 enabled: bool,
             }
         };
@@ -815,27 +818,27 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains("pubemail_input:::gpui::Entity<"),
-            "positional component syntax should generate a component-suffixed field: {compact}"
+            "explicit component shape syntax should generate a component-suffixed field: {compact}"
         );
         assert!(
             compact.contains("Into::into(\"test@example.com\")"),
-            "positional component syntax should compose with key-value field helpers"
+            "explicit component syntax should compose with key-value field helpers"
         );
         assert!(
             compact.contains("pubenabled:"),
-            "positional component syntax should generate a value-holder field: {compact}"
+            "explicit component syntax should generate a value-holder field: {compact}"
         );
         assert!(
             compact.contains(
-                "if<<gpui_form_collection::switch::Switchas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
+                "if<<gpui_form_collection::switch::Switchas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
-            "positional component syntax should inherit required-value metadata from the shape"
+            "explicit component syntax should inherit required-value metadata from the shape"
         );
         assert!(
             compact.contains(
                 "with_prototyping_field_suffix(Some(::gpui_form::schema::registry::ComponentSuffix::new(\"input\")))"
             ),
-            "positional component inventory metadata should use the resolved generated suffix"
+            "explicit component inventory metadata should use the resolved generated suffix"
         );
     }
 
@@ -844,7 +847,10 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::input::Input::<_>, crate::Input)]
+                #[gpui_form(
+                    shape = gpui_form_collection::input::Input::<_>,
+                    shape = crate::Input
+                )]
                 email: String,
             }
         };
@@ -860,7 +866,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("multiplecomponentexpressionswereprovided"),
+            compact.contains("duplicate`shape`option"),
             "duplicate component syntax should produce an actionable error: {compact}"
         );
     }
@@ -900,7 +906,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::Input)]
+                #[gpui_form(shape = crate::Input)]
                 name: String,
             }
         };
@@ -928,7 +934,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    crate::Input,
+                    shape = crate::Input,
                     type = crate::types::AccountCode,
                     from = crate::types::AccountCode::new,
                     into = crate::types::AccountCode::into_string
@@ -949,7 +955,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy"
+                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );
@@ -961,9 +967,9 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
+                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
-            "FieldVariant should inherit generated required-value policy from the shape: {compact}"
+            "FieldVariant should inherit generated value-storage policy from the shape: {compact}"
         );
         assert!(
             compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::into_string\")))"),
@@ -976,7 +982,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::switch::Switch.value_storage(direct))]
+                #[gpui_form(shape = gpui_form_collection::switch::Switch, value_storage = direct)]
                 enabled: bool,
             }
         };
@@ -992,7 +998,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("unknowncomponentmetadata`value_storage`"),
+            compact.contains("unknowngpui_formfieldoption`value_storage`"),
             "field-level value_storage override should be rejected: {compact}"
         );
     }
@@ -1002,7 +1008,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::input::Input::<_>)]
+                #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
                 account_no: crate::types::AccountCode,
             }
         };
@@ -1046,7 +1052,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::date_picker::DatePicker)]
+                #[gpui_form(shape = gpui_form_collection::date_picker::DatePicker)]
                 birth_date: chrono::NaiveDate,
             }
         };
@@ -1079,7 +1085,8 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    gpui_form_collection::select::Select::<_>.searchable(true)
+                    shape = gpui_form_collection::select::Select::<_>,
+                    searchable = true
                 )]
                 country: crate::types::Country,
             }
@@ -1096,7 +1103,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("unknowncomponentmetadata`searchable`"),
+            compact.contains("unknowngpui_formfieldoption`searchable`"),
             "component-specific methods should fail in gpui_form attributes: {compact}"
         );
     }
@@ -1107,7 +1114,8 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable_with_max_depth(3)
+                    shape = gpui_form_component::infinite_select::InfiniteSelect::<_>,
+                    searchable_with_max_depth = 3
                 )]
                 location: crate::types::Country,
             }
@@ -1124,7 +1132,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("unknowncomponentmetadata`searchable_with_max_depth`"),
+            compact.contains("unknowngpui_formfieldoption`searchable_with_max_depth`"),
             "unsupported infinite-select helper should fail: {compact}"
         );
     }
@@ -1134,7 +1142,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(crate::Input.field_suffix("input-field"))]
+                #[gpui_form(shape = crate::Input, field_suffix = "input-field")]
                 name: String,
             }
         };

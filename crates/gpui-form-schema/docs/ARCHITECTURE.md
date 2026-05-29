@@ -78,7 +78,7 @@ generated-code naming policy. The suffix is normalized against the field name
 before falling back to `"shape"`.
 
 `gpui-form-derive` emits `FieldValuePresence` from the source field optionality
-and, for non-optional component fields, the shape's `RequiredValuePolicy`
+and, for non-optional component fields, the shape's `ValueStoragePolicy`
 associated type. Components that can synthesize missing values define that once
 on the shape.
 

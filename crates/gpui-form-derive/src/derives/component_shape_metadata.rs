@@ -1,20 +1,21 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    Expr, Ident, LitStr, Path, Result, Type,
+    Expr, Ident, LitStr, Path, Result, Token, Type,
     parse::{Parse, ParseStream},
+    punctuated::Punctuated,
 };
 
 use gpui_form_codegen::{CratePaths, components::validate_shape_field_suffix};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
-pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `value_storage = require_value|direct`, \
-     `value_binding`, or `field_suffix = ...`";
+pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `value = ...`, `values(...)`, \
+     `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum ValueStoragePolicy {
-    RequireValue,
+    RequiredValueStorage,
     Direct,
 }
 
@@ -22,7 +23,7 @@ impl Parse for ValueStoragePolicy {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let ident = input.parse::<Ident>()?;
         if ident == "require_value" {
-            Ok(Self::RequireValue)
+            Ok(Self::RequiredValueStorage)
         } else if ident == "direct" {
             Ok(Self::Direct)
         } else {
@@ -43,6 +44,8 @@ pub(super) struct ComponentShapeMetadata {
     /// When set, `ComponentShape::COMPONENT_TYPE` is populated so that
     /// field annotations do not need to repeat `component = ...`.
     component: Option<Type>,
+    /// Explicit form-side value types supported by this shape.
+    values: Vec<Type>,
     /// Storage policy for non-optional source fields in generated form value
     /// holders.
     value_storage: Option<ValueStoragePolicy>,
@@ -91,6 +94,58 @@ impl ComponentShapeMetadata {
 
     pub(super) fn has_component(&self) -> bool {
         self.component.is_some()
+    }
+
+    pub(super) fn add_value<T: quote::ToTokens>(&mut self, value: Type, _span: T) -> Result<()> {
+        self.values.push(value);
+        Ok(())
+    }
+
+    pub(super) fn add_values<I, T>(&mut self, values: I, span: T) -> Result<()>
+    where
+        I: IntoIterator<Item = Type>,
+        T: quote::ToTokens,
+    {
+        let mut added = false;
+        for value in values {
+            self.add_value(value, &span)?;
+            added = true;
+        }
+
+        if !added {
+            return Err(syn::Error::new_spanned(
+                span,
+                "`values(...)` requires at least one value type",
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub(super) fn parse_values(input: ParseStream<'_>) -> Result<Vec<Type>> {
+        Ok(Punctuated::<Type, Token![,]>::parse_terminated(input)?
+            .into_iter()
+            .collect())
+    }
+
+    pub(super) fn value_impl_tokens(
+        &self,
+        runtime_crate: &Path,
+        ident: &Ident,
+        generics: &syn::Generics,
+    ) -> TokenStream {
+        let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+        let impls = self.values.iter().map(|value| {
+            quote! {
+                impl #impl_generics #runtime_crate::shape::ComponentShapeFor<#value>
+                    for #ident #ty_generics
+                    #where_clause
+                {
+                }
+            }
+        });
+
+        quote! { #(#impls)* }
     }
 
     pub(super) fn set_value_storage<T: quote::ToTokens>(
@@ -144,15 +199,17 @@ impl ComponentShapeMetadata {
     }
 
     pub(super) fn impl_items_tokens(&self, runtime_crate: &Path) -> TokenStream {
-        let required_value_policy = match self
+        let value_storage_policy = match self
             .value_storage
-            .unwrap_or(ValueStoragePolicy::RequireValue)
+            .unwrap_or(ValueStoragePolicy::RequiredValueStorage)
         {
-            ValueStoragePolicy::RequireValue => quote! { #runtime_crate::shape::RequireValue },
-            ValueStoragePolicy::Direct => quote! { #runtime_crate::shape::AllowMissingValue },
+            ValueStoragePolicy::RequiredValueStorage => {
+                quote! { #runtime_crate::shape::RequiredValueStorage }
+            },
+            ValueStoragePolicy::Direct => quote! { #runtime_crate::shape::DirectValueStorage },
         };
-        let required_value_policy_assoc = quote! {
-            type RequiredValuePolicy = #required_value_policy;
+        let value_storage_policy_assoc = quote! {
+            type ValueStoragePolicy = #value_storage_policy;
         };
         let value_binding_policy = if self.value_binding {
             quote! { #runtime_crate::shape::InheritedComponentValueBinding }
@@ -176,7 +233,7 @@ impl ComponentShapeMetadata {
         });
 
         quote! {
-            #required_value_policy_assoc
+            #value_storage_policy_assoc
             #value_binding_policy_assoc
             #component_type_const
             #prototyping_const

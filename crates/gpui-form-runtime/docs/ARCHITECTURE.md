@@ -30,14 +30,14 @@ policy associated types directly so hand-written shapes cannot make const
 metadata disagree with their storage or binding policy.
 
 Generated field type compatibility checks dispatch through
-`ComponentShapeFor<Value>`. Shape macros emit broad implementations by default;
-curated component shapes can provide narrower implementations so their own
-traits and `#[diagnostic::on_unimplemented]` notes describe unsupported field
-value types.
+`ComponentShapeFor<Value>`. Shape macros emit implementations only for explicit
+`value = ...` / `values(...)` metadata; curated component shapes can provide
+narrower manual implementations so their own traits and
+`#[diagnostic::on_unimplemented]` notes describe unsupported field value types.
 
-Generated validation asks `ValueHolderStorage::is_present` whether a
-policy-owned holder field currently contains a value. `RequireValue` reports
-`None` as missing; `AllowMissingValue` always reports present because its
+Generated validation asks `ValueStorage::is_present` whether a
+policy-owned holder field currently contains a value. `RequiredValueStorage` reports
+`None` as missing; `DirectValueStorage` always reports present because its
 storage is direct `T`.
 
 `ComponentPrototyping::field_suffix(...)` validates suffixes through

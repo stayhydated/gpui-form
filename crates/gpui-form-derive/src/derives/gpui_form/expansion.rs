@@ -1,33 +1,26 @@
 use darling::FromDeriveInput as _;
-use gpui_form_codegen::{CratePaths, components::RequiredValue};
-use itertools::Itertools as _;
+use gpui_form_codegen::{
+    CratePaths,
+    components::RequiredValue,
+    metadata::{optional_rust_expr_tokens, rust_expr_tokens, rust_type_tokens},
+};
 use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
 use proc_macro2::TokenStream;
-use quote::{ToTokens as _, format_ident, quote};
+use quote::{format_ident, quote};
 use std::collections::HashMap;
 use syn::DeriveInput;
 use syn::GenericParam;
 
 use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
 use crate::derives::gpui_form::components::generate_component_field;
-use crate::derives::gpui_form::structs::{AnalyzedField, ComponentStruct, GpuiFormOptions};
+use crate::derives::gpui_form::structs::{
+    ComponentStruct, FieldPlan, GpuiFormOptions, StoragePlan, ValidationMetadata, ValidationRule,
+    value_storage_policy_ident_for_field,
+};
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 use crate::derives::gpui_form::value_holder::{
     generate_value_holder, holder_conversion_can_fail_metadata_tokens, parse_field_default,
 };
-
-fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
-    match expr {
-        Some(expr) => {
-            let expr_str = expr.to_token_stream().to_string();
-            let facade_crate = CratePaths::resolve().gpui_form;
-            quote! {
-                Some(#facade_crate::schema::registry::RustExpr::new_unchecked(#expr_str))
-            }
-        },
-        None => quote! { None },
-    }
-}
 
 fn field_value_presence_tokens(was_optional: bool, required_value: &RequiredValue) -> TokenStream {
     let facade_crate = CratePaths::resolve().gpui_form;
@@ -112,8 +105,8 @@ pub fn expand_gpui_form(
     if parsed.empty.is_some() {
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
-        let empty_fields: Vec<AnalyzedField> = Vec::new();
-        let (value_holder_tokens, _) = generate_value_holder(
+        let empty_fields: Vec<FieldPlan> = Vec::new();
+        let value_holder_tokens = generate_value_holder(
             &original_input,
             &empty_fields,
             enable_koruma,
@@ -170,6 +163,7 @@ pub fn expand_gpui_form(
     let parsed_koruma_fields: HashMap<String, KorumaFieldInfo> = match &derive_input.data {
         syn::Data::Struct(data_struct) => {
             let mut fields = HashMap::new();
+            let mut errors: Option<syn::Error> = None;
             for field in &data_struct.fields {
                 let Some(ident) = field.ident.as_ref() else {
                     continue;
@@ -179,8 +173,17 @@ pub fn expand_gpui_form(
                         fields.insert(ident.to_string(), *info);
                     },
                     ParseFieldResult::Skip => {},
-                    ParseFieldResult::Error(error) => return error.to_compile_error(),
+                    ParseFieldResult::Error(error) => {
+                        if let Some(errors) = &mut errors {
+                            errors.combine(error);
+                        } else {
+                            errors = Some(error);
+                        }
+                    },
                 }
+            }
+            if let Some(errors) = errors {
+                return errors.to_compile_error();
             }
             fields
         },
@@ -189,28 +192,6 @@ pub fn expand_gpui_form(
 
     let enable_koruma = koruma_options.is_some() || !parsed_koruma_fields.is_empty();
     let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
-
-    let koruma_validations: HashMap<String, Vec<String>> = parsed_koruma_fields
-        .iter()
-        .map(|(name, info)| {
-            let mut validator_names: Vec<String> = info
-                .validation
-                .field_validators
-                .iter()
-                .map(|v| v.name().to_string())
-                .collect();
-
-            if info.is_newtype() {
-                validator_names.push("NewtypeValidation".to_string());
-            }
-
-            if info.is_nested() {
-                validator_names.push("NestedValidation".to_string());
-            }
-
-            (name.clone(), validator_names)
-        })
-        .collect();
 
     if fields_iter.is_empty() {
         return syn::Error::new_spanned(
@@ -223,29 +204,7 @@ pub fn expand_gpui_form(
         .to_compile_error();
     }
 
-    let component_field_pairs: Vec<crate::derives::gpui_form::structs::ComponentFieldContent> =
-        fields_iter
-            .iter()
-            .filter(|field| field.component().is_some())
-            .map(generate_component_field)
-            .collect();
-
-    let (field_structure_tokens, field_base_declarations_tokens, required_value_map): (
-        Vec<TokenStream>,
-        Vec<TokenStream>,
-        HashMap<String, RequiredValue>,
-    ) = component_field_pairs
-        .into_iter()
-        .map(|content| {
-            (
-                content.field_structure_tokens,
-                content.field_base_declarations_tokens,
-                content.required_value,
-            )
-        })
-        .multiunzip();
-
-    let mut analyzed_fields = Vec::new();
+    let mut field_plans = Vec::new();
     for field in fields_iter {
         let field_name = field.ident.clone();
         let field_name_str = field_name.to_string();
@@ -258,27 +217,49 @@ pub fn expand_gpui_form(
             .as_ref()
             .map(|ty| extract_option_inner_type(ty).1)
             .unwrap_or_else(|| source_value_type.clone());
-        let required_value = if field.component().is_some() && !was_optional {
-            required_value_map
-                .get(&field_name_str)
-                .cloned()
-                .unwrap_or_else(|| RequiredValue::explicit(false))
+        let component_layout = field
+            .component()
+            .is_some()
+            .then(|| generate_component_field(field));
+        let required_value = component_layout
+            .as_ref()
+            .map(|layout| layout.required_value.clone())
+            .unwrap_or_else(|| RequiredValue::explicit(false));
+        let storage = StoragePlan::from_required_value(was_optional, required_value);
+        let value_storage_policy_ident = if matches!(storage, StoragePlan::ShapePolicy(_)) {
+            match value_storage_policy_ident_for_field(&field_name) {
+                Ok(ident) => Some(ident),
+                Err(error) => return error.to_compile_error(),
+            }
         } else {
-            RequiredValue::explicit(false)
+            None
         };
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info
             .map(|info| info.validation.clone())
             .unwrap_or_default();
+        let mut validation_metadata = ValidationMetadata::default();
+        if let Some(info) = koruma_info {
+            for validator in &info.validation.field_validators {
+                validation_metadata.push(ValidationRule::Validator(validator.name().to_string()));
+            }
+            if info.is_newtype() {
+                validation_metadata.push(ValidationRule::Newtype);
+            }
+            if info.is_nested() {
+                validation_metadata.push(ValidationRule::Nested);
+            }
+        }
         let default_expr = parse_field_default(field);
-        analyzed_fields.push(AnalyzedField {
+        field_plans.push(FieldPlan {
             field_name,
             original_type: field.ty.clone(),
             source_value_type,
             form_type,
             was_optional,
-            required_value,
+            storage,
             validation,
+            validation_metadata,
             default_expr,
             override_type,
             into_expr: rendered
@@ -290,15 +271,36 @@ pub fn expand_gpui_form(
             component: field
                 .component()
                 .map(|component| component.component.clone()),
+            component_layout,
+            value_storage_policy_ident,
             skip: field.skip(),
         });
     }
 
-    let has_fields_needing_required = analyzed_fields
+    let field_structure_tokens: Vec<TokenStream> = field_plans
+        .iter()
+        .filter_map(|field| {
+            field
+                .component_layout
+                .as_ref()
+                .map(|layout| layout.field_structure_tokens.clone())
+        })
+        .collect();
+    let field_base_declarations_tokens: Vec<TokenStream> = field_plans
+        .iter()
+        .filter_map(|field| {
+            field
+                .component_layout
+                .as_ref()
+                .map(|layout| layout.field_base_declarations_tokens.clone())
+        })
+        .collect();
+
+    let has_fields_needing_required = field_plans
         .iter()
         .any(|f| f.needs_required_validation() && !f.validation.is_newtype);
 
-    let has_any_koruma_validations = analyzed_fields.iter().any(|f| {
+    let has_any_koruma_validations = field_plans.iter().any(|f| {
         !f.skip
             && (!f.validation.field_validators.is_empty()
                 || !f.validation.element_validators.is_empty()
@@ -307,15 +309,15 @@ pub fn expand_gpui_form(
 
     let effective_enable_koruma =
         enable_koruma || (has_fields_needing_required && has_any_koruma_validations);
-    let (value_holder_tokens, fields_requiring_required) = generate_value_holder(
+    let value_holder_tokens = generate_value_holder(
         &original_input,
-        &analyzed_fields,
+        &field_plans,
         effective_enable_koruma,
         enable_koruma_fluent,
     );
-    let conversion_can_fail = holder_conversion_can_fail_metadata_tokens(&analyzed_fields);
+    let conversion_can_fail = holder_conversion_can_fail_metadata_tokens(&field_plans);
 
-    let field_variant_construction_code: Vec<TokenStream> = analyzed_fields
+    let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()
         .filter_map(|field| {
             if field.skip {
@@ -325,38 +327,37 @@ pub fn expand_gpui_form(
             let component_def = field.component.as_ref()?;
             let field_name_str = field.field_name.to_string();
             let value_presence_tokens =
-                field_value_presence_tokens(field.was_optional, &field.required_value);
+                field_value_presence_tokens(field.was_optional, &field.storage.required_value());
 
-            let field_type_str = field.form_type.to_token_stream().to_string();
-            let source_value_type_str = field.source_value_type.to_token_stream().to_string();
-            let mut validation_rules = koruma_validations
-                .get(&field_name_str)
-                .cloned()
-                .unwrap_or_default();
+            let field_type_tokens = rust_type_tokens(&facade_crate, &field.form_type);
+            let source_value_type_tokens = rust_type_tokens(&facade_crate, &field.source_value_type);
+            let needs_inferred_required_rule = field.needs_required_validation()
+                && !field
+                    .validation_metadata
+                    .has_registry_name("RequiredValidation");
 
-            let needs_inferred_required_rule = fields_requiring_required
-                .contains(&field_name_str)
-                && !validation_rules.contains(&"RequiredValidation".to_string());
-
-            if needs_inferred_required_rule
-                && !matches!(field.required_value, RequiredValue::Shape(_))
+            let validation_rules: Vec<ValidationRule> = if needs_inferred_required_rule
+                && !matches!(field.storage, StoragePlan::ShapePolicy(_))
             {
-                validation_rules.insert(0, "RequiredValidation".to_string());
-            }
-
+                std::iter::once(ValidationRule::Required)
+                    .chain(field.validation_metadata.iter().cloned())
+                    .collect()
+            } else {
+                field.validation_metadata.iter().cloned().collect()
+            };
             let validation_literals: Vec<_> = validation_rules
                 .iter()
-                .map(|v| syn::LitStr::new(v, proc_macro2::Span::call_site()))
+                .map(|rule| syn::LitStr::new(rule.registry_name(), proc_macro2::Span::call_site()))
                 .collect();
             let validation_rules_tokens = if needs_inferred_required_rule
-                && let RequiredValue::Shape(shape) = &field.required_value
+                && let StoragePlan::ShapePolicy(shape) = &field.storage
             {
                 let runtime_crate = CratePaths::resolve().gpui_form_facade_runtime();
                 quote! {
                     {
                         const __GPUI_FORM_FIELD_VALIDATIONS: &[&str] =
-                            if <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
-                                as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
+                            if <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                                as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
                             {
                                 &[
                                     "RequiredValidation",
@@ -379,26 +380,26 @@ pub fn expand_gpui_form(
             };
 
             let default_expr_tokens = field.default_expr.as_ref().map(|expr| {
-                let expr_str = expr.to_token_stream().to_string();
+                let expr_tokens = rust_expr_tokens(&facade_crate, expr);
                 quote! {
-                    .with_default(#facade_crate::schema::registry::RustExpr::new_unchecked(#expr_str))
+                    .with_default(#expr_tokens)
                 }
             });
 
             let component_variant_tokens =
                 component_def.component_variant_tokens(&field.form_type, &field_name_str);
-            let from_expr_tokens = option_expr_string_tokens(&field.from_expr);
-            let into_expr_tokens = option_expr_string_tokens(&field.into_expr);
+            let from_expr_tokens = optional_rust_expr_tokens(&facade_crate, &field.from_expr);
+            let into_expr_tokens = optional_rust_expr_tokens(&facade_crate, &field.into_expr);
 
             Some(quote! {
                 #facade_crate::schema::registry::FieldVariant::component(
                     #field_name_str,
-                    #facade_crate::schema::registry::RustType::new_unchecked(#field_type_str),
+                    #field_type_tokens,
                     #value_presence_tokens,
                     #component_variant_tokens
                 )
                 .with_source_value_type(
-                    #facade_crate::schema::registry::RustType::new_unchecked(#source_value_type_str)
+                    #source_value_type_tokens
                 )
                 .with_conversions(#from_expr_tokens, #into_expr_tokens)
                 .with_validations(#validation_rules_tokens)
@@ -407,7 +408,7 @@ pub fn expand_gpui_form(
         })
         .collect();
 
-    let component_type_check_tokens: Vec<TokenStream> = analyzed_fields
+    let component_type_check_tokens: Vec<TokenStream> = field_plans
         .iter()
         .filter_map(|field| {
             if field.skip {

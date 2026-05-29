@@ -67,6 +67,7 @@ gpui_form_derive::component_shape! {
     pub struct Switch {
         type State = SwitchState;
         component = gpui_form_collection::switch::SwitchField;
+        value = bool;
         value_storage = direct;
         field_suffix = "switch";
         value_binding;

@@ -7,7 +7,7 @@ layer used by `gpui-form-derive`.
 
 This crate exists to:
 
-1. parse component shape expressions into a typed internal model
+1. parse explicit component shape metadata into a typed internal model
 1. emit generated `FormFields` and `FormComponents` tokens from a
    `ComponentShape`
 1. emit schema metadata aligned with the same component-shape contract
@@ -27,32 +27,30 @@ crate.
 
 ## Parse-Time Component Model
 
-`components.rs` models component shape expressions accepted by the derive:
+`components.rs` models explicit component shape metadata accepted by the derive:
 
-- `#[gpui_form(my::Shape)]`
-- `#[gpui_form(my::Shape.component(my::Widget))]`
-- `#[gpui_form(my::Shape.field_suffix("input"))]`
+- `#[gpui_form(shape = my::Shape)]`
+- `#[gpui_form(shape = my::Shape, component = my::Widget)]`
+- `#[gpui_form(shape = my::Shape, field_suffix = "input")]`
 
 Important parse-time responsibilities:
 
 - field shape syntax reaches this crate as a parsed shape path plus optional
-  generic component metadata calls
+  `component = ...` and `field_suffix = "..."` metadata
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
   `#[gpui_form(type = ...)]` override
-- `component(...)` records render-component metadata for prototyping output and
+- `component = ...` records render-component metadata for prototyping output and
   must be path-like
-- component metadata method names are parsed into a small typed enum before
-  argument validation, so diagnostics and duplicate checks share one supported
-  method list
+- duplicate component metadata is rejected at the field attribute boundary
 - generated type checks assert `ComponentShapeFor<Value>` so shape crates own
   component-specific value compatibility diagnostics
-- non-optional shape-backed fields inherit the shape's required-value policy by
+- non-optional shape-backed fields inherit the shape's value-storage policy by
   default
 - shape-level `ValueBindingPolicy` records whether generated prototyping code
   should use `ComponentValueBinding`
-- `field_suffix("...")` records a field-level prototyping name override and
+- `field_suffix = "..."` records a field-level prototyping name override and
   must be a non-empty identifier suffix
 
 Component-specific settings and value compatibility rules belong inside the

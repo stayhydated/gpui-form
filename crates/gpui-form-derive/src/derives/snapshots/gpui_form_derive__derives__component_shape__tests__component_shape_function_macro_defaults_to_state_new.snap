@@ -11,10 +11,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for LocalInputShape {
     ) -> Self::State {
         <crate::state::InputState>::new(window, cx)
     }
-    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
 }
-impl<
-    __GpuiFormShapeValue,
-> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue>
-for LocalInputShape {}

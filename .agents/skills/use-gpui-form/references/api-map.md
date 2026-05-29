@@ -46,35 +46,35 @@ manual runtime trait impls.
 ## Supported Component Syntax
 
 ```rust
-#[gpui_form(gpui_form_collection::input::Input::<_>)]
-#[gpui_form(gpui_form_collection::select::Select::<_>)]
-#[gpui_form(gpui_form_collection::combobox::Combobox::<Item>)]
-#[gpui_form(gpui_form_collection::number_input::NumberInput::<_>)]
-#[gpui_form(gpui_form_collection::slider::Slider)]
-#[gpui_form(gpui_form_collection::color_picker::ColorPicker)]
-#[gpui_form(gpui_form_collection::date_picker::DatePicker)]
-#[gpui_form(gpui_form_collection::date_picker::DateRangePicker)]
-#[gpui_form(gpui_form_collection::otp_input::OtpInput::<_>)]
-#[gpui_form(gpui_form_component::date_picker::DatePicker)]
-#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]
-#[gpui_form(gpui_form_component::file_picker::FilePicker)]
-#[gpui_form(gpui_form_collection::checkbox::Checkbox)]
-#[gpui_form(gpui_form_collection::switch::Switch)]
-#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
-#[gpui_form(my::Shape)]
-#[gpui_form(my::Shape.component(my::ui::Widget))]
-#[gpui_form(my::Shape.field_suffix("input"))]
+#[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
+#[gpui_form(shape = gpui_form_collection::select::Select::<_>)]
+#[gpui_form(shape = gpui_form_collection::combobox::Combobox::<Item>)]
+#[gpui_form(shape = gpui_form_collection::number_input::NumberInput::<_>)]
+#[gpui_form(shape = gpui_form_collection::slider::Slider)]
+#[gpui_form(shape = gpui_form_collection::color_picker::ColorPicker)]
+#[gpui_form(shape = gpui_form_collection::date_picker::DatePicker)]
+#[gpui_form(shape = gpui_form_collection::date_picker::DateRangePicker)]
+#[gpui_form(shape = gpui_form_collection::otp_input::OtpInput::<_>)]
+#[gpui_form(shape = gpui_form_component::date_picker::DatePicker)]
+#[gpui_form(shape = gpui_form_component::date_picker::DateRangePicker)]
+#[gpui_form(shape = gpui_form_component::file_picker::FilePicker)]
+#[gpui_form(shape = gpui_form_collection::checkbox::Checkbox)]
+#[gpui_form(shape = gpui_form_collection::switch::Switch)]
+#[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(shape = my::Shape)]
+#[gpui_form(shape = my::Shape, component = my::ui::Widget)]
+#[gpui_form(shape = my::Shape, field_suffix = "input")]
 ```
 
-The `.component(...)` override must be path-like, and `.field_suffix("...")`
+The `component = ...` override must be path-like, and `field_suffix = "..."`
 must be a non-empty ASCII identifier suffix.
 
 Common field attributes:
 
 ```rust
-#[gpui_form(<shape>)]
+#[gpui_form(shape = <shape>)]
 #[gpui_form(hidden)]
-#[gpui_form(<shape>, default = <expr>)]
+#[gpui_form(shape = <shape>, default = <expr>)]
 #[gpui_form(hidden, default = <expr>)]
 #[gpui_form(skip)]
 #[gpui_form(type = <form_type>)]
@@ -127,15 +127,15 @@ Common struct attributes:
 - Define a custom component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.
-- Use `#[gpui_form(my::Shape)]` when the app owns the state/widget contract.
-- Treat the component expression and chained generic metadata methods as derive
-  metadata; runtime construction still uses `ComponentShape::new`.
-- Component shapes own the default required-value policy for non-optional
+- Use `#[gpui_form(shape = my::Shape)]` when the app owns the state/widget contract.
+- Treat `shape = ...`, `component = ...`, and `field_suffix = "..."`
+  as derive metadata; runtime construction still uses `ComponentShape::new`.
+- Component shapes own the default value-storage policy for non-optional
   fields. Put `value_storage = direct` on the reusable shape definition when it
-  can synthesize missing values; field attributes do not accept
+  can synthesize default values; field attributes do not accept
   `.value_storage(...)`. Required shape-backed values are reported by
   generated `validate()` and by fallible holder-to-model conversion, while
-  value-synthesizing policies expose `holder.into_original()`.
+  default-synthesizing policies expose `holder.into_original()`.
 
 ## Generated Names
 
@@ -190,7 +190,7 @@ pub enum Country {
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct LocationForm {
-    #[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+    #[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
     pub location: Country,
 }
 ```
@@ -206,7 +206,7 @@ model stores:
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        gpui_form_collection::date_picker::DatePicker,
+        shape = gpui_form_collection::date_picker::DatePicker,
         type = chrono::NaiveDate,
         from = to_form_date,
         into = to_model_timestamp
@@ -229,6 +229,7 @@ use gpui_form_derive::ComponentShape;
 #[derive(ComponentShape)]
 #[gpui_form_shape(
     state = TagsInputState,
+    value = Vec<String>,
     value_storage = direct,
     field_suffix = "input"
 )]
@@ -240,7 +241,7 @@ pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(TagsInput)]
+    #[gpui_form(shape = TagsInput)]
     pub tags: Option<Vec<String>>,
 }
 ```
@@ -259,12 +260,15 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
+        value = String;
         value_storage = direct;
     }
 }
 ```
 
 `gpui_form_derive::component_shape!` uses semicolons between options.
+Use `value = ...` or `values(...)` to publish supported form-side value types,
+or write manual `ComponentShapeFor<Value>` impls for constrained compatibility.
 Use `value_storage = direct` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; add `value_binding;` when the
@@ -273,7 +277,7 @@ must be a path-like type, and `field_suffix = "..."` must be a non-empty ASCII
 identifier suffix. Omit `value_binding;` to leave that metadata disabled.
 
 Manual `ComponentShape` impls must provide `ComponentShapeFor<Value>` impls for
-the supported form-side value types plus both `RequiredValuePolicy` and
+the supported form-side value types plus both `ValueStoragePolicy` and
 `ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or
 `InheritedComponentValueBinding` when the shape should inherit reusable
 `ComponentValueBinding<T>` impls.

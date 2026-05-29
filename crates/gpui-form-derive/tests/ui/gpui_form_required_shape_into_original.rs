@@ -1,6 +1,6 @@
 use gpui_form_derive::GpuiForm;
 use gpui_form_runtime::shape::{
-    ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequireValue,
+    ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequiredValueStorage,
 };
 
 #[derive(Clone, Debug)]
@@ -18,7 +18,7 @@ struct RequiredShape;
 
 impl ComponentShape for RequiredShape {
     type State = State;
-    type RequiredValuePolicy = RequireValue;
+    type ValueStoragePolicy = RequiredValueStorage;
     type ValueBindingPolicy = NoComponentValueBinding;
 
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
@@ -30,7 +30,7 @@ impl<T> ComponentShapeFor<T> for RequiredShape {}
 
 #[derive(GpuiForm)]
 struct Demo {
-    #[gpui_form(RequiredShape)]
+    #[gpui_form(shape = RequiredShape)]
     value: NonDefault,
 }
 

@@ -11,12 +11,12 @@ impl State {
 }
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(state = State, value_binding)]
+#[gpui_form_shape(state = State, value = String, value_binding)]
 struct DerivedShape;
 
 #[derive(GpuiForm)]
 struct DerivedDemo {
-    #[gpui_form(DerivedShape)]
+    #[gpui_form(shape = DerivedShape)]
     name: String,
 }
 

@@ -14,12 +14,9 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
             Mode::Tags,
         ))(window, cx)
     }
-    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
     const COMPONENT_TYPE: Option<&'static str> = Some(
         concat!(module_path!(), "::", stringify!(TagsInput)),
     );
 }
-impl<
-    __GpuiFormShapeValue,
-> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for TagsInput {}

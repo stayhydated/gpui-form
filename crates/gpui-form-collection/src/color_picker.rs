@@ -7,6 +7,7 @@ gpui_form_derive::component_shape! {
     pub struct ColorPicker {
         type State = ColorPickerState;
         component = gpui_component::color_picker::ColorPicker;
+        value = Hsla;
         field_suffix = "color_picker";
         value_binding;
 

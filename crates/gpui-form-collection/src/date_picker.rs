@@ -11,6 +11,7 @@ gpui_form_derive::component_shape! {
     pub struct DatePicker {
         type State = DatePickerState;
         component = gpui_component::date_picker::DatePicker;
+        value = NaiveDate;
         field_suffix = "date_picker";
         value_binding;
 
@@ -43,6 +44,7 @@ gpui_form_derive::component_shape! {
         type State = DatePickerState;
         new = DatePickerState::range;
         component = gpui_component::date_picker::DatePicker;
+        value = (NaiveDate, NaiveDate);
         field_suffix = "date_range_picker";
         value_binding;
 

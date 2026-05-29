@@ -9,12 +9,15 @@ use syn::{
 
 use super::component_shape_metadata::ComponentShapeMetadata;
 
-const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
+const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value = ...`, `values(...)`, \
+     `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
+    syn::custom_keyword!(value);
+    syn::custom_keyword!(values);
     syn::custom_keyword!(value_storage);
     syn::custom_keyword!(value_binding);
 }
@@ -72,6 +75,18 @@ impl Parse for ComponentShapeInput {
                 let key = content.parse::<kw::component>()?;
                 content.parse::<Token![=]>()?;
                 metadata.set_component(content.parse()?, key)?;
+                parse_option_separator(&content)?;
+            } else if content.peek(kw::value) {
+                let key = content.parse::<kw::value>()?;
+                content.parse::<Token![=]>()?;
+                metadata.add_value(content.parse()?, key)?;
+                parse_option_separator(&content)?;
+            } else if content.peek(kw::values) {
+                let key = content.parse::<kw::values>()?;
+                let values_content;
+                syn::parenthesized!(values_content in content);
+                let values = ComponentShapeMetadata::parse_values(&values_content)?;
+                metadata.add_values(values, key)?;
                 parse_option_separator(&content)?;
             } else if content.peek(kw::value_storage) {
                 let key = content.parse::<kw::value_storage>()?;
@@ -169,23 +184,10 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let gpui_crate = CratePaths::resolve().gpui;
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
-    let component_shape_for_impl = if has_explicit_component_shape_for_impl(&impls) {
+    let component_shape_for_impls = if has_explicit_component_shape_for_impl(&impls) {
         None
     } else {
-        let mut shape_for_generics = generics.clone();
-        shape_for_generics
-            .params
-            .push(syn::parse_quote!(__GpuiFormShapeValue));
-        let (shape_for_impl_generics, _, shape_for_where_clause) =
-            shape_for_generics.split_for_impl();
-
-        Some(quote! {
-            impl #shape_for_impl_generics #runtime_crate::shape::ComponentShapeFor<__GpuiFormShapeValue>
-                for #ident #ty_generics
-                #shape_for_where_clause
-            {
-            }
-        })
+        Some(metadata.value_impl_tokens(&runtime_crate, &ident, &generics))
     };
 
     quote! {
@@ -208,7 +210,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
         }
 
         #(#impls)*
-        #component_shape_for_impl
+        #component_shape_for_impls
     }
 }
 
@@ -242,6 +244,7 @@ mod tests {
                 type State = ::gpui_component::input::InputState;
                 new = |window, cx| ::gpui_component::input::InputState::new(window, cx);
                 component = ::gpui_component::input::Input;
+                value = T;
                 field_suffix = "input";
             }
         })
@@ -267,6 +270,28 @@ mod tests {
     }
 
     #[test]
+    fn component_shape_function_macro_accepts_multiple_values() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct SliderShape {
+                type State = crate::state::SliderState;
+                values(f32, gpui_component::slider::SliderValue);
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("ComponentShapeFor<f32>forSliderShape")
+                && compact.contains(
+                    "ComponentShapeFor<gpui_component::slider::SliderValue>forSliderShape"
+                ),
+            "values(...) should emit one compatibility impl per value type: {compact}"
+        );
+    }
+
+    #[test]
     fn component_shape_function_macro_accepts_direct_constructor_call() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct LocalInputShape {
@@ -289,7 +314,7 @@ mod tests {
     }
 
     #[test]
-    fn component_shape_function_macro_accepts_required_value_policy() {
+    fn component_shape_function_macro_accepts_value_storage_policy() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct SwitchShape {
                 type State = crate::state::SwitchState;
@@ -317,8 +342,10 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue;"),
-            "explicit require_value storage should emit RequireValue policy: {compact}"
+            compact.contains(
+                "typeValueStoragePolicy=::gpui_form_runtime::shape::RequiredValueStorage;"
+            ),
+            "explicit require_value storage should emit RequiredValueStorage policy: {compact}"
         );
     }
 

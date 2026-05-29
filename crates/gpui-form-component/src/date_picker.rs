@@ -393,6 +393,7 @@ impl Render for DateRangePickerState {
     feature = "component-shape",
     gpui_form_shape(
         state = DatePickerState,
+        value = chrono::NaiveDate,
         field_suffix = "date_picker",
         value_binding
     )
@@ -416,6 +417,7 @@ pub struct DatePicker {
     feature = "component-shape",
     gpui_form_shape(
         state = DateRangePickerState,
+        value = (chrono::NaiveDate, chrono::NaiveDate),
         field_suffix = "date_range_picker",
         value_binding
     )

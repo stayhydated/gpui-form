@@ -1,6 +1,7 @@
 pub mod components;
 pub mod crate_paths;
 pub mod implementations;
+pub mod metadata;
 
 mod names;
 

@@ -1,5 +1,6 @@
 use gpui_form::runtime::shape::{
-    AllowMissingValue, ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequireValue,
+    ComponentShape, ComponentShapeFor, DirectValueStorage, NoComponentValueBinding,
+    RequiredValueStorage,
 };
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
@@ -19,7 +20,7 @@ struct RequiredShape;
 
 impl ComponentShape for RequiredShape {
     type State = State;
-    type RequiredValuePolicy = RequireValue;
+    type ValueStoragePolicy = RequiredValueStorage;
     type ValueBindingPolicy = NoComponentValueBinding;
 
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
@@ -33,7 +34,7 @@ struct AllowShape;
 
 impl ComponentShape for AllowShape {
     type State = State;
-    type RequiredValuePolicy = AllowMissingValue;
+    type ValueStoragePolicy = DirectValueStorage;
     type ValueBindingPolicy = NoComponentValueBinding;
 
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
@@ -46,19 +47,19 @@ impl<T> ComponentShapeFor<T> for AllowShape {}
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]
 struct RequiredDemo {
-    #[gpui_form(RequiredShape)]
+    #[gpui_form(shape = RequiredShape)]
     value: NonDefault,
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DefaultedDemo {
-    #[gpui_form(RequiredShape, default = NonDefault("fallback".to_string()))]
+    #[gpui_form(shape = RequiredShape, default = NonDefault("fallback".to_string()))]
     value: NonDefault,
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
-struct AllowMissingDemo {
-    #[gpui_form(AllowShape)]
+struct DirectStorageDemo {
+    #[gpui_form(shape = AllowShape)]
     value: String,
 }
 
@@ -98,15 +99,15 @@ fn defaulted_required_shape_value_remains_infallible() {
 }
 
 #[test]
-fn allow_missing_shape_value_exposes_infallible_into_original() {
-    let model = AllowMissingDemoFormValueHolder {
+fn direct_storage_shape_value_exposes_infallible_into_original() {
+    let model = DirectStorageDemoFormValueHolder {
         value: "ready".to_string(),
     }
     .into_original();
 
     assert_eq!(
         model,
-        AllowMissingDemo {
+        DirectStorageDemo {
             value: "ready".to_string()
         }
     );

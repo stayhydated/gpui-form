@@ -101,7 +101,7 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(gpui_form_component::infinite_select::InfiniteSelect::<_>)]
+#[gpui_form(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>)]
 pub location: Country,
 ```
 
@@ -163,10 +163,10 @@ For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
 use the rendered component type as the form shape:
 
 ```rs
-#[gpui_form(gpui_form_component::date_picker::DatePicker)]
+#[gpui_form(shape = gpui_form_component::date_picker::DatePicker)]
 pub birth_date: chrono::NaiveDate;
 
-#[gpui_form(gpui_form_component::date_picker::DateRangePicker)]
+#[gpui_form(shape = gpui_form_component::date_picker::DateRangePicker)]
 pub holiday_range: (chrono::NaiveDate, chrono::NaiveDate);
 ```
 
@@ -210,7 +210,7 @@ For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
 use the element type as the form shape:
 
 ```rs
-#[gpui_form(gpui_form_component::file_picker::FilePicker)]
+#[gpui_form(shape = gpui_form_component::file_picker::FilePicker)]
 pub uploaded_files: Vec<std::path::PathBuf>;
 ```
 
@@ -229,7 +229,7 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`ComponentShape` is the contract used by `#[gpui_form(Shape)]`. Generated
+`ComponentShape` is the contract used by `#[gpui_form(shape = Shape)]`. Generated
 `GpuiForm` field code reaches it through `gpui_form::runtime::shape`; crates
 that define shapes directly may use `gpui_form_runtime::shape`. This crate's
 `component-shape` feature implements that contract for its built-in rendered
@@ -250,6 +250,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
+        value = String;
         field_suffix = "input";
     }
 }
@@ -264,6 +265,7 @@ use crate::state::{TagsState, build};
 #[gpui_form_shape(
     state = TagsState,
     new = build,
+    value = Vec<String>,
     value_storage = direct,
     field_suffix = "input"
 )]
@@ -285,6 +287,9 @@ generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The value must be a path-like type. `field_suffix = "..."` must be a
 non-empty identifier suffix.
+Use `value = ...` or `values(...)` to publish the form-side value types a
+shape supports; omit those metadata entries only when you provide manual
+`ComponentShapeFor<Value>` impls.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping

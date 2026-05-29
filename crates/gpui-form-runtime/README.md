@@ -20,16 +20,16 @@ gpui-form-derive = "*"
 `shape::ComponentShape` is the runtime trait implemented by component shapes.
 The derive macro stores `Entity<<Shape as ComponentShape>::State>` in generated
 form fields and calls `ComponentShape::new(window, cx)` from the generated
-component constructor. Shapes also publish a `RequiredValuePolicy`, which lets
+component constructor. Shapes also publish a `ValueStoragePolicy`, which lets
 generated value holders inherit whether a non-optional field should use direct
 `T` storage or missing-aware `Option<T>` storage. Missing-aware storage is
 visible to generated `validate()` and fallible holder-to-model conversion.
-`ValueHolderInfallibleStorage<T>` marks policies, currently `AllowMissingValue`,
+`InfallibleValueStorage<T>` marks policies, currently `DirectValueStorage`,
 whose storage representation always contains a value.
 Generated forms also assert `ComponentShapeFor<T>` for the form-side value
-type; derive and `component_shape!` shapes implement this broadly by default,
-while manual or constrained shapes should implement it only for supported
-values.
+type. Derive and `component_shape!` shapes emit those impls from explicit
+`value = ...` or `values(...)` metadata; manual or constrained shapes should
+implement it only for supported values.
 Manual implementations also publish a `ValueBindingPolicy`: use
 `NoComponentValueBinding` by default, or `InheritedComponentValueBinding` when
 fields should inherit shape-level `ComponentValueBinding<T>` synchronization.
@@ -43,6 +43,7 @@ use gpui_form_derive::ComponentShape;
 #[derive(ComponentShape)]
 #[gpui_form_shape(
     state = EmailInputState,
+    value = String,
     value_storage = direct,
     field_suffix = "input"
 )]
@@ -58,6 +59,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
+        value = String;
         value_storage = direct;
         field_suffix = "input";
     }

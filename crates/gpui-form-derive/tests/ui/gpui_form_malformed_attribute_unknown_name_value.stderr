@@ -1,4 +1,4 @@
-error: unknown gpui_form field option `unknown`
+error: unknown gpui_form field option `unknown`; component-backed fields must use `shape = MyShape`
  --> tests/ui/gpui_form_malformed_attribute_unknown_name_value.rs:5:17
   |
 5 |     #[gpui_form(unknown = "value")]

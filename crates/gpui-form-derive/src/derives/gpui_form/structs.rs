@@ -1,18 +1,21 @@
 use darling::{Error as DarlingError, FromField, FromMeta};
-use gpui_form_codegen::components::{RequiredValue, ShapeMetadataCall, ShapeOptions};
+use gpui_form_codegen::components::{RequiredValue, ShapeOptions};
 use koruma_derive_core::ValidationInfo;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use syn::{
-    Expr, Ident, Path, Token, Type, parenthesized,
+    Expr, Ident, LitStr, Path, Token, Type,
     parse::{Parse, ParseStream, Parser as _},
     punctuated::Punctuated,
 };
 
 mod kw {
     syn::custom_keyword!(default);
+    syn::custom_keyword!(component);
+    syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(from);
     syn::custom_keyword!(hidden);
     syn::custom_keyword!(into);
+    syn::custom_keyword!(shape);
     syn::custom_keyword!(skip);
 }
 
@@ -22,8 +25,77 @@ pub struct TypeOverride(pub Type);
 #[derive(Clone, Debug)]
 pub struct DefaultExpr(pub Expr);
 
+/// Value-holder storage selected during derive planning.
+#[derive(Clone, Debug)]
+pub enum StoragePlan {
+    OriginallyOptional,
+    RequiredValue,
+    Direct,
+    ShapePolicy(Path),
+}
+
+impl StoragePlan {
+    pub fn from_required_value(was_optional: bool, required_value: RequiredValue) -> Self {
+        if was_optional {
+            Self::OriginallyOptional
+        } else {
+            match required_value {
+                RequiredValue::Explicit(true) => Self::RequiredValue,
+                RequiredValue::Explicit(false) => Self::Direct,
+                RequiredValue::Shape(shape) => Self::ShapePolicy(shape),
+            }
+        }
+    }
+
+    pub fn required_value(&self) -> RequiredValue {
+        match self {
+            Self::OriginallyOptional | Self::Direct => RequiredValue::explicit(false),
+            Self::RequiredValue => RequiredValue::explicit(true),
+            Self::ShapePolicy(shape) => RequiredValue::Shape(shape.clone()),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum ValidationRule {
+    Validator(String),
+    Required,
+    Newtype,
+    Nested,
+}
+
+impl ValidationRule {
+    pub fn registry_name(&self) -> &str {
+        match self {
+            Self::Validator(name) => name,
+            Self::Required => "RequiredValidation",
+            Self::Newtype => "NewtypeValidation",
+            Self::Nested => "NestedValidation",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ValidationMetadata {
+    rules: Vec<ValidationRule>,
+}
+
+impl ValidationMetadata {
+    pub fn push(&mut self, rule: ValidationRule) {
+        self.rules.push(rule);
+    }
+
+    pub fn has_registry_name(&self, name: &str) -> bool {
+        self.rules.iter().any(|rule| rule.registry_name() == name)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &ValidationRule> {
+        self.rules.iter()
+    }
+}
+
 /// Precomputed field facts shared by expansion, inventory, and value holders.
-pub struct AnalyzedField {
+pub struct FieldPlan {
     pub field_name: Ident,
     #[allow(dead_code)]
     pub original_type: Type,
@@ -31,17 +103,20 @@ pub struct AnalyzedField {
     pub source_value_type: Type,
     pub form_type: Type,
     pub was_optional: bool,
-    pub required_value: RequiredValue,
+    pub storage: StoragePlan,
     pub validation: ValidationInfo,
+    pub validation_metadata: ValidationMetadata,
     pub default_expr: Option<Expr>,
     pub override_type: Option<Type>,
     pub into_expr: Option<Expr>,
     pub from_expr: Option<Expr>,
     pub component: Option<ShapeOptions>,
+    pub component_layout: Option<ComponentFieldContent>,
+    pub value_storage_policy_ident: Option<Ident>,
     pub skip: bool,
 }
 
-impl AnalyzedField {
+impl FieldPlan {
     /// Returns true if this field needs the `RequiredValidation` koruma validator.
     /// This applies to fields that:
     /// - Can be missing in the form holder
@@ -50,12 +125,38 @@ impl AnalyzedField {
     pub fn needs_required_validation(&self) -> bool {
         !self.skip
             && matches!(
-                self.required_value,
-                RequiredValue::Explicit(true) | RequiredValue::Shape(_)
+                self.storage,
+                StoragePlan::RequiredValue | StoragePlan::ShapePolicy(_)
             )
             && !self.was_optional
             && !self.validation.is_nested
     }
+}
+
+pub fn value_storage_policy_ident_for_field(field_name: &Ident) -> syn::Result<Ident> {
+    let field_name_ident = field_name;
+    let field_name = field_name_ident.to_string();
+    let field_name = field_name.strip_prefix("r#").unwrap_or(&field_name);
+    let mut pascal = String::new();
+    let mut uppercase_next = true;
+    for ch in field_name.chars() {
+        if ch == '_' {
+            uppercase_next = true;
+        } else if uppercase_next {
+            pascal.extend(ch.to_uppercase());
+            uppercase_next = false;
+        } else {
+            pascal.push(ch);
+        }
+    }
+
+    let ident = format!("__GpuiForm{pascal}ValueStoragePolicy");
+    syn::parse_str::<Ident>(&ident).map_err(|err| {
+        syn::Error::new_spanned(
+            field_name_ident,
+            format!("failed to generate value-storage policy identifier `{ident}`: {err}"),
+        )
+    })
 }
 
 #[derive(Clone, Debug)]
@@ -100,62 +201,40 @@ impl FromMeta for EmptyForm {
 
 #[derive(Debug)]
 enum GpuiFormFieldOption {
-    Skip { span: kw::skip },
-    Hidden { span: kw::hidden },
-    Type { span: Token![type], ty: Type },
-    Into { span: kw::into, expr: Expr },
-    From { span: kw::from, expr: Expr },
-    Default { span: kw::default, expr: Expr },
-    Component(FieldShapeExpr),
-}
-
-#[derive(Debug)]
-struct FieldShapeExpr {
-    path: Path,
-    metadata: Vec<ShapeMetadataCall>,
-}
-
-impl Parse for FieldShapeExpr {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let mut shape = if input.peek(syn::token::Paren) {
-            let content;
-            parenthesized!(content in input);
-            let shape = content.parse::<Self>()?;
-            if !content.is_empty() {
-                return Err(content
-                    .error("component syntax expects a shape path or shape metadata expression"));
-            }
-            shape
-        } else {
-            Self {
-                path: input.parse()?,
-                metadata: Vec::new(),
-            }
-        };
-
-        while input.peek(Token![.]) {
-            input.parse::<Token![.]>()?;
-            let method: Ident = input.parse()?;
-            let content;
-            parenthesized!(content in input);
-            let args = Punctuated::<Expr, Token![,]>::parse_terminated(&content)?
-                .into_iter()
-                .collect();
-            shape.metadata.push(ShapeMetadataCall {
-                method: gpui_form_codegen::components::ShapeMetadataMethod::parse_syn(&method)?,
-                span: method,
-                args,
-            });
-        }
-
-        if input.peek(syn::token::Paren) {
-            return Err(input.error(
-                "component metadata must use method-call syntax, such as `Shape.field_suffix(\"input\")`",
-            ));
-        }
-
-        Ok(shape)
-    }
+    Skip {
+        span: kw::skip,
+    },
+    Hidden {
+        span: kw::hidden,
+    },
+    Type {
+        span: Token![type],
+        ty: Type,
+    },
+    Into {
+        span: kw::into,
+        expr: Expr,
+    },
+    From {
+        span: kw::from,
+        expr: Expr,
+    },
+    Default {
+        span: kw::default,
+        expr: Expr,
+    },
+    Shape {
+        span: kw::shape,
+        path: Path,
+    },
+    Component {
+        span: kw::component,
+        ty: Type,
+    },
+    FieldSuffix {
+        span: kw::field_suffix,
+        suffix: LitStr,
+    },
 }
 
 impl Parse for GpuiFormFieldOption {
@@ -196,6 +275,33 @@ impl Parse for GpuiFormFieldOption {
             });
         }
 
+        if input.peek(kw::shape) {
+            let key = input.parse::<kw::shape>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Shape {
+                span: key,
+                path: input.parse()?,
+            });
+        }
+
+        if input.peek(kw::component) {
+            let key = input.parse::<kw::component>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Component {
+                span: key,
+                ty: input.parse()?,
+            });
+        }
+
+        if input.peek(kw::field_suffix) {
+            let key = input.parse::<kw::field_suffix>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::FieldSuffix {
+                span: key,
+                suffix: input.parse()?,
+            });
+        }
+
         if input.peek(kw::skip) {
             let key = input.parse::<kw::skip>()?;
             return Ok(Self::Skip { span: key });
@@ -210,15 +316,18 @@ impl Parse for GpuiFormFieldOption {
             let fork = input.fork();
             let key: Ident = fork.parse()?;
 
-            if fork.peek(Token![=]) || fork.peek(syn::token::Paren) {
-                return Err(syn::Error::new_spanned(
-                    key.clone(),
-                    format!("unknown gpui_form field option `{key}`"),
-                ));
-            }
+            return Err(syn::Error::new_spanned(
+                key.clone(),
+                format!(
+                    "unknown gpui_form field option `{key}`; component-backed fields must use \
+                     `shape = MyShape`"
+                ),
+            ));
         }
 
-        Ok(Self::Component(input.parse()?))
+        Err(input.error(
+            "expected gpui_form field option such as `shape = MyShape`, `hidden`, or `skip`",
+        ))
     }
 }
 
@@ -254,6 +363,8 @@ impl FieldOptions {
 struct ParsedFieldIntent {
     kind: Option<FieldIntentKind>,
     options: Box<FieldOptions>,
+    pending_component: Option<(Type, Span)>,
+    pending_field_suffix: Option<(LitStr, Span)>,
 }
 
 #[derive(Debug)]
@@ -268,6 +379,8 @@ impl ParsedFieldIntent {
         Self {
             kind: None,
             options: Box::default(),
+            pending_component: None,
+            pending_field_suffix: None,
         }
     }
 
@@ -280,6 +393,12 @@ impl ParsedFieldIntent {
             Some(FieldIntentKind::Skipped) => None,
             _ => Some(&mut self.options),
         }
+    }
+
+    fn has_component_configuration(&self) -> bool {
+        matches!(self.kind, Some(FieldIntentKind::Component(_)))
+            || self.pending_component.is_some()
+            || self.pending_field_suffix.is_some()
     }
 }
 
@@ -368,32 +487,55 @@ impl FromField for ComponentField {
             ty: field.ty.clone(),
             intent: ParsedFieldIntent::pending(),
         };
+        let mut errors = DarlingError::accumulator();
+        let mut had_attribute_errors = false;
 
         for attr in &field.attrs {
             if !attr.path().is_ident("gpui_form") {
                 continue;
             }
 
-            let list = attr.meta.require_list().map_err(|_| {
+            let list = match attr.meta.require_list().map_err(|_| {
                 DarlingError::custom(
                     "`gpui_form` field attribute must be a list, for example \
-                     `#[gpui_form(my::Shape)]`",
+                     `#[gpui_form(shape = my::Shape)]`",
                 )
                 .with_span(attr)
-            })?;
+            }) {
+                Ok(list) => list,
+                Err(error) => {
+                    errors.push(error);
+                    had_attribute_errors = true;
+                    continue;
+                },
+            };
 
-            let items = Punctuated::<GpuiFormFieldOption, syn::Token![,]>::parse_terminated
+            let items = match Punctuated::<GpuiFormFieldOption, syn::Token![,]>::parse_terminated
                 .parse2(list.tokens.clone())
-                .map_err(DarlingError::from)?;
+                .map_err(DarlingError::from)
+            {
+                Ok(items) => items,
+                Err(error) => {
+                    errors.push(error);
+                    had_attribute_errors = true;
+                    continue;
+                },
+            };
 
             for item in items {
-                parse_gpui_form_item(&mut parsed, item)?;
+                if errors
+                    .handle(parse_gpui_form_item(&mut parsed, item))
+                    .is_none()
+                {
+                    had_attribute_errors = true;
+                }
             }
         }
 
-        validate_field_intent(&parsed)?;
-
-        Ok(parsed)
+        if !had_attribute_errors {
+            errors.handle(validate_field_intent(&parsed));
+        }
+        errors.finish_with(parsed)
     }
 }
 
@@ -420,66 +562,21 @@ fn parse_gpui_form_item(
             let options = field_options_mut(field, "default", &span)?;
             set_once(&mut options.default, DefaultExpr(expr), "default", &span)
         },
-        GpuiFormFieldOption::Component(shape) => parse_gpui_form_shape(field, shape),
+        GpuiFormFieldOption::Shape { span, path } => set_shape(field, path, &span),
+        GpuiFormFieldOption::Component { span, ty } => set_component_type(field, ty, &span),
+        GpuiFormFieldOption::FieldSuffix { span, suffix } => set_field_suffix(field, suffix, &span),
     }
 }
 
-fn parse_gpui_form_shape(field: &mut ComponentField, shape: FieldShapeExpr) -> darling::Result<()> {
-    if let Some(ident) = single_segment_path_ident(&shape.path) {
-        if ident == "skip" {
-            set_skip(field, true, &shape.path)?;
-            return Ok(());
-        }
-
-        if !is_upper_camel_ident(ident) {
-            return Err(DarlingError::custom(format!(
-                "unknown gpui_form field option `{ident}`; bare field options only support `hidden` and `skip`; \
-                 use an UpperCamel shape identifier such as `MyShape` or a qualified shape path \
-                 such as `my::Shape`"
-            ))
-            .with_span(ident));
-        }
-    }
-
-    parse_positional_component(field, shape)
-}
-
-fn single_segment_path_ident(path: &Path) -> Option<&Ident> {
-    if path.segments.len() == 1 {
-        path.segments.last().map(|segment| &segment.ident)
-    } else {
-        None
-    }
-}
-
-fn is_upper_camel_ident(ident: &Ident) -> bool {
-    let ident = ident.to_string();
-    let ident = ident.strip_prefix("r#").unwrap_or(&ident);
-    ident
-        .chars()
-        .next()
-        .is_some_and(|ch| ch.is_ascii_uppercase())
-}
-
-fn parse_positional_component(
+fn set_shape<S: syn::spanned::Spanned>(
     field: &mut ComponentField,
-    shape: FieldShapeExpr,
-) -> darling::Result<()> {
-    let span = shape.path.clone();
-    let component = ShapeOptions::from_shape_and_metadata(shape.path, shape.metadata)?;
-    set_component(field, component, &span)
-}
-
-fn set_component<T: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    component: ShapeOptions,
-    span: &T,
+    shape: Path,
+    span: &S,
 ) -> darling::Result<()> {
     match field.intent.kind {
         Some(FieldIntentKind::Component(_)) => {
             return Err(DarlingError::custom(
-                "multiple component expressions were provided; keep a single shape \
-                 expression, such as `#[gpui_form(my::Shape)]`",
+                "duplicate `shape` option in `gpui_form` field attribute; remove the duplicate `shape` entry",
             )
             .with_span(span));
         },
@@ -492,8 +589,61 @@ fn set_component<T: syn::spanned::Spanned>(
         None => {},
     }
 
+    let component = field
+        .intent
+        .pending_component
+        .take()
+        .map(|(component, _)| component);
+    let field_suffix = field
+        .intent
+        .pending_field_suffix
+        .take()
+        .map(|(field_suffix, _)| field_suffix);
+    let component = ShapeOptions::from_explicit_metadata(shape, component, field_suffix)?;
     field.intent.kind = Some(FieldIntentKind::Component(component));
     Ok(())
+}
+
+fn set_component_type<S: syn::spanned::Spanned>(
+    field: &mut ComponentField,
+    component: Type,
+    span: &S,
+) -> darling::Result<()> {
+    match &mut field.intent.kind {
+        Some(FieldIntentKind::Component(shape)) => shape.set_component(component, span),
+        Some(FieldIntentKind::Hidden) => {
+            Err(intent_conflict_error("hidden", "component").with_span(span))
+        },
+        Some(FieldIntentKind::Skipped) => Err(skip_conflict_error("component").with_span(span)),
+        None => set_pending_once(
+            &mut field.intent.pending_component,
+            component,
+            span.span(),
+            "component",
+            span,
+        ),
+    }
+}
+
+fn set_field_suffix<S: syn::spanned::Spanned>(
+    field: &mut ComponentField,
+    field_suffix: LitStr,
+    span: &S,
+) -> darling::Result<()> {
+    match &mut field.intent.kind {
+        Some(FieldIntentKind::Component(shape)) => shape.set_field_suffix(field_suffix, span),
+        Some(FieldIntentKind::Hidden) => {
+            Err(intent_conflict_error("hidden", "field_suffix").with_span(span))
+        },
+        Some(FieldIntentKind::Skipped) => Err(skip_conflict_error("field_suffix").with_span(span)),
+        None => set_pending_once(
+            &mut field.intent.pending_field_suffix,
+            field_suffix,
+            span.span(),
+            "field_suffix",
+            span,
+        ),
+    }
 }
 
 fn set_hidden<S: syn::spanned::Spanned>(
@@ -516,6 +666,10 @@ fn set_hidden<S: syn::spanned::Spanned>(
         None => {},
     }
 
+    if field.intent.has_component_configuration() {
+        return Err(intent_conflict_error("component", "hidden").with_span(span));
+    }
+
     field.intent.kind = Some(FieldIntentKind::Hidden);
     Ok(())
 }
@@ -534,6 +688,24 @@ fn set_once<T, S: syn::spanned::Spanned>(
     }
 
     *slot = Some(value);
+    Ok(())
+}
+
+fn set_pending_once<T, S: syn::spanned::Spanned>(
+    slot: &mut Option<(T, Span)>,
+    value: T,
+    value_span: Span,
+    key: &str,
+    span: &S,
+) -> darling::Result<()> {
+    if slot.is_some() {
+        return Err(DarlingError::custom(format!(
+            "duplicate `{key}` option in `gpui_form` field attribute; remove the duplicate `{key}` entry"
+        ))
+        .with_span(span));
+    }
+
+    *slot = Some((value, value_span));
     Ok(())
 }
 
@@ -559,6 +731,10 @@ fn set_skip<S: syn::spanned::Spanned>(
 
     if matches!(field.intent.kind, Some(FieldIntentKind::Hidden)) {
         return Err(skip_conflict_error("hidden").with_span(span));
+    }
+
+    if field.intent.has_component_configuration() {
+        return Err(skip_conflict_error("component").with_span(span));
     }
 
     if let Some(option) = field.intent.options.first_conflict() {
@@ -599,6 +775,14 @@ fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
         return Ok(());
     }
 
+    if field.intent.pending_component.is_some() || field.intent.pending_field_suffix.is_some() {
+        return Err(DarlingError::custom(format!(
+            "field `{}` has component metadata but no shape; add `shape = ...`",
+            field.ident
+        ))
+        .with_span(&field.ident));
+    }
+
     Err(DarlingError::custom(format!(
         "field `{}` must choose a gpui_form field intent; add a component shape, `hidden`, or `skip`",
         field.ident
@@ -620,7 +804,7 @@ pub struct ComponentStruct {
 pub struct ComponentFieldContent {
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
-    pub required_value: (String, RequiredValue),
+    pub required_value: RequiredValue,
 }
 
 pub struct GpuiFormOptions {

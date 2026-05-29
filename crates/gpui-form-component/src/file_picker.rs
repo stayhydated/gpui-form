@@ -248,6 +248,7 @@ impl Render for FilePickerState {
     feature = "component-shape",
     gpui_form_shape(
         state = FilePickerState,
+        value = Vec<std::path::PathBuf>,
         value_storage = direct,
         field_suffix = "file_picker",
         value_binding

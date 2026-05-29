@@ -104,8 +104,8 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         } else {
             quote! {
                 self.current_data.#field_name_ident =
-                    <<#shape as gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy
-                        as gpui_form::runtime::shape::ValueHolderDefaultStorage<
+                    <<#shape as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy
+                        as gpui_form::runtime::shape::DefaultValueStorage<
                             #field_type
                         >>::default_storage();
             }

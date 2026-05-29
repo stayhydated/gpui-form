@@ -70,7 +70,7 @@ those component APIs explicitly.
    `gpui_form::bon` where needed.
 1. Generated component field code references
    `gpui_form::runtime::shape` when a field uses a component shape
-   expression, such as `#[gpui_form(Shape)]`. Users of component-backed
+   expression, such as `#[gpui_form(shape = Shape)]`. Users of component-backed
    fields need only the facade plus the crate that owns the concrete shape
    type.
 

@@ -1,5 +1,5 @@
 error: component type cannot be inferred with bare `_`; use an explicit component type
- --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:45
+ --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:56
   |
-5 |     #[gpui_form(crate::InputShape.component(_))]
-  |                                             ^
+5 |     #[gpui_form(shape = crate::InputShape, component = _)]
+  |                                                        ^

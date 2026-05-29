@@ -15,8 +15,16 @@ impl super::ComponentLayout for ShapeComponent {
             r#type,
         } = &self.0;
 
-        let field_name_ident =
-            crate::names::ComponentFieldName::new(&options.component_suffix(name), name);
+        let field_name_ident = match crate::names::ComponentFieldName::try_new(
+            &options.component_suffix(name),
+            name,
+        ) {
+            Ok(ident) => ident,
+            Err(error) => {
+                field_structure_tokens.extend(error.to_compile_error());
+                return;
+            },
+        };
         let shape = options.runtime_shape(r#type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();

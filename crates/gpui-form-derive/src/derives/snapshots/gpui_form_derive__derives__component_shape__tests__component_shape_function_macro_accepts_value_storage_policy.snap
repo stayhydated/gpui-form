@@ -11,9 +11,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for SwitchShape {
     ) -> Self::State {
         <crate::state::SwitchState>::new(window, cx)
     }
-    type RequiredValuePolicy = ::gpui_form_runtime::shape::AllowMissingValue;
+    type ValueStoragePolicy = ::gpui_form_runtime::shape::DirectValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
 }
-impl<
-    __GpuiFormShapeValue,
-> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for SwitchShape {}

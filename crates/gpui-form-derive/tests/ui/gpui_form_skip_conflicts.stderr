@@ -1,14 +1,14 @@
 error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
  --> tests/ui/gpui_form_skip_conflicts.rs:5:23
   |
-5 |     #[gpui_form(skip, crate::InputShape)]
+5 |     #[gpui_form(skip, shape = crate::InputShape)]
   |                       ^^^^^
 
 error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
-  --> tests/ui/gpui_form_skip_conflicts.rs:11:36
+  --> tests/ui/gpui_form_skip_conflicts.rs:11:44
    |
-11 |     #[gpui_form(crate::InputShape, skip)]
-   |                                    ^^^^
+11 |     #[gpui_form(shape = crate::InputShape, skip)]
+   |                                            ^^^^
 
 error: `skip` cannot be combined with `default` in a `gpui_form` field attribute; remove `skip` or remove the `default` option
   --> tests/ui/gpui_form_skip_conflicts.rs:17:23
@@ -22,17 +22,29 @@ error: `skip` cannot be combined with `type` in a `gpui_form` field attribute; r
 23 |     #[gpui_form(skip, type = usize, from = |value| value.len(), into = |value| value.to_string())]
    |                       ^^^^
 
+error: `skip` cannot be combined with `from` in a `gpui_form` field attribute; remove `skip` or remove the `from` option
+  --> tests/ui/gpui_form_skip_conflicts.rs:23:37
+   |
+23 |     #[gpui_form(skip, type = usize, from = |value| value.len(), into = |value| value.to_string())]
+   |                                     ^^^^
+
+error: `skip` cannot be combined with `into` in a `gpui_form` field attribute; remove `skip` or remove the `into` option
+  --> tests/ui/gpui_form_skip_conflicts.rs:23:65
+   |
+23 |     #[gpui_form(skip, type = usize, from = |value| value.len(), into = |value| value.to_string())]
+   |                                                                 ^^^^
+
 error: `hidden` cannot be combined with `component` in a `gpui_form` field attribute; choose exactly one of component, hidden, or skip
   --> tests/ui/gpui_form_skip_conflicts.rs:29:25
    |
-29 |     #[gpui_form(hidden, crate::InputShape)]
+29 |     #[gpui_form(hidden, shape = crate::InputShape)]
    |                         ^^^^^
 
 error: `component` cannot be combined with `hidden` in a `gpui_form` field attribute; choose exactly one of component, hidden, or skip
-  --> tests/ui/gpui_form_skip_conflicts.rs:35:36
+  --> tests/ui/gpui_form_skip_conflicts.rs:35:44
    |
-35 |     #[gpui_form(crate::InputShape, hidden)]
-   |                                    ^^^^^^
+35 |     #[gpui_form(shape = crate::InputShape, hidden)]
+   |                                            ^^^^^^
 
 error: `skip` cannot be combined with `hidden` in a `gpui_form` field attribute; remove `skip` or remove the `hidden` option
   --> tests/ui/gpui_form_skip_conflicts.rs:41:23

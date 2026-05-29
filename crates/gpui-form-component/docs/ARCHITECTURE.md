@@ -138,7 +138,7 @@ Responsibilities:
 ### Date picker
 
 1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
-   `DatePicker` and `DateRangePicker` usable directly in `#[gpui_form(...)]`
+   `DatePicker` and `DateRangePicker` usable directly in `#[gpui_form(shape = ...)]`
    while generated fields store their backing state entities.
 1. Runtime date selection emits `DatePickerEvent::Change`.
 1. Shape-owned value adapters convert selected `jiff::civil::Date` values into
@@ -156,7 +156,7 @@ Responsibilities:
 1. Subscribers receive changed path lists, cancellation, or platform-dialog
    errors through `FilePickerEvent`.
 1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
-   `FilePicker` usable directly in `#[gpui_form(...)]` while generated fields
+   `FilePicker` usable directly in `#[gpui_form(shape = ...)]` while generated fields
    store `Entity<FilePickerState>`; state-level value binding maps `Change`
    events to `Vec<std::path::PathBuf>`.
 
@@ -197,7 +197,7 @@ When adding a new reusable component shape that needs runtime state:
 
 1. add the runtime helper in this crate
 1. expose it through `ComponentShape` or a helper macro/derive
-1. publish shape metadata such as `COMPONENT_TYPE`, `RequiredValuePolicy`,
+1. publish shape metadata such as `COMPONENT_TYPE`, `ValueStoragePolicy`,
    `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generated
    scaffolds or value-holder storage need it
 1. update user-facing docs so normal generated forms use

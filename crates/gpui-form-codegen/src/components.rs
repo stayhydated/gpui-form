@@ -1,15 +1,13 @@
 use darling::Error as DarlingError;
 use gpui_form_schema::registry::validate_component_suffix;
 use proc_macro2::{Group, Span, TokenStream, TokenTree};
-use quote::{ToTokens as _, quote, quote_spanned};
+use quote::{quote, quote_spanned};
 use syn::spanned::Spanned as _;
-use syn::{
-    Expr, Lit, LitStr, Path, Type,
-    parse::{Parse, ParseStream},
-};
+use syn::{LitStr, Path, Type};
 
 use crate::CratePaths;
 use crate::implementations::ComponentLayout as _;
+use crate::metadata::{rust_path_tokens, rust_type_tokens};
 
 fn tokens_with_span<T: quote::ToTokens>(value: &T, span: Span) -> TokenStream {
     value
@@ -93,72 +91,11 @@ impl RequiredValue {
                 let crate_paths = CratePaths::resolve();
                 let runtime_crate = crate_paths.gpui_form_facade_runtime();
                 quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::RequiredValuePolicy
-                        as #runtime_crate::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE
+                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
                 }
             },
         }
-    }
-}
-
-mod kw {
-    syn::custom_keyword!(component);
-    syn::custom_keyword!(field_suffix);
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ShapeMetadataMethod {
-    Component,
-    FieldSuffix,
-}
-
-impl ShapeMetadataMethod {
-    pub const SUPPORTED: &'static str = "`component` and `field_suffix`";
-
-    pub fn parse_syn(method: &syn::Ident) -> syn::Result<Self> {
-        syn::parse2(method.to_token_stream()).map_err(|_| {
-            syn::Error::new_spanned(
-                method,
-                format!(
-                    "unknown component metadata `{method}`; supported generic methods are {}; \
-                     put component-specific options in a dedicated ComponentShape wrapper",
-                    Self::SUPPORTED
-                ),
-            )
-        })
-    }
-
-    const fn name(self) -> &'static str {
-        match self {
-            Self::Component => "component",
-            Self::FieldSuffix => "field_suffix",
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ShapeMetadataCall {
-    pub method: ShapeMetadataMethod,
-    pub span: syn::Ident,
-    pub args: Vec<Expr>,
-}
-
-impl Parse for ShapeMetadataMethod {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        if input.peek(kw::component) {
-            input.parse::<kw::component>()?;
-            return Ok(Self::Component);
-        }
-
-        if input.peek(kw::field_suffix) {
-            input.parse::<kw::field_suffix>()?;
-            return Ok(Self::FieldSuffix);
-        }
-
-        Err(input.error(format!(
-            "expected component metadata method {}",
-            Self::SUPPORTED
-        )))
     }
 }
 
@@ -187,40 +124,43 @@ impl ShapeOptions {
         }
     }
 
-    pub fn from_shape_and_metadata(
+    pub fn from_explicit_metadata(
         shape: Path,
-        methods: Vec<ShapeMetadataCall>,
+        component: Option<Type>,
+        field_suffix: Option<LitStr>,
     ) -> darling::Result<Self> {
         let mut options = Self::from_shape(shape);
 
-        for method in &methods {
-            options.apply_component_method(method)?;
+        if let Some(component) = component {
+            let span = component.span();
+            options.set_component(component, &span)?;
+        }
+
+        if let Some(field_suffix) = field_suffix {
+            let span = field_suffix.span();
+            options.set_field_suffix(field_suffix, &span)?;
         }
 
         Ok(options)
     }
 
-    fn apply_component_method(&mut self, method: &ShapeMetadataCall) -> darling::Result<()> {
-        match method.method {
-            ShapeMetadataMethod::Component => {
-                set_metadata_once(
-                    &mut self.component,
-                    expect_type_arg(method.method, &method.span, &method.args)?,
-                    method.method,
-                    &method.span,
-                )?;
-            },
-            ShapeMetadataMethod::FieldSuffix => {
-                set_metadata_once(
-                    &mut self.field_suffix,
-                    expect_field_suffix_arg(method.method, &method.span, &method.args)?,
-                    method.method,
-                    &method.span,
-                )?;
-            },
-        }
+    pub fn set_component<S: syn::spanned::Spanned>(
+        &mut self,
+        component: Type,
+        span: &S,
+    ) -> darling::Result<()> {
+        let component = normalize_component_type(component, span)?;
+        set_metadata_once(&mut self.component, component, "component", span)
+    }
 
-        Ok(())
+    pub fn set_field_suffix<S: syn::spanned::Spanned>(
+        &mut self,
+        field_suffix: LitStr,
+        span: &S,
+    ) -> darling::Result<()> {
+        validate_shape_field_suffix(&field_suffix.value())
+            .map_err(|message| DarlingError::custom(message).with_span(&field_suffix))?;
+        set_metadata_once(&mut self.field_suffix, field_suffix, "field_suffix", span)
     }
 
     pub fn resolved_shape(&self, field_type: &syn::Type) -> syn::Path {
@@ -329,76 +269,35 @@ fn normalize_shape_path(mut path: Path) -> Path {
     path
 }
 
-fn expect_type_arg(
-    method: ShapeMetadataMethod,
-    span: &syn::Ident,
-    args: &[Expr],
+fn normalize_component_type<S: syn::spanned::Spanned>(
+    component: Type,
+    span: &S,
 ) -> darling::Result<Type> {
-    let [arg] = args else {
-        return Err(DarlingError::custom(format!(
-            "`{}` expects exactly one type argument",
-            method.name()
-        ))
-        .with_span(span));
-    };
-
-    match arg {
-        Expr::Path(path) => Ok(Type::Path(syn::TypePath {
-            qself: path.qself.clone(),
-            path: normalize_shape_path(path.path.clone()),
-        })),
-        Expr::Infer(infer) => Err(DarlingError::custom(
+    match component {
+        Type::Path(mut type_path) => {
+            type_path.path = normalize_shape_path(type_path.path);
+            Ok(Type::Path(type_path))
+        },
+        Type::Infer(infer) => Err(DarlingError::custom(
             "component type cannot be inferred with bare `_`; use an explicit component type",
         )
-        .with_span(infer)),
-        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
+        .with_span(&infer)),
+        _ => Err(DarlingError::custom(
+            "component metadata must be a path-like type, such as `my_crate::Input`",
+        )
+        .with_span(span)),
     }
 }
 
-fn expect_string_lit_arg(
-    method: ShapeMetadataMethod,
-    span: &syn::Ident,
-    args: &[Expr],
-) -> darling::Result<LitStr> {
-    let [arg] = args else {
-        return Err(DarlingError::custom(format!(
-            "`{}` expects exactly one string literal argument",
-            method.name()
-        ))
-        .with_span(span));
-    };
-
-    match arg {
-        Expr::Lit(expr_lit) => match &expr_lit.lit {
-            Lit::Str(value) => Ok(value.clone()),
-            lit => Err(DarlingError::unexpected_lit_type(lit).with_span(arg)),
-        },
-        _ => Err(DarlingError::unexpected_expr_type(arg).with_span(arg)),
-    }
-}
-
-fn expect_field_suffix_arg(
-    method: ShapeMetadataMethod,
-    span: &syn::Ident,
-    args: &[Expr],
-) -> darling::Result<LitStr> {
-    let value = expect_string_lit_arg(method, span, args)?;
-    validate_component_suffix(&value.value())
-        .map_err(|err| DarlingError::custom(err.to_string()).with_span(&value))?;
-    Ok(value)
-}
-
-fn set_metadata_once<T>(
+fn set_metadata_once<T, S: syn::spanned::Spanned>(
     slot: &mut Option<T>,
     value: T,
-    method: ShapeMetadataMethod,
-    span: &syn::Ident,
+    option: &str,
+    span: &S,
 ) -> darling::Result<()> {
     if slot.is_some() {
         return Err(DarlingError::custom(format!(
-            "duplicate `{}` component metadata method; remove the duplicate `.{}(...)` call",
-            method.name(),
-            method.name()
+            "duplicate `{option}` option in `gpui_form` field attribute; remove the duplicate `{option}` entry",
         ))
         .with_span(span));
     }
@@ -583,18 +482,15 @@ impl ShapeOptions {
         field_type: &syn::Type,
         field_name: &str,
     ) -> TokenStream {
-        let shape = self
-            .resolved_shape(field_type)
-            .to_token_stream()
-            .to_string();
         let schema_crate = CratePaths::resolve().gpui_form;
+        let shape = rust_path_tokens(&schema_crate, &self.resolved_shape(field_type));
         let component_type_tokens = self.component_type_tokens(field_type);
         let value_binding_tokens = self.value_binding_tokens(field_type);
         let prototyping_tokens = self.prototyping_tokens(field_type, field_name);
 
         quote! {
             #schema_crate::schema::registry::FieldComponentVariant::new(
-                #schema_crate::schema::registry::RustPath::new_unchecked(#shape)
+                #shape
             )
             #component_type_tokens
             #value_binding_tokens
@@ -608,10 +504,10 @@ impl ShapeOptions {
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
         let schema_crate = crate_paths.gpui_form;
         if let Some(component) = self.component.as_ref() {
-            let component_str = component.to_token_stream().to_string();
+            let component_type = rust_type_tokens(&schema_crate, component);
             quote! {
                 .with_component_type(
-                    #schema_crate::schema::registry::RustType::new_unchecked(#component_str)
+                    #component_type
                 )
             }
         } else {

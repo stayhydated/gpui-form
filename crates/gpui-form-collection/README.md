@@ -13,7 +13,7 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, GpuiForm)]
 pub struct Account {
-    #[gpui_form(gpui_form_collection::input::Input::<_>)]
+    #[gpui_form(shape = gpui_form_collection::input::Input::<_>)]
     pub code: AccountCode,
 }
 ```
@@ -51,9 +51,9 @@ select-specific configuration, define a small `ComponentShape` wrapper whose
 Collection components implement `ComponentShape` and add value adapters where
 the component can synchronize form state generically. `GpuiForm` generated code
 uses these contracts through the facade path `gpui_form::runtime::shape`.
-Components that synthesize a missing value, such as input, select, combobox,
+Components that synthesize a default value, such as input, select, combobox,
 checkbox, switch, number input, slider, and OTP input, publish direct `T`
-value-holder storage as their default required-value policy. For combobox,
+value-holder storage as their default value-storage policy. For combobox,
 empty selection is explicit: value binding emits `FormValueChange::Clear`, so
 optional fields clear to `None` and non-optional `Vec<T>` fields reset to
 `Vec::default()`. They also publish prototyping field suffix metadata, so

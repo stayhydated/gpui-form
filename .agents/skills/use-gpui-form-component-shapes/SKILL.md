@@ -52,7 +52,7 @@ Use `#[derive(ComponentShape)]` when the rendered component type is local:
 use gpui_form_derive::ComponentShape;
 
 #[derive(ComponentShape)]
-#[gpui_form_shape(state = TagsInputState, field_suffix = "input")]
+#[gpui_form_shape(state = TagsInputState, value = Vec<String>, field_suffix = "input")]
 pub struct TagsInput {
     state: gpui::Entity<TagsInputState>,
 }
@@ -65,7 +65,7 @@ Use the rendered component type as the field shape:
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(TagsInput)]
+    #[gpui_form(shape = TagsInput)]
     pub tags: Option<Vec<String>>,
 }
 ```
@@ -81,7 +81,9 @@ Metadata rules:
   be emitted as written.
 - Add `component = ...` only when generated metadata should use a path-like
   render component type different from the derived type.
-- Add `value_storage = direct` when the component can synthesize a missing value
+- Add `value = ...` or `values(...)` for each form-side value type the shape
+  supports, unless you will implement `ComponentShapeFor<Value>` manually.
+- Add `value_storage = direct` when the component can synthesize a default value
   and non-optional fields should use direct `T` value-holder storage by default.
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
@@ -104,12 +106,12 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-Use the wrapper shape in `#[gpui_form(...)]`:
+Use the wrapper shape with `#[gpui_form(shape = ...)]`:
 
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct ContactForm {
-    #[gpui_form(EmailInputShape)]
+    #[gpui_form(shape = EmailInputShape)]
     pub email: String,
 }
 ```
@@ -127,6 +129,7 @@ gpui_form_derive::component_shape! {
         new = |window, cx| gpui_component::input::InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
+        value = T;
         value_storage = direct;
         field_suffix = "input";
         value_binding;
@@ -142,14 +145,18 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-The macro accepts `new`, `component`, `value_storage = require_value|direct`,
-`value_binding`, and `field_suffix` metadata, plus `type State = ...`.
+The macro accepts `new`, `component`, `value = ...`, `values(...)`,
+`value_storage = require_value|direct`, `value_binding`, and `field_suffix`
+metadata, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `value_storage = direct` on reusable wrappers that can seed or synthesize a
-missing value; consuming field attributes do not accept `.value_storage(...)`.
+missing value; consuming field attributes do not accept `value_storage = ...`.
 Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
 for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.
+Use `value = ...` / `values(...)` for simple compatibility impls, or omit value
+metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
+shape needs custom bounds or diagnostics.
 
 When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
 `ComponentShapeFor<Value>` impls for the supported form-side value types and

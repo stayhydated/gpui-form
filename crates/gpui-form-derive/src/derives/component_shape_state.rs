@@ -26,6 +26,15 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let component = value.parse()?;
                 shape.set_component(component, &meta.path)
+            } else if meta.path.is_ident("value") {
+                let value = meta.value()?;
+                let ty = value.parse()?;
+                shape.add_value(ty, &meta.path)
+            } else if meta.path.is_ident("values") {
+                let content;
+                syn::parenthesized!(content in meta.input);
+                let values = ComponentShapeMetadata::parse_values(&content)?;
+                shape.add_values(values, &meta.path)
             } else if meta.path.is_ident("value_storage") {
                 let value = meta.value()?;
                 let value_storage = value.parse()?;
@@ -61,12 +70,8 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let constructor_body = meta.constructor_body_or(default_constructor);
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let mut shape_for_generics = input.generics.clone();
-    shape_for_generics
-        .params
-        .push(syn::parse_quote!(__GpuiFormShapeValue));
-    let (shape_for_impl_generics, _, shape_for_where_clause) = shape_for_generics.split_for_impl();
     let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
+    let component_shape_for_impls = meta.value_impl_tokens(&runtime_crate, ident, &input.generics);
     let gpui_crate = CratePaths::resolve().gpui;
     let inferred_component_type = if input.generics.params.is_empty() {
         quote! { #ident }
@@ -150,11 +155,7 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
 
         #binding_impl
 
-        impl #shape_for_impl_generics #runtime_crate::shape::ComponentShapeFor<__GpuiFormShapeValue>
-            for #ident #ty_generics
-            #shape_for_where_clause
-        {
-        }
+        #component_shape_for_impls
     })
 }
 
@@ -275,18 +276,27 @@ mod tests {
     fn test_component_shape_with_field_suffix() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(state = crate::state::TagsState, field_suffix = "tags")]
+            #[gpui_form_shape(
+                state = crate::state::TagsState,
+                value = Vec<String>,
+                field_suffix = "tags"
+            )]
             struct TagsInput;
         })
         .unwrap();
 
         let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
 
         insta::assert_snapshot!(pretty_tokens(expanded));
+        assert!(
+            compact.contains("ComponentShapeFor<Vec<String>>forTagsInput"),
+            "value = ... should emit explicit compatibility impl: {compact}"
+        );
     }
 
     #[test]
-    fn test_component_shape_with_required_value_policy() {
+    fn test_component_shape_with_value_storage_policy() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
             #[gpui_form_shape(state = crate::state::SwitchState, value_storage = direct)]
@@ -312,8 +322,10 @@ mod tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue;"),
-            "explicit require_value storage should emit RequireValue policy: {compact}"
+            compact.contains(
+                "typeValueStoragePolicy=::gpui_form_runtime::shape::RequiredValueStorage;"
+            ),
+            "explicit require_value storage should emit RequiredValueStorage policy: {compact}"
         );
     }
 

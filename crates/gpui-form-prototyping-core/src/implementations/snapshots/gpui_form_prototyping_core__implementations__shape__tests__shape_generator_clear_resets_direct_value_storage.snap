@@ -23,7 +23,7 @@ fn on_code_shape_event(
         FormValueChange::Clear => {
             self.current_data.code = <<gpui_form_collection::otp_input::OtpInput<
                 String,
-            > as gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy as gpui_form::runtime::shape::ValueHolderDefaultStorage<
+            > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                 String,
             >>::default_storage();
         }

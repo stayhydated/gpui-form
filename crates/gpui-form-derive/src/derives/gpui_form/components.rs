@@ -9,7 +9,6 @@ fn extract_default_expr(field: &ComponentField) -> Option<syn::Expr> {
 }
 
 pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent {
-    let field_name = field.ident.to_string();
     let Some(rendered) = field.component() else {
         unreachable!("generate_component_field should only be called for component fields");
     };
@@ -17,7 +16,7 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
     let field_type = extract_option_inner_type(field_type).1;
 
     let layout = rendered.component.generate_field_layout(
-        field_name.clone(),
+        field.ident.to_string(),
         field_type,
         extract_default_expr(field),
     );
@@ -25,6 +24,6 @@ pub fn generate_component_field(field: &ComponentField) -> ComponentFieldContent
     ComponentFieldContent {
         field_structure_tokens: layout.field_structure_tokens,
         field_base_declarations_tokens: layout.field_base_declarations_tokens,
-        required_value: (field_name, layout.required_value),
+        required_value: layout.required_value,
     }
 }

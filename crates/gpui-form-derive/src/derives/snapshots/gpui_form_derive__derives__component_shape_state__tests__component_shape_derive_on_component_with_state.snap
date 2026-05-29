@@ -10,7 +10,7 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
     ) -> Self::State {
         <crate::state::TagsState>::new(window, cx)
     }
-    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
     const PROTOTYPING: ::gpui_form_runtime::shape::ComponentPrototyping = ::gpui_form_runtime::shape::ComponentPrototyping::new()
         .field_suffix("tags");
@@ -18,6 +18,3 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
         concat!(module_path!(), "::", stringify!(TagsInput)),
     );
 }
-impl<
-    __GpuiFormShapeValue,
-> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for TagsInput {}

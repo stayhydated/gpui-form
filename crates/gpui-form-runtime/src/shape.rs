@@ -18,7 +18,7 @@ pub trait ComponentShape {
 
     /// Shape-owned policy for whether non-optional source fields keep a
     /// missing-value state in the generated value holder.
-    type RequiredValuePolicy: ComponentRequiredValuePolicy;
+    type ValueStoragePolicy: ComponentValueStoragePolicy;
 
     /// Shape-owned policy for whether generated prototyping code should
     /// inherit value binding by default.
@@ -34,7 +34,7 @@ pub trait ComponentShape {
     /// emit `Component::new(&entity)` without requiring component UI metadata to
     /// be repeated on every field annotation.
     ///
-    /// A `.component(...)` override on the field shape expression always takes
+    /// A field-level `component = ...` override always takes
     /// precedence.
     const COMPONENT_TYPE: Option<&'static str> = None;
 
@@ -50,8 +50,9 @@ pub trait ComponentShape {
 ///
 /// Generated `GpuiForm` code asserts this alongside [`ComponentShape`] so
 /// reusable shapes can own value-type compatibility diagnostics. Shape macros
-/// emit a broad implementation by default; component-specific shapes may
-/// implement this trait manually when only selected value types are supported.
+/// emit implementations from explicit `value = ...` / `values(...)` metadata;
+/// component-specific shapes may implement this trait manually when custom
+/// bounds or diagnostics are needed.
 #[diagnostic::on_unimplemented(
     message = "gpui-form component shape `{Self}` is not compatible with form value `{Value}`",
     note = "implement `ComponentShapeFor<{Value}>` for `{Self}`, or choose a component shape whose value type matches the field"
@@ -59,12 +60,12 @@ pub trait ComponentShape {
 pub trait ComponentShapeFor<Value>: ComponentShape {}
 
 mod sealed {
-    pub trait RequiredValuePolicy {}
+    pub trait ValueStoragePolicy {}
     pub trait ValueBindingPolicy {}
 }
 
 /// Marker trait for a component shape's generated value-holder storage policy.
-pub trait ComponentRequiredValuePolicy: sealed::RequiredValuePolicy {
+pub trait ComponentValueStoragePolicy: sealed::ValueStoragePolicy {
     /// Whether a missing generated value-holder value is invalid by default.
     const REQUIRES_VALUE: bool;
 }
@@ -118,21 +119,21 @@ where
 
 /// Store non-optional source fields as `Option<T>` and treat `None` as missing.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct RequireValue;
+pub struct RequiredValueStorage;
 
-impl sealed::RequiredValuePolicy for RequireValue {}
+impl sealed::ValueStoragePolicy for RequiredValueStorage {}
 
-impl ComponentRequiredValuePolicy for RequireValue {
+impl ComponentValueStoragePolicy for RequiredValueStorage {
     const REQUIRES_VALUE: bool = true;
 }
 
 /// Store non-optional source fields directly as `T`.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct AllowMissingValue;
+pub struct DirectValueStorage;
 
-impl sealed::RequiredValuePolicy for AllowMissingValue {}
+impl sealed::ValueStoragePolicy for DirectValueStorage {}
 
-impl ComponentRequiredValuePolicy for AllowMissingValue {
+impl ComponentValueStoragePolicy for DirectValueStorage {
     const REQUIRES_VALUE: bool = false;
 }
 
@@ -141,14 +142,14 @@ impl ComponentRequiredValuePolicy for AllowMissingValue {
 /// This lets `#[derive(GpuiForm)]` defer the `T` vs `Option<T>` choice to the
 /// component shape that owns the policy while still emitting concrete holder
 /// conversion code.
-pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
+pub trait ValueStorage<T>: ComponentValueStoragePolicy {
     /// Concrete generated value-holder field storage.
     type Storage;
 
     /// Construct storage from a present form value.
     fn present(value: T) -> Self::Storage;
 
-    /// Construct storage from a present form value, allowing `RequireValue` to
+    /// Construct storage from a present form value, allowing `RequiredValueStorage` to
     /// encode a value equal to the declared default as missing.
     fn present_unless_default(value: T, default: T) -> Self::Storage
     where
@@ -165,7 +166,7 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
         Present: FnOnce(T) -> Output,
         Missing: FnOnce() -> Output;
 
-    /// Fallible variant of [`ValueHolderStorage::map_into_value`].
+    /// Fallible variant of [`ValueStorage::map_into_value`].
     fn try_map_into_value<Output, Error, Present>(
         storage: Self::Storage,
         present: Present,
@@ -197,21 +198,21 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
     message = "gpui-form cannot synthesize direct storage for `{T}` with this component shape policy",
     note = "add `#[gpui_form(default = ...)]`, make `{T}` implement `Default`, or make the shape use `value_storage = require_value`"
 )]
-pub trait ValueHolderDefaultStorage<T>: ValueHolderStorage<T> {
+pub trait DefaultValueStorage<T>: ValueStorage<T> {
     /// Construct a missing/default value-holder field.
     fn default_storage() -> Self::Storage;
 }
 
 /// Storage policies whose holder-to-model conversion cannot fail because the
 /// storage representation always contains a value.
-pub trait ValueHolderInfallibleStorage<T>: ValueHolderStorage<T> {
+pub trait InfallibleValueStorage<T>: ValueStorage<T> {
     /// Convert storage into an output value without a missing-value fallback.
     fn map_into_value<Output, Present>(storage: Self::Storage, present: Present) -> Output
     where
         Present: FnOnce(T) -> Output;
 }
 
-impl<T> ValueHolderStorage<T> for RequireValue {
+impl<T> ValueStorage<T> for RequiredValueStorage {
     type Storage = Option<T>;
 
     fn present(value: T) -> Self::Storage {
@@ -267,13 +268,13 @@ impl<T> ValueHolderStorage<T> for RequireValue {
     }
 }
 
-impl<T> ValueHolderDefaultStorage<T> for RequireValue {
+impl<T> DefaultValueStorage<T> for RequiredValueStorage {
     fn default_storage() -> Self::Storage {
         None
     }
 }
 
-impl<T> ValueHolderStorage<T> for AllowMissingValue {
+impl<T> ValueStorage<T> for DirectValueStorage {
     type Storage = T;
 
     fn present(value: T) -> Self::Storage {
@@ -326,13 +327,13 @@ impl<T> ValueHolderStorage<T> for AllowMissingValue {
     }
 }
 
-impl<T: Default> ValueHolderDefaultStorage<T> for AllowMissingValue {
+impl<T: Default> DefaultValueStorage<T> for DirectValueStorage {
     fn default_storage() -> Self::Storage {
         T::default()
     }
 }
 
-impl<T> ValueHolderInfallibleStorage<T> for AllowMissingValue {
+impl<T> InfallibleValueStorage<T> for DirectValueStorage {
     fn map_into_value<Output, Present>(storage: Self::Storage, present: Present) -> Output
     where
         Present: FnOnce(T) -> Output,

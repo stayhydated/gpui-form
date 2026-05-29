@@ -1,11 +1,11 @@
-error: duplicate `component` component metadata method; remove the duplicate `.component(...)` call
- --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:5:52
+error: duplicate `component` option in `gpui_form` field attribute; remove the duplicate `component` entry
+ --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:8:9
   |
-5 |     #[gpui_form(DemoShape.component(crate::Widget).component(crate::OtherWidget))]
-  |                                                    ^^^^^^^^^
+8 |         component = crate::OtherWidget
+  |         ^^^^^^^^^
 
-error: duplicate `field_suffix` component metadata method; remove the duplicate `.field_suffix(...)` call
-  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:11:49
+error: duplicate `field_suffix` option in `gpui_form` field attribute; remove the duplicate `field_suffix` entry
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:60
    |
-11 |     #[gpui_form(DemoShape.field_suffix("input").field_suffix("field"))]
-   |                                                 ^^^^^^^^^^^^
+15 |     #[gpui_form(shape = DemoShape, field_suffix = "input", field_suffix = "field")]
+   |                                                            ^^^^^^^^^^^^

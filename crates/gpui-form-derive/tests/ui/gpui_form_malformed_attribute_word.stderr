@@ -1,4 +1,4 @@
-error: `gpui_form` field attribute must be a list, for example `#[gpui_form(my::Shape)]`
+error: `gpui_form` field attribute must be a list, for example `#[gpui_form(shape = my::Shape)]`
  --> tests/ui/gpui_form_malformed_attribute_word.rs:5:5
   |
 5 |     #[gpui_form]

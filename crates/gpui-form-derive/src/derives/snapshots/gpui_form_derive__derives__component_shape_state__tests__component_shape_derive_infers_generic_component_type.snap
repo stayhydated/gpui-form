@@ -10,14 +10,9 @@ impl<T, D> ::gpui_form_runtime::shape::ComponentShape for Picker<T, D> {
     ) -> Self::State {
         <crate::state::PickerState<T, D>>::new(window, cx)
     }
-    type RequiredValuePolicy = ::gpui_form_runtime::shape::RequireValue;
+    type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
     const COMPONENT_TYPE: Option<&'static str> = Some(
         concat!(module_path!(), "::", stringify!(Picker < _, _ >)),
     );
 }
-impl<
-    T,
-    D,
-    __GpuiFormShapeValue,
-> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for Picker<T, D> {}

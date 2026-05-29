@@ -1,4 +1,4 @@
-error[E0599]: the method `into_original` exists for struct `__DemoFormValueHolderStorage<RequireValue>`, but its trait bounds were not satisfied
+error[E0599]: the method `into_original` exists for struct `__DemoFormValueHolderStorage<RequiredValueStorage>`, but its trait bounds were not satisfied
   --> tests/ui/gpui_form_required_shape_into_original.rs:39:20
    |
 31 | #[derive(GpuiForm)]
@@ -9,13 +9,13 @@ error[E0599]: the method `into_original` exists for struct `__DemoFormValueHolde
    |
   ::: $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
    |
-   | pub struct RequireValue;
-   | ----------------------- doesn't satisfy `_: ValueHolderInfallibleStorage<NonDefault>`
+   | pub struct RequiredValueStorage;
+   | ------------------------------- doesn't satisfy `_: InfallibleValueStorage<NonDefault>`
    |
-note: trait bound `RequireValue: ValueHolderInfallibleStorage<NonDefault>` was not satisfied
+note: trait bound `RequiredValueStorage: InfallibleValueStorage<NonDefault>` was not satisfied
   --> tests/ui/gpui_form_required_shape_into_original.rs:31:10
    |
 31 | #[derive(GpuiForm)]
-   |          ^^^^^^^^ unsatisfied bound `RequireValue: ValueHolderInfallibleStorage<NonDefault>` introduced here
+   |          ^^^^^^^^ unsatisfied bound `RequiredValueStorage: InfallibleValueStorage<NonDefault>` introduced here
    = help: consider manually implementing the trait to avoid undesired bounds
    = note: this error originates in the derive macro `GpuiForm` (in Nightly builds, run with -Z macro-backtrace for more info)

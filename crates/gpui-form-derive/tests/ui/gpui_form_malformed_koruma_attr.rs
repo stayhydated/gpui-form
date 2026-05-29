@@ -5,7 +5,7 @@ struct InputState;
 
 impl gpui_form_runtime::shape::ComponentShape for InputShape {
     type State = InputState;
-    type RequiredValuePolicy = gpui_form_runtime::shape::AllowMissingValue;
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
     type ValueBindingPolicy = gpui_form_runtime::shape::NoComponentValueBinding;
 
     fn new(
@@ -21,7 +21,7 @@ impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
 #[derive(GpuiForm)]
 #[gpui_form(koruma)]
 struct Demo {
-    #[gpui_form(crate::InputShape)]
+    #[gpui_form(shape = crate::InputShape)]
     #[koruma]
     name: String,
 }
