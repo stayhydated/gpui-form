@@ -72,15 +72,19 @@ must be a non-empty ASCII identifier suffix.
 Common field attributes:
 
 ```rust
-#[gpui_form(default = <expr>)]
+#[gpui_form(<shape>)]
+#[gpui_form(hidden)]
+#[gpui_form(<shape>, default = <expr>)]
+#[gpui_form(hidden, default = <expr>)]
 #[gpui_form(skip)]
 #[gpui_form(type = <form_type>)]
 #[gpui_form(from = <expr>)]
 #[gpui_form(into = <expr>)]
 ```
 
-`skip` cannot be combined with component, default, type, from, or into options
-on the same field.
+Every field must choose exactly one intent: component, `hidden`, or `skip`.
+Use `hidden` for value-holder-only fields. `skip` cannot be combined with
+component, hidden, default, type, from, or into options on the same field.
 
 Common struct attributes:
 
@@ -127,9 +131,9 @@ Common struct attributes:
 - Treat the component expression and chained generic metadata methods as derive
   metadata; runtime construction still uses `ComponentShape::new`.
 - Component shapes own the default required-value policy for non-optional
-  fields. Put `requires_value = false` on the reusable shape definition when it
+  fields. Put `value_storage = direct` on the reusable shape definition when it
   can synthesize missing values; field attributes do not accept
-  `.requires_value(...)`. Required shape-backed values are reported by
+  `.value_storage(...)`. Required shape-backed values are reported by
   generated `validate()` and by fallible holder-to-model conversion, while
   value-synthesizing policies expose `holder.into_original()`.
 
@@ -225,7 +229,7 @@ use gpui_form_derive::ComponentShape;
 #[derive(ComponentShape)]
 #[gpui_form_shape(
     state = TagsInputState,
-    requires_value = false,
+    value_storage = direct,
     field_suffix = "input"
 )]
 pub struct TagsInput {
@@ -255,20 +259,21 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
-        requires_value = false;
+        value_storage = direct;
     }
 }
 ```
 
 `gpui_form_derive::component_shape!` uses semicolons between options.
-Use `requires_value = false` when the reusable shape can synthesize a
+Use `value_storage = direct` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; add `value_binding;` when the
 wrapper should publish shape-level value-binding metadata. `component = ...`
 must be a path-like type, and `field_suffix = "..."` must be a non-empty ASCII
 identifier suffix. Omit `value_binding;` to leave that metadata disabled.
 
-Manual `ComponentShape` impls must provide both `RequiredValuePolicy` and
+Manual `ComponentShape` impls must provide `ComponentShapeFor<Value>` impls for
+the supported form-side value types plus both `RequiredValuePolicy` and
 `ValueBindingPolicy`. Use `NoComponentValueBinding` by default, or
 `InheritedComponentValueBinding` when the shape should inherit reusable
 `ComponentValueBinding<T>` impls.

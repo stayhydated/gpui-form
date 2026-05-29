@@ -17,7 +17,7 @@ gpui_form_derive::component_shape! {
         new = |window, cx| InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "input";
         value_binding;
 

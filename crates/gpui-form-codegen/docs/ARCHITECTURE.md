@@ -35,7 +35,8 @@ crate.
 
 Important parse-time responsibilities:
 
-- expression syntax uses a shape path plus optional generic component metadata
+- field shape syntax reaches this crate as a parsed shape path plus optional
+  generic component metadata calls
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved to the field's form-side type, including any
@@ -45,6 +46,8 @@ Important parse-time responsibilities:
 - component metadata method names are parsed into a small typed enum before
   argument validation, so diagnostics and duplicate checks share one supported
   method list
+- generated type checks assert `ComponentShapeFor<Value>` so shape crates own
+  component-specific value compatibility diagnostics
 - non-optional shape-backed fields inherit the shape's required-value policy by
   default
 - shape-level `ValueBindingPolicy` records whether generated prototyping code
@@ -52,9 +55,10 @@ Important parse-time responsibilities:
 - `field_suffix("...")` records a field-level prototyping name override and
   must be a non-empty identifier suffix
 
-Component-specific settings belong inside the shape's `ComponentShape::new`
-implementation or in a dedicated wrapper shape. This crate does not know about
-selects, inputs, date pickers, or any other component family.
+Component-specific settings and value compatibility rules belong inside the
+shape's `ComponentShape::new` implementation, `ComponentShapeFor<Value>` impls,
+or a dedicated wrapper shape. This crate does not know about selects, inputs,
+date pickers, or any other component family.
 
 ## Component Layout Emission
 
@@ -87,11 +91,10 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- shape-only field metadata
-  (`FieldVariant::new(field_name, RustType::new_unchecked(value_type), optional)`)
-- the resolved component shape path
+- explicit component field metadata via `FieldVariant::component(...)`
+- the field value-presence policy as `FieldValuePresence`
+- the resolved component shape path in `FieldComponentVariant`
 - the optional render component type
-- the required-value holder policy
 - the value-binding flag
 - the resolved component field suffix used by generated form fields
 

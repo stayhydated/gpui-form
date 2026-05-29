@@ -16,6 +16,8 @@ impl gpui_form_runtime::shape::ComponentShape for InputShape {
     }
 }
 
+impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
+
 #[derive(GpuiForm)]
 #[gpui_form(koruma)]
 struct Demo {

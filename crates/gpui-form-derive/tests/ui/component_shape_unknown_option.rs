@@ -9,4 +9,18 @@ component_shape! {
     }
 }
 
+component_shape! {
+    struct OldRequiresValueShape {
+        type State = State;
+        requires_value = false;
+    }
+}
+
+component_shape! {
+    struct InvalidValueStorageShape {
+        type State = State;
+        value_storage = synthesize;
+    }
+}
+
 fn main() {}

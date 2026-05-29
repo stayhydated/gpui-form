@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use syn::{DeriveInput, Type};
 
 use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
-use crate::derives::gpui_form::structs::{ComponentField, FieldOptionality};
-use crate::derives::gpui_form::utils::extract_option_inner_type;
+use crate::derives::gpui_form::structs::{AnalyzedField, ComponentField};
 
 #[derive(Clone, Debug)]
 enum FieldStorage {
@@ -16,7 +15,7 @@ enum FieldStorage {
     ShapePolicy(syn::Path),
 }
 
-fn field_storage(field: &FieldOptionality) -> FieldStorage {
+fn field_storage(field: &AnalyzedField) -> FieldStorage {
     if field.was_optional {
         FieldStorage::OriginallyOptional
     } else {
@@ -28,15 +27,11 @@ fn field_storage(field: &FieldOptionality) -> FieldStorage {
     }
 }
 
-fn form_base_type(field: &FieldOptionality) -> Type {
-    if let Some(override_type) = &field.override_type {
-        extract_option_inner_type(override_type).1
-    } else {
-        field.inner_type.clone()
-    }
+fn form_base_type(field: &AnalyzedField) -> Type {
+    field.form_type.clone()
 }
 
-fn shape_policy_ident(field: &FieldOptionality) -> syn::Ident {
+fn shape_policy_ident(field: &AnalyzedField) -> syn::Ident {
     let field_name = field.field_name.to_string();
     let field_name = field_name.strip_prefix("r#").unwrap_or(&field_name);
     let mut pascal = String::new();
@@ -54,7 +49,7 @@ fn shape_policy_ident(field: &FieldOptionality) -> syn::Ident {
     format_ident!("__GpuiForm{pascal}RequiredValuePolicy")
 }
 
-fn shape_policy_storage_type_tokens(field: &FieldOptionality, base_type: &Type) -> TokenStream {
+fn shape_policy_storage_type_tokens(field: &AnalyzedField, base_type: &Type) -> TokenStream {
     let policy = shape_policy_ident(field);
     let runtime_crate = runtime_crate_path();
     quote! {
@@ -71,7 +66,7 @@ fn runtime_crate_path() -> syn::Path {
     crate_paths.gpui_form_facade_runtime()
 }
 
-fn form_field_type_tokens(field: &FieldOptionality) -> TokenStream {
+fn form_field_type_tokens(field: &AnalyzedField) -> TokenStream {
     let base_type = form_base_type(field);
     match field_storage(field) {
         FieldStorage::OriginallyOptional | FieldStorage::RequiredValue => {
@@ -82,7 +77,7 @@ fn form_field_type_tokens(field: &FieldOptionality) -> TokenStream {
     }
 }
 
-fn apply_from_conversion(field: &FieldOptionality, value: TokenStream) -> TokenStream {
+fn apply_from_conversion(field: &AnalyzedField, value: TokenStream) -> TokenStream {
     if let Some(expr) = &field.from_expr {
         quote! { (#expr)(#value) }
     } else if field.override_type.is_some() {
@@ -92,7 +87,7 @@ fn apply_from_conversion(field: &FieldOptionality, value: TokenStream) -> TokenS
     }
 }
 
-fn apply_into_conversion(field: &FieldOptionality, value: TokenStream) -> TokenStream {
+fn apply_into_conversion(field: &AnalyzedField, value: TokenStream) -> TokenStream {
     if let Some(expr) = &field.into_expr {
         quote! { (#expr)(#value) }
     } else if field.override_type.is_some() {
@@ -102,15 +97,15 @@ fn apply_into_conversion(field: &FieldOptionality, value: TokenStream) -> TokenS
     }
 }
 
-fn needs_from_conversion(field: &FieldOptionality) -> bool {
+fn needs_from_conversion(field: &AnalyzedField) -> bool {
     field.from_expr.is_some() || field.override_type.is_some()
 }
 
-fn needs_into_conversion(field: &FieldOptionality) -> bool {
+fn needs_into_conversion(field: &AnalyzedField) -> bool {
     field.into_expr.is_some() || field.override_type.is_some()
 }
 
-fn field_conversion_can_fail(field: &FieldOptionality) -> bool {
+fn field_conversion_can_fail(field: &AnalyzedField) -> bool {
     if field.default_expr.is_some() {
         return false;
     }
@@ -121,26 +116,26 @@ fn field_conversion_can_fail(field: &FieldOptionality) -> bool {
     )
 }
 
-pub(super) fn holder_conversion_can_fail(fields: &[FieldOptionality]) -> bool {
+pub(super) fn holder_conversion_can_fail(fields: &[AnalyzedField]) -> bool {
     fields
         .iter()
         .filter(|field| !field.skip)
         .any(field_conversion_can_fail)
 }
 
-fn field_conversion_requires_try_path(field: &FieldOptionality) -> bool {
+fn field_conversion_requires_try_path(field: &AnalyzedField) -> bool {
     field_conversion_can_fail(field)
         && !matches!(field_storage(field), FieldStorage::ShapePolicy(_))
 }
 
-fn holder_conversion_has_hard_fallible_field(fields: &[FieldOptionality]) -> bool {
+fn holder_conversion_has_hard_fallible_field(fields: &[AnalyzedField]) -> bool {
     fields
         .iter()
         .filter(|field| !field.skip)
         .any(field_conversion_requires_try_path)
 }
 
-fn holder_conversion_can_fail_tokens(fields: &[FieldOptionality]) -> TokenStream {
+fn holder_conversion_can_fail_tokens(fields: &[AnalyzedField]) -> TokenStream {
     let mut predicates = Vec::new();
     let runtime_crate = runtime_crate_path();
 
@@ -166,14 +161,12 @@ fn holder_conversion_can_fail_tokens(fields: &[FieldOptionality]) -> TokenStream
     }
 }
 
-pub(super) fn holder_conversion_can_fail_metadata_tokens(
-    fields: &[FieldOptionality],
-) -> TokenStream {
+pub(super) fn holder_conversion_can_fail_metadata_tokens(fields: &[AnalyzedField]) -> TokenStream {
     holder_conversion_can_fail_tokens(fields)
 }
 
 fn try_from_field_tokens(
-    field: &FieldOptionality,
+    field: &AnalyzedField,
     source: TokenStream,
     error_type: &syn::Ident,
 ) -> TokenStream {
@@ -283,7 +276,7 @@ fn default_expr_for_original(expr: &syn::Expr) -> TokenStream {
 }
 
 fn generate_default_impl(
-    fields: &[FieldOptionality],
+    fields: &[AnalyzedField],
     struct_name: &syn::Ident,
     impl_generics: TokenStream,
     ty_generics: TokenStream,
@@ -360,7 +353,7 @@ fn generate_default_impl(
 
 fn add_field_trait_bounds(
     mut where_clause: Option<syn::WhereClause>,
-    fields: &[FieldOptionality],
+    fields: &[AnalyzedField],
     trait_path: syn::Path,
 ) -> Option<syn::WhereClause> {
     for field in fields {
@@ -378,7 +371,7 @@ fn add_field_trait_bounds(
 }
 
 fn generate_clone_impl(
-    fields: &[FieldOptionality],
+    fields: &[AnalyzedField],
     struct_name: &syn::Ident,
     impl_generics: TokenStream,
     ty_generics: TokenStream,
@@ -412,7 +405,7 @@ fn generate_clone_impl(
 }
 
 fn generate_debug_impl(
-    fields: &[FieldOptionality],
+    fields: &[AnalyzedField],
     struct_name: &syn::Ident,
     impl_generics: TokenStream,
     ty_generics: TokenStream,
@@ -444,7 +437,7 @@ fn generate_debug_impl(
     }
 }
 
-fn generate_to_wrapped_field(field: &FieldOptionality) -> TokenStream {
+fn generate_to_wrapped_field(field: &AnalyzedField) -> TokenStream {
     let field_name = &field.field_name;
 
     match field_storage(field) {
@@ -543,7 +536,7 @@ fn generate_to_wrapped_field(field: &FieldOptionality) -> TokenStream {
     }
 }
 
-fn generate_from_wrapped_field(field: &FieldOptionality) -> TokenStream {
+fn generate_from_wrapped_field(field: &AnalyzedField) -> TokenStream {
     let field_name = &field.field_name;
 
     match field_storage(field) {
@@ -623,7 +616,7 @@ fn generate_from_wrapped_field(field: &FieldOptionality) -> TokenStream {
     }
 }
 
-fn generate_infallible_from_wrapped_field(field: &FieldOptionality) -> TokenStream {
+fn generate_infallible_from_wrapped_field(field: &AnalyzedField) -> TokenStream {
     let field_name = &field.field_name;
 
     match field_storage(field) {
@@ -644,7 +637,7 @@ fn generate_infallible_from_wrapped_field(field: &FieldOptionality) -> TokenStre
     }
 }
 
-fn generate_present_fields_json_entry(field: &FieldOptionality) -> TokenStream {
+fn generate_present_fields_json_entry(field: &AnalyzedField) -> TokenStream {
     let field_name = &field.field_name;
     let field_name_str = field_name.to_string();
 
@@ -893,7 +886,7 @@ fn required_value_policy_validator_tokens(
 }
 
 fn required_validation_builder_tokens(
-    field: &FieldOptionality,
+    field: &AnalyzedField,
     validator_ident: &syn::Ident,
     target_ident: &syn::Ident,
 ) -> Option<TokenStream> {
@@ -930,7 +923,7 @@ pub fn parse_field_default(field: &ComponentField) -> Option<syn::Expr> {
 /// Generates the FormValueHolder struct and its implementations.
 pub fn generate_value_holder(
     original_input: &DeriveInput,
-    fields: &[FieldOptionality],
+    fields: &[AnalyzedField],
     enable_koruma: bool,
     enable_koruma_fluent: bool,
 ) -> (TokenStream, Vec<String>) {

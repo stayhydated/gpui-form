@@ -1,5 +1,7 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{AllowMissingValue, ComponentShape, NoComponentValueBinding};
+use gpui_form_runtime::shape::{
+    AllowMissingValue, ComponentShape, ComponentShapeFor, NoComponentValueBinding,
+};
 
 #[derive(Clone, Debug)]
 struct NonDefault(String);
@@ -23,6 +25,8 @@ impl ComponentShape for DirectStorageShape {
         State::new(window, cx)
     }
 }
+
+impl<T> ComponentShapeFor<T> for DirectStorageShape {}
 
 #[derive(GpuiForm)]
 struct Demo {

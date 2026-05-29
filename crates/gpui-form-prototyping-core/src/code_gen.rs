@@ -78,6 +78,11 @@ impl<'a> FormShapeAdapter<'a> {
             }
         })?;
 
+        for field in data.components {
+            parse_ident("field name", field.field_name())?;
+            let _ = ResolvedField::new(field)?;
+        }
+
         Ok(())
     }
 
@@ -85,6 +90,7 @@ impl<'a> FormShapeAdapter<'a> {
         self.shape_data
             .components
             .iter()
+            .filter(|field| field.is_component())
             .map(|field| {
                 parse_ident("field name", field.field_name())?;
                 parse_ident("field pascal ident", &field.field_name_pascal())?;
@@ -125,7 +131,12 @@ impl<'a> FormShapeAdapter<'a> {
     pub fn required_imports(&self) -> ImportSet {
         let mut set = ImportSet::default();
         set.extend_items(FRAGMENT_IMPORTS);
-        if !self.shape_data.components.is_empty() {
+        if self
+            .shape_data
+            .components
+            .iter()
+            .any(|field| field.is_component())
+        {
             set.extend_items(FIELD_FRAGMENT_IMPORTS);
         }
         if self.shape_data.has_validations() {
@@ -139,7 +150,12 @@ impl<'a> FormShapeAdapter<'a> {
         {
             set.extend_items(SUBSCRIPTION_IMPORTS);
         }
-        for field in self.shape_data.components {
+        for field in self
+            .shape_data
+            .components
+            .iter()
+            .filter(|field| field.is_component())
+        {
             let generator = field_generator();
             set.extend(generator.generate_imports(field));
         }
@@ -301,7 +317,7 @@ impl<'a> FormShapeAdapter<'a> {
 
         let mut collected_imports = ImportSet::default();
         collected_imports.extend_items(FRAGMENT_IMPORTS);
-        if !data.components.is_empty() {
+        if !generated_fields.is_empty() {
             collected_imports.extend_items(FIELD_FRAGMENT_IMPORTS);
         }
         if data.has_validations() {
@@ -498,7 +514,7 @@ fn source_path_to_use_path(source_path: &str) -> Option<syn::Path> {
 mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
-    use gpui_form_schema::registry::{FieldVariant, GpuiFormShape, RustType};
+    use gpui_form_schema::registry::{FieldValuePresence, FieldVariant, GpuiFormShape, RustType};
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -523,10 +539,10 @@ mod tests {
 
     #[test]
     fn parts_return_error_for_invalid_field_type_metadata() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "country",
             RustType::new_unchecked("Vec<"),
-            false,
+            FieldValuePresence::RequiresValue,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
@@ -551,10 +567,10 @@ mod tests {
 
     #[test]
     fn required_imports_only_include_subscription_when_needed() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "enabled",
             RustType::new_unchecked("bool"),
-            false,
+            FieldValuePresence::RequiresValue,
         )];
         const SHAPE: GpuiFormShape =
             GpuiFormShape::new("Demo", &FIELDS, "examples/some-lib/src/demo.rs", false);
@@ -572,11 +588,11 @@ mod tests {
 
     #[test]
     fn parts_use_inventory_conversion_fallibility_metadata() {
-        const REQUIRED_FIELDS: [FieldVariant; 1] =
-            [
-                FieldVariant::new("name", RustType::new_unchecked("String"), false)
-                    .with_requires_value(false),
-            ];
+        const REQUIRED_FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
+            "name",
+            RustType::new_unchecked("String"),
+            FieldValuePresence::DirectStorage,
+        )];
         const INFALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &REQUIRED_FIELDS,
@@ -589,10 +605,10 @@ mod tests {
             .expect("valid infallible shape metadata should generate parts");
         assert!(!parts.holder_conversion_can_fail);
 
-        const OPTIONAL_FIELDS: [FieldVariant; 1] = [FieldVariant::new(
+        const OPTIONAL_FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
             "name",
             RustType::new_unchecked("String"),
-            true,
+            FieldValuePresence::Optional,
         )];
         const FALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",

@@ -14,6 +14,12 @@ impl strum::IntoEnumIterator for Role {
     }
 }
 
+impl Default for Role {
+    fn default() -> Self {
+        Self::User
+    }
+}
+
 impl gpui_component::select::SelectItem for Role {
     type Value = Self;
 
@@ -32,8 +38,8 @@ impl gpui_component::select::SelectItem for Role {
 
 #[derive(GpuiForm)]
 struct RolesForm {
-    #[gpui_form(gpui_form_collection::combobox::Combobox::<_>)]
-    roles: Vec<Role>,
+    #[gpui_form(gpui_form_collection::combobox::Combobox::<Role>)]
+    role: Role,
 }
 
 fn main() {}

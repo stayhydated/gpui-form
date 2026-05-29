@@ -125,7 +125,7 @@ component as a custom shape contract and does not inspect the shape path for
 built-in component categories.
 Single-segment local shape identifiers should be UpperCamel, such as
 `EmailInputShape`; lowercase bare words are reserved for field options, and the
-only supported bare option is `skip`. Use a qualified path such as
+supported bare options are `hidden` and `skip`. Use a qualified path such as
 `my::Shape` when the shape is not a local single-segment type.
 
 Component shapes own the default required-value policy for non-optional fields.
@@ -137,18 +137,26 @@ conversion back to the source model fails when the value is missing. Those
 fallible holder-to-model paths expose `holder.try_into_original()`; infallible
 paths expose `holder.into_original()` and implement `From` when the derive can
 prove infallibility directly. Define this behavior on the reusable component
-shape with `requires_value = false`. Required shape-backed fields without a
+shape with `value_storage = direct`. Required shape-backed fields without a
 declared field default keep only `try_into_original()` so missing values cannot
 be hidden behind a panic-capable infallible API.
 
 Common field-level helpers:
 
-- `#[gpui_form(default = <expr>)]` seeds the generated value holder.
+- Every field must choose exactly one intent: a component shape expression,
+  `hidden`, or `skip`.
+- `#[gpui_form(hidden)]` keeps a field in the generated value holder without
+  generating a GPUI component.
+- `#[gpui_form(hidden, default = <expr>)]` seeds a hidden generated value holder
+  field.
+- `#[gpui_form(<shape>, default = <expr>)]` seeds a component-backed generated
+  value holder field.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
   allowing prefill from the original model. It cannot be combined with
-  component, default, or conversion options on the same field.
+  component, hidden, default, or conversion options on the same field.
 - `#[gpui_form(type = <form_type>, from = <expr>, into = <expr>)]` lets the
-  generated form edit a type that differs from the original field type.
+  generated form edit a type that differs from the original field type; combine
+  it with either a component shape or `hidden`.
 - `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
   value types with `FromStr` in prototyping output, so value objects can use
   `type`, `from`, and `into` while the source model keeps its storage type.
@@ -300,7 +308,7 @@ The `_` generic is resolved to the field's form-side type, including any
 `#[gpui_form(type = ...)]` override. `Combobox<T>` is the exception: its
 generic is the selected item type, so a `Vec<Country>` field uses
 `Combobox::<Country>`. The collection combobox publishes
-`requires_value = false`: an empty selection is emitted as
+`value_storage = direct`: an empty selection is emitted as
 `FormValueChange::Clear`, so optional fields clear to `None` and
 non-optional `Vec<T>` fields reset to their declared
 `#[gpui_form(default = ...)]` when present, otherwise `Vec::default()`.
@@ -353,7 +361,7 @@ pub struct ContactForm {
 `component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
-It uses `new`, `component`, `requires_value`, `value_binding`, and
+It uses `new`, `component`, `value_storage = require_value|direct`, `value_binding`, and
 `field_suffix` metadata, plus `type State = ...` for the wrapped external
 state type. If `new` is omitted, the macro calls `<State>::new(window, cx)`.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
@@ -371,7 +379,8 @@ crates that use `#[derive(ComponentShape)]`, `component_shape!`,
 `component_value_binding`, or manual runtime trait implementations; those
 macros emit direct runtime paths and resolve renamed runtime dependencies.
 If you implement `ComponentShape` manually instead of using the derive or
-`component_shape!`, set both policy associated types:
+`component_shape!`, also implement `ComponentShapeFor<Value>` for each
+form-side value type the shape supports, and set both policy associated types:
 `RequiredValuePolicy` controls value-holder storage, and `ValueBindingPolicy`
 is usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.

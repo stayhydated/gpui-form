@@ -48,11 +48,13 @@ that crate's `derive` feature is enabled.
 1. Flatten `cfg_attr` wrappers so downstream parsing sees effective
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
-   Field-level component shapes are written as positional expressions such as
-   `#[gpui_form(my::Shape)]`; the parser rejects duplicate component
-   expressions before codegen. Component metadata is validated at the macro
-   boundary: `component = ...` must be path-like and `field_suffix = "..."`
-   must be a non-empty identifier suffix.
+   Field-level component shapes are parsed into a typed shape path plus
+   metadata calls such as `#[gpui_form(my::Shape.field_suffix("input"))]`;
+   arbitrary Rust expressions are only parsed for `default`, `from`, and
+   `into`. The parser rejects duplicate component expressions before codegen.
+   Component metadata is validated at the macro boundary: `component = ...`
+   must be path-like and `field_suffix = "..."` must be a non-empty identifier
+   suffix.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`.
@@ -81,8 +83,17 @@ Important behaviors:
   into the holder
 - reverse conversion becomes explicit `into_original(...)` when skipped fields
   prevent a fully automatic round trip
-- skipped fields are normalized as skipped intent and reject component,
-  default, and conversion metadata during field parsing
+- every field is normalized as component, hidden, or skipped intent during
+  parsing; missing intent is a compile error so a field cannot silently become
+  value-holder-only
+- hidden fields are explicit value-holder-only fields and may use default and
+  conversion metadata
+- skipped fields reject component, hidden, default, and conversion metadata
+  during field parsing
+- expansion builds one `AnalyzedField` list after component field generation;
+  inventory metadata, value-holder generation, type checks, validation wiring,
+  defaults, conversions, and shape requiredness all read from that list instead
+  of recomputing field type facts independently
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
   missing without a default; `From` is reserved for holders the derive can prove
   infallible directly
@@ -146,13 +157,15 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `requires_value`, `value_binding`, and
-  `field_suffix` metadata keys
+- accepts `new`, `component`, `value_storage = require_value|direct`,
+  `value_binding`, and `field_suffix` metadata keys
 - uses semicolon separators between metadata entries
 - accepts nested `impl` items and emits them after the generated
   `ComponentShape` impl
 - sets shape-level `ValueBindingPolicy` only when `value_binding;` is present
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
+- emits a broad `ComponentShapeFor<Value>` impl unless the block contains an
+  explicit `ComponentShapeFor` impl
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_runtime::shape` by default

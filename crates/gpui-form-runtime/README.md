@@ -26,6 +26,10 @@ generated value holders inherit whether a non-optional field should use direct
 visible to generated `validate()` and fallible holder-to-model conversion.
 `ValueHolderInfallibleStorage<T>` marks policies, currently `AllowMissingValue`,
 whose storage representation always contains a value.
+Generated forms also assert `ComponentShapeFor<T>` for the form-side value
+type; derive and `component_shape!` shapes implement this broadly by default,
+while manual or constrained shapes should implement it only for supported
+values.
 Manual implementations also publish a `ValueBindingPolicy`: use
 `NoComponentValueBinding` by default, or `InheritedComponentValueBinding` when
 fields should inherit shape-level `ComponentValueBinding<T>` synchronization.
@@ -39,7 +43,7 @@ use gpui_form_derive::ComponentShape;
 #[derive(ComponentShape)]
 #[gpui_form_shape(
     state = EmailInputState,
-    requires_value = false,
+    value_storage = direct,
     field_suffix = "input"
 )]
 pub struct EmailInput {
@@ -54,7 +58,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "input";
     }
 }

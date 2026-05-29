@@ -248,7 +248,9 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma(fluent))]
             struct OptionalOnlyForm {
+                #[gpui_form(hidden)]
                 note: Option<String>,
+                #[gpui_form(hidden)]
                 kind: Option<u8>,
             }
         };
@@ -375,7 +377,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "with_requires_value(<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
+                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
             "FieldVariant should inherit required-value policy from the shape: {compact}"
         );
@@ -434,7 +436,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"birth_date\",::gpui_form::schema::registry::RustType::new_unchecked(\"chrono::NaiveDate\"),true"
+                "FieldVariant::component(\"birth_date\",::gpui_form::schema::registry::RustType::new_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::FieldValuePresence::Optional"
             ),
             "FieldVariant should use override type for metadata"
         );
@@ -489,7 +491,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),false"
+                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -501,7 +503,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::NumericShape<rust_decimal::Decimal>\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::NumericShape<rust_decimal::Decimal>\"))"
             ),
             "Component shape metadata should preserve the fully-qualified override type"
         );
@@ -703,7 +705,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),false)"
+                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::shapes::BioInputShapeas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy"
             ),
             "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
@@ -714,7 +716,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::shapes::BioInputShape\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::shapes::BioInputShape\"))"
             ),
             "FieldVariant should carry the component shape path: {compact}"
         );
@@ -825,7 +827,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_requires_value(<<gpui_form_collection::switch::Switchas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
+                "if<<gpui_form_collection::switch::Switchas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
             "positional component syntax should inherit required-value metadata from the shape"
         );
@@ -947,7 +949,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::new(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),false"
+                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicy"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );
@@ -959,7 +961,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_requires_value(<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE)"
+                "if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::RequiredValuePolicyas::gpui_form::runtime::shape::ComponentRequiredValuePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
             "FieldVariant should inherit generated required-value policy from the shape: {compact}"
         );
@@ -970,11 +972,11 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_component_shape_rejects_field_required_value_override() {
+    fn test_component_shape_rejects_field_value_storage_override() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(gpui_form_collection::switch::Switch.requires_value(false))]
+                #[gpui_form(gpui_form_collection::switch::Switch.value_storage(direct))]
                 enabled: bool,
             }
         };
@@ -990,8 +992,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("unknowncomponentmetadata`requires_value`"),
-            "field-level requires_value override should be rejected: {compact}"
+            compact.contains("unknowncomponentmetadata`value_storage`"),
+            "field-level value_storage override should be rejected: {compact}"
         );
     }
 
@@ -1033,7 +1035,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "with_shape_path(::gpui_form::schema::registry::RustPath::new_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
             ),
             "component shape metadata should store the resolved shape path: {compact}"
         );

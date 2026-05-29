@@ -36,17 +36,18 @@ helpers and component-specific derives explicitly:
    use gpui_form_collection_derive::SelectItem;
    ```
 
-4. Add `GpuiForm` to a normal Rust struct and annotate each visible field with
-   a component.
+4. Add `GpuiForm` to a normal Rust struct and give every field one explicit
+   intent: component, `hidden`, or `skip`.
 5. Use generated types named from the source struct, such as
    `UserProfileFormFields`, `UserProfileFormComponents`, and
    `UserProfileFormValueHolder`.
 6. Put the component shape directly in `#[gpui_form(...)]`, use
-   `#[gpui_form(default = ...)]` for initial form values,
+   `#[gpui_form(hidden)]` for value-holder-only fields,
+   `#[gpui_form(default = ...)]` with either a component or `hidden` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
    `#[gpui_form(Shape, type = ..., from = ..., into = ...)]` when the
    UI edits a form-side type that differs from the model field. Do not combine
-   `skip` with component, default, type, from, or into options on the same
+   `skip` with component, hidden, default, type, from, or into options on the same
    field. Text input prototyping parses non-`String` form-side types with
    `FromStr`.
 7. Use paths such as `gpui_form_component::date_picker`,

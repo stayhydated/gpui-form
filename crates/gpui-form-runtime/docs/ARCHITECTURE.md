@@ -11,9 +11,9 @@ generated `#[derive(GpuiForm)]` output references after macro expansion.
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/shape.rs`: `ComponentShape`, required-value and value-binding policy
-  markers, value-holder storage helpers, value-binding contracts, and
-  generated-code helper aliases/functions
+- `src/shape.rs`: `ComponentShape`, `ComponentShapeFor`, required-value and
+  value-binding policy markers, value-holder storage helpers, value-binding
+  contracts, and generated-code helper aliases/functions
 
 ## Boundaries
 
@@ -28,6 +28,12 @@ rather than const generics. This keeps generic shape paths such as
 `Input<T>` type-checkable. Schema and prototyping metadata read the sealed
 policy associated types directly so hand-written shapes cannot make const
 metadata disagree with their storage or binding policy.
+
+Generated field type compatibility checks dispatch through
+`ComponentShapeFor<Value>`. Shape macros emit broad implementations by default;
+curated component shapes can provide narrower implementations so their own
+traits and `#[diagnostic::on_unimplemented]` notes describe unsupported field
+value types.
 
 Generated validation asks `ValueHolderStorage::is_present` whether a
 policy-owned holder field currently contains a value. `RequireValue` reports

@@ -1225,7 +1225,7 @@ where
     gpui_form_shape(
         state = InfiniteSelectState<T, D>,
         new = InfiniteSelectState::<T, D>::new_default,
-        requires_value = false,
+        value_storage = direct,
         field_suffix = "infinite_select",
         value_binding
     )

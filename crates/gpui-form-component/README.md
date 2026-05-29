@@ -264,7 +264,7 @@ use crate::state::{TagsState, build};
 #[gpui_form_shape(
     state = TagsState,
     new = build,
-    requires_value = false,
+    value_storage = direct,
     field_suffix = "input"
 )]
 pub struct TagsInput {
@@ -309,7 +309,7 @@ associated-type projections at every call site.
 Manual `ComponentPrototyping::field_suffix(...)` calls validate the same
 non-empty ASCII identifier suffix contract in const evaluation.
 
-Set `requires_value = false` on a reusable shape when the component can
+Set `value_storage = direct` on a reusable shape when the component can
 synthesize a missing value. Generated forms then inherit direct `T` holder
 storage from the shape; consuming field attributes do not accept a
 required-value override.

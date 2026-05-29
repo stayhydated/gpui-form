@@ -18,6 +18,8 @@ impl gpui_form_runtime::shape::ComponentShape for NumericShape {
     }
 }
 
+impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for NumericShape {}
+
 impl gpui_form_runtime::shape::ComponentShape for InputShape {
     type State = InputState;
     type RequiredValuePolicy = gpui_form_runtime::shape::AllowMissingValue;
@@ -30,6 +32,8 @@ impl gpui_form_runtime::shape::ComponentShape for InputShape {
         InputState
     }
 }
+
+impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
 
 #[derive(GpuiForm, koruma::Koruma)]
 #[gpui_form(koruma)]

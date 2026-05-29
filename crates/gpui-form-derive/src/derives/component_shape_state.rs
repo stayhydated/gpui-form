@@ -26,10 +26,10 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
                 let value = meta.value()?;
                 let component = value.parse()?;
                 shape.set_component(component, &meta.path)
-            } else if meta.path.is_ident("requires_value") {
+            } else if meta.path.is_ident("value_storage") {
                 let value = meta.value()?;
-                let requires_value = value.parse()?;
-                shape.set_requires_value(requires_value, &meta.path)
+                let value_storage = value.parse()?;
+                shape.set_value_storage(value_storage, &meta.path)
             } else if meta.path.is_ident("field_suffix") {
                 let value = meta.value()?;
                 let field_suffix = value.parse()?;
@@ -61,6 +61,11 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let constructor_body = meta.constructor_body_or(default_constructor);
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let mut shape_for_generics = input.generics.clone();
+    shape_for_generics
+        .params
+        .push(syn::parse_quote!(__GpuiFormShapeValue));
+    let (shape_for_impl_generics, _, shape_for_where_clause) = shape_for_generics.split_for_impl();
     let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
     let gpui_crate = CratePaths::resolve().gpui;
     let inferred_component_type = if input.generics.params.is_empty() {
@@ -144,6 +149,12 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
         }
 
         #binding_impl
+
+        impl #shape_for_impl_generics #runtime_crate::shape::ComponentShapeFor<__GpuiFormShapeValue>
+            for #ident #ty_generics
+            #shape_for_where_clause
+        {
+        }
     })
 }
 
@@ -278,7 +289,7 @@ mod tests {
     fn test_component_shape_with_required_value_policy() {
         let input: DeriveInput = syn::parse2(quote! {
             #[derive(ComponentShape)]
-            #[gpui_form_shape(state = crate::state::SwitchState, requires_value = false)]
+            #[gpui_form_shape(state = crate::state::SwitchState, value_storage = direct)]
             struct SwitchInput;
         })
         .unwrap();
@@ -286,6 +297,24 @@ mod tests {
         let expanded = expand(input).unwrap();
 
         insta::assert_snapshot!(pretty_tokens(expanded));
+    }
+
+    #[test]
+    fn test_component_shape_with_explicit_require_value_storage() {
+        let input: DeriveInput = syn::parse2(quote! {
+            #[derive(ComponentShape)]
+            #[gpui_form_shape(state = crate::state::InputState, value_storage = require_value)]
+            struct RequiredInput;
+        })
+        .unwrap();
+
+        let expanded = expand(input).unwrap();
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue;"),
+            "explicit require_value storage should emit RequireValue policy: {compact}"
+        );
     }
 
     #[test]

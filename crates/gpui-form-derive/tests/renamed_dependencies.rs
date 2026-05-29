@@ -38,7 +38,7 @@ gpui-form = {{ path = "{gpui_form}", default-features = false, features = ["deri
         src_dir.join("lib.rs"),
         r#"
 use gpui_form::runtime::shape::{
-    ComponentShape, NoComponentValueBinding, RequireValue,
+    ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequireValue,
 };
 
 struct State;
@@ -59,6 +59,8 @@ impl ComponentShape for RenamedRuntimeShape {
         State::new(window, cx)
     }
 }
+
+impl<T> ComponentShapeFor<T> for RenamedRuntimeShape {}
 
 #[derive(gpui_form::GpuiForm)]
 pub struct Demo {
@@ -171,7 +173,7 @@ gpui_form_derive::component_shape! {
     pub struct MacroShape {
         type State = MacroState;
         component = MacroComponent;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "macro";
         value_binding;
 

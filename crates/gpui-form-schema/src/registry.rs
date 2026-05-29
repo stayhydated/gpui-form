@@ -67,10 +67,13 @@ fn rust_syntax_error(kind: RustSyntaxKind, value: &str, error: syn::Error) -> Ru
 }
 
 impl RustType {
+    pub fn parse(self) -> Result<syn::Type, RustSyntaxError> {
+        syn::parse_str::<syn::Type>(self.0)
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Type, self.0, error))
+    }
+
     pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        syn::parse_str::<syn::Type>(value)
-            .map(|_| Self(value))
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Type, value, error))
+        Self(value).parse().map(|_| Self(value))
     }
 
     pub fn new_opt(value: Option<&'static str>) -> Result<Option<Self>, RustSyntaxError> {
@@ -107,10 +110,13 @@ impl RustType {
 pub struct RustPath(&'static str);
 
 impl RustPath {
+    pub fn parse(self) -> Result<syn::Path, RustSyntaxError> {
+        syn::parse_str::<syn::Path>(self.0)
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Path, self.0, error))
+    }
+
     pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        syn::parse_str::<syn::Path>(value)
-            .map(|_| Self(value))
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Path, value, error))
+        Self(value).parse().map(|_| Self(value))
     }
 
     /// Construct metadata without validation.
@@ -132,10 +138,13 @@ impl RustPath {
 pub struct RustExpr(&'static str);
 
 impl RustExpr {
+    pub fn parse(self) -> Result<syn::Expr, RustSyntaxError> {
+        syn::parse_str::<syn::Expr>(self.0)
+            .map_err(|error| rust_syntax_error(RustSyntaxKind::Expr, self.0, error))
+    }
+
     pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        syn::parse_str::<syn::Expr>(value)
-            .map(|_| Self(value))
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Expr, value, error))
+        Self(value).parse().map(|_| Self(value))
     }
 
     /// Construct metadata without validation.
@@ -305,27 +314,6 @@ pub enum FieldValuePresence {
 }
 
 impl FieldValuePresence {
-    pub const fn from_optional(optional: bool) -> Self {
-        if optional {
-            Self::Optional
-        } else {
-            Self::RequiresValue
-        }
-    }
-
-    pub const fn with_requires_value(self, requires_value: bool) -> Self {
-        match self {
-            Self::Optional => Self::Optional,
-            Self::RequiresValue | Self::DirectStorage => {
-                if requires_value {
-                    Self::RequiresValue
-                } else {
-                    Self::DirectStorage
-                }
-            },
-        }
-    }
-
     pub const fn optional(self) -> bool {
         matches!(self, Self::Optional)
     }
@@ -355,6 +343,34 @@ impl FieldComponentVariant {
             value_binding: false,
             prototyping_field_suffix: None,
         }
+    }
+
+    /// Attach a UI component type to this component metadata.
+    pub const fn with_component_type(mut self, component: RustType) -> Self {
+        self.component_type = Some(component);
+        self
+    }
+
+    /// Attach an optional UI component type to this component metadata.
+    ///
+    /// Used when the component type may come from the shape's
+    /// `ComponentShape::COMPONENT_TYPE` constant rather than an explicit
+    /// field attribute value.
+    pub const fn with_component_type_opt(mut self, component: Option<RustType>) -> Self {
+        self.component_type = component;
+        self
+    }
+
+    /// Marks this component shape as value-bound for generated prototyping code.
+    pub const fn with_value_binding(mut self, enabled: bool) -> Self {
+        self.value_binding = enabled;
+        self
+    }
+
+    /// Attach the component shape's preferred prototyping field suffix.
+    pub const fn with_prototyping_field_suffix(mut self, suffix: Option<ComponentSuffix>) -> Self {
+        self.prototyping_field_suffix = suffix;
+        self
     }
 
     pub const fn shape_path(&self) -> RustPath {
@@ -399,17 +415,40 @@ pub struct FieldVariant {
 }
 
 impl FieldVariant {
-    pub const fn new(field_name: &'static str, value_type: RustType, optional: bool) -> Self {
+    pub const fn hidden(
+        field_name: &'static str,
+        value_type: RustType,
+        value_presence: FieldValuePresence,
+    ) -> Self {
         Self {
             field_name,
             value_type,
             source_value_type: value_type,
-            value_presence: FieldValuePresence::from_optional(optional),
+            value_presence,
             validations: &[],
             default_expr: None,
             from_expr: None,
             into_expr: None,
             component: None,
+        }
+    }
+
+    pub const fn component(
+        field_name: &'static str,
+        value_type: RustType,
+        value_presence: FieldValuePresence,
+        component: FieldComponentVariant,
+    ) -> Self {
+        Self {
+            field_name,
+            value_type,
+            source_value_type: value_type,
+            value_presence,
+            validations: &[],
+            default_expr: None,
+            from_expr: None,
+            into_expr: None,
+            component: Some(component),
         }
     }
 
@@ -445,8 +484,12 @@ impl FieldVariant {
         self.into_expr
     }
 
-    pub const fn component(&self) -> Option<&FieldComponentVariant> {
+    pub const fn component_variant(&self) -> Option<&FieldComponentVariant> {
         self.component.as_ref()
+    }
+
+    pub const fn is_component(&self) -> bool {
+        self.component.is_some()
     }
 
     pub const fn shape_path(&self) -> Option<RustPath> {
@@ -483,12 +526,6 @@ impl FieldVariant {
         self
     }
 
-    /// Attach the required-value policy for generated value-holder conversion.
-    pub const fn with_requires_value(mut self, requires_value: bool) -> Self {
-        self.value_presence = self.value_presence.with_requires_value(requires_value);
-        self
-    }
-
     /// Attach optional source/form conversion expressions.
     pub const fn with_conversions(
         mut self,
@@ -503,62 +540,6 @@ impl FieldVariant {
     /// Attach a default value expression to this field metadata.
     pub const fn with_default(mut self, default_expr: RustExpr) -> Self {
         self.default_expr = Some(default_expr);
-        self
-    }
-
-    /// Attach a UI component type to this field metadata.
-    pub const fn with_component_type(mut self, component: RustType) -> Self {
-        let Some(mut variant) = self.component else {
-            panic!("FieldVariant::with_component_type requires with_shape_path first");
-        };
-        variant.component_type = Some(component);
-        self.component = Some(variant);
-        self
-    }
-
-    /// Attach an optional UI component type to this field metadata.
-    ///
-    /// Used when the component type may come from the shape's
-    /// `ComponentShape::COMPONENT_TYPE` constant rather than an explicit
-    /// field attribute value.
-    pub const fn with_component_type_opt(mut self, component: Option<RustType>) -> Self {
-        let Some(mut variant) = self.component else {
-            panic!("FieldVariant::with_component_type_opt requires with_shape_path first");
-        };
-        variant.component_type = component;
-        self.component = Some(variant);
-        self
-    }
-
-    /// Attach the component shape type path.
-    pub const fn with_shape_path(mut self, shape: RustPath) -> Self {
-        self.component = Some(match self.component {
-            Some(mut variant) => {
-                variant.shape_path = shape;
-                variant
-            },
-            None => FieldComponentVariant::new(shape),
-        });
-        self
-    }
-
-    /// Marks this component shape as value-bound for generated prototyping code.
-    pub const fn with_value_binding(mut self, enabled: bool) -> Self {
-        let Some(mut variant) = self.component else {
-            panic!("FieldVariant::with_value_binding requires with_shape_path first");
-        };
-        variant.value_binding = enabled;
-        self.component = Some(variant);
-        self
-    }
-
-    /// Attach the component shape's preferred prototyping field suffix.
-    pub const fn with_prototyping_field_suffix(mut self, suffix: Option<ComponentSuffix>) -> Self {
-        let Some(mut variant) = self.component else {
-            panic!("FieldVariant::with_prototyping_field_suffix requires with_shape_path first");
-        };
-        variant.prototyping_field_suffix = suffix;
-        self.component = Some(variant);
         self
     }
 
@@ -622,9 +603,22 @@ pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<St
 #[cfg(test)]
 mod tests {
     use super::{
-        ComponentSuffix, FieldVariant, RustExpr, RustPath, RustSyntaxKind, RustType,
-        is_valid_component_suffix, validate_component_suffix,
+        ComponentSuffix, FieldComponentVariant, FieldValuePresence, FieldVariant, RustExpr,
+        RustPath, RustSyntaxKind, RustType, is_valid_component_suffix, validate_component_suffix,
     };
+
+    const fn shape_field(
+        field_name: &'static str,
+        value_type: &'static str,
+        shape_path: &'static str,
+    ) -> FieldVariant {
+        FieldVariant::component(
+            field_name,
+            RustType::new_unchecked(value_type),
+            FieldValuePresence::RequiresValue,
+            FieldComponentVariant::new(RustPath::new_unchecked(shape_path)),
+        )
+    }
 
     #[test]
     fn rust_metadata_constructors_validate_syntax() {
@@ -658,8 +652,7 @@ mod tests {
 
     #[test]
     fn shape_name_without_prototyping_suffix_falls_back_to_shape() {
-        let field = FieldVariant::new("country", RustType::new_unchecked("Country"), false)
-            .with_shape_path(RustPath::new_unchecked("crate::fields::CountrySelectShape"));
+        let field = shape_field("country", "Country", "crate::fields::CountrySelectShape");
 
         assert_eq!(field.field_name_with_component_suffix(), "country_shape");
         assert_eq!(field.kebab_id(), "country-shape");
@@ -667,37 +660,52 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_drives_component_suffix() {
-        let field = FieldVariant::new("country", RustType::new_unchecked("Country"), false)
-            .with_shape_path(RustPath::new_unchecked(
+        let field = FieldVariant::component(
+            "country",
+            RustType::new_unchecked("Country"),
+            FieldValuePresence::RequiresValue,
+            FieldComponentVariant::new(RustPath::new_unchecked(
                 "crate::fields::CountrySelectorState",
             ))
-            .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")));
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("select"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "country_select");
     }
 
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::new("email", RustType::new_unchecked("String"), false)
-            .with_shape_path(RustPath::new_unchecked("crate::fields::TextInputShape"))
-            .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input")));
+        let field = FieldVariant::component(
+            "email",
+            RustType::new_unchecked("String"),
+            FieldValuePresence::RequiresValue,
+            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::TextInputShape"))
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "email_input");
     }
 
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
-            .with_shape_path(RustPath::new_unchecked("crate::fields::TagsInputShape"))
-            .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags")));
+        let field = FieldVariant::component(
+            "tags",
+            RustType::new_unchecked("Vec<String>"),
+            FieldValuePresence::RequiresValue,
+            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::TagsInputShape"))
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }
 
     #[test]
-    fn optional_fields_cannot_be_marked_required() {
-        let field = FieldVariant::new("email", RustType::new_unchecked("String"), true)
-            .with_requires_value(true);
+    fn optional_presence_uses_value_holder_option() {
+        let field = FieldVariant::hidden(
+            "email",
+            RustType::new_unchecked("String"),
+            FieldValuePresence::Optional,
+        );
 
         assert!(field.optional());
         assert!(!field.requires_value());
@@ -705,34 +713,52 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "FieldVariant::with_value_binding requires with_shape_path first")]
-    fn value_binding_requires_shape_path() {
-        let _ = FieldVariant::new("email", RustType::new_unchecked("String"), false)
-            .with_value_binding(true);
+    fn component_metadata_is_constructed_before_field_variant() {
+        let component =
+            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::EmailInputShape"))
+                .with_component_type(RustType::new_unchecked("EmailInput"))
+                .with_value_binding(true)
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
+        let field = FieldVariant::component(
+            "email",
+            RustType::new_unchecked("String"),
+            FieldValuePresence::DirectStorage,
+            component,
+        );
+
+        assert_eq!(
+            field.shape_path().map(RustPath::as_str),
+            Some("crate::fields::EmailInputShape")
+        );
+        assert_eq!(
+            field.component_type().map(RustType::as_str),
+            Some("EmailInput")
+        );
+        assert!(field.value_binding());
+        assert!(!field.value_holder_uses_option());
     }
 
     #[test]
     fn shape_path_does_not_drive_field_suffix() {
-        let field = FieldVariant::new("email", RustType::new_unchecked("String"), false)
-            .with_shape_path(RustPath::new_unchecked("crate::fields::EmailInputShape"));
+        let field = shape_field("email", "String", "crate::fields::EmailInputShape");
 
         assert_eq!(field.field_name_with_component_suffix(), "email_shape");
     }
 
     #[test]
     fn multiword_shape_name_without_prototyping_suffix_uses_shape() {
-        let field = FieldVariant::new("location", RustType::new_unchecked("Country"), false)
-            .with_shape_path(RustPath::new_unchecked(
-                "gpui_form_component::infinite_select::InfiniteSelect<Country>",
-            ));
+        let field = shape_field(
+            "location",
+            "Country",
+            "gpui_form_component::infinite_select::InfiniteSelect<Country>",
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "location_shape");
     }
 
     #[test]
     fn exact_duplicate_shape_name_falls_back_to_shape_suffix() {
-        let field = FieldVariant::new("tags", RustType::new_unchecked("Vec<String>"), false)
-            .with_shape_path(RustPath::new_unchecked("crate::state::TagsState"));
+        let field = shape_field("tags", "Vec<String>", "crate::state::TagsState");
 
         assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }

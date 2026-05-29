@@ -9,13 +9,13 @@ use syn::{
 
 use super::component_shape_metadata::ComponentShapeMetadata;
 
-const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `requires_value = ...`, `value_binding`, or `field_suffix = ...`";
+const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
 
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
-    syn::custom_keyword!(requires_value);
+    syn::custom_keyword!(value_storage);
     syn::custom_keyword!(value_binding);
 }
 
@@ -73,10 +73,10 @@ impl Parse for ComponentShapeInput {
                 content.parse::<Token![=]>()?;
                 metadata.set_component(content.parse()?, key)?;
                 parse_option_separator(&content)?;
-            } else if content.peek(kw::requires_value) {
-                let key = content.parse::<kw::requires_value>()?;
+            } else if content.peek(kw::value_storage) {
+                let key = content.parse::<kw::value_storage>()?;
                 content.parse::<Token![=]>()?;
-                metadata.set_requires_value(content.parse()?, key)?;
+                metadata.set_value_storage(content.parse()?, key)?;
                 parse_option_separator(&content)?;
             } else if content.peek(kw::value_binding) {
                 let key = content.parse::<kw::value_binding>()?;
@@ -142,6 +142,16 @@ fn phantom_type_tokens(generics: &Generics) -> TokenStream {
     }
 }
 
+fn has_explicit_component_shape_for_impl(impls: &[ItemImpl]) -> bool {
+    impls.iter().any(|impl_item| {
+        impl_item
+            .trait_
+            .as_ref()
+            .and_then(|(_, path, _)| path.segments.last())
+            .is_some_and(|segment| segment.ident == "ComponentShapeFor")
+    })
+}
+
 fn expand(input: ComponentShapeInput) -> TokenStream {
     let ComponentShapeInput {
         attrs,
@@ -159,11 +169,30 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let gpui_crate = CratePaths::resolve().gpui;
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
+    let component_shape_for_impl = if has_explicit_component_shape_for_impl(&impls) {
+        None
+    } else {
+        let mut shape_for_generics = generics.clone();
+        shape_for_generics
+            .params
+            .push(syn::parse_quote!(__GpuiFormShapeValue));
+        let (shape_for_impl_generics, _, shape_for_where_clause) =
+            shape_for_generics.split_for_impl();
+
+        Some(quote! {
+            impl #shape_for_impl_generics #runtime_crate::shape::ComponentShapeFor<__GpuiFormShapeValue>
+                for #ident #ty_generics
+                #shape_for_where_clause
+            {
+            }
+        })
+    };
+
     quote! {
         #(#attrs)*
         #vis struct #ident #generics(
             ::core::marker::PhantomData<fn() -> #phantom_type>
-        ) #where_clause;
+        );
 
         impl #impl_generics #runtime_crate::shape::ComponentShape for #ident #ty_generics #where_clause {
             type State = #state;
@@ -179,6 +208,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
         }
 
         #(#impls)*
+        #component_shape_for_impl
     }
 }
 
@@ -263,7 +293,7 @@ mod tests {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct SwitchShape {
                 type State = crate::state::SwitchState;
-                requires_value = false;
+                value_storage = direct;
             }
         })
         .unwrap();
@@ -271,6 +301,25 @@ mod tests {
         let expanded = expand(input);
 
         insta::assert_snapshot!(pretty_tokens(expanded));
+    }
+
+    #[test]
+    fn component_shape_function_macro_accepts_explicit_require_value_storage() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct RequiredInputShape {
+                type State = crate::state::InputState;
+                value_storage = require_value;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("typeRequiredValuePolicy=::gpui_form_runtime::shape::RequireValue;"),
+            "explicit require_value storage should emit RequireValue policy: {compact}"
+        );
     }
 
     #[test]

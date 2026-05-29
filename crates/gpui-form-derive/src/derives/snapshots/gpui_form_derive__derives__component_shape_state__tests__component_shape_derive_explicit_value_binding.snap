@@ -1,6 +1,5 @@
 ---
 source: crates/gpui-form-derive/src/derives/component_shape_state.rs
-assertion_line: 339
 expression: pretty_tokens(expanded)
 ---
 impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
@@ -50,3 +49,6 @@ where
         >>::form_value_change(state, event)
     }
 }
+impl<
+    __GpuiFormShapeValue,
+> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for TagsInput {}

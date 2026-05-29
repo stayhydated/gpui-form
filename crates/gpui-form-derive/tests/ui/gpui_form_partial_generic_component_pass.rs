@@ -11,6 +11,7 @@ where
 {
     #[gpui_form(gpui_form_collection::input::Input::<_>)]
     component: T,
+    #[gpui_form(hidden)]
     plain: U,
 }
 

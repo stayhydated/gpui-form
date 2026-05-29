@@ -1,5 +1,5 @@
 use gpui_form::runtime::shape::{
-    AllowMissingValue, ComponentShape, NoComponentValueBinding, RequireValue,
+    AllowMissingValue, ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequireValue,
 };
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
@@ -27,6 +27,8 @@ impl ComponentShape for RequiredShape {
     }
 }
 
+impl<T> ComponentShapeFor<T> for RequiredShape {}
+
 struct AllowShape;
 
 impl ComponentShape for AllowShape {
@@ -38,6 +40,8 @@ impl ComponentShape for AllowShape {
         State::new(window, cx)
     }
 }
+
+impl<T> ComponentShapeFor<T> for AllowShape {}
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]

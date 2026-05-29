@@ -81,7 +81,7 @@ Metadata rules:
   be emitted as written.
 - Add `component = ...` only when generated metadata should use a path-like
   render component type different from the derived type.
-- Add `requires_value = false` when the component can synthesize a missing value
+- Add `value_storage = direct` when the component can synthesize a missing value
   and non-optional fields should use direct `T` value-holder storage by default.
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
@@ -127,7 +127,7 @@ gpui_form_derive::component_shape! {
         new = |window, cx| gpui_component::input::InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "input";
         value_binding;
 
@@ -142,16 +142,17 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-The macro accepts `new`, `component`, `requires_value`, `value_binding`, and
-`field_suffix` metadata, plus `type State = ...`.
+The macro accepts `new`, `component`, `value_storage = require_value|direct`,
+`value_binding`, and `field_suffix` metadata, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
-`requires_value = false` on reusable wrappers that can seed or synthesize a
-missing value; consuming field attributes do not accept `.requires_value(...)`.
+`value_storage = direct` on reusable wrappers that can seed or synthesize a
+missing value; consuming field attributes do not accept `.value_storage(...)`.
 Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
 for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.
 
 When implementing `gpui_form_runtime::shape::ComponentShape` by hand, include
+`ComponentShapeFor<Value>` impls for the supported form-side value types and
 both policy associated types. Use `NoComponentValueBinding` unless the shape
 should inherit reusable `ComponentValueBinding<T>` impls by default; use
 `InheritedComponentValueBinding` for that inherited path.

@@ -2,11 +2,7 @@
 source: crates/gpui-form-derive/src/derives/component_shape.rs
 expression: pretty_tokens(expanded)
 ---
-pub struct InputShape<T>(
-    ::core::marker::PhantomData<fn() -> (T)>,
-)
-where
-    T: ::std::str::FromStr + ::std::string::ToString + 'static;
+pub struct InputShape<T>(::core::marker::PhantomData<fn() -> (T)>);
 impl<T> ::gpui_form_runtime::shape::ComponentShape for InputShape<T>
 where
     T: ::std::str::FromStr + ::std::string::ToString + 'static,
@@ -26,3 +22,10 @@ where
     const PROTOTYPING: ::gpui_form_runtime::shape::ComponentPrototyping = ::gpui_form_runtime::shape::ComponentPrototyping::new()
         .field_suffix("input");
 }
+impl<
+    T,
+    __GpuiFormShapeValue,
+> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for InputShape<T>
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+{}

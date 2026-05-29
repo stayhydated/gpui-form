@@ -14,3 +14,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
     const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(crate ::ui::TagsInput));
 }
+impl<
+    __GpuiFormShapeValue,
+> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for TagsInput {}

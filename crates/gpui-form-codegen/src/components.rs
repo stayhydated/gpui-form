@@ -101,35 +101,30 @@ impl RequiredValue {
     }
 }
 
-#[derive(Clone, Debug)]
-struct ComponentMethod {
-    method: ShapeMetadataMethod,
-    span: syn::Ident,
-    args: Vec<Expr>,
-}
-
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(field_suffix);
 }
 
 #[derive(Clone, Copy, Debug)]
-enum ShapeMetadataMethod {
+pub enum ShapeMetadataMethod {
     Component,
     FieldSuffix,
 }
 
 impl ShapeMetadataMethod {
-    const SUPPORTED: &'static str = "`component` and `field_suffix`";
+    pub const SUPPORTED: &'static str = "`component` and `field_suffix`";
 
-    fn parse(method: &syn::Ident) -> darling::Result<Self> {
+    pub fn parse_syn(method: &syn::Ident) -> syn::Result<Self> {
         syn::parse2(method.to_token_stream()).map_err(|_| {
-            DarlingError::custom(format!(
-                "unknown component metadata `{method}`; supported generic methods are {}; \
-                 put component-specific options in a dedicated ComponentShape wrapper",
-                Self::SUPPORTED
-            ))
-            .with_span(method)
+            syn::Error::new_spanned(
+                method,
+                format!(
+                    "unknown component metadata `{method}`; supported generic methods are {}; \
+                     put component-specific options in a dedicated ComponentShape wrapper",
+                    Self::SUPPORTED
+                ),
+            )
         })
     }
 
@@ -139,6 +134,13 @@ impl ShapeMetadataMethod {
             Self::FieldSuffix => "field_suffix",
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct ShapeMetadataCall {
+    pub method: ShapeMetadataMethod,
+    pub span: syn::Ident,
+    pub args: Vec<Expr>,
 }
 
 impl Parse for ShapeMetadataMethod {
@@ -185,8 +187,10 @@ impl ShapeOptions {
         }
     }
 
-    fn from_component_expr(expr: &Expr) -> darling::Result<Self> {
-        let (shape, methods) = analyze_component_expr(expr)?;
+    pub fn from_shape_and_metadata(
+        shape: Path,
+        methods: Vec<ShapeMetadataCall>,
+    ) -> darling::Result<Self> {
         let mut options = Self::from_shape(shape);
 
         for method in &methods {
@@ -196,7 +200,7 @@ impl ShapeOptions {
         Ok(options)
     }
 
-    fn apply_component_method(&mut self, method: &ComponentMethod) -> darling::Result<()> {
+    fn apply_component_method(&mut self, method: &ShapeMetadataCall) -> darling::Result<()> {
         match method.method {
             ShapeMetadataMethod::Component => {
                 set_metadata_once(
@@ -281,8 +285,12 @@ impl ShapeOptions {
 
         quote_spanned! {span=>
             {
-                fn __gpui_form_assert_component_shape<Shape: #runtime_crate::shape::ComponentShape>() {}
-                __gpui_form_assert_component_shape::<#shape>();
+                fn __gpui_form_assert_component_shape<
+                    Shape: #runtime_crate::shape::ComponentShape
+                        + #runtime_crate::shape::ComponentShapeFor<Value>,
+                    Value,
+                >() {}
+                __gpui_form_assert_component_shape::<#shape, #field_type>();
                 #value_binding_assertion
             }
         }
@@ -291,69 +299,6 @@ impl ShapeOptions {
     pub fn required_value(&self, field_type: &syn::Type) -> RequiredValue {
         RequiredValue::shape(self.resolved_shape(field_type))
     }
-
-    pub fn validate_field_type(&self, field_type: &syn::Type) -> Result<(), syn::Error> {
-        if !is_combobox_with_inferred_item(&self.shape) {
-            return Ok(());
-        }
-
-        let Some(item_type) = vec_inner_type(field_type) else {
-            return Ok(());
-        };
-
-        let field_type = type_display(field_type);
-        let item_type = type_display(item_type);
-        Err(syn::Error::new(
-            self.span,
-            format!(
-                "`Combobox::<_>` inferred `{field_type}`; use `Combobox::<{item_type}>` for `{field_type}` fields"
-            ),
-        ))
-    }
-}
-
-fn is_combobox_with_inferred_item(path: &Path) -> bool {
-    let Some(segment) = path.segments.last() else {
-        return false;
-    };
-    if segment.ident != "Combobox" {
-        return false;
-    }
-
-    let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
-        return false;
-    };
-
-    args.args
-        .first()
-        .is_some_and(|arg| matches!(arg, syn::GenericArgument::Type(Type::Infer(_))))
-}
-
-fn vec_inner_type(ty: &Type) -> Option<&Type> {
-    let Type::Path(type_path) = ty else {
-        return None;
-    };
-    let segment = type_path.path.segments.last()?;
-    if segment.ident != "Vec" {
-        return None;
-    }
-
-    let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
-        return None;
-    };
-    args.args.iter().find_map(|arg| match arg {
-        syn::GenericArgument::Type(inner) => Some(inner),
-        _ => None,
-    })
-}
-
-fn type_display(ty: &Type) -> String {
-    ty.to_token_stream()
-        .to_string()
-        .replace(" :: ", "::")
-        .replace(" < ", "<")
-        .replace(" >", ">")
-        .replace(" , ", ", ")
 }
 
 fn type_suffix_source(ty: &Type) -> Option<String> {
@@ -372,34 +317,6 @@ fn path_suffix_source(path: &Path) -> Option<String> {
         .unwrap_or(&ident);
 
     Some(suffix_source.to_string())
-}
-
-fn analyze_component_expr(expr: &Expr) -> darling::Result<(Path, Vec<ComponentMethod>)> {
-    match expr {
-        Expr::Group(group) => analyze_component_expr(&group.expr),
-        Expr::Paren(paren) => analyze_component_expr(&paren.expr),
-        Expr::MethodCall(method_call) => {
-            let (shape, mut methods) = analyze_component_expr(&method_call.receiver)?;
-            methods.push(ComponentMethod {
-                method: ShapeMetadataMethod::parse(&method_call.method)?,
-                span: method_call.method.clone(),
-                args: method_call.args.iter().cloned().collect(),
-            });
-            Ok((shape, methods))
-        },
-        Expr::Call(call) => Err(DarlingError::custom(
-            "component metadata must use method-call syntax, such as `Shape.field_suffix(\"input\")`",
-        )
-        .with_span(call)),
-        Expr::Path(path) => Ok((path.path.clone(), Vec::new())),
-        Expr::Lit(expr_lit) => {
-            Err(DarlingError::unexpected_lit_type(&expr_lit.lit).with_span(&expr_lit.lit))
-        },
-        _ => Err(DarlingError::custom(
-            "component syntax expects a shape path or shape metadata expression",
-        )
-        .with_span(expr)),
-    }
 }
 
 fn normalize_shape_path(mut path: Path) -> Path {
@@ -634,10 +551,6 @@ impl ComponentOption for ShapeOptions {}
 pub struct ShapeComponent(pub FieldInformation<ShapeOptions>);
 
 impl ShapeOptions {
-    pub fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        Self::from_component_expr(expr)
-    }
-
     pub fn generate_field_layout(
         &self,
         field_name: String,
@@ -665,7 +578,31 @@ impl ShapeOptions {
         }
     }
 
-    pub fn component_type_tokens(&self, field_type: &syn::Type) -> TokenStream {
+    pub fn component_variant_tokens(
+        &self,
+        field_type: &syn::Type,
+        field_name: &str,
+    ) -> TokenStream {
+        let shape = self
+            .resolved_shape(field_type)
+            .to_token_stream()
+            .to_string();
+        let schema_crate = CratePaths::resolve().gpui_form;
+        let component_type_tokens = self.component_type_tokens(field_type);
+        let value_binding_tokens = self.value_binding_tokens(field_type);
+        let prototyping_tokens = self.prototyping_tokens(field_type, field_name);
+
+        quote! {
+            #schema_crate::schema::registry::FieldComponentVariant::new(
+                #schema_crate::schema::registry::RustPath::new_unchecked(#shape)
+            )
+            #component_type_tokens
+            #value_binding_tokens
+            #prototyping_tokens
+        }
+    }
+
+    fn component_type_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.resolved_shape(field_type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
@@ -688,18 +625,7 @@ impl ShapeOptions {
         }
     }
 
-    pub fn shape_path_tokens(&self, field_type: &syn::Type) -> TokenStream {
-        let shape = self
-            .resolved_shape(field_type)
-            .to_token_stream()
-            .to_string();
-        let schema_crate = CratePaths::resolve().gpui_form;
-        quote! {
-            .with_shape_path(#schema_crate::schema::registry::RustPath::new_unchecked(#shape))
-        }
-    }
-
-    pub fn value_binding_tokens(&self, field_type: &syn::Type) -> TokenStream {
+    fn value_binding_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.resolved_shape(field_type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
@@ -712,7 +638,7 @@ impl ShapeOptions {
         }
     }
 
-    pub fn prototyping_tokens(&self, field_type: &syn::Type, field_name: &str) -> TokenStream {
+    fn prototyping_tokens(&self, field_type: &syn::Type, field_name: &str) -> TokenStream {
         let suffix = self
             .clone()
             .with_field_type(field_type)

@@ -79,7 +79,9 @@ need.
 
 ## Field Resolution
 
-The generator parses `FieldVariant::value_type.as_str()` as a full Rust type,
+The generator resolves `RustType`, `RustPath`, and `RustExpr` registry values
+through their schema-owned parse helpers, not by open-coding string parsing in
+field generators. `FieldVariant::value_type` is treated as a full Rust type,
 not just a bare identifier. That is important because inventory metadata may
 carry:
 

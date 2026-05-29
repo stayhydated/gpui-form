@@ -1,13 +1,38 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Expr, LitBool, LitStr, Path, Result, Type};
+use syn::{
+    Expr, Ident, LitStr, Path, Result, Type,
+    parse::{Parse, ParseStream},
+};
 
 use gpui_form_codegen::{CratePaths, components::validate_shape_field_suffix};
 
 use super::component_shape_constructor::constructor_body_tokens;
 
-pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `requires_value = ...`, \
+pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `value_storage = require_value|direct`, \
      `value_binding`, or `field_suffix = ...`";
+
+#[derive(Clone, Copy, Debug)]
+pub(super) enum ValueStoragePolicy {
+    RequireValue,
+    Direct,
+}
+
+impl Parse for ValueStoragePolicy {
+    fn parse(input: ParseStream<'_>) -> Result<Self> {
+        let ident = input.parse::<Ident>()?;
+        if ident == "require_value" {
+            Ok(Self::RequireValue)
+        } else if ident == "direct" {
+            Ok(Self::Direct)
+        } else {
+            Err(syn::Error::new_spanned(
+                ident,
+                "expected `require_value` or `direct` for `value_storage`",
+            ))
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
@@ -18,9 +43,9 @@ pub(super) struct ComponentShapeMetadata {
     /// When set, `ComponentShape::COMPONENT_TYPE` is populated so that
     /// field annotations do not need to repeat `component = ...`.
     component: Option<Type>,
-    /// Whether non-optional source fields should keep a missing-value state in
-    /// generated form value holders.
-    requires_value: Option<LitBool>,
+    /// Storage policy for non-optional source fields in generated form value
+    /// holders.
+    value_storage: Option<ValueStoragePolicy>,
     /// Opt generated prototyping code into ComponentValueBinding by default.
     value_binding: bool,
     /// Preferred generated field/helper suffix for prototyping output.
@@ -68,16 +93,16 @@ impl ComponentShapeMetadata {
         self.component.is_some()
     }
 
-    pub(super) fn set_requires_value<T: quote::ToTokens>(
+    pub(super) fn set_value_storage<T: quote::ToTokens>(
         &mut self,
-        requires_value: LitBool,
+        value_storage: ValueStoragePolicy,
         span: T,
     ) -> Result<()> {
         set_once(
-            &mut self.requires_value,
-            requires_value,
+            &mut self.value_storage,
+            value_storage,
             span,
-            "requires_value",
+            "value_storage",
         )
     }
 
@@ -119,15 +144,12 @@ impl ComponentShapeMetadata {
     }
 
     pub(super) fn impl_items_tokens(&self, runtime_crate: &Path) -> TokenStream {
-        let required_value_policy = if self
-            .requires_value
-            .as_ref()
-            .map(syn::LitBool::value)
-            .unwrap_or(true)
+        let required_value_policy = match self
+            .value_storage
+            .unwrap_or(ValueStoragePolicy::RequireValue)
         {
-            quote! { #runtime_crate::shape::RequireValue }
-        } else {
-            quote! { #runtime_crate::shape::AllowMissingValue }
+            ValueStoragePolicy::RequireValue => quote! { #runtime_crate::shape::RequireValue },
+            ValueStoragePolicy::Direct => quote! { #runtime_crate::shape::AllowMissingValue },
         };
         let required_value_policy_assoc = quote! {
             type RequiredValuePolicy = #required_value_policy;

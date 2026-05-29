@@ -24,4 +24,22 @@ struct SkipWithConversion {
     field: String,
 }
 
+#[derive(GpuiForm)]
+struct HiddenWithComponent {
+    #[gpui_form(hidden, crate::InputShape)]
+    field: String,
+}
+
+#[derive(GpuiForm)]
+struct ComponentWithHidden {
+    #[gpui_form(crate::InputShape, hidden)]
+    field: String,
+}
+
+#[derive(GpuiForm)]
+struct SkipWithHidden {
+    #[gpui_form(skip, hidden)]
+    field: String,
+}
+
 fn main() {}

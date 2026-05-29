@@ -5,8 +5,16 @@ use gpui_component::{
     searchable_list::SearchableListDelegate,
     select::SelectItem,
 };
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentShapeFor, ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
+
+#[diagnostic::on_unimplemented(
+    message = "`Combobox<{Item}>` expects form value `Vec<{Item}>`, not `{Self}`",
+    note = "use `Combobox::<Item>` for `Vec<Item>` fields"
+)]
+pub trait ComboboxFormValue<Item> {}
+
+impl<Item> ComboboxFormValue<Item> for Vec<Item> {}
 
 gpui_form_derive::component_shape! {
     /// Form component for a `gpui_component::combobox::Combobox` backed by `ComboboxState`.
@@ -21,7 +29,7 @@ gpui_form_derive::component_shape! {
         type State = ComboboxState<D>;
         new = Self::new_default;
         component = gpui_component::combobox::Combobox<_>;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "combobox";
         value_binding;
 
@@ -64,6 +72,14 @@ gpui_form_derive::component_shape! {
                     },
                 }
             }
+        }
+
+        impl<T, D, Value> ComponentShapeFor<Value> for Combobox<T, D>
+        where
+            T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+            D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static,
+            Value: ComboboxFormValue<T>,
+        {
         }
     }
 }

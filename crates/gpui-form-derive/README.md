@@ -70,16 +70,24 @@ component as a custom shape contract and does not inspect the shape path for
 built-in component categories.
 Single-segment local shape identifiers should be UpperCamel, such as
 `EmailInputShape`; lowercase bare words are reserved for field options, and the
-only supported bare option is `skip`. Use a qualified path such as
+supported bare options are `hidden` and `skip`. Use a qualified path such as
 `my::Shape` when the shape is not a local single-segment type.
 
 Supporting field attributes:
 
-- `#[gpui_form(default = <expr>)]`
+- `#[gpui_form(<shape>)]`
+- `#[gpui_form(hidden)]`
+- `#[gpui_form(<shape>, default = <expr>)]`
+- `#[gpui_form(hidden, default = <expr>)]`
 - `#[gpui_form(skip)]`
 - `#[gpui_form(type = <form_type>)]`
 - `#[gpui_form(from = <expr>)]`
 - `#[gpui_form(into = <expr>)]`
+
+Every non-empty-form field must choose exactly one intent: component, hidden,
+or skipped. Use `hidden` for value-holder-only fields; `default`, `type`,
+`from`, and `into` are helpers that must be combined with a component shape or
+`hidden`.
 
 Supporting struct attributes:
 
@@ -104,7 +112,7 @@ Behavior notes:
   infallible paths expose `holder.into_original()` and implement `From` when
   the derive can prove infallibility directly. Required shape-backed fields
   without a field default keep only the checked `try_into_original()` path.
-- set `requires_value = false` on the reusable shape definition when the
+- set `value_storage = direct` on the reusable shape definition when the
   component can synthesize missing values
 - shape-level `ValueBindingPolicy` records that the component shape implements
   `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
@@ -141,7 +149,8 @@ Behavior notes:
 Implements `gpui_form_runtime::shape::ComponentShape` for a rendered component
 with separate backing state. Crates that use this derive need an explicit
 `gpui-form-runtime` dependency; generated paths resolve renamed runtime
-dependencies.
+dependencies. The derive also emits a broad `ComponentShapeFor<Value>` impl so
+generated forms can assert value-type compatibility.
 
 ```rs
 use crate::state::{TagsState, build};
@@ -208,7 +217,7 @@ gpui_form_derive::component_shape! {
         new = |window, cx| gpui_component::input::InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
-        requires_value = false;
+        value_storage = direct;
         field_suffix = "input";
         value_binding;
 
@@ -226,11 +235,11 @@ gpui_form_derive::component_shape! {
 Use this when the component and state live in another crate. The macro creates
 the local wrapper type that owns the `ComponentShape` implementation and the
 wrapper's reusable `ComponentValueBinding<T>` impls.
-It accepts `new`, `component`, `requires_value`, `value_binding`, and
-`field_suffix` metadata, with `type State = ...` supplying the wrapped state
-type. If `new` is omitted, the generated implementation calls
+It accepts `new`, `component`, `value_storage = require_value|direct`,
+`value_binding`, and `field_suffix` metadata, with `type State = ...`
+supplying the wrapped state type. If `new` is omitted, the generated implementation calls
 `<State>::new(window, cx)`.
-`requires_value = false` publishes that non-optional fields using this shape can
+`value_storage = direct` publishes that non-optional fields using this shape can
 store `T` directly because the component can synthesize a missing value.
 `component = ...` must be path-like, and `field_suffix = "..."` must be a
 non-empty ASCII identifier suffix.
@@ -238,7 +247,9 @@ Separate metadata entries with semicolons.
 Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
 contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
 `InheritedComponentValueBinding`; otherwise the macro uses
-`NoComponentValueBinding`.
+`NoComponentValueBinding`. The macro emits a broad `ComponentShapeFor<Value>`
+impl unless the block contains an explicit `ComponentShapeFor` impl; constrained
+shapes can provide their own value compatibility rule this way.
 
 ## Feature Flags
 

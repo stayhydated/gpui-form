@@ -10,15 +10,19 @@ prototyping flows around generated form metadata.
 
 - `registry::GpuiFormShape`
 - `registry::FieldVariant`
+- `registry::{FieldComponentVariant, FieldValuePresence}`
 - `registry::{RustType, RustPath, RustExpr, ComponentSuffix}`
 - `registry::inventory`
 
 `FieldVariant` records both source-model and form-side value types,
 required-value holder behavior, conversion expressions, component shape
 metadata, resolved component suffixes, and opt-in value-binding metadata for
-generators. Its fields are private; use the const builders and accessors so
-metadata cannot represent states such as optional-but-required or
-value-bound-without-shape. Helpers such as
+generators. Its fields are private; construct fields explicitly with
+`FieldVariant::component(...)` or `FieldVariant::hidden(...)`, and pass
+`FieldValuePresence` directly so metadata cannot hide an order-sensitive
+optional/value-presence bool pair. Component-only metadata is built through
+`FieldComponentVariant::new(shape_path)` before attaching it to a field, so
+metadata cannot represent value-bound-without-shape. Helpers such as
 `field_name_with_component_suffix()` keep inventory consumers aligned with the
 field names emitted by `#[derive(GpuiForm)]`, with a `"shape"` fallback suffix.
 
@@ -27,7 +31,7 @@ not accidentally pass a type where a path, expression, or component suffix is
 expected. `RustType::new`, `RustPath::new`, and `RustExpr::new` validate the
 fragment with `syn`; macro-generated inventory uses explicit unchecked const
 constructors because the derive layer stringifies syntax it already parsed.
-Call `.as_str()` before parsing a wrapper with `syn`.
+Use the wrapper `.parse()` methods when tooling needs the `syn` representation.
 
 ## Example
 

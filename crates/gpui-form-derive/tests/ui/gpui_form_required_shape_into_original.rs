@@ -1,5 +1,7 @@
 use gpui_form_derive::GpuiForm;
-use gpui_form_runtime::shape::{ComponentShape, NoComponentValueBinding, RequireValue};
+use gpui_form_runtime::shape::{
+    ComponentShape, ComponentShapeFor, NoComponentValueBinding, RequireValue,
+};
 
 #[derive(Clone, Debug)]
 struct NonDefault(String);
@@ -23,6 +25,8 @@ impl ComponentShape for RequiredShape {
         State::new(window, cx)
     }
 }
+
+impl<T> ComponentShapeFor<T> for RequiredShape {}
 
 #[derive(GpuiForm)]
 struct Demo {

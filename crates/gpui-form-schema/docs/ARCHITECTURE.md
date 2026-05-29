@@ -12,7 +12,10 @@ This crate is the runtime-safe metadata boundary between:
 - downstream tooling such as `gpui-form-prototyping-core`
 
 It should describe component contract metadata and discovered form shape
-information, but not own proc-macro parsing or token emission.
+information, but not own proc-macro parsing or token emission. String metadata
+is confined to inventory-safe `RustType`, `RustPath`, and `RustExpr` wrappers;
+downstream tooling asks those wrappers to parse back into `syn` types at the
+inventory boundary.
 
 ## Modules
 
@@ -39,12 +42,15 @@ Important fields:
 
 Per-field metadata for one generated component entry.
 
-`FieldVariant` has private fields and exposes const builders/accessors. Value
-presence is stored as `FieldValuePresence` instead of independent
-`optional`/`requires_value` booleans, so metadata cannot represent an
-optional-but-required field. Component-only metadata is stored behind
-`FieldComponentVariant`, so builders cannot represent value binding,
-component type, or component suffix metadata without a shape path.
+`FieldVariant` has private fields and exposes intent-specific const builders:
+`FieldVariant::component(...)` for component-backed inventory and
+`FieldVariant::hidden(...)` for value-holder-only metadata. Value presence is
+stored as `FieldValuePresence` instead of independent `optional` and
+value-presence booleans, so construction sites must choose `Optional`,
+`RequiresValue`, or `DirectStorage` directly. Component-only metadata is built
+as `FieldComponentVariant` before it is attached to a field, so builders cannot
+represent value binding, component type, or component suffix metadata without a
+shape path.
 
 Rust syntax fragments are stored as typed string wrappers:
 
@@ -71,17 +77,17 @@ or another registry producer. Inventory consumers use this as their
 generated-code naming policy. The suffix is normalized against the field name
 before falling back to `"shape"`.
 
-`requires_value` is emitted by `gpui-form-codegen` from the shape's
-`RequiredValuePolicy` associated type. Non-optional shape-backed fields inherit
-the reusable shape's policy, so components that can synthesize missing values
-define that once on the shape.
+`gpui-form-derive` emits `FieldValuePresence` from the source field optionality
+and, for non-optional component fields, the shape's `RequiredValuePolicy`
+associated type. Components that can synthesize missing values define that once
+on the shape.
 
 ## Data Flow
 
 1. `gpui-form-codegen` parses field component syntax and turns it into typed
    component definitions.
-1. `gpui-form-codegen` emits shape-only `FieldVariant` metadata for each
-   field.
+1. `gpui-form-codegen` emits `FieldComponentVariant` metadata for each
+   component-backed field.
 1. `gpui-form-derive` embeds that metadata into generated inventory
    registration.
 1. When inventory registration is enabled, `gpui-form-derive` submits a

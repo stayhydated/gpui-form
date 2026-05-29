@@ -46,6 +46,18 @@ pub trait ComponentShape {
     const PROTOTYPING: ComponentPrototyping = ComponentPrototyping::new();
 }
 
+/// Marker that a component shape supports a form value type.
+///
+/// Generated `GpuiForm` code asserts this alongside [`ComponentShape`] so
+/// reusable shapes can own value-type compatibility diagnostics. Shape macros
+/// emit a broad implementation by default; component-specific shapes may
+/// implement this trait manually when only selected value types are supported.
+#[diagnostic::on_unimplemented(
+    message = "gpui-form component shape `{Self}` is not compatible with form value `{Value}`",
+    note = "implement `ComponentShapeFor<{Value}>` for `{Self}`, or choose a component shape whose value type matches the field"
+)]
+pub trait ComponentShapeFor<Value>: ComponentShape {}
+
 mod sealed {
     pub trait RequiredValuePolicy {}
     pub trait ValueBindingPolicy {}
@@ -183,7 +195,7 @@ pub trait ValueHolderStorage<T>: ComponentRequiredValuePolicy {
 /// Storage policies that can synthesize missing/default value-holder storage.
 #[diagnostic::on_unimplemented(
     message = "gpui-form cannot synthesize direct storage for `{T}` with this component shape policy",
-    note = "add `#[gpui_form(default = ...)]`, make `{T}` implement `Default`, or make the shape use `requires_value = true`"
+    note = "add `#[gpui_form(default = ...)]`, make `{T}` implement `Default`, or make the shape use `value_storage = require_value`"
 )]
 pub trait ValueHolderDefaultStorage<T>: ValueHolderStorage<T> {
     /// Construct a missing/default value-holder field.

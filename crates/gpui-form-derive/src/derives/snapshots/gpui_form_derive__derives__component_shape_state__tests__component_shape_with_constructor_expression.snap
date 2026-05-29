@@ -20,3 +20,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
         concat!(module_path!(), "::", stringify!(TagsInput)),
     );
 }
+impl<
+    __GpuiFormShapeValue,
+> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for TagsInput {}

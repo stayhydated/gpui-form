@@ -3,6 +3,7 @@ struct PlainGeneric<T = String>
 where
     T: Default,
 {
+    #[gpui_form(hidden)]
     value: T,
 }
 

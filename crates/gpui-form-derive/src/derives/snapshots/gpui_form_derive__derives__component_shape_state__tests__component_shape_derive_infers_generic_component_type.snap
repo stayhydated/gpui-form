@@ -16,3 +16,8 @@ impl<T, D> ::gpui_form_runtime::shape::ComponentShape for Picker<T, D> {
         concat!(module_path!(), "::", stringify!(Picker < _, _ >)),
     );
 }
+impl<
+    T,
+    D,
+    __GpuiFormShapeValue,
+> ::gpui_form_runtime::shape::ComponentShapeFor<__GpuiFormShapeValue> for Picker<T, D> {}

@@ -1,13 +1,13 @@
 error[E0277]: gpui-form component shape `InheritedBindingShape` does not implement value binding for `std::string::String`
-  --> tests/ui/gpui_form_missing_value_binding_impl.rs:28:17
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:32:17
    |
-28 |     #[gpui_form(InheritedBindingShape)]
+32 |     #[gpui_form(InheritedBindingShape)]
    |                 ^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
    |
 help: the trait `ComponentValueBinding<std::string::String>` is not implemented for `InheritedBindingShape`
-  --> tests/ui/gpui_form_missing_value_binding_impl.rs:14:1
+  --> tests/ui/gpui_form_missing_value_binding_impl.rs:16:1
    |
-14 | struct InheritedBindingShape;
+16 | struct InheritedBindingShape;
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = note: add `value_binding` shape metadata with a `ComponentValueBinding<T>` impl, or use `NoComponentValueBinding` if the shape should not inherit value binding
 help: the trait `AssertComponentValueBindingPolicy<Shape, Value>` is implemented for `InheritedComponentValueBinding`
