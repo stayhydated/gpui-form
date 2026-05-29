@@ -1,5 +1,5 @@
 error: expected parentheses
- --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:65
+ --> tests/ui/gpui_form_malformed_attribute_component_infer.rs:5:57
   |
-5 |     #[gpui_form(component(shape = crate::InputShape), component = _)]
-  |                                                                 ^
+5 |     #[gpui_form(component(crate::InputShape), component = _)]
+  |                                                         ^

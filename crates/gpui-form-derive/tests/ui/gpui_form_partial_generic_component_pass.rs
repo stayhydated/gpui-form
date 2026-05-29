@@ -10,7 +10,7 @@ where
         T,
     >>::Storage: std::fmt::Debug + Clone + Default,
 {
-    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
+    #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     component: T,
     #[gpui_form(hidden)]
     plain: U,

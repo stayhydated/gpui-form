@@ -1,14 +1,14 @@
 error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
  --> tests/ui/gpui_form_skip_conflicts.rs:5:23
   |
-5 |     #[gpui_form(skip, component(shape = crate::InputShape))]
+5 |     #[gpui_form(skip, component(crate::InputShape))]
   |                       ^^^^^^^^^
 
 error: `skip` cannot be combined with `component` in a `gpui_form` field attribute; remove `skip` or remove the `component` option
-  --> tests/ui/gpui_form_skip_conflicts.rs:11:55
+  --> tests/ui/gpui_form_skip_conflicts.rs:11:47
    |
-11 |     #[gpui_form(component(shape = crate::InputShape), skip)]
-   |                                                       ^^^^
+11 |     #[gpui_form(component(crate::InputShape), skip)]
+   |                                               ^^^^
 
 error: `skip` cannot be combined with `default` in a `gpui_form` field attribute; remove `skip` or remove the `default` option
   --> tests/ui/gpui_form_skip_conflicts.rs:17:23
@@ -37,14 +37,14 @@ error: `skip` cannot be combined with `form_to_source` in a `gpui_form` field at
 error: `hidden` cannot be combined with `component` in a `gpui_form` field attribute; choose exactly one of component, hidden, or skip
   --> tests/ui/gpui_form_skip_conflicts.rs:29:25
    |
-29 |     #[gpui_form(hidden, component(shape = crate::InputShape))]
+29 |     #[gpui_form(hidden, component(crate::InputShape))]
    |                         ^^^^^^^^^
 
 error: `component` cannot be combined with `hidden` in a `gpui_form` field attribute; choose exactly one of component, hidden, or skip
-  --> tests/ui/gpui_form_skip_conflicts.rs:35:55
+  --> tests/ui/gpui_form_skip_conflicts.rs:35:47
    |
-35 |     #[gpui_form(component(shape = crate::InputShape), hidden)]
-   |                                                       ^^^^^^
+35 |     #[gpui_form(component(crate::InputShape), hidden)]
+   |                                               ^^^^^^
 
 error: `skip` cannot be combined with `hidden` in a `gpui_form` field attribute; remove `skip` or remove the `hidden` option
   --> tests/ui/gpui_form_skip_conflicts.rs:41:23

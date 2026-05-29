@@ -27,7 +27,7 @@ impl<T> ComponentShapeFor<T> for ManualShape {}
 
 #[derive(GpuiForm)]
 struct Demo {
-    #[gpui_form(component(shape = ManualShape))]
+    #[gpui_form(component(ManualShape))]
     value: String,
 }
 

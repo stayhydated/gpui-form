@@ -38,7 +38,7 @@ impl gpui_component::select::SelectItem for Role {
 
 #[derive(GpuiForm)]
 struct RolesForm {
-    #[gpui_form(component(shape = gpui_form_collection::combobox::Combobox::<Role>))]
+    #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Role>))]
     role: Role,
 }
 

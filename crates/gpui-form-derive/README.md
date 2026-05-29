@@ -30,39 +30,39 @@ use gpui_form::GpuiForm;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
 pub struct UserProfile {
-    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
+    #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     pub username: Option<String>,
 
-    #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
+    #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     pub age: Option<u32>,
 }
 ```
 
 Supported component forms:
 
-- `#[gpui_form(component(shape = my::Shape))]`
-- `#[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]`
-- `#[gpui_form(component(shape = gpui_form_collection::select::Select::<_>))]`
-- `#[gpui_form(component(shape = gpui_form_collection::combobox::Combobox::<Country>))]`
-- `#[gpui_form(component(shape = gpui_form_collection::checkbox::Checkbox))]`
-- `#[gpui_form(component(shape = gpui_form_collection::switch::Switch))]`
-- `#[gpui_form(component(shape = gpui_form_collection::number_input::NumberInput::<_>))]`
-- `#[gpui_form(component(shape = gpui_form_collection::slider::Slider))]`
-- `#[gpui_form(component(shape = gpui_form_collection::color_picker::ColorPicker))]`
-- `#[gpui_form(component(shape = gpui_form_collection::date_picker::DatePicker))]`
-- `#[gpui_form(component(shape = gpui_form_collection::date_picker::DateRangePicker))]`
-- `#[gpui_form(component(shape = gpui_form_collection::otp_input::OtpInput::<_>))]`
-- `#[gpui_form(component(shape = gpui_form_component::date_picker::DatePicker))]`
-- `#[gpui_form(component(shape = gpui_form_component::date_picker::DateRangePicker))]`
-- `#[gpui_form(component(shape = gpui_form_component::file_picker::FilePicker))]`
-- `#[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
+- `#[gpui_form(component(my::Shape))]`
+- `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>))]`
+- `#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Country>))]`
+- `#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]`
+- `#[gpui_form(component(gpui_form_collection::switch::Switch))]`
+- `#[gpui_form(component(gpui_form_collection::number_input::NumberInput::<_>))]`
+- `#[gpui_form(component(gpui_form_collection::slider::Slider))]`
+- `#[gpui_form(component(gpui_form_collection::color_picker::ColorPicker))]`
+- `#[gpui_form(component(gpui_form_collection::date_picker::DatePicker))]`
+- `#[gpui_form(component(gpui_form_collection::date_picker::DateRangePicker))]`
+- `#[gpui_form(component(gpui_form_collection::otp_input::OtpInput::<_>))]`
+- `#[gpui_form(component(gpui_form_component::date_picker::DatePicker))]`
+- `#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]`
+- `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
 
 The `gpui_form_component` shape examples require that crate's
 `component-shape` feature. Infinite-select field types also need the
 `InfiniteSelect` derive, available through `gpui-form-component`'s `derive`
 feature or by depending on `gpui-form-component-derive` directly.
 
-The `component(shape = ...)` value is parsed as a Rust type path; generated runtime
+The `component(...)` value is parsed as a Rust type path; generated runtime
 construction delegates to `ComponentShape::new`. The shape type must be
 declared with `component_shape!` or `#[derive(ComponentShape)]`; hand-written
 `ComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put render
@@ -71,9 +71,9 @@ not on the `#[gpui_form(...)]` field attribute.
 
 Supporting field attributes:
 
-- `#[gpui_form(component(shape = <shape>))]`
+- `#[gpui_form(component(<shape>))]`
 - `#[gpui_form(hidden)]`
-- `#[gpui_form(component(shape = <shape>), default = <expr>)]`
+- `#[gpui_form(component(<shape>), default = <expr>)]`
 - `#[gpui_form(hidden, default = <expr>)]`
 - `#[gpui_form(skip)]`
 - `#[gpui_form(type = <form_type>)]`

@@ -101,7 +101,7 @@ for field in location.read(cx).form_fields() {
 For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 
 ```rs
-#[gpui_form(component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>))]
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
 pub location: Country,
 ```
 
@@ -163,10 +163,10 @@ For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
 use the rendered component type as the form shape:
 
 ```rs
-#[gpui_form(component(shape = gpui_form_component::date_picker::DatePicker))]
+#[gpui_form(component(gpui_form_component::date_picker::DatePicker))]
 pub birth_date: chrono::NaiveDate;
 
-#[gpui_form(component(shape = gpui_form_component::date_picker::DateRangePicker))]
+#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]
 pub holiday_range: (chrono::NaiveDate, chrono::NaiveDate);
 ```
 
@@ -210,7 +210,7 @@ For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
 use the element type as the form shape:
 
 ```rs
-#[gpui_form(component(shape = gpui_form_component::file_picker::FilePicker))]
+#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]
 pub uploaded_files: Vec<std::path::PathBuf>;
 ```
 
@@ -229,7 +229,7 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`ComponentShape` is the runtime contract used by `#[gpui_form(component(shape = Shape))]`.
+`ComponentShape` is the runtime contract used by `#[gpui_form(component(Shape))]`.
 Generated `GpuiForm` field code also requires `DeclaredComponentShape`, emitted
 by `gpui_form_derive::component_shape!` and
 `#[derive(gpui_form_derive::ComponentShape)]`. Field shapes should be declared

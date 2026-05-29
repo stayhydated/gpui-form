@@ -1,7 +1,7 @@
 error[E0277]: gpui-form component state `State` does not implement value binding for `std::string::String`
   --> tests/ui/gpui_form_missing_component_shape_contracts.rs:19:17
    |
-19 |     #[gpui_form(component(shape = DerivedShape))]
+19 |     #[gpui_form(component(DerivedShape))]
    |                 ^^^^^^^^^ unsatisfied trait bound
    |
 help: the trait `ComponentStateValueBinding<std::string::String>` is not implemented for `State`

@@ -27,7 +27,7 @@ Generated form field checks require `DeclaredComponentShape`, which is emitted
 only by `gpui_form_derive::component_shape!` and
 `#[derive(gpui_form_derive::ComponentShape)]`. A hand-written
 `ComponentShape` impl can exist for lower-level runtime experiments, but it is
-not a usable `#[gpui_form(component(shape = ...))]` field shape; use the macro or derive
+not a usable `#[gpui_form(component(...))]` field shape; use the macro or derive
 to declare field shapes.
 
 Generated inherited value-binding checks dispatch through

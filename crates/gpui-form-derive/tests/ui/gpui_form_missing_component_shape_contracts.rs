@@ -16,7 +16,7 @@ struct DerivedShape;
 
 #[derive(GpuiForm)]
 struct DerivedDemo {
-    #[gpui_form(component(shape = DerivedShape))]
+    #[gpui_form(component(DerivedShape))]
     name: String,
 }
 

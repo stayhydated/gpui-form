@@ -20,7 +20,7 @@ gpui_form_derive::component_shape! {
 #[derive(GpuiForm)]
 #[gpui_form(koruma)]
 struct Demo {
-    #[gpui_form(component(shape = crate::InputShape))]
+    #[gpui_form(component(crate::InputShape))]
     #[koruma]
     name: String,
 }

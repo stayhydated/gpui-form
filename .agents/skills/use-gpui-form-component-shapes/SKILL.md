@@ -65,7 +65,7 @@ Use the rendered component type as the field shape:
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct PostEditor {
-    #[gpui_form(component(shape = TagsInput))]
+    #[gpui_form(component(TagsInput))]
     pub tags: Option<Vec<String>>,
 }
 ```
@@ -107,12 +107,12 @@ gpui_form_derive::component_shape! {
 }
 ```
 
-Use the wrapper shape with `#[gpui_form(component(shape = ...))]`:
+Use the wrapper shape with `#[gpui_form(component(...))]`:
 
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct ContactForm {
-    #[gpui_form(component(shape = EmailInputShape))]
+    #[gpui_form(component(EmailInputShape))]
     pub email: String,
 }
 ```
@@ -160,7 +160,7 @@ metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
 shape needs custom bounds or diagnostics.
 
 Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
-`#[gpui_form(component(shape = ...))]` field shape. `#[derive(GpuiForm)]` requires the
+`#[gpui_form(component(...))]` field shape. `#[derive(GpuiForm)]` requires the
 `DeclaredComponentShape` marker emitted by `#[derive(ComponentShape)]` or
 `component_shape!`.
 

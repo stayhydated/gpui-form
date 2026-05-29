@@ -4,8 +4,8 @@ error: expected parentheses
 7 |         component = crate::Widget,
   |                   ^
 
-error: unknown gpui_form field option `field_suffix`; component-backed fields must use `component(shape = MyShape)` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
-  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:47
+error: unknown gpui_form field option `field_suffix`; component-backed fields must use `component(MyShape)` where `MyShape` is declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
+  --> tests/ui/gpui_form_duplicate_shape_metadata_methods.rs:15:39
    |
-15 |     #[gpui_form(component(shape = DemoShape), field_suffix = "input", field_suffix = "field")]
-   |                                               ^^^^^^^^^^^^
+15 |     #[gpui_form(component(DemoShape), field_suffix = "input", field_suffix = "field")]
+   |                                       ^^^^^^^^^^^^

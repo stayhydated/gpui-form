@@ -395,13 +395,12 @@ impl Parse for GpuiFormFieldOption {
             let key = input.parse::<kw::component>()?;
             let content;
             syn::parenthesized!(content in input);
-            let shape_key = content.parse::<kw::shape>()?;
-            content.parse::<Token![=]>()?;
-            let shape = content.parse()?;
+            let shape = content.parse::<Path>()?;
             if !content.is_empty() {
-                return Err(content.error("`component(...)` only accepts `shape = MyShape`"));
+                return Err(content.error(
+                    "`component(...)` only accepts a single component shape path, for example `component(MyShape)`",
+                ));
             }
-            let _ = shape_key;
             return Ok(Self::Component { span: key, shape });
         }
 
@@ -459,7 +458,7 @@ impl Parse for GpuiFormFieldOption {
                 key.clone(),
                 format!(
                     "unknown gpui_form field option `{key}`; component-backed fields must use \
-                     `component(shape = MyShape)` where `MyShape` is declared with \
+                     `component(MyShape)` where `MyShape` is declared with \
                      `gpui_form_derive::component_shape!` or \
                      `#[derive(gpui_form_derive::ComponentShape)]`"
                 ),
@@ -467,7 +466,7 @@ impl Parse for GpuiFormFieldOption {
         }
 
         Err(input.error(
-            "expected gpui_form field option such as `component(shape = MyShape)`, `hidden`, or `skip`",
+            "expected gpui_form field option such as `component(MyShape)`, `hidden`, or `skip`",
         ))
     }
 }
@@ -629,7 +628,7 @@ impl FromField for ComponentField {
             let list = match attr.meta.require_list().map_err(|_| {
                 DarlingError::custom(
                     "`gpui_form` field attribute must be a list, for example \
-                     `#[gpui_form(component(shape = my::Shape))]`",
+                     `#[gpui_form(component(my::Shape))]`",
                 )
                 .with_span(attr)
             }) {
@@ -852,7 +851,7 @@ fn field_options_mut<'a, S: syn::spanned::Spanned>(
 fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
     if field.intent.kind.is_none() {
         return Err(DarlingError::custom(format!(
-            "field `{}` must choose a gpui_form field intent; add `component(shape = ...)`, `hidden`, or `skip`",
+            "field `{}` must choose a gpui_form field intent; add `component(...)`, `hidden`, or `skip`",
             field.ident
         ))
         .with_span(&field.ident));

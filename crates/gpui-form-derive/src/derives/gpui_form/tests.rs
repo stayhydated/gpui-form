@@ -120,11 +120,11 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma(fluent))]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input))]
+                #[gpui_form(component(crate::Input))]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::general::RequiredValidation::<Option<_>>::builder()))]
                 name: String,
 
-                #[gpui_form(component(shape = crate::NumericShape))]
+                #[gpui_form(component(crate::NumericShape))]
                 #[cfg_attr(feature = "validation", koruma(koruma_collection::numeric::PositiveValidation::<_>::builder()))]
                 age: u32,
             }
@@ -197,7 +197,7 @@ mod gpui_form_tests {
             #[cfg_attr(feature = "ui", derive(GpuiForm))]
             #[cfg_attr(feature = "ui", gpui_form(koruma(fluent)))]
             pub struct CommonVRead {
-                #[cfg_attr(feature = "ui", gpui_form(component(shape = crate::NumericShape)))]
+                #[cfg_attr(feature = "ui", gpui_form(component(crate::NumericShape)))]
                 #[cfg_attr(feature = "validation", koruma(newtype))]
                 pub index: CommonVariableIndex,
             }
@@ -300,7 +300,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::NumericShape))]
+                #[gpui_form(component(crate::NumericShape))]
                 #[koruma(koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167))]
                 age: u32,
             }
@@ -330,7 +330,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::NumericShape))]
+                #[gpui_form(component(crate::NumericShape))]
                 #[koruma(koruma_collection::numeric::PositiveValidation::<_>::builder())]
                 age: u32,
             }
@@ -360,7 +360,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input))]
+                #[gpui_form(component(crate::Input))]
                 name: String,
             }
         };
@@ -419,7 +419,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     source_to_form = |ts| to_form(ts),
                     form_to_source = |dt| to_model(dt),
-                    component(shape = crate::DatePickerState)
+                    component(crate::DatePickerState)
                 )]
                 birth_date: Option<Timestamp>,
             }
@@ -474,7 +474,7 @@ mod gpui_form_tests {
                     type = rust_decimal::Decimal,
                     source_to_form = |value| value,
                     form_to_source = |value| value,
-                    component(shape = crate::NumericShape::<_>)
+                    component(crate::NumericShape::<_>)
                 )]
                 amount: f64,
             }
@@ -519,7 +519,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     source_to_form = |ts| to_form(ts),
                     form_to_source = |dt| to_model(dt),
-                    component(shape = crate::DatePickerState)
+                    component(crate::DatePickerState)
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -572,7 +572,7 @@ mod gpui_form_tests {
                     type = chrono::NaiveDate,
                     source_to_form = |ts| to_form(ts),
                     form_to_source = |dt| to_model(dt),
-                    component(shape = crate::DatePickerState)
+                    component(crate::DatePickerState)
                 )]
                 birth_date: Option<Timestamp>,
 
@@ -612,7 +612,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input), default = "test@example.com")]
+                #[gpui_form(component(crate::Input), default = "test@example.com")]
                 email: String,
             }
         };
@@ -638,7 +638,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input), default = "test@example.com")]
+                #[gpui_form(component(crate::Input), default = "test@example.com")]
                 email: String,
 
                 #[gpui_form(skip)]
@@ -673,7 +673,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::ui::BioInput))]
+                #[gpui_form(component(crate::ui::BioInput))]
                 bio: String,
             }
         };
@@ -736,7 +736,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::state::TagsState), field_suffix = "tags")]
+                #[gpui_form(component(crate::state::TagsState), field_suffix = "tags")]
                 labels: Vec<String>,
             }
         };
@@ -778,7 +778,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("component-backedfieldsmustuse`shape=MyShape`")
+            compact.contains("component(MyShape)")
                 || compact.contains("expectedgpui_formfieldoption"),
             "old positional metadata syntax should be rejected: {compact}"
         );
@@ -789,10 +789,10 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>), default = "test@example.com")]
+                #[gpui_form(component(gpui_form_collection::input::Input::<_>), default = "test@example.com")]
                 email: String,
 
-                #[gpui_form(component(shape = gpui_form_collection::switch::Switch))]
+                #[gpui_form(component(gpui_form_collection::switch::Switch))]
                 enabled: bool,
             }
         };
@@ -833,13 +833,39 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn test_component_shape_accepts_shorthand_syntax() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component(gpui_form_collection::switch::Switch))]
+                enabled: bool,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("pubenabled:"),
+            "shorthand component syntax should generate a value-holder field: {compact}"
+        );
+    }
+
+    #[test]
     fn test_component_shape_rejects_duplicate_component_expression() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(shape = gpui_form_collection::input::Input::<_>),
-                    component(shape = crate::Input)
+                    component(gpui_form_collection::input::Input::<_>),
+                    component(crate::Input)
                 )]
                 email: String,
             }
@@ -896,7 +922,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input))]
+                #[gpui_form(component(crate::Input))]
                 name: String,
             }
         };
@@ -924,7 +950,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(shape = crate::Input),
+                    component(crate::Input),
                     type = crate::types::AccountCode,
                     source_to_form = crate::types::AccountCode::new,
                     form_to_source = crate::types::AccountCode::into_string
@@ -972,7 +998,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = gpui_form_collection::switch::Switch), value_storage = direct)]
+                #[gpui_form(component(gpui_form_collection::switch::Switch), value_storage = direct)]
                 enabled: bool,
             }
         };
@@ -998,7 +1024,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = gpui_form_collection::input::Input::<_>))]
+                #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
                 account_no: crate::types::AccountCode,
             }
         };
@@ -1041,7 +1067,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = gpui_form_collection::date_picker::DatePicker))]
+                #[gpui_form(component(gpui_form_collection::date_picker::DatePicker))]
                 birth_date: chrono::NaiveDate,
             }
         };
@@ -1073,7 +1099,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(shape = gpui_form_collection::select::Select::<_>),
+                    component(gpui_form_collection::select::Select::<_>),
                     searchable = true
                 )]
                 country: crate::types::Country,
@@ -1102,7 +1128,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(shape = gpui_form_component::infinite_select::InfiniteSelect::<_>),
+                    component(gpui_form_component::infinite_select::InfiniteSelect::<_>),
                     searchable_with_max_depth = 3
                 )]
                 location: crate::types::Country,
@@ -1130,7 +1156,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(shape = crate::Input), field_suffix = "input-field")]
+                #[gpui_form(component(crate::Input), field_suffix = "input-field")]
                 name: String,
             }
         };

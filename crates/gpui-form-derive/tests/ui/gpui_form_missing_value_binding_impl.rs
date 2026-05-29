@@ -21,7 +21,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(GpuiForm)]
 struct InheritedDemo {
-    #[gpui_form(component(shape = InheritedBindingShape))]
+    #[gpui_form(component(InheritedBindingShape))]
     name: String,
 }
 

@@ -59,7 +59,7 @@ gpui_form_derive::component_shape! {
 
 #[derive(gpui_form::GpuiForm)]
 pub struct Demo {
-    #[gpui_form(component(shape = RenamedRuntimeShape))]
+    #[gpui_form(component(RenamedRuntimeShape))]
     pub name: String,
 }
 

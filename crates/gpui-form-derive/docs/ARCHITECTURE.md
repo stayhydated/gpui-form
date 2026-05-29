@@ -49,7 +49,7 @@ that crate's `derive` feature is enabled.
    `#[gpui_form(...)]` data.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
    Field-level component shapes are parsed into a typed shape path from
-   `#[gpui_form(component(shape = my::Shape))]`;
+   `#[gpui_form(component(my::Shape))]`;
    arbitrary Rust expressions are only parsed for `default`, `source_to_form`,
    and `form_to_source`. The parser rejects duplicate component expressions
    before codegen and rejects field-level component metadata such as
