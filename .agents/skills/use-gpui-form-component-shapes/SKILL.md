@@ -85,8 +85,9 @@ Metadata rules:
   be emitted as written.
 - Add `component = ...` only when generated metadata should use a path-like
   render component type different from the derived type.
-- Add `value = ...` or `values(...)` for each form-side value type the shape
-  supports, unless you will implement `ComponentShapeFor<Value>` manually.
+- Add `value = ...` or `values(...)` once for each form-side value type the
+  shape supports, unless you will implement `ComponentShapeFor<Value>`
+  manually.
 - Add `value_storage = direct` when the component can synthesize a default value
   and non-optional fields should use direct `T` value-holder storage by default.
 - Add `value_binding` when the derived shape should delegate value binding
@@ -161,7 +162,8 @@ for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.
 Use `value = ...` / `values(...)` for simple compatibility impls, or omit value
 metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
-shape needs custom bounds or diagnostics.
+shape needs custom bounds or diagnostics. Do not mix the two forms in one
+`component_shape!` block.
 
 Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
 `#[gpui_form(component(...))]` field shape. `#[derive(GpuiForm)]` requires the

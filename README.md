@@ -366,6 +366,9 @@ a non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. `value = ...` and `values(...)` emit
 `ComponentShapeFor<T>` compatibility impls for supported form-side value types.
+Each value type may be listed once. Do not combine value metadata with manual
+`ComponentShapeFor<T>` impls in the same `component_shape!` block; omit the
+metadata when a manual impl needs custom bounds or diagnostics.
 A nested `ComponentValueBinding<T>` impl is emitted with the shape. Add `value_binding;` when that wrapper should
 publish shape-level value-binding metadata for prototyping subscriptions.
 
@@ -378,7 +381,8 @@ or `component_value_binding`; those macros emit direct runtime paths and
 resolve renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from the derive or `component_shape!`,
 provide manual `ComponentShapeFor<Value>` impls for each supported form-side
-value type. The shape declaration owns both policy associated types:
+value type. Do not combine value metadata with manual `ComponentShapeFor`
+impls in the same `component_shape!` block. The shape declaration owns both policy associated types:
 `ValueStoragePolicy` controls value-holder storage, and `ValueBindingPolicy` is
 usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.

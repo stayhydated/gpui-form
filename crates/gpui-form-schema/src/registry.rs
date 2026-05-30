@@ -92,14 +92,14 @@ impl RustType {
     /// This is intended for macro-generated inventory, where the derive layer
     /// just stringified syntax that was already parsed by `syn`.
     #[doc(hidden)]
-    pub const fn new_unchecked(value: &'static str) -> Self {
+    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
     #[doc(hidden)]
-    pub const fn new_opt_unchecked(value: Option<&'static str>) -> Option<Self> {
+    pub const fn from_macro_tokens_opt_unchecked(value: Option<&'static str>) -> Option<Self> {
         match value {
-            Some(value) => Some(Self::new_unchecked(value)),
+            Some(value) => Some(Self::from_macro_tokens_unchecked(value)),
             None => None,
         }
     }
@@ -128,7 +128,7 @@ impl RustPath {
     /// This is intended for macro-generated inventory, where the derive layer
     /// just stringified syntax that was already parsed by `syn`.
     #[doc(hidden)]
-    pub const fn new_unchecked(value: &'static str) -> Self {
+    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
@@ -156,7 +156,7 @@ impl RustExpr {
     /// This is intended for macro-generated inventory, where the derive layer
     /// just stringified syntax that was already parsed by `syn`.
     #[doc(hidden)]
-    pub const fn new_unchecked(value: &'static str) -> Self {
+    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
         Self(value)
     }
 
@@ -168,7 +168,7 @@ impl RustExpr {
 #[derive(Debug)]
 pub struct GpuiFormShape {
     pub struct_name: &'static str,
-    pub components: &'static [FieldVariant],
+    pub fields: &'static [FieldVariant],
     /// Rust module path where the struct with #[derive(GpuiForm)] is declared.
     pub source_module_path: RustPath,
     /// Whether the struct has koruma validation enabled at the struct level.
@@ -189,13 +189,13 @@ pub struct GpuiFormShape {
 impl GpuiFormShape {
     pub const fn new(
         struct_name: &'static str,
-        components: &'static [FieldVariant],
+        fields: &'static [FieldVariant],
         source_module_path: RustPath,
         koruma_enabled: bool,
     ) -> Self {
         Self {
             struct_name,
-            components,
+            fields,
             source_module_path,
             koruma_enabled,
             has_skipped_fields: false,
@@ -222,7 +222,7 @@ impl GpuiFormShape {
     pub fn has_validations(&self) -> bool {
         self.koruma_enabled
             && self
-                .components
+                .fields
                 .iter()
                 .any(|field| !field.validations.is_empty())
     }
@@ -369,13 +369,27 @@ pub struct FieldVariant {
     component: Option<FieldComponentVariant>,
 }
 
-impl FieldVariant {
-    pub const fn hidden(
-        field_name: &'static str,
-        value_type: RustType,
-        value_presence: FieldValuePresence,
-    ) -> Self {
-        Self {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FieldVariantBuilder {
+    field_name: &'static str,
+    value_type: Option<RustType>,
+    value_presence: Option<FieldValuePresence>,
+}
+
+impl FieldVariantBuilder {
+    pub const fn with_value_type(mut self, value_type: RustType) -> Self {
+        self.value_type = Some(value_type);
+        self
+    }
+
+    pub const fn with_value_presence(mut self, value_presence: FieldValuePresence) -> Self {
+        self.value_presence = Some(value_presence);
+        self
+    }
+
+    pub const fn hidden(self) -> FieldVariant {
+        let (field_name, value_type, value_presence) = self.finish();
+        FieldVariant {
             field_name,
             value_type,
             source_value_type: value_type,
@@ -388,13 +402,9 @@ impl FieldVariant {
         }
     }
 
-    pub const fn component(
-        field_name: &'static str,
-        value_type: RustType,
-        value_presence: FieldValuePresence,
-        component: FieldComponentVariant,
-    ) -> Self {
-        Self {
+    pub const fn component(self, component: FieldComponentVariant) -> FieldVariant {
+        let (field_name, value_type, value_presence) = self.finish();
+        FieldVariant {
             field_name,
             value_type,
             source_value_type: value_type,
@@ -404,6 +414,28 @@ impl FieldVariant {
             from_expr: None,
             into_expr: None,
             component: Some(component),
+        }
+    }
+
+    const fn finish(self) -> (&'static str, RustType, FieldValuePresence) {
+        let value_type = match self.value_type {
+            Some(value_type) => value_type,
+            None => panic!("FieldVariantBuilder requires value_type"),
+        };
+        let value_presence = match self.value_presence {
+            Some(value_presence) => value_presence,
+            None => panic!("FieldVariantBuilder requires value_presence"),
+        };
+        (self.field_name, value_type, value_presence)
+    }
+}
+
+impl FieldVariant {
+    pub const fn builder(field_name: &'static str) -> FieldVariantBuilder {
+        FieldVariantBuilder {
+            field_name,
+            value_type: None,
+            value_presence: None,
         }
     }
 
@@ -567,12 +599,12 @@ mod tests {
         value_type: &'static str,
         shape_path: &'static str,
     ) -> FieldVariant {
-        FieldVariant::component(
-            field_name,
-            RustType::new_unchecked(value_type),
-            FieldValuePresence::RequiresValue,
-            FieldComponentVariant::new(RustPath::new_unchecked(shape_path)),
-        )
+        FieldVariant::builder(field_name)
+            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
+            .with_value_presence(FieldValuePresence::RequiresValue)
+            .component(FieldComponentVariant::new(
+                RustPath::from_macro_tokens_unchecked(shape_path),
+            ))
     }
 
     #[test]
@@ -615,52 +647,55 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_drives_component_suffix() {
-        let field = FieldVariant::component(
-            "country",
-            RustType::new_unchecked("Country"),
-            FieldValuePresence::RequiresValue,
-            FieldComponentVariant::new(RustPath::new_unchecked(
-                "crate::fields::CountrySelectorState",
-            ))
-            .with_prototyping_field_suffix(Some(ComponentSuffix::new("select"))),
-        );
+        let field = FieldVariant::builder("country")
+            .with_value_type(RustType::from_macro_tokens_unchecked("Country"))
+            .with_value_presence(FieldValuePresence::RequiresValue)
+            .component(
+                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                    "crate::fields::CountrySelectorState",
+                ))
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("select"))),
+            );
 
         assert_eq!(field.field_name_with_component_suffix(), "country_select");
     }
 
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::component(
-            "email",
-            RustType::new_unchecked("String"),
-            FieldValuePresence::RequiresValue,
-            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::TextInputShape"))
+        let field = FieldVariant::builder("email")
+            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
+            .with_value_presence(FieldValuePresence::RequiresValue)
+            .component(
+                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                    "crate::fields::TextInputShape",
+                ))
                 .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input"))),
-        );
+            );
 
         assert_eq!(field.field_name_with_component_suffix(), "email_input");
     }
 
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::component(
-            "tags",
-            RustType::new_unchecked("Vec<String>"),
-            FieldValuePresence::RequiresValue,
-            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::TagsInputShape"))
+        let field = FieldVariant::builder("tags")
+            .with_value_type(RustType::from_macro_tokens_unchecked("Vec<String>"))
+            .with_value_presence(FieldValuePresence::RequiresValue)
+            .component(
+                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                    "crate::fields::TagsInputShape",
+                ))
                 .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags"))),
-        );
+            );
 
         assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }
 
     #[test]
     fn optional_presence_uses_value_holder_option() {
-        let field = FieldVariant::hidden(
-            "email",
-            RustType::new_unchecked("String"),
-            FieldValuePresence::Optional,
-        );
+        let field = FieldVariant::builder("email")
+            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
+            .with_value_presence(FieldValuePresence::Optional)
+            .hidden();
 
         assert!(field.optional());
         assert!(!field.requires_value());
@@ -669,17 +704,16 @@ mod tests {
 
     #[test]
     fn component_metadata_is_constructed_before_field_variant() {
-        let component =
-            FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::EmailInputShape"))
-                .with_render_component(true)
-                .with_value_binding(true)
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
-        let field = FieldVariant::component(
-            "email",
-            RustType::new_unchecked("String"),
-            FieldValuePresence::DirectStorage,
-            component,
-        );
+        let component = FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+            "crate::fields::EmailInputShape",
+        ))
+        .with_render_component(true)
+        .with_value_binding(true)
+        .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
+        let field = FieldVariant::builder("email")
+            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
+            .with_value_presence(FieldValuePresence::DirectStorage)
+            .component(component);
 
         assert_eq!(
             field.shape_path().map(RustPath::as_str),

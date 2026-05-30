@@ -124,7 +124,7 @@ impl<'a> FormShapeAdapter<'a> {
                 error: error.source_error().to_string(),
             })?;
 
-        for field in data.components {
+        for field in data.fields {
             parse_ident("field name", field.field_name())?;
             let _ = ResolvedField::new(field)?;
         }
@@ -134,7 +134,7 @@ impl<'a> FormShapeAdapter<'a> {
 
     fn collect_fields(&self) -> PrototypingResult<Vec<GeneratedField<'a>>> {
         self.shape_data
-            .components
+            .fields
             .iter()
             .filter(|field| field.is_component())
             .map(|field| {
@@ -186,7 +186,7 @@ impl<'a> FormShapeAdapter<'a> {
         set.extend_items(FRAGMENT_IMPORTS);
         if self
             .shape_data
-            .components
+            .fields
             .iter()
             .any(|field| field.is_component())
         {
@@ -197,7 +197,7 @@ impl<'a> FormShapeAdapter<'a> {
         }
         if self
             .shape_data
-            .components
+            .fields
             .iter()
             .any(|field| field.subscribable())
         {
@@ -205,7 +205,7 @@ impl<'a> FormShapeAdapter<'a> {
         }
         for field in self
             .shape_data
-            .components
+            .fields
             .iter()
             .filter(|field| field.is_component())
         {
@@ -247,7 +247,7 @@ impl<'a> FormShapeAdapter<'a> {
         let has_skipped_fields = data.has_skipped_fields();
         let holder_conversion_can_fail = data.holder_conversion_can_fail();
 
-        let is_empty = data.components.is_empty();
+        let is_empty = data.fields.is_empty();
         let has_koruma = data.has_koruma();
 
         let component_creations: TokenStream = generated_fields
@@ -469,7 +469,7 @@ pub struct FormParts {
     pub form_id_literal: String,
 
     // ── Flags ─────────────────────────────────────────────────────────────────
-    /// True when the struct has no component fields.
+    /// True when the struct has no non-skipped form fields.
     pub is_empty: bool,
     /// True when koruma validation is enabled.
     pub has_koruma: bool,
@@ -538,10 +538,25 @@ mod tests {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    const fn hidden_field(
+        field_name: &'static str,
+        value_type: &'static str,
+        value_presence: FieldValuePresence,
+    ) -> FieldVariant {
+        FieldVariant::builder(field_name)
+            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
+            .with_value_presence(value_presence)
+            .hidden()
+    }
+
     #[test]
     fn parts_return_error_for_invalid_source_module_path() {
-        const SHAPE: GpuiFormShape =
-            GpuiFormShape::new("Demo", &[], RustPath::new_unchecked("demo::"), false);
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &[],
+            RustPath::from_macro_tokens_unchecked("demo::"),
+            false,
+        );
 
         let error = match FormShapeAdapter::new(&SHAPE).parts() {
             Ok(_) => panic!("invalid source paths should return an error"),
@@ -560,15 +575,15 @@ mod tests {
 
     #[test]
     fn parts_return_error_for_invalid_field_type_metadata() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
+        const FIELDS: [FieldVariant; 1] = [hidden_field(
             "country",
-            RustType::new_unchecked("Vec<"),
+            "Vec<",
             FieldValuePresence::RequiresValue,
         )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
-            RustPath::new_unchecked("some_lib::demo"),
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
             false,
         );
 
@@ -592,15 +607,15 @@ mod tests {
 
     #[test]
     fn required_imports_only_include_subscription_when_needed() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
+        const FIELDS: [FieldVariant; 1] = [hidden_field(
             "enabled",
-            RustType::new_unchecked("bool"),
+            "bool",
             FieldValuePresence::RequiresValue,
         )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
-            RustPath::new_unchecked("some_lib::demo"),
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
             false,
         );
 
@@ -617,15 +632,15 @@ mod tests {
 
     #[test]
     fn parts_use_inventory_conversion_fallibility_metadata() {
-        const REQUIRED_FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
+        const REQUIRED_FIELDS: [FieldVariant; 1] = [hidden_field(
             "name",
-            RustType::new_unchecked("String"),
+            "String",
             FieldValuePresence::DirectStorage,
         )];
         const INFALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &REQUIRED_FIELDS,
-            RustPath::new_unchecked("some_lib::demo"),
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
             false,
         );
 
@@ -634,15 +649,12 @@ mod tests {
             .expect("valid infallible shape metadata should generate parts");
         assert!(!parts.holder_conversion_can_fail);
 
-        const OPTIONAL_FIELDS: [FieldVariant; 1] = [FieldVariant::hidden(
-            "name",
-            RustType::new_unchecked("String"),
-            FieldValuePresence::Optional,
-        )];
+        const OPTIONAL_FIELDS: [FieldVariant; 1] =
+            [hidden_field("name", "String", FieldValuePresence::Optional)];
         const FALLIBLE_SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &OPTIONAL_FIELDS,
-            RustPath::new_unchecked("some_lib::demo"),
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
             false,
         )
         .with_holder_conversion_can_fail(true);

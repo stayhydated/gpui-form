@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::{
     Expr, Ident, LitStr, Path, Result, Token, Type, Visibility,
     parse::{Parse, ParseStream},
@@ -12,6 +12,14 @@ use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `value = ...`, `values(...)`, \
      `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
+
+fn rust_type_key(ty: &Type) -> String {
+    ty.to_token_stream()
+        .to_string()
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect()
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum ValueStoragePolicy {
@@ -97,6 +105,18 @@ impl ComponentShapeMetadata {
     }
 
     pub(super) fn add_value<T: quote::ToTokens>(&mut self, value: Type, _span: T) -> Result<()> {
+        let value_key = rust_type_key(&value);
+        if self
+            .values
+            .iter()
+            .any(|existing| rust_type_key(existing) == value_key)
+        {
+            return Err(syn::Error::new_spanned(
+                value,
+                "duplicate `value` compatibility metadata; remove the duplicate `value = ...` or `values(...)` entry",
+            ));
+        }
+
         self.values.push(value);
         Ok(())
     }
@@ -126,6 +146,10 @@ impl ComponentShapeMetadata {
         Ok(Punctuated::<Type, Token![,]>::parse_terminated(input)?
             .into_iter()
             .collect())
+    }
+
+    pub(super) fn first_value(&self) -> Option<&Type> {
+        self.values.first()
     }
 
     pub(super) fn value_impl_tokens(

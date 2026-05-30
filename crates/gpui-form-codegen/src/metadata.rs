@@ -8,21 +8,21 @@ fn rust_metadata_string<T: quote::ToTokens>(tokens: &T) -> String {
 pub fn rust_type_tokens(schema_crate: &syn::Path, ty: &syn::Type) -> TokenStream {
     let ty = rust_metadata_string(ty);
     quote! {
-        #schema_crate::schema::registry::RustType::new_unchecked(#ty)
+        #schema_crate::schema::registry::RustType::from_macro_tokens_unchecked(#ty)
     }
 }
 
 pub fn rust_path_tokens(schema_crate: &syn::Path, path: &syn::Path) -> TokenStream {
     let path = rust_metadata_string(path);
     quote! {
-        #schema_crate::schema::registry::RustPath::new_unchecked(#path)
+        #schema_crate::schema::registry::RustPath::from_macro_tokens_unchecked(#path)
     }
 }
 
 pub fn rust_expr_tokens(schema_crate: &syn::Path, expr: &syn::Expr) -> TokenStream {
     let expr = rust_metadata_string(expr);
     quote! {
-        #schema_crate::schema::registry::RustExpr::new_unchecked(#expr)
+        #schema_crate::schema::registry::RustExpr::from_macro_tokens_unchecked(#expr)
     }
 }
 

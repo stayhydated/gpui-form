@@ -10,8 +10,8 @@ help: the trait `DeclaredComponentShape` is not implemented for `ManualShape`
 15 | struct ManualShape;
    | ^^^^^^^^^^^^^^^^^^
    = note: hand-written `ComponentShape` implementations are not accepted by `#[derive(GpuiForm)]`
-note: required by a bound in `__gpui_form_assert_component_shape`
+note: required by a bound in `__gpui_form_assert_value_declared_component_shape`
   --> tests/ui/gpui_form_missing_declared_component_shape.rs:32:17
    |
 32 |     #[gpui_form(component(ManualShape))]
-   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_component_shape`
+   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_value_declared_component_shape`

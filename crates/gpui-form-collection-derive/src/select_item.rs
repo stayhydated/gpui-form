@@ -1,8 +1,8 @@
 use darling::FromDeriveInput;
+use gpui_form_codegen::resolve_crate_path;
 use proc_macro::TokenStream;
-use proc_macro_crate::{FoundCrate, crate_name};
 use quote::quote;
-use syn::{Data, DeriveInput, Fields, Path};
+use syn::{Data, DeriveInput, Fields};
 
 #[derive(FromDeriveInput)]
 #[darling(supports(enum_any), attributes(select_item))]
@@ -11,16 +11,6 @@ struct SelectItemArgs {
     fluent: bool,
     #[darling(default)]
     display: bool,
-}
-
-fn resolve_crate_path(package_name: &str, fallback: &str) -> Path {
-    let path = match crate_name(package_name) {
-        Ok(FoundCrate::Itself) => "crate".to_string(),
-        Ok(FoundCrate::Name(name)) => format!("::{name}"),
-        Err(_) => fallback.to_string(),
-    };
-
-    syn::parse_str(&path).expect("crate path resolver produced a valid Rust path")
 }
 
 pub fn from(input: TokenStream) -> TokenStream {

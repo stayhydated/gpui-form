@@ -51,8 +51,9 @@ Those belong in `gpui-form-derive`, `gpui-form-codegen`, and
 
 1. A user derives `InfiniteSelect` through `gpui-form-component` with the
    `derive` feature or directly through this crate.
-1. The macro resolves the runtime crate path from the consuming crate's
-   dependencies and emits trait impls against `gpui-form-component`.
+1. The macro resolves the runtime crate path through
+   `gpui-form-codegen::resolve_crate_path` and emits trait impls against
+   `gpui-form-component`.
 1. Users therefore depend on `gpui-form-component` explicitly whenever they use
    this derive.
 1. Runtime code in `gpui-form-component` consumes that impl through

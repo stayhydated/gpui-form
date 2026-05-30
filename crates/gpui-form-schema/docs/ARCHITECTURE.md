@@ -32,7 +32,7 @@ Inventory-registered description of one derived form source struct.
 Important fields:
 
 - `struct_name`
-- `components`
+- `fields`
 - `source_module_path`
 - `koruma_enabled`
 - `has_skipped_fields`
@@ -40,17 +40,20 @@ Important fields:
 
 ### `FieldVariant`
 
-Per-field metadata for one generated component entry.
+Per-field metadata for one non-skipped form field. Inventory scope is all
+rendered form fields: component-backed fields and explicit hidden
+value-holder-only fields. Skipped source fields are represented by
+`GpuiFormShape::has_skipped_fields`, not by a `FieldVariant`.
 
-`FieldVariant` has private fields and exposes intent-specific const builders:
-`FieldVariant::component(...)` for component-backed inventory and
-`FieldVariant::hidden(...)` for value-holder-only metadata. Value presence is
-stored as `FieldValuePresence` instead of independent `optional` and
-value-presence booleans, so construction sites must choose `Optional`,
-`RequiresValue`, or `DirectStorage` directly. Component-only metadata is built
-as `FieldComponentVariant` before it is attached to a field, so builders cannot
-represent value binding, component type, or component suffix metadata without a
-shape path.
+`FieldVariant` has private fields and exposes a const builder:
+`FieldVariant::builder(field_name).with_value_type(...).with_value_presence(...)`
+followed by `.component(...)` for component-backed inventory or `.hidden()` for
+value-holder-only metadata. Value presence is stored as `FieldValuePresence`
+instead of independent `optional` and value-presence booleans, so construction
+sites must choose `Optional`, `RequiresValue`, or `DirectStorage` directly.
+Component-only metadata is built as `FieldComponentVariant` before it is
+attached to a field, so builders cannot represent value binding, component
+type, or component suffix metadata without a shape path.
 
 Rust syntax fragments are stored as typed string wrappers:
 

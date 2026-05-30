@@ -129,7 +129,7 @@ pub fn expand_gpui_form(
                     #facade_crate::schema::registry::GpuiFormShape::new(
                         stringify!(#struct_name),
                         &[],
-                        #facade_crate::schema::registry::RustPath::new_unchecked(module_path!()),
+                        #facade_crate::schema::registry::RustPath::from_macro_tokens_unchecked(module_path!()),
                         #enable_koruma
                     ).with_skipped_fields(false)
                     .with_holder_conversion_can_fail(#conversion_can_fail)
@@ -316,16 +316,15 @@ pub fn expand_gpui_form(
                 }
             });
 
-            let component_variant_tokens =
-                component_def.component_variant_tokens(&shared.form_type, &field_name_str);
+            let component_variant_tokens = component_def.component_variant_tokens();
             let from_expr_tokens = optional_rust_expr_tokens(&facade_crate, &shared.from_expr);
             let into_expr_tokens = optional_rust_expr_tokens(&facade_crate, &shared.into_expr);
 
             Some(quote! {
-                #facade_crate::schema::registry::FieldVariant::component(
-                    #field_name_str,
-                    #field_type_tokens,
-                    #value_presence_tokens,
+                #facade_crate::schema::registry::FieldVariant::builder(#field_name_str)
+                .with_value_type(#field_type_tokens)
+                .with_value_presence(#value_presence_tokens)
+                .component(
                     #component_variant_tokens
                 )
                 .with_source_value_type(
@@ -345,10 +344,9 @@ pub fn expand_gpui_form(
                 return None;
             }
 
-            let shared = field.shared()?;
             field
                 .component()
-                .map(|component| component.type_check_tokens(&shared.form_type))
+                .map(|component| component.type_check_tokens())
         })
         .collect();
 
@@ -376,7 +374,7 @@ pub fn expand_gpui_form(
                     #facade_crate::schema::registry::GpuiFormShape::new(
                         stringify!(#struct_name),
                         __GPUI_FORM_FIELDS,
-                        #facade_crate::schema::registry::RustPath::new_unchecked(module_path!()),
+                        #facade_crate::schema::registry::RustPath::from_macro_tokens_unchecked(module_path!()),
                         #effective_enable_koruma
                     ).with_skipped_fields(#has_skipped_fields)
                     .with_holder_conversion_can_fail(#conversion_can_fail)

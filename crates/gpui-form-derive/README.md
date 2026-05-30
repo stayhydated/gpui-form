@@ -148,7 +148,8 @@ Crates that use this derive need an explicit `gpui-form-runtime` dependency;
 generated paths resolve renamed runtime dependencies. Add `value = T` or
 `values(T, U)` when the derive should emit `ComponentShapeFor<T>`
 compatibility impls for supported form-side value types; omit value metadata
-when you will implement `ComponentShapeFor<Value>` manually.
+when you will implement `ComponentShapeFor<Value>` manually. Each value type
+may be listed once.
 
 ```rs
 use crate::state::{TagsState, build};
@@ -256,6 +257,8 @@ contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
 `NoComponentValueBinding`. The macro emits `ComponentShapeFor<T>` impls only
 for `value = ...` / `values(...)` metadata. Omit value metadata when the block
 contains a manual `ComponentShapeFor` impl with custom bounds or diagnostics.
+Combining value metadata with manual `ComponentShapeFor` impls is rejected so
+compatibility behavior stays explicit.
 
 ## Feature Flags
 

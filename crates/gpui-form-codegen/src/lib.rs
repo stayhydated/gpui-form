@@ -5,4 +5,4 @@ pub mod metadata;
 
 mod names;
 
-pub use crate_paths::CratePaths;
+pub use crate_paths::{CratePaths, resolve_crate_path};

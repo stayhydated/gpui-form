@@ -292,7 +292,8 @@ The value must be a path-like type. `field_suffix = "..."` must be a
 non-empty identifier suffix.
 Use `value = ...` or `values(...)` to publish the form-side value types a
 shape supports; omit those metadata entries only when you provide manual
-`ComponentShapeFor<Value>` impls.
+`ComponentShapeFor<Value>` impls. Do not mix value metadata with manual
+compatibility impls in the same `component_shape!` block.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping

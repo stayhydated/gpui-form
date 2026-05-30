@@ -16,17 +16,17 @@ help: the trait `ComboboxFormValue<Item>` is implemented for `Vec<Item>`
    | impl<Item> ComboboxFormValue<Item> for Vec<Item> {}
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = note: required for `gpui_form_collection::combobox::Combobox<Role>` to implement `ComponentShapeFor<Role>`
-note: required by a bound in `__gpui_form_assert_component_shape`
+note: required by a bound in `__gpui_form_assert_role_component_value_compatibility`
   --> tests/ui/gpui_form_combobox_wrong_value_type.rs:41:17
    |
 41 |     #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Role>))]
-   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_component_shape`
+   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_role_component_value_compatibility`
 
 error[E0277]: gpui-form component shape `gpui_form_collection::combobox::Combobox<Role>` does not implement value binding for `Role`
-  --> tests/ui/gpui_form_combobox_wrong_value_type.rs:41:17
+  --> tests/ui/gpui_form_combobox_wrong_value_type.rs:41:27
    |
 41 |     #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Role>))]
-   |                 ^^^^^^^^^ the trait `ComponentValueBinding<Role>` is not implemented for `gpui_form_collection::combobox::Combobox<Role>`
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ComponentValueBinding<Role>` is not implemented for `gpui_form_collection::combobox::Combobox<Role>`
    |
    = note: add `value_binding` shape metadata with a `ComponentValueBinding<T>` impl, or use `NoComponentValueBinding` if the shape should not inherit value binding
 help: the trait `ComponentValueBinding<Role>` is not implemented for `gpui_form_collection::combobox::Combobox<Role>`
@@ -40,3 +40,8 @@ help: the trait `ComponentValueBinding<Role>` is not implemented for `gpui_form_
    | |_________________________________________________________________________^
    = help: for that trait implementation, expected `Vec<Role>`, found `Role`
    = note: required for `InheritedComponentValueBinding` to implement `AssertComponentValueBindingPolicy<gpui_form_collection::combobox::Combobox<Role>, Role>`
+note: required by a bound in `__gpui_form_assert_role_component_value_binding`
+  --> tests/ui/gpui_form_combobox_wrong_value_type.rs:41:17
+   |
+41 |     #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Role>))]
+   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_role_component_value_binding`

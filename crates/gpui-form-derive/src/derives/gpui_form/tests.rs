@@ -437,7 +437,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"birth_date\",::gpui_form::schema::registry::RustType::new_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::FieldValuePresence::Optional"
+                "FieldVariant::builder(\"birth_date\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\")).with_value_presence(::gpui_form::schema::registry::FieldValuePresence::Optional).component("
             ),
             "FieldVariant should use override type for metadata"
         );
@@ -499,7 +499,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::RustType::new_unchecked(\"rust_decimal::Decimal\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
+                "FieldVariant::builder(\"amount\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"rust_decimal::Decimal\")).with_value_presence(if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -511,7 +511,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::NumericShape<rust_decimal::Decimal>\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::from_macro_tokens_unchecked(\"crate::NumericShape<rust_decimal::Decimal>\"))"
             ),
             "Component shape metadata should preserve the fully-qualified override type"
         );
@@ -712,7 +712,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::RustType::new_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
+                "FieldVariant::builder(\"bio\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\")).with_value_presence(if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
@@ -723,7 +723,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"crate::ui::BioInput\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::from_macro_tokens_unchecked(\"crate::ui::BioInput\"))"
             ),
             "FieldVariant should carry the component shape path: {compact}"
         );
@@ -889,7 +889,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("duplicate`shape`option"),
+            compact.contains("duplicate`component`option"),
             "duplicate component syntax should produce an actionable error: {compact}"
         );
     }
@@ -945,9 +945,18 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("AssertComponentValueBindingPolicy<crate::Input,String")
+            compact.contains("AssertComponentValueBindingPolicy<Shape,Value")
+                && compact.contains(
+                    "__gpui_form_assert_name_component_value_binding::<crate::Input,String"
+                )
                 && compact.contains("assert_component_value_binding_policy()"),
             "shape value-binding policy should emit a derive-time assertion through the runtime helper: {compact}"
+        );
+        assert!(
+            compact.contains("__gpui_form_assert_name_declared_component_shape")
+                && compact.contains("__gpui_form_assert_name_component_value_compatibility")
+                && compact.contains("__gpui_form_assert_name_component_value_binding"),
+            "component type checks should be split into field-named assertions: {compact}"
         );
     }
 
@@ -978,13 +987,13 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::RustType::new_unchecked(\"crate::types::AccountCode\"),if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
+                "FieldVariant::builder(\"account_no\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"crate::types::AccountCode\")).with_value_presence(if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );
         assert!(
             compact.contains(
-                "with_source_value_type(::gpui_form::schema::registry::RustType::new_unchecked(\"String\"))"
+                "with_source_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"))"
             ),
             "FieldVariant should store the source model value type: {compact}"
         );
@@ -995,7 +1004,7 @@ mod gpui_form_tests {
             "FieldVariant should inherit generated value-storage policy from the shape: {compact}"
         );
         assert!(
-            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::new_unchecked(\"crate::types::AccountCode::into_string\")))"),
+            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::into_string\")))"),
             "FieldVariant should store source/form conversion expressions: {compact}"
         );
     }
@@ -1063,7 +1072,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::new_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::from_macro_tokens_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
             ),
             "component shape metadata should store the resolved shape path: {compact}"
         );

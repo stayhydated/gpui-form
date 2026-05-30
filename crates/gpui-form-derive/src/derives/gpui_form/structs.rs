@@ -1,5 +1,5 @@
 use darling::{Error as DarlingError, FromField, FromMeta};
-use gpui_form_codegen::components::{RequiredValue, ShapeOptions};
+use gpui_form_codegen::components::{RequiredValue, ResolvedComponentShape, ShapeOptions};
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::{Span, TokenStream};
 use syn::{
@@ -221,7 +221,7 @@ pub struct HiddenFieldPlan {
 #[derive(Clone, Debug)]
 pub struct ComponentFieldPlan {
     pub shared: SharedFieldPlan,
-    pub component: ShapeOptions,
+    pub component: ResolvedComponentShape,
     pub component_layout: ComponentFieldContent,
 }
 
@@ -247,7 +247,7 @@ impl FieldPlan {
 
     pub fn component_field(
         shared: SharedFieldPlan,
-        component: ShapeOptions,
+        component: ResolvedComponentShape,
         component_layout: ComponentFieldContent,
     ) -> Self {
         Self::Component(ComponentFieldPlan {
@@ -285,7 +285,7 @@ impl FieldPlan {
         }
     }
 
-    pub fn component(&self) -> Option<&ShapeOptions> {
+    pub fn component(&self) -> Option<&ResolvedComponentShape> {
         match self {
             Self::Component(plan) => Some(&plan.component),
             Self::Skipped(_) | Self::Hidden(_) => None,
@@ -520,12 +520,12 @@ struct FieldOptions {
 }
 
 impl FieldOptions {
-    fn first_conflict(&self) -> Option<&'static str> {
+    fn first_conflict(&self) -> Option<FieldOptionKey> {
         [
-            ("default", self.default.is_some()),
-            ("type", self.r#type.is_some()),
-            ("source_to_form", self.source_to_form.is_some()),
-            ("form_to_source", self.form_to_source.is_some()),
+            (FieldOptionKey::Default, self.default.is_some()),
+            (FieldOptionKey::Type, self.r#type.is_some()),
+            (FieldOptionKey::SourceToForm, self.source_to_form.is_some()),
+            (FieldOptionKey::FormToSource, self.form_to_source.is_some()),
         ]
         .into_iter()
         .find_map(|(option, present)| present.then_some(option))
@@ -545,6 +545,74 @@ enum FieldIntentKind {
     Skipped,
 }
 
+impl FieldIntentKind {
+    const fn option_key(&self) -> FieldOptionKey {
+        match self {
+            Self::Component(_) => FieldOptionKey::Component,
+            Self::Hidden => FieldOptionKey::Hidden,
+            Self::Skipped => FieldOptionKey::Skip,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FieldOptionKey {
+    Component,
+    Hidden,
+    Skip,
+    Type,
+    FormToSource,
+    SourceToForm,
+    Default,
+}
+
+impl FieldOptionKey {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Component => "component",
+            Self::Hidden => "hidden",
+            Self::Skip => "skip",
+            Self::Type => "type",
+            Self::FormToSource => "form_to_source",
+            Self::SourceToForm => "source_to_form",
+            Self::Default => "default",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FieldOptionConflict {
+    Duplicate(FieldOptionKey),
+    Intent {
+        first: FieldOptionKey,
+        second: FieldOptionKey,
+    },
+    SkipWith(FieldOptionKey),
+}
+
+fn field_option_conflict(
+    existing: FieldOptionKey,
+    incoming: FieldOptionKey,
+) -> Option<FieldOptionConflict> {
+    if existing == incoming {
+        return Some(FieldOptionConflict::Duplicate(incoming));
+    }
+
+    match (existing, incoming) {
+        (FieldOptionKey::Skip, other) | (other, FieldOptionKey::Skip) => {
+            Some(FieldOptionConflict::SkipWith(other))
+        },
+        (FieldOptionKey::Component, FieldOptionKey::Hidden)
+        | (FieldOptionKey::Hidden, FieldOptionKey::Component) => {
+            Some(FieldOptionConflict::Intent {
+                first: existing,
+                second: incoming,
+            })
+        },
+        _ => None,
+    }
+}
+
 impl ParsedFieldIntent {
     fn pending() -> Self {
         Self {
@@ -553,19 +621,11 @@ impl ParsedFieldIntent {
         }
     }
 
-    fn is_skipped(&self) -> bool {
-        matches!(self.kind, Some(FieldIntentKind::Skipped))
-    }
-
     fn options_mut(&mut self) -> Option<&mut FieldOptions> {
         match self.kind {
             Some(FieldIntentKind::Skipped) => None,
             _ => Some(&mut self.options),
         }
-    }
-
-    fn has_component_configuration(&self) -> bool {
-        matches!(self.kind, Some(FieldIntentKind::Component(_)))
     }
 }
 
@@ -710,38 +770,38 @@ fn parse_gpui_form_item(
         GpuiFormFieldOption::Skip { span } => set_skip(field, true, &span),
         GpuiFormFieldOption::Hidden { span } => set_hidden(field, &span),
         GpuiFormFieldOption::Type { span, ty } => {
-            let options = field_options_mut(field, "type", &span)?;
+            let options = field_options_mut(field, FieldOptionKey::Type, &span)?;
             set_once(
                 &mut options.r#type,
                 Spanned::new(TypeOverride(ty), &span),
-                "type",
+                FieldOptionKey::Type,
                 &span,
             )
         },
         GpuiFormFieldOption::FormToSource { span, expr } => {
-            let options = field_options_mut(field, "form_to_source", &span)?;
+            let options = field_options_mut(field, FieldOptionKey::FormToSource, &span)?;
             set_once(
                 &mut options.form_to_source,
                 Spanned::new(expr, &span),
-                "form_to_source",
+                FieldOptionKey::FormToSource,
                 &span,
             )
         },
         GpuiFormFieldOption::SourceToForm { span, expr } => {
-            let options = field_options_mut(field, "source_to_form", &span)?;
+            let options = field_options_mut(field, FieldOptionKey::SourceToForm, &span)?;
             set_once(
                 &mut options.source_to_form,
                 Spanned::new(expr, &span),
-                "source_to_form",
+                FieldOptionKey::SourceToForm,
                 &span,
             )
         },
         GpuiFormFieldOption::Default { span, expr } => {
-            let options = field_options_mut(field, "default", &span)?;
+            let options = field_options_mut(field, FieldOptionKey::Default, &span)?;
             set_once(
                 &mut options.default,
                 Spanned::new(DefaultExpr(expr), &span),
-                "default",
+                FieldOptionKey::Default,
                 &span,
             )
         },
@@ -754,21 +814,7 @@ fn set_shape<S: syn::spanned::Spanned>(
     shape: Path,
     span: &S,
 ) -> darling::Result<()> {
-    match field.intent.kind {
-        Some(FieldIntentKind::Component(_)) => {
-            return Err(DarlingError::custom(
-                "duplicate `shape` option in `gpui_form` field attribute; remove the duplicate `shape` entry",
-            )
-            .with_span(span));
-        },
-        Some(FieldIntentKind::Hidden) => {
-            return Err(intent_conflict_error("hidden", "component").with_span(span));
-        },
-        Some(FieldIntentKind::Skipped) => {
-            return Err(skip_conflict_error("component").with_span(span));
-        },
-        None => {},
-    }
+    ensure_intent_available(field, FieldOptionKey::Component, span)?;
 
     let component = ShapeOptions::from_shape_with_span(shape, span.span());
     field.intent.kind = Some(FieldIntentKind::Component(component));
@@ -779,25 +825,7 @@ fn set_hidden<S: syn::spanned::Spanned>(
     field: &mut ComponentField,
     span: &S,
 ) -> darling::Result<()> {
-    match field.intent.kind {
-        Some(FieldIntentKind::Hidden) => {
-            return Err(DarlingError::custom(
-                "duplicate `hidden` option in `gpui_form` field attribute; remove the duplicate `hidden` entry",
-            )
-            .with_span(span));
-        },
-        Some(FieldIntentKind::Component(_)) => {
-            return Err(intent_conflict_error("component", "hidden").with_span(span));
-        },
-        Some(FieldIntentKind::Skipped) => {
-            return Err(skip_conflict_error("hidden").with_span(span));
-        },
-        None => {},
-    }
-
-    if field.intent.has_component_configuration() {
-        return Err(intent_conflict_error("component", "hidden").with_span(span));
-    }
+    ensure_intent_available(field, FieldOptionKey::Hidden, span)?;
 
     field.intent.kind = Some(FieldIntentKind::Hidden);
     Ok(())
@@ -806,14 +834,11 @@ fn set_hidden<S: syn::spanned::Spanned>(
 fn set_once<T, S: syn::spanned::Spanned>(
     slot: &mut Option<T>,
     value: T,
-    key: &str,
+    key: FieldOptionKey,
     span: &S,
 ) -> darling::Result<()> {
     if slot.is_some() {
-        return Err(DarlingError::custom(format!(
-            "duplicate `{key}` option in `gpui_form` field attribute; remove the duplicate `{key}` entry"
-        ))
-        .with_span(span));
+        return Err(field_conflict_error(FieldOptionConflict::Duplicate(key)).with_span(span));
     }
 
     *slot = Some(value);
@@ -829,56 +854,65 @@ fn set_skip<S: syn::spanned::Spanned>(
         return Ok(());
     }
 
-    if field.intent.is_skipped() {
-        return Err(DarlingError::custom(
-            "duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry",
-        )
-        .with_span(span));
-    }
-
-    if matches!(field.intent.kind, Some(FieldIntentKind::Component(_))) {
-        return Err(skip_conflict_error("component").with_span(span));
-    }
-
-    if matches!(field.intent.kind, Some(FieldIntentKind::Hidden)) {
-        return Err(skip_conflict_error("hidden").with_span(span));
-    }
-
-    if field.intent.has_component_configuration() {
-        return Err(skip_conflict_error("component").with_span(span));
-    }
+    ensure_intent_available(field, FieldOptionKey::Skip, span)?;
 
     if let Some(option) = field.intent.options.first_conflict() {
-        return Err(skip_conflict_error(option).with_span(span));
+        return Err(field_conflict_error(FieldOptionConflict::SkipWith(option)).with_span(span));
     }
 
     field.intent.kind = Some(FieldIntentKind::Skipped);
     Ok(())
 }
 
-fn intent_conflict_error(first: &str, second: &str) -> DarlingError {
-    DarlingError::custom(format!(
-        "`{first}` cannot be combined with `{second}` in a `gpui_form` field attribute; \
-         choose exactly one of component, hidden, or skip"
-    ))
+fn ensure_intent_available<S: syn::spanned::Spanned>(
+    field: &ComponentField,
+    incoming: FieldOptionKey,
+    span: &S,
+) -> darling::Result<()> {
+    if let Some(existing) = field.intent.kind.as_ref().map(FieldIntentKind::option_key) {
+        if let Some(conflict) = field_option_conflict(existing, incoming) {
+            return Err(field_conflict_error(conflict).with_span(span));
+        }
+    }
+
+    Ok(())
 }
 
-fn skip_conflict_error(option: &str) -> DarlingError {
-    DarlingError::custom(format!(
-        "`skip` cannot be combined with `{option}` in a `gpui_form` field attribute; \
-         remove `skip` or remove the `{option}` option"
-    ))
+fn field_conflict_error(conflict: FieldOptionConflict) -> DarlingError {
+    match conflict {
+        FieldOptionConflict::Duplicate(key) => {
+            let key = key.label();
+            DarlingError::custom(format!(
+                "duplicate `{key}` option in `gpui_form` field attribute; remove the duplicate `{key}` entry"
+            ))
+        },
+        FieldOptionConflict::Intent { first, second } => {
+            let first = first.label();
+            let second = second.label();
+            DarlingError::custom(format!(
+                "`{first}` cannot be combined with `{second}` in a `gpui_form` field attribute; \
+                 choose exactly one of component, hidden, or skip"
+            ))
+        },
+        FieldOptionConflict::SkipWith(option) => {
+            let option = option.label();
+            DarlingError::custom(format!(
+                "`skip` cannot be combined with `{option}` in a `gpui_form` field attribute; \
+                 remove `skip` or remove the `{option}` option"
+            ))
+        },
+    }
 }
 
 fn field_options_mut<'a, S: syn::spanned::Spanned>(
     field: &'a mut ComponentField,
-    option: &str,
+    option: FieldOptionKey,
     span: &S,
 ) -> darling::Result<&'a mut FieldOptions> {
     field
         .intent
         .options_mut()
-        .ok_or_else(|| skip_conflict_error(option).with_span(span))
+        .ok_or_else(|| field_conflict_error(FieldOptionConflict::SkipWith(option)).with_span(span))
 }
 
 fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
@@ -924,6 +958,7 @@ pub struct ComponentStruct {
 
 #[derive(Clone, Debug)]
 pub struct ComponentFieldContent {
+    pub component: ResolvedComponentShape,
     pub field_structure_tokens: TokenStream,
     pub field_base_declarations_tokens: TokenStream,
     pub required_value: RequiredValue,

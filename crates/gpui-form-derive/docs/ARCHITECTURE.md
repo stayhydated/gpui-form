@@ -57,7 +57,8 @@ that crate's `derive` feature is enabled.
    declaration.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
-   `gpui-form-codegen`.
+   `gpui-form-codegen`, which resolves the component shape into a planned
+   `ResolvedComponentShape` before layout, inventory, and type-check emission.
 1. Emit:
    - `FormFields`
    - `FormComponents`
@@ -172,8 +173,10 @@ When the `inventory` feature is enabled:
   `ComponentShape` impl
 - sets shape-level `ValueBindingPolicy` only when `value_binding;` is present
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
-- emits a broad `ComponentShapeFor<Value>` impl unless the block contains an
-  explicit `ComponentShapeFor` impl
+- emits one `ComponentShapeFor<T>` impl per `value = ...` / `values(...)`
+  metadata entry
+- rejects duplicate value metadata and rejects mixing value metadata with
+  manual `ComponentShapeFor` impls in the same block
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_runtime::shape` by default

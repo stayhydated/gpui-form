@@ -9,23 +9,21 @@ impl super::ComponentLayout for ShapeComponent {
         field_structure_tokens: &mut TokenStream,
         field_base_declarations_tokens: &mut TokenStream,
     ) {
-        let FieldInformation::<ShapeOptions> {
+        let FieldInformation::<ResolvedComponentShape> {
             options,
             name,
-            r#type,
+            r#type: _,
         } = &self.0;
 
-        let field_name_ident = match crate::names::ComponentFieldName::try_new(
-            &options.component_suffix(name),
-            name,
-        ) {
-            Ok(ident) => ident,
-            Err(error) => {
-                field_structure_tokens.extend(error.to_compile_error());
-                return;
-            },
-        };
-        let shape = options.runtime_shape(r#type);
+        let field_name_ident =
+            match crate::names::ComponentFieldName::try_new(options.component_suffix(), name) {
+                Ok(ident) => ident,
+                Err(error) => {
+                    field_structure_tokens.extend(error.to_compile_error());
+                    return;
+                },
+            };
+        let shape = options.shape();
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
         let gpui_crate = crate_paths.gpui;
@@ -33,7 +31,7 @@ impl super::ComponentLayout for ShapeComponent {
         let state_type = quote! {
             <#shape as #runtime_crate::shape::ComponentShape>::State
         };
-        let constructor_tokens = options.constructor_tokens(r#type);
+        let constructor_tokens = options.constructor_tokens();
 
         let field_structure_definition = quote! {
             pub #field_name_ident: #gpui_crate::Entity<#state_type>,

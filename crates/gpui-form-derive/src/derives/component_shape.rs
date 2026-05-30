@@ -199,6 +199,13 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
         };
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate, render_component_assoc);
     let component_shape_for_impls = if has_explicit_component_shape_for_impl(&impls) {
+        if let Some(value) = metadata.first_value() {
+            return syn::Error::new_spanned(
+                value,
+                "`value = ...` and `values(...)` cannot be combined with manual `ComponentShapeFor` impls; remove the value metadata or remove the manual impl",
+            )
+            .to_compile_error();
+        }
         None
     } else {
         Some(metadata.value_impl_tokens(&runtime_crate, &ident, &generics))
@@ -306,6 +313,46 @@ mod tests {
                     "ComponentShapeFor<gpui_component::slider::SliderValue>forSliderShape"
                 ),
             "values(...) should emit one compatibility impl per value type: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_duplicate_values() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct SliderShape {
+                type State = crate::state::SliderState;
+                value = f32;
+                values(gpui_component::slider::SliderValue, f32);
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject duplicate value metadata"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string()
+                .contains("duplicate `value` compatibility metadata"),
+            "macro should report duplicate value metadata clearly: {err}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_manual_component_shape_for_with_values() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+                value = String;
+
+                impl gpui_form_runtime::shape::ComponentShapeFor<String> for InputShape {}
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input).to_string();
+
+        assert!(
+            expanded.contains("cannot be combined with manual `ComponentShapeFor` impls"),
+            "value metadata plus manual ComponentShapeFor impl should emit a compile error: {expanded}"
         );
     }
 

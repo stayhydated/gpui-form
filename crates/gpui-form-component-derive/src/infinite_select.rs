@@ -1,7 +1,7 @@
 use darling::{FromDeriveInput, FromVariant};
+use gpui_form_codegen::resolve_crate_path;
 use proc_macro::TokenStream;
-use proc_macro_crate::{FoundCrate, crate_name};
-use quote::{format_ident, quote};
+use quote::quote;
 use std::collections::HashMap;
 use syn::{DeriveInput, Ident, Type};
 
@@ -154,29 +154,6 @@ where
         .collect()
 }
 
-fn crate_tokens(found_crate: FoundCrate) -> proc_macro2::TokenStream {
-    match found_crate {
-        FoundCrate::Itself => quote! { crate },
-        FoundCrate::Name(name) => {
-            let ident = format_ident!("{}", name.replace('-', "_"));
-            quote! { ::#ident }
-        },
-    }
-}
-
-fn resolve_runtime_crate() -> syn::Result<proc_macro2::TokenStream> {
-    match crate_name("gpui-form-component") {
-        Ok(found_crate) => Ok(crate_tokens(found_crate)),
-        Err(err) => Err(syn::Error::new(
-            proc_macro2::Span::call_site(),
-            format!(
-                "InfiniteSelect derive could not resolve the runtime crate. Add `gpui-form-component` as an explicit dependency. Resolution error: {}",
-                err,
-            ),
-        )),
-    }
-}
-
 pub fn from(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input as DeriveInput);
 
@@ -186,10 +163,7 @@ pub fn from(input: TokenStream) -> TokenStream {
     };
 
     let enum_ident = &args.ident;
-    let runtime_crate = match resolve_runtime_crate() {
-        Ok(path) => path,
-        Err(err) => return err.to_compile_error().into(),
-    };
+    let runtime_crate = resolve_crate_path("gpui-form-component", "::gpui_form_component");
 
     let fluent_kv = match FluentKvOptions::from_attrs(&args.attrs) {
         Ok(options) => options,

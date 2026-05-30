@@ -82,7 +82,7 @@ pub fn plan_form(
             Some(component) => {
                 let layout = generate_component_field(&field_name, &source_value_type, &component);
                 (
-                    Some(component.component.clone()),
+                    Some(layout.component.clone()),
                     Some(layout.clone()),
                     layout.required_value,
                 )

@@ -377,7 +377,8 @@ or `component_value_binding`; those macros emit direct runtime paths and
 resolve renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from the derive or `component_shape!`,
 provide manual `ComponentShapeFor<Value>` impls for each supported form-side
-value type. The shape declaration owns both policy associated types:
+value type. Do not combine value metadata with manual `ComponentShapeFor`
+impls in the same `component_shape!` block. The shape declaration owns both policy associated types:
 `ValueStoragePolicy` controls value-holder storage, and `ValueBindingPolicy` is
 usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.
