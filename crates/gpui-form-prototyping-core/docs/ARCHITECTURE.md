@@ -107,15 +107,19 @@ All component fields are shape-backed:
 - if the field's render capability is enabled, the generator emits
   `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
   runtime `ComponentRender` contract
-- if that metadata is false, the generator falls back to a placeholder row
-- component subscriptions are generated only when the field's value-binding
-  capability is enabled; the field's shape must provide the generic
-  `ComponentValueBinding<T>` hook that maps component events to
-  `FormValueChange<T>`
+- if render metadata, value-binding metadata, shape path metadata, or required
+  default storage support is missing, `FormShapeAdapter::parts()` returns a
+  field-specific `PrototypingError` instead of emitting placeholder UI
+- component subscriptions require the field's value-binding capability; the
+  field's shape must provide the generic `ComponentValueBinding<T>` hook that
+  maps component events to `FormValueChange<T>`
 - value-bound component subscriptions use runtime projection aliases and helper
   functions from `gpui_form::runtime::shape` inline for value-binding state
   seeding and event conversion; owned components expose their own event enum,
   while external wrappers keep their upstream event type
+- clear events reset optional holder storage to `None`; for non-optional
+  storage they use the declared source default lowered into the form-side value
+  when present, then fall back to the shape-owned default storage policy
 
 ## Coordination Rules
 

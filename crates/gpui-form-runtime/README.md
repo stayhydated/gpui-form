@@ -6,7 +6,7 @@ Most applications start with [`gpui-form`](../gpui-form/README.md), whose
 facade re-exports these contracts as `gpui_form::runtime::shape` for generated
 `GpuiForm` code. Depend on `gpui-form-runtime` directly only when writing
 lower-level integration code: app-owned `ComponentShape`s, wrapper shapes, or
-`component_value_binding` impls.
+direct value-binding impls.
 
 ```toml
 [dependencies]
@@ -83,11 +83,11 @@ implementation. `ComponentPrototyping` stores the shared
 
 ## Value Binding
 
-Implement `shape::ComponentValueBinding<T>` when generated prototyping code
-should seed a component from a form value and map component events back into the
-form value holder.
-Component-derived shapes delegate through
-`shape::ComponentStateValueBinding<T>` on their backing state.
+Implement `shape::ComponentStateValueBinding<T>` on a component-derived shape's
+backing state when generated prototyping code should seed a component from a
+form value and map component events back into the form value holder. The derived
+shape delegates its `shape::ComponentValueBinding<T>` impl through that
+state-level contract when `value_binding` metadata is present.
 Wrapper shapes declared with `gpui_form_derive::component_shape!` can place the
 `ComponentValueBinding<T>` impl inside the macro block; add `value_binding;` to
 the macro metadata when the wrapper should publish shape-level value-binding

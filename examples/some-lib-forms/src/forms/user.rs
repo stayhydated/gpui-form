@@ -53,7 +53,11 @@ impl UserForm {
                 self.current_data.username = value;
             },
             FormValueChange::Clear => {
-                self.current_data.username = ::core::default::Default::default();
+                self.current_data.username = <<gpui_form_collection::input::Input<
+                    String,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    String,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -74,7 +78,7 @@ impl UserForm {
                 self.current_data.email = value;
             },
             FormValueChange::Clear => {
-                self.current_data.email = ::core::default::Default::default();
+                self.current_data.email = ::core::convert::Into::into("test@example.com");
             },
             FormValueChange::Unchanged => {},
         }
@@ -122,7 +126,7 @@ impl UserForm {
                 self.current_data.balance = value;
             },
             FormValueChange::Clear => {
-                self.current_data.balance = ::core::default::Default::default();
+                self.current_data.balance = ::core::convert::Into::into(67);
             },
             FormValueChange::Unchanged => {},
         }
@@ -149,7 +153,11 @@ impl UserForm {
                 self.current_data.debt = value;
             },
             FormValueChange::Clear => {
-                self.current_data.debt = ::core::default::Default::default();
+                self.current_data.debt = <<gpui_form_collection::input::Input<
+                    rust_decimal::Decimal,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    rust_decimal::Decimal,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -193,7 +201,9 @@ impl UserForm {
                 self.current_data.attention_level = value;
             },
             FormValueChange::Clear => {
-                self.current_data.attention_level = ::core::default::Default::default();
+                self.current_data.attention_level = <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    f32,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -239,7 +249,11 @@ impl UserForm {
                 self.current_data.otp_code = value;
             },
             FormValueChange::Clear => {
-                self.current_data.otp_code = ::core::default::Default::default();
+                self.current_data.otp_code = <<gpui_form_collection::otp_input::OtpInput<
+                    String,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    String,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -265,7 +279,9 @@ impl UserForm {
                 self.current_data.uploaded_files = value;
             },
             FormValueChange::Clear => {
-                self.current_data.uploaded_files = ::core::default::Default::default();
+                self.current_data.uploaded_files = <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    Vec<std::path::PathBuf>,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -313,7 +329,9 @@ impl UserForm {
                 self.current_data.subscribe_newsletter = value;
             },
             FormValueChange::Clear => {
-                self.current_data.subscribe_newsletter = ::core::default::Default::default();
+                self.current_data.subscribe_newsletter = <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    bool,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -334,7 +352,9 @@ impl UserForm {
                 self.current_data.enable_notifications = value;
             },
             FormValueChange::Clear => {
-                self.current_data.enable_notifications = ::core::default::Default::default();
+                self.current_data.enable_notifications = <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    bool,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -361,7 +381,11 @@ impl UserForm {
                 self.current_data.preferred = value;
             },
             FormValueChange::Clear => {
-                self.current_data.preferred = ::core::default::Default::default();
+                self.current_data.preferred = <<gpui_form_collection::select::Select<
+                    PreferredLanguage,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    PreferredLanguage,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -706,21 +730,22 @@ impl Render for UserForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.username().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.username().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -729,18 +754,27 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(
-                                &self.fields.username_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    String,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        String,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.username_input),
+                            ),
                     )
                     .child(
                         field()
@@ -754,21 +788,22 @@ impl Render for UserForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.email().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.email().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -777,18 +812,27 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(
-                                &self.fields.email_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    String,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        String,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.email_input),
+                            ),
                     )
                     .child(
                         field()
@@ -802,21 +846,22 @@ impl Render for UserForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.age().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.age().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -825,16 +870,27 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(&self.fields.age_input)),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    u32,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        u32,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.age_input),
+                            ),
                     )
                     .child(
                         field()
@@ -848,21 +904,22 @@ impl Render for UserForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.balance().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.balance().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -871,18 +928,27 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(
-                                &self.fields.balance_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    rust_decimal::Decimal,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        rust_decimal::Decimal,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.balance_input),
+                            ),
                     )
                     .child(
                         field()
@@ -896,21 +962,22 @@ impl Render for UserForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.debt().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.debt().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -919,16 +986,27 @@ impl Render for UserForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(&self.fields.debt_input)),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    rust_decimal::Decimal,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        rust_decimal::Decimal,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.debt_input),
+                            ),
                     )
                     .child(
                         field()
@@ -949,9 +1027,15 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_form_collection::number_input::NumberInputField>::new(
-                                &self.fields.rating_number_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::number_input::NumberInput<
+                                    u32,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::number_input::NumberInput<
+                                        u32,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.rating_number_input),
+                            ),
                     )
                     .child(
                         field()
@@ -972,9 +1056,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::slider::Slider>::new(
-                                &self.fields.attention_level_slider,
-                            )),
+                            .child(
+                                <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.attention_level_slider),
+                            ),
                     )
                     .child(
                         field()
@@ -995,9 +1081,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::color_picker::ColorPicker>::new(
-                                &self.fields.brand_color_color_picker,
-                            )),
+                            .child(
+                                <<gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.brand_color_color_picker),
+                            ),
                     )
                     .child(
                         field()
@@ -1018,9 +1106,15 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_form_collection::otp_input::OtpInputField>::new(
-                                &self.fields.otp_code_otp_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::otp_input::OtpInput<
+                                    String,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::otp_input::OtpInput<
+                                        String,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.otp_code_otp_input),
+                            ),
                     )
                     .child(
                         field()
@@ -1041,9 +1135,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_form_component::file_picker::FilePicker>::new(
-                                &self.fields.uploaded_files_file_picker,
-                            )),
+                            .child(
+                                <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.uploaded_files_file_picker),
+                            ),
                     )
                     .child(
                         field()
@@ -1064,9 +1160,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::date_picker::DatePicker>::new(
-                                &self.fields.holiday_range_date_range_picker,
-                            )),
+                            .child(
+                                <<gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.holiday_range_date_range_picker),
+                            ),
                     )
                     .child(
                         field()
@@ -1087,9 +1185,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_form_collection::switch::SwitchField>::new(
-                                &self.fields.subscribe_newsletter_switch,
-                            )),
+                            .child(
+                                <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.subscribe_newsletter_switch),
+                            ),
                     )
                     .child(
                         field()
@@ -1110,9 +1210,11 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_form_collection::checkbox::CheckboxField>::new(
-                                &self.fields.enable_notifications_checkbox,
-                            )),
+                            .child(
+                                <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.enable_notifications_checkbox),
+                            ),
                     )
                     .child(
                         field()
@@ -1133,9 +1235,15 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::select::Select<_>>::new(
-                                &self.fields.preferred_select,
-                            )),
+                            .child(
+                                <<gpui_form_collection::select::Select<
+                                    PreferredLanguage,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::select::Select<
+                                        PreferredLanguage,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.preferred_select),
+                            ),
                     )
                     .child(
                         field()
@@ -1156,9 +1264,15 @@ impl Render for UserForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::select::Select<_>>::new(
-                                &self.fields.country_select,
-                            )),
+                            .child(
+                                <<gpui_form_collection::select::Select<
+                                    EnumCountry,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::select::Select<
+                                        EnumCountry,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.country_select),
+                            ),
                     )
                     .child(
                         field()
@@ -1171,30 +1285,70 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::BirthDate;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let error = {
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.birth_date().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
+                                };
+                                let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
                                         .flex()
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::date_picker::DatePicker>::new(
-                                &self.fields.birth_date_date_picker,
-                            )),
+                            .child(
+                                <<gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.birth_date_date_picker),
+                            ),
                     )
-                    .child(field().label_indent(false).child(self.action_buttons(
-                        cx,
-                        |payload, _, _| {
-                            let _ = payload;
-                        },
-                    ))),
+                    .child(
+                        field()
+                            .label_indent(false)
+                            .child(
+                                self
+                                    .action_buttons(
+                                        cx,
+                                        |payload, _, _| {
+                                            let _ = payload;
+                                        },
+                                    ),
+                            ),
+                    ),
             )
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
-            .child(format!(
-                "into_original: incomplete; present_fields_json: {}",
-                self.current_data.present_fields_json()
-            ))
+            .child(
+                format!(
+                    "into_original: incomplete; present_fields_json: {}", self
+                    .current_data.present_fields_json()
+                ),
+            )
     }
 }

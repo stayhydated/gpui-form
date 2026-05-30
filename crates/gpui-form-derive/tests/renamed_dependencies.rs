@@ -119,7 +119,8 @@ renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}"
         src_dir.join("lib.rs"),
         r#"
 use renamed_gpui_form_runtime::shape::{
-    ComponentShape, ComponentValueBinding, DeclaredComponentShape, FormValueChange,
+    ComponentShape, ComponentStateValueBinding, ComponentValueBinding, DeclaredComponentShape,
+    FormValueChange,
 };
 
 pub struct DerivedState;
@@ -143,8 +144,7 @@ impl DerivedComponent {
 
 impl renamed_gpui::EventEmitter<DerivedEvent> for DerivedState {}
 
-#[gpui_form_derive::component_value_binding]
-impl ComponentValueBinding<String> for DerivedState {
+impl ComponentStateValueBinding<String> for DerivedState {
     type Event = DerivedEvent;
 
     fn form_value_change(_state: &Self, _event: &Self::Event) -> FormValueChange<String> {

@@ -21,6 +21,11 @@ pub enum PrototypingError {
         value: String,
         error: String,
     },
+    MissingComponentCapability {
+        struct_name: String,
+        field_name: String,
+        capability: &'static str,
+    },
 }
 
 impl fmt::Display for PrototypingError {
@@ -53,6 +58,16 @@ impl fmt::Display for PrototypingError {
                 write!(
                     f,
                     "invalid default expression `{value}` for field `{field_name}` in prototyping metadata: {error}"
+                )
+            },
+            Self::MissingComponentCapability {
+                struct_name,
+                field_name,
+                capability,
+            } => {
+                write!(
+                    f,
+                    "missing {capability} for field `{field_name}` on form `{struct_name}` in prototyping metadata"
                 )
             },
         }

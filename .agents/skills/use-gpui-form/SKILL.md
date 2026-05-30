@@ -43,15 +43,12 @@ helpers and component-specific derives explicitly:
    `UserProfileFormValueHolder`.
 6. Put the component shape in `#[gpui_form(component(...))]`, use
    `#[gpui_form(hidden)]` for value-holder-only fields,
-   `#[gpui_form(default = ...)]` with either a component or `hidden` for initial form values,
+   intent-scoped `default = ...` inside `component(...)` or `hidden(...)` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
    `#[gpui_form(component(Shape, value(type = ..., from_source = ..., into_source = ...), default = ...))]`
-   when the UI edits a form-side type that differs from the model field. The
-   flat `component(Shape), type = ..., source_to_form = ..., form_to_source = ...`
-   form is still accepted in existing code. Do not combine
-   `skip` with component, hidden, default, type, source_to_form, or form_to_source options on the same
-   field. Text input prototyping parses non-`String` form-side types with
-   `FromStr`.
+   when the UI edits a form-side type that differs from the model field. Do not
+   combine `skip` with component or hidden intent on the same field. Text input
+   prototyping parses non-`String` form-side types with `FromStr`.
 7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
    `inventory` feature is enabled; generic forms cannot register concrete
    prototyping metadata.
@@ -124,7 +121,7 @@ Common patterns:
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly.
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - Convert generated holders with `holder.try_into_original()` when conversion can fail or when a required shape-backed field has no declared default, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit.
-- `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their declared `#[gpui_form(default = ...)]` when present, otherwise `Vec::default()`.
+- `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`. Generated form identifiers derive from the
@@ -132,6 +129,9 @@ Common patterns:
   available and otherwise falls back to the shape type name. Shape-level suffixes must be non-empty
   ASCII identifier suffixes. Direct `ComponentPrototyping::field_suffix(...)` calls validate the
   same suffix contract.
+- Inventory prototyping fails fast when a shape-backed field is missing render,
+  value-binding, shape path, or default-storage metadata. Fix the component
+  shape metadata instead of relying on placeholder generated UI.
 - Format written inventory-prototyping scaffolds with `rustfmt`; the workspace `examples/prototyping` generator does this before reporting completion.
 - Storybook-style GPUI scaffolds that localize generated labels or messages should call `gpui_es_fluent::localize_label` and `gpui_es_fluent::localize_message` with the active `gpui::App` context.
 - Keep consumer code focused on app models, form state, rendering, and app-owned components.

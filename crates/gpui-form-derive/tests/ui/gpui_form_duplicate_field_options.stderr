@@ -1,29 +1,29 @@
-error: duplicate `type` option in `gpui_form` field attribute; remove the duplicate `type` entry
- --> tests/ui/gpui_form_duplicate_field_options.rs:5:32
+error: duplicate `type` option in `value(...)`; remove the duplicate `type` entry
+ --> tests/ui/gpui_form_duplicate_field_options.rs:5:67
   |
-5 |     #[gpui_form(type = String, type = std::string::String)]
-  |                                ^^^^
+5 |     #[gpui_form(component(crate::InputShape, value(type = String, type = std::string::String)))]
+  |                                                                   ^^^^
 
-error: duplicate `source_to_form` option in `gpui_form` field attribute; remove the duplicate `source_to_form` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:11:49
+error: duplicate `from_source` option in `value(...)`; remove the duplicate `from_source` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:16:13
    |
-11 |     #[gpui_form(source_to_form = |value| value, source_to_form = std::convert::identity)]
-   |                                                 ^^^^^^^^^^^^^^
+16 |             from_source = std::convert::identity,
+   |             ^^^^^^^^^^^
 
-error: duplicate `form_to_source` option in `gpui_form` field attribute; remove the duplicate `form_to_source` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:17:49
+error: duplicate `into_source` option in `value(...)`; remove the duplicate `into_source` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:31:13
    |
-17 |     #[gpui_form(form_to_source = |value| value, form_to_source = std::convert::identity)]
-   |                                                 ^^^^^^^^^^^^^^
+31 |             into_source = std::convert::identity,
+   |             ^^^^^^^^^^^
 
-error: duplicate `default` option in `gpui_form` field attribute; remove the duplicate `default` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:23:42
+error: duplicate `default` option in structured `gpui_form` field option; remove the duplicate `default` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:39:71
    |
-23 |     #[gpui_form(default = String::new(), default = "")]
-   |                                          ^^^^^^^
+39 |     #[gpui_form(component(crate::InputShape, default = String::new(), default = ""))]
+   |                                                                       ^^^^^^^
 
 error: duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry
-  --> tests/ui/gpui_form_duplicate_field_options.rs:29:23
+  --> tests/ui/gpui_form_duplicate_field_options.rs:45:23
    |
-29 |     #[gpui_form(skip, skip)]
+45 |     #[gpui_form(skip, skip)]
    |                       ^^^^

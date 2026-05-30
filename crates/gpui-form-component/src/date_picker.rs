@@ -55,24 +55,20 @@ pub struct DatePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-#[gpui_form_derive::component_value_binding]
-impl ComponentValueBinding<chrono::NaiveDate> for DatePickerState {
+impl gpui_form_runtime::shape::ComponentStateValueBinding<chrono::NaiveDate> for DatePickerState {
     type Event = DatePickerEvent;
 
     fn seed_value_binding_state(
-        state: &mut Self::State,
+        state: &mut Self,
         value: Option<&chrono::NaiveDate>,
         window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
+        cx: &mut Context<'_, Self>,
     ) {
         let date = value.and_then(|value| value.to_string().parse::<JiffDate>().ok());
         state.set_date(date, window, cx);
     }
 
-    fn form_value_change(
-        _state: &Self::State,
-        event: &Self::Event,
-    ) -> FormValueChange<chrono::NaiveDate> {
+    fn form_value_change(_state: &Self, event: &Self::Event) -> FormValueChange<chrono::NaiveDate> {
         match event {
             DatePickerEvent::Change(Some(date)) => parse_form_date::<chrono::NaiveDate>(*date)
                 .map_or(FormValueChange::Unchanged, FormValueChange::Set),
@@ -102,15 +98,16 @@ pub struct DateRangePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-#[gpui_form_derive::component_value_binding]
-impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRangePickerState {
+impl gpui_form_runtime::shape::ComponentStateValueBinding<(chrono::NaiveDate, chrono::NaiveDate)>
+    for DateRangePickerState
+{
     type Event = DateRangePickerEvent;
 
     fn seed_value_binding_state(
-        state: &mut Self::State,
+        state: &mut Self,
         value: Option<&(chrono::NaiveDate, chrono::NaiveDate)>,
         window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
+        cx: &mut Context<'_, Self>,
     ) {
         state.set_range(
             value.and_then(|(start, _)| jiff_date_from_chrono(*start)),
@@ -121,7 +118,7 @@ impl ComponentValueBinding<(chrono::NaiveDate, chrono::NaiveDate)> for DateRange
     }
 
     fn form_value_change(
-        _state: &Self::State,
+        _state: &Self,
         event: &Self::Event,
     ) -> FormValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
         match event {

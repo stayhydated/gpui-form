@@ -32,7 +32,8 @@ This crate exists to:
 helpers, collection shapes, `InfiniteSelect`, or `SelectItem` depend on and
 import those crates explicitly. Lower-level crates that declare component
 shapes with `#[derive(ComponentShape)]`, `component_shape!`, or
-`component_value_binding` may also depend on `gpui-form-runtime` directly.
+direct runtime value-binding impls may also depend on `gpui-form-runtime`
+directly.
 
 ## Feature Flags
 

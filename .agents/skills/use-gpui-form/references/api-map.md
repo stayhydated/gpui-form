@@ -40,7 +40,8 @@ Useful runtime/helper paths:
 
 Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
 the facade. Add `gpui-form-runtime` directly only when defining lower-level
-shapes with `gpui_form_derive` shape macros or `component_value_binding`.
+shapes with `gpui_form_derive` shape macros or direct runtime value-binding
+impls.
 
 ## Supported Component Syntax
 
@@ -74,17 +75,16 @@ Common field attributes:
 ```rust
 #[gpui_form(component(<shape>))]
 #[gpui_form(hidden)]
-#[gpui_form(component(<shape>), default = <expr>)]
-#[gpui_form(hidden, default = <expr>)]
+#[gpui_form(component(<shape>, default = <expr>))]
+#[gpui_form(hidden(default = <expr>))]
+#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
+#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
 #[gpui_form(skip)]
-#[gpui_form(type = <form_type>)]
-#[gpui_form(source_to_form = <expr>)]
-#[gpui_form(form_to_source = <expr>)]
 ```
 
 Every field must choose exactly one intent: component, `hidden`, or `skip`.
 Use `hidden` for value-holder-only fields. `skip` cannot be combined with
-component, hidden, default, type, source_to_form, or form_to_source options on the same field.
+component or hidden intent on the same field.
 
 Common struct attributes:
 
@@ -106,7 +106,7 @@ Common struct attributes:
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
   `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
-  `Vec<Item>` fields reset to their declared `#[gpui_form(default = ...)]`
+  `Vec<Item>` fields reset to their intent-scoped `default = ...`
   when present, otherwise `Vec::default()`.
 - Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
   input with step buttons.
@@ -199,17 +199,21 @@ Helper state is available from `gpui_form_component::infinite_select`.
 
 ## Type Conversion Pattern
 
-Use `type`, `source_to_form`, and `form_to_source` when the UI edits a different type than the
-model stores:
+Use intent-scoped `value(type = ..., from_source = ..., into_source = ...)`
+when the UI edits a different type than the model stores:
 
 ```rust
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        component(gpui_form_collection::date_picker::DatePicker),
-        type = chrono::NaiveDate,
-        source_to_form = to_form_date,
-        form_to_source = to_model_timestamp
+        component(
+            gpui_form_collection::date_picker::DatePicker,
+            value(
+                type = chrono::NaiveDate,
+                from_source = to_form_date,
+                into_source = to_model_timestamp,
+            )
+        )
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -248,9 +252,9 @@ pub struct PostEditor {
 
 `new` accepts a constructor path or closure and is called with `(window, cx)`;
 if omitted, the derive calls `<State>::new(window, cx)`.
-Crates that use `#[derive(ComponentShape)]`, `component_shape!`, or
-`component_value_binding` should depend on `gpui-form-runtime` directly because
-those lower-level surfaces emit direct runtime paths.
+Crates that use `#[derive(ComponentShape)]`, `component_shape!`, or direct
+runtime value-binding impls should depend on `gpui-form-runtime` directly
+because those lower-level surfaces emit direct runtime paths.
 
 Or declare a reusable shape:
 

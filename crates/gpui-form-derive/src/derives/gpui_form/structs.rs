@@ -362,28 +362,12 @@ enum GpuiFormFieldOption {
     },
     Hidden {
         span: kw::hidden,
-        options: FieldOptions,
-    },
-    Type {
-        span: Token![type],
-        ty: Type,
-    },
-    FormToSource {
-        span: kw::form_to_source,
-        expr: Expr,
-    },
-    SourceToForm {
-        span: kw::source_to_form,
-        expr: Expr,
-    },
-    Default {
-        span: kw::default,
-        expr: Expr,
+        options: RenderedFieldOptions,
     },
     Component {
         span: kw::component,
         shape: Path,
-        options: FieldOptions,
+        options: RenderedFieldOptions,
     },
 }
 
@@ -404,38 +388,39 @@ impl Parse for GpuiFormFieldOption {
 
         if input.peek(Token![type]) {
             let key = input.parse::<Token![type]>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::Type {
-                span: key,
-                ty: input.parse()?,
-            });
+            return Err(syn::Error::new_spanned(
+                key,
+                "`type = ...` is no longer a top-level `gpui_form` field option; \
+                 move it into `component(..., value(type = ..., from_source = ..., into_source = ...))` \
+                 or `hidden(value(type = ..., from_source = ..., into_source = ...))`",
+            ));
         }
 
         if input.peek(kw::form_to_source) {
             let key = input.parse::<kw::form_to_source>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::FormToSource {
-                span: key,
-                expr: input.parse()?,
-            });
+            return Err(syn::Error::new_spanned(
+                key,
+                "`form_to_source = ...` is no longer a top-level `gpui_form` field option; \
+                 use `into_source = ...` inside `value(...)`",
+            ));
         }
 
         if input.peek(kw::source_to_form) {
             let key = input.parse::<kw::source_to_form>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::SourceToForm {
-                span: key,
-                expr: input.parse()?,
-            });
+            return Err(syn::Error::new_spanned(
+                key,
+                "`source_to_form = ...` is no longer a top-level `gpui_form` field option; \
+                 use `from_source = ...` inside `value(...)`",
+            ));
         }
 
         if input.peek(kw::default) {
             let key = input.parse::<kw::default>()?;
-            input.parse::<Token![=]>()?;
-            return Ok(Self::Default {
-                span: key,
-                expr: input.parse()?,
-            });
+            return Err(syn::Error::new_spanned(
+                key,
+                "`default = ...` is no longer a top-level `gpui_form` field option; \
+                 move it inside `component(...)` or `hidden(...)`",
+            ));
         }
 
         if input.peek(kw::skip) {
@@ -450,7 +435,7 @@ impl Parse for GpuiFormFieldOption {
                 syn::parenthesized!(content in input);
                 parse_structured_field_options(&content, false)?
             } else {
-                FieldOptions::default()
+                RenderedFieldOptions::default()
             };
             return Ok(Self::Hidden { span: key, options });
         }
@@ -479,8 +464,8 @@ impl Parse for GpuiFormFieldOption {
 fn parse_structured_field_options(
     input: ParseStream<'_>,
     needs_leading_comma: bool,
-) -> syn::Result<FieldOptions> {
-    let mut options = FieldOptions::default();
+) -> syn::Result<RenderedFieldOptions> {
+    let mut options = RenderedFieldOptions::default();
     let mut first = true;
     while !input.is_empty() {
         if needs_leading_comma || !first {
@@ -501,7 +486,10 @@ fn parse_structured_field_options(
             let key = input.parse::<kw::default>()?;
             input.parse::<Token![=]>()?;
             if options.default.is_some() {
-                return Err(syn::Error::new_spanned(key, "duplicate `default` option"));
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate `default` option in structured `gpui_form` field option; remove the duplicate `default` entry",
+                ));
             }
             options.default = Some(Spanned::new(DefaultExpr(input.parse()?), &key));
             continue;
@@ -515,14 +503,17 @@ fn parse_structured_field_options(
 
 fn parse_structured_value_options(
     input: ParseStream<'_>,
-    options: &mut FieldOptions,
+    options: &mut RenderedFieldOptions,
 ) -> syn::Result<()> {
     while !input.is_empty() {
         if input.peek(Token![type]) {
             let key = input.parse::<Token![type]>()?;
             input.parse::<Token![=]>()?;
             if options.r#type.is_some() {
-                return Err(syn::Error::new_spanned(key, "duplicate `type` option"));
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate `type` option in `value(...)`; remove the duplicate `type` entry",
+                ));
             }
             options.r#type = Some(Spanned::new(TypeOverride(input.parse()?), &key));
         } else if input.peek(kw::from_source) {
@@ -531,7 +522,7 @@ fn parse_structured_value_options(
             if options.source_to_form.is_some() {
                 return Err(syn::Error::new_spanned(
                     key,
-                    "duplicate `from_source` option",
+                    "duplicate `from_source` option in `value(...)`; remove the duplicate `from_source` entry",
                 ));
             }
             options.source_to_form = Some(Spanned::new(input.parse()?, &key));
@@ -541,7 +532,7 @@ fn parse_structured_value_options(
             if options.form_to_source.is_some() {
                 return Err(syn::Error::new_spanned(
                     key,
-                    "duplicate `into_source` option",
+                    "duplicate `into_source` option in `value(...)`; remove the duplicate `into_source` entry",
                 ));
             }
             options.form_to_source = Some(Spanned::new(input.parse()?, &key));
@@ -563,51 +554,45 @@ fn parse_structured_value_options(
 pub struct ComponentField {
     pub ident: Ident,
     pub ty: Type,
-    intent: ParsedFieldIntent,
+    attr: FieldAttr,
 }
 
 #[derive(Clone, Debug, Default)]
-struct FieldOptions {
+struct RenderedFieldOptions {
     r#type: Option<Spanned<TypeOverride>>,
     form_to_source: Option<Spanned<Expr>>,
     source_to_form: Option<Spanned<Expr>>,
     default: Option<Spanned<DefaultExpr>>,
 }
 
-impl FieldOptions {
-    fn first_conflict(&self) -> Option<FieldOptionKey> {
-        [
-            (FieldOptionKey::Default, self.default.is_some()),
-            (FieldOptionKey::Type, self.r#type.is_some()),
-            (FieldOptionKey::SourceToForm, self.source_to_form.is_some()),
-            (FieldOptionKey::FormToSource, self.form_to_source.is_some()),
-        ]
-        .into_iter()
-        .find_map(|(option, present)| present.then_some(option))
-    }
+#[derive(Debug)]
+struct ComponentFieldOptions {
+    component: ShapeOptions,
+    rendered: RenderedFieldOptions,
 }
 
 #[derive(Debug)]
-struct ParsedFieldIntent {
-    kind: Option<FieldIntentKind>,
-    options: Box<FieldOptions>,
-}
-
-#[derive(Debug)]
-enum FieldIntentKind {
-    Component(ShapeOptions),
-    Hidden,
+enum FieldAttr {
+    Component(ComponentFieldOptions),
+    Hidden(RenderedFieldOptions),
     Skipped,
 }
 
-impl FieldIntentKind {
+impl FieldAttr {
     const fn option_key(&self) -> FieldOptionKey {
         match self {
             Self::Component(_) => FieldOptionKey::Component,
-            Self::Hidden => FieldOptionKey::Hidden,
+            Self::Hidden(_) => FieldOptionKey::Hidden,
             Self::Skipped => FieldOptionKey::Skip,
         }
     }
+}
+
+#[derive(Debug)]
+struct ParsedComponentField {
+    ident: Ident,
+    ty: Type,
+    attr: Option<FieldAttr>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -615,10 +600,6 @@ enum FieldOptionKey {
     Component,
     Hidden,
     Skip,
-    Type,
-    FormToSource,
-    SourceToForm,
-    Default,
 }
 
 impl FieldOptionKey {
@@ -627,10 +608,6 @@ impl FieldOptionKey {
             Self::Component => "component",
             Self::Hidden => "hidden",
             Self::Skip => "skip",
-            Self::Type => "type",
-            Self::FormToSource => "form_to_source",
-            Self::SourceToForm => "source_to_form",
-            Self::Default => "default",
         }
     }
 }
@@ -668,22 +645,6 @@ fn field_option_conflict(
     }
 }
 
-impl ParsedFieldIntent {
-    fn pending() -> Self {
-        Self {
-            kind: None,
-            options: Box::default(),
-        }
-    }
-
-    fn options_mut(&mut self) -> Option<&mut FieldOptions> {
-        match self.kind {
-            Some(FieldIntentKind::Skipped) => None,
-            _ => Some(&mut self.options),
-        }
-    }
-}
-
 pub struct SkippedField;
 
 pub struct HiddenField;
@@ -711,26 +672,26 @@ pub enum ComponentFieldIntent<'a> {
 
 impl ComponentField {
     pub fn intent(&self) -> ComponentFieldIntent<'_> {
-        match &self.intent.kind {
-            Some(FieldIntentKind::Component(component)) => {
+        match &self.attr {
+            FieldAttr::Component(component) => {
                 ComponentFieldIntent::Component(ComponentRenderedField {
-                    r#type: self.intent.options.r#type.as_ref(),
-                    form_to_source: self.intent.options.form_to_source.as_ref(),
-                    source_to_form: self.intent.options.source_to_form.as_ref(),
-                    component,
-                    default: self.intent.options.default.as_ref(),
+                    r#type: component.rendered.r#type.as_ref(),
+                    form_to_source: component.rendered.form_to_source.as_ref(),
+                    source_to_form: component.rendered.source_to_form.as_ref(),
+                    component: &component.component,
+                    default: component.rendered.default.as_ref(),
                 })
             },
-            Some(FieldIntentKind::Hidden) => ComponentFieldIntent::Hidden(
+            FieldAttr::Hidden(rendered) => ComponentFieldIntent::Hidden(
                 HiddenField,
                 RenderedField {
-                    r#type: self.intent.options.r#type.as_ref(),
-                    form_to_source: self.intent.options.form_to_source.as_ref(),
-                    source_to_form: self.intent.options.source_to_form.as_ref(),
-                    default: self.intent.options.default.as_ref(),
+                    r#type: rendered.r#type.as_ref(),
+                    form_to_source: rendered.form_to_source.as_ref(),
+                    source_to_form: rendered.source_to_form.as_ref(),
+                    default: rendered.default.as_ref(),
                 },
             ),
-            Some(FieldIntentKind::Skipped) | None => ComponentFieldIntent::Skipped(SkippedField),
+            FieldAttr::Skipped => ComponentFieldIntent::Skipped(SkippedField),
         }
     }
 
@@ -760,10 +721,10 @@ impl FromField for ComponentField {
         let ident = field.ident.clone().ok_or_else(|| {
             DarlingError::custom("GpuiForm only supports named struct fields").with_span(field)
         })?;
-        let mut parsed = ComponentField {
+        let mut parsed = ParsedComponentField {
             ident,
             ty: field.ty.clone(),
-            intent: ParsedFieldIntent::pending(),
+            attr: None,
         };
         let mut errors = DarlingError::accumulator();
         let mut had_attribute_errors = false;
@@ -810,170 +771,73 @@ impl FromField for ComponentField {
             }
         }
 
-        if !had_attribute_errors {
-            errors.handle(validate_field_intent(&parsed));
+        let attr = if !had_attribute_errors {
+            match validate_field_intent(&parsed).map_err(DarlingError::from) {
+                Ok(()) => parsed.attr,
+                Err(error) => {
+                    errors.push(error);
+                    None
+                },
+            }
+        } else {
+            parsed.attr
+        };
+
+        match attr {
+            Some(attr) => errors.finish_with(ComponentField {
+                ident: parsed.ident,
+                ty: parsed.ty,
+                attr,
+            }),
+            None => errors.finish_with(ComponentField {
+                ident: parsed.ident,
+                ty: parsed.ty,
+                attr: FieldAttr::Skipped,
+            }),
         }
-        errors.finish_with(parsed)
     }
 }
 
 fn parse_gpui_form_item(
-    field: &mut ComponentField,
+    field: &mut ParsedComponentField,
     item: GpuiFormFieldOption,
 ) -> darling::Result<()> {
     match item {
-        GpuiFormFieldOption::Skip { span } => set_skip(field, true, &span),
+        GpuiFormFieldOption::Skip { span } => set_attr(field, FieldAttr::Skipped, &span),
         GpuiFormFieldOption::Hidden { span, options } => {
-            set_hidden(field, &span)?;
-            merge_field_options(field, options, &span)
-        },
-        GpuiFormFieldOption::Type { span, ty } => {
-            let options = field_options_mut(field, FieldOptionKey::Type, &span)?;
-            set_once(
-                &mut options.r#type,
-                Spanned::new(TypeOverride(ty), &span),
-                FieldOptionKey::Type,
-                &span,
-            )
-        },
-        GpuiFormFieldOption::FormToSource { span, expr } => {
-            let options = field_options_mut(field, FieldOptionKey::FormToSource, &span)?;
-            set_once(
-                &mut options.form_to_source,
-                Spanned::new(expr, &span),
-                FieldOptionKey::FormToSource,
-                &span,
-            )
-        },
-        GpuiFormFieldOption::SourceToForm { span, expr } => {
-            let options = field_options_mut(field, FieldOptionKey::SourceToForm, &span)?;
-            set_once(
-                &mut options.source_to_form,
-                Spanned::new(expr, &span),
-                FieldOptionKey::SourceToForm,
-                &span,
-            )
-        },
-        GpuiFormFieldOption::Default { span, expr } => {
-            let options = field_options_mut(field, FieldOptionKey::Default, &span)?;
-            set_once(
-                &mut options.default,
-                Spanned::new(DefaultExpr(expr), &span),
-                FieldOptionKey::Default,
-                &span,
-            )
+            set_attr(field, FieldAttr::Hidden(options), &span)
         },
         GpuiFormFieldOption::Component {
             span,
             shape,
             options,
         } => {
-            set_shape(field, shape, &span)?;
-            merge_field_options(field, options, &span)
+            let component = ShapeOptions::from_shape_with_span(shape, span.span);
+            set_attr(
+                field,
+                FieldAttr::Component(ComponentFieldOptions {
+                    component,
+                    rendered: options,
+                }),
+                &span,
+            )
         },
     }
 }
 
-fn merge_field_options<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    incoming: FieldOptions,
+fn set_attr<S: syn::spanned::Spanned>(
+    field: &mut ParsedComponentField,
+    incoming_attr: FieldAttr,
     span: &S,
 ) -> darling::Result<()> {
-    if let Some(value) = incoming.r#type {
-        let options = field_options_mut(field, FieldOptionKey::Type, span)?;
-        set_once(&mut options.r#type, value, FieldOptionKey::Type, span)?;
-    }
-    if let Some(value) = incoming.source_to_form {
-        let options = field_options_mut(field, FieldOptionKey::SourceToForm, span)?;
-        set_once(
-            &mut options.source_to_form,
-            value,
-            FieldOptionKey::SourceToForm,
-            span,
-        )?;
-    }
-    if let Some(value) = incoming.form_to_source {
-        let options = field_options_mut(field, FieldOptionKey::FormToSource, span)?;
-        set_once(
-            &mut options.form_to_source,
-            value,
-            FieldOptionKey::FormToSource,
-            span,
-        )?;
-    }
-    if let Some(value) = incoming.default {
-        let options = field_options_mut(field, FieldOptionKey::Default, span)?;
-        set_once(&mut options.default, value, FieldOptionKey::Default, span)?;
-    }
-    Ok(())
-}
-
-fn set_shape<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    shape: Path,
-    span: &S,
-) -> darling::Result<()> {
-    ensure_intent_available(field, FieldOptionKey::Component, span)?;
-
-    let component = ShapeOptions::from_shape_with_span(shape, span.span());
-    field.intent.kind = Some(FieldIntentKind::Component(component));
-    Ok(())
-}
-
-fn set_hidden<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    span: &S,
-) -> darling::Result<()> {
-    ensure_intent_available(field, FieldOptionKey::Hidden, span)?;
-
-    field.intent.kind = Some(FieldIntentKind::Hidden);
-    Ok(())
-}
-
-fn set_once<T, S: syn::spanned::Spanned>(
-    slot: &mut Option<T>,
-    value: T,
-    key: FieldOptionKey,
-    span: &S,
-) -> darling::Result<()> {
-    if slot.is_some() {
-        return Err(field_conflict_error(FieldOptionConflict::Duplicate(key)).with_span(span));
-    }
-
-    *slot = Some(value);
-    Ok(())
-}
-
-fn set_skip<S: syn::spanned::Spanned>(
-    field: &mut ComponentField,
-    value: bool,
-    span: &S,
-) -> darling::Result<()> {
-    if !value {
-        return Ok(());
-    }
-
-    ensure_intent_available(field, FieldOptionKey::Skip, span)?;
-
-    if let Some(option) = field.intent.options.first_conflict() {
-        return Err(field_conflict_error(FieldOptionConflict::SkipWith(option)).with_span(span));
-    }
-
-    field.intent.kind = Some(FieldIntentKind::Skipped);
-    Ok(())
-}
-
-fn ensure_intent_available<S: syn::spanned::Spanned>(
-    field: &ComponentField,
-    incoming: FieldOptionKey,
-    span: &S,
-) -> darling::Result<()> {
-    if let Some(existing) = field.intent.kind.as_ref().map(FieldIntentKind::option_key) {
+    let incoming = incoming_attr.option_key();
+    if let Some(existing) = field.attr.as_ref().map(FieldAttr::option_key) {
         if let Some(conflict) = field_option_conflict(existing, incoming) {
             return Err(field_conflict_error(conflict).with_span(span));
         }
     }
 
+    field.attr = Some(incoming_attr);
     Ok(())
 }
 
@@ -1003,39 +867,46 @@ fn field_conflict_error(conflict: FieldOptionConflict) -> DarlingError {
     }
 }
 
-fn field_options_mut<'a, S: syn::spanned::Spanned>(
-    field: &'a mut ComponentField,
-    option: FieldOptionKey,
-    span: &S,
-) -> darling::Result<&'a mut FieldOptions> {
-    field
-        .intent
-        .options_mut()
-        .ok_or_else(|| field_conflict_error(FieldOptionConflict::SkipWith(option)).with_span(span))
-}
-
-fn validate_field_intent(field: &ComponentField) -> darling::Result<()> {
-    if field.intent.kind.is_none() {
+fn validate_field_intent(field: &ParsedComponentField) -> darling::Result<()> {
+    let Some(attr) = &field.attr else {
         return Err(DarlingError::custom(format!(
             "field `{}` must choose a gpui_form field intent; add `component(...)`, `hidden`, or `skip`",
             field.ident
         ))
         .with_span(&field.ident));
-    }
+    };
 
-    if let Some(type_override) = &field.intent.options.r#type {
-        if field.intent.options.source_to_form.is_none() {
-            return Err(DarlingError::custom(
-                "`type = ...` requires an explicit `source_to_form = ...` conversion",
-            )
-            .with_span(&type_override.span));
-        }
+    let rendered = match attr {
+        FieldAttr::Component(component) => Some(&component.rendered),
+        FieldAttr::Hidden(rendered) => Some(rendered),
+        FieldAttr::Skipped => None,
+    };
 
-        if field.intent.options.form_to_source.is_none() {
+    if let Some(rendered) = rendered {
+        if let Some(type_override) = &rendered.r#type {
+            if rendered.source_to_form.is_none() {
+                return Err(DarlingError::custom(
+                    "`value(type = ...)` requires an explicit `from_source = ...` conversion",
+                )
+                .with_span(&type_override.span));
+            }
+
+            if rendered.form_to_source.is_none() {
+                return Err(DarlingError::custom(
+                    "`value(type = ...)` requires an explicit `into_source = ...` conversion",
+                )
+                .with_span(&type_override.span));
+            }
+        } else if let Some(from_source) = &rendered.source_to_form {
             return Err(DarlingError::custom(
-                "`type = ...` requires an explicit `form_to_source = ...` conversion",
+                "`from_source = ...` requires `type = ...` in the same `value(...)` option",
             )
-            .with_span(&type_override.span));
+            .with_span(&from_source.span));
+        } else if let Some(into_source) = &rendered.form_to_source {
+            return Err(DarlingError::custom(
+                "`into_source = ...` requires `type = ...` in the same `value(...)` option",
+            )
+            .with_span(&into_source.span));
         }
     }
 

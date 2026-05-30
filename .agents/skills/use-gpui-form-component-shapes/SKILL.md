@@ -11,8 +11,8 @@ Use this skill for user-facing app or integration code that wires custom
 components into `#[derive(GpuiForm)]` through `ComponentShape`.
 Normal generated `GpuiForm` component fields reach runtime contracts through
 `gpui_form::runtime::shape`, but crates that define custom shapes with
-`#[derive(ComponentShape)]`, `component_shape!`, or `component_value_binding`
-should depend on `gpui-form-runtime` directly because those lower-level
+`#[derive(ComponentShape)]`, `component_shape!`, or direct runtime value-binding
+impls should depend on `gpui-form-runtime` directly because those lower-level
 surfaces emit direct runtime paths.
 
 Use `use-gpui-form` for ordinary forms built from existing built-in,
@@ -173,13 +173,12 @@ Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
 ## Value Binding
 
 If generated forms should keep the form value and component state synchronized,
-put `#[gpui_form_derive::component_value_binding]` on a
-`gpui_form_runtime::shape::ComponentValueBinding<T>` impl for the backing state.
-The attribute compiles it as the state-level binding used by component-derived
-shapes that opt in with `#[gpui_form_shape(..., value_binding)]`. For wrapper
-shapes created by `component_shape!`, prefer putting the `ComponentValueBinding<T>`
-impl inside the macro block and add `value_binding;` to the macro metadata when
-the wrapper should publish shape-level value-binding metadata.
+implement `gpui_form_runtime::shape::ComponentStateValueBinding<T>` directly on
+the backing state for component-derived shapes that opt in with
+`#[gpui_form_shape(..., value_binding)]`. For wrapper shapes created by
+`component_shape!`, prefer putting the `ComponentValueBinding<T>` impl inside
+the macro block and add `value_binding;` to the macro metadata when the wrapper
+should publish shape-level value-binding metadata.
 
 Value binding is shape-owned. Use a component-derived shape with explicit
 `value_binding` or a wrapper shape with both `value_binding;` and a

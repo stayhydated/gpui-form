@@ -13,7 +13,6 @@ power the rest of the ecosystem.
 - `#[derive(GpuiForm)]`
 - `#[derive(ComponentShape)]`
 - `component_shape!`
-- `#[gpui_form_derive::component_value_binding]`
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by `gpui-form-component` when
@@ -37,10 +36,8 @@ that crate's `derive` feature is enabled.
   parsing state and emitted associated-const helpers for shape declaration
   macros
 - `src/derives/component_shape_state.rs`: `ComponentShape` derive expansion
-- `src/derives/component_shape.rs`: function-like component shape
-  expansion for local wrappers around external component/state types
-- `src/derives/component_value_binding.rs`: attribute macro expansion that
-  rewrites backing-state value bindings for component-derived shapes
+- `src/derives/component_shape.rs`: function-like component shape expansion for
+  local wrappers around external component/state types
 
 ## `GpuiForm` Expansion Pipeline
 
@@ -50,9 +47,10 @@ that crate's `derive` feature is enabled.
 1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
    Field-level component shapes are parsed into a typed shape path from
    `#[gpui_form(component(my::Shape))]`;
-   arbitrary Rust expressions are only parsed for `default`, `source_to_form`,
-   and `form_to_source`. The parser rejects duplicate component expressions
-   before codegen and rejects field-level component metadata such as
+   arbitrary Rust expressions are only parsed for intent-scoped `default`,
+   `value(from_source = ...)`, and `value(into_source = ...)`. The parser
+   rejects duplicate component expressions before codegen and rejects
+   field-level component metadata such as
    `component = ...` or `field_suffix = ...`; those belong on the shape
    declaration.
 1. Parse Koruma field metadata through `koruma-derive-core`.
@@ -72,7 +70,7 @@ that crate's `derive` feature is enabled.
 
 - optionality normalization between model fields and editable form state
 - default-value seeding
-- `type`/`source_to_form`/`form_to_source` conversions
+- `value(type = ..., from_source = ..., into_source = ...)` conversions
 - `#[gpui_form(skip)]` reconstruction behavior
 - Koruma mirroring for holder validation
 
@@ -89,12 +87,11 @@ Important behaviors:
   value-holder-only
 - structured field syntax nests value conversion/default metadata inside the
   component or hidden intent: `component(Shape, value(...), default = ...)` and
-  `hidden(value(...), default = ...)`. The flat syntax is adapted into the same
-  typed field option model.
+  `hidden(value(...), default = ...)`. Flat top-level `type`, `source_to_form`,
+  `form_to_source`, and `default` field options are rejected during parsing.
 - hidden fields are explicit value-holder-only fields and may use default and
   conversion metadata
-- skipped fields reject component, hidden, default, and conversion metadata
-  during field parsing
+- skipped fields reject component and hidden intent during field parsing
 - expansion builds one `FormPlan` after component field generation; inventory
   metadata, value-holder generation, type checks, validation wiring, defaults,
   conversions, and shape requiredness all read from that plan instead of

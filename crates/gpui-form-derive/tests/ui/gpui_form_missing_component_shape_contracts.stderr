@@ -9,7 +9,7 @@ help: the trait `ComponentStateValueBinding<std::string::String>` is not impleme
    |
  3 | struct State;
    | ^^^^^^^^^^^^
-   = note: implement `ComponentStateValueBinding<T>` for the backing state, usually with `#[gpui_form_derive::component_value_binding]`
+   = note: implement `ComponentStateValueBinding<T>` for the backing state
 help: the trait `AssertComponentValueBindingPolicy<Shape, Value>` is implemented for `InheritedComponentValueBinding`
   --> $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
    |

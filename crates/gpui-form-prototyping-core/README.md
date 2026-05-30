@@ -54,8 +54,11 @@ that hand-written forms use. Generated text inputs use the form-side
 `FieldVariant::value_type().as_str()` and parse non-`String` values with
 `FromStr` instead of assuming every text field stores `String`.
 
-Shape-backed fields remain inert by default. If a field's shape opts into
-`value_binding`, the adapter emits generic seed and subscription hooks through
+Shape-backed fields must publish render and value-binding metadata before the
+adapter can scaffold them. Missing component capabilities return a
+`PrototypingError` with the source form name, field name, and missing
+capability instead of generating placeholder UI. For value-bound fields, the
+adapter emits generic seed and subscription hooks through
 `gpui_form::runtime::shape::ComponentValueBinding<T>`. Generated scaffolds use
 the resolved suffix stored in `FieldVariant` for field and handler suffixes,
 such as `email_input` and `on_email_input_event`, then fall back to the generic
@@ -63,6 +66,9 @@ such as `email_input` and `on_email_input_event`, then fall back to the generic
 Value-bound scaffolds use `seed_value_binding_state`, `form_value_change`,
 `FormValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.
+On `FormValueChange::Clear`, optional fields reset to `None`; non-optional
+fields reset to the intent-scoped source default converted into the form-side
+value when one exists, otherwise to the shape's default storage policy.
 The adapter also consumes `GpuiFormShape::holder_conversion_can_fail()` from
 inventory metadata, so generated debug rows use the same `into_original` versus
 `try_into_original` shape as the derive-generated value holder.

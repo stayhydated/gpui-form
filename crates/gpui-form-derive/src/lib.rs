@@ -44,15 +44,3 @@ pub fn derive_component_shape(input: TokenStream) -> TokenStream {
 pub fn component_shape(input: TokenStream) -> TokenStream {
     derives::component_shape::function(input)
 }
-
-/// Attribute macro for state-owned value-binding implementations.
-///
-/// Apply this to an `impl ComponentValueBinding<T> for State` block to compile
-/// it as the state-level binding contract used by component-derived shapes.
-/// The attribute does not take options; the binding's associated `Event` type
-/// remains the source of truth.
-#[proc_macro_attribute]
-#[proc_macro_error]
-pub fn component_value_binding(attr: TokenStream, item: TokenStream) -> TokenStream {
-    derives::component_value_binding::attribute(attr, item)
-}

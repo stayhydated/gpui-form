@@ -51,7 +51,11 @@ impl LocationFormForm {
                 self.current_data.name = value;
             },
             FormValueChange::Clear => {
-                self.current_data.name = ::core::default::Default::default();
+                self.current_data.name = <<gpui_form_collection::input::Input<
+                    String,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    String,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -80,7 +84,11 @@ impl LocationFormForm {
                 self.current_data.location = value;
             },
             FormValueChange::Clear => {
-                self.current_data.location = ::core::default::Default::default();
+                self.current_data.location = <<gpui_form_component::infinite_select::InfiniteSelect<
+                    Country,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    Country,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -200,7 +208,15 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(&self.fields.name_input)),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    String,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        String,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.name_input),
+                            ),
                     )
                     .child(
                         field()
@@ -222,23 +238,36 @@ impl Render for LocationFormForm {
                                 }
                             })
                             .child(
-                                <gpui_form_component::infinite_select::InfiniteSelect<_, _>>::new(
-                                    &self.fields.location_infinite_select,
-                                ),
+                                <<gpui_form_component::infinite_select::InfiniteSelect<
+                                    Country,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_component::infinite_select::InfiniteSelect<
+                                        Country,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.location_infinite_select),
                             ),
                     )
-                    .child(field().label_indent(false).child(self.action_buttons(
-                        cx,
-                        |payload, _, _| {
-                            let _ = payload;
-                        },
-                    ))),
+                    .child(
+                        field()
+                            .label_indent(false)
+                            .child(
+                                self
+                                    .action_buttons(
+                                        cx,
+                                        |payload, _, _| {
+                                            let _ = payload;
+                                        },
+                                    ),
+                            ),
+                    ),
             )
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
-            .child(format!(
-                "try_into_original: {:?}",
-                self.current_data.clone().try_into_original()
-            ))
+            .child(
+                format!(
+                    "try_into_original: {:?}", self.current_data.clone()
+                    .try_into_original()
+                ),
+            )
     }
 }

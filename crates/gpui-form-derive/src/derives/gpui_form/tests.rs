@@ -416,12 +416,14 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    type = chrono::NaiveDate,
-                    source_to_form = |ts| to_form(ts),
-                    form_to_source = |dt| to_model(dt),
-                    component(crate::DatePickerState)
-                )]
+                #[gpui_form(component(
+                    crate::DatePickerState,
+                    value(
+                        type = chrono::NaiveDate,
+                        from_source = |ts| to_form(ts),
+                        into_source = |dt| to_model(dt),
+                    )
+                ))]
                 birth_date: Option<Timestamp>,
             }
         };
@@ -478,12 +480,14 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    type = rust_decimal::Decimal,
-                    source_to_form = |value| value,
-                    form_to_source = |value| value,
-                    component(crate::NumericShape::<_>)
-                )]
+                #[gpui_form(component(
+                    crate::NumericShape::<_>,
+                    value(
+                        type = rust_decimal::Decimal,
+                        from_source = |value| value,
+                        into_source = |value| value,
+                    )
+                ))]
                 amount: f64,
             }
         };
@@ -523,12 +527,14 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    type = chrono::NaiveDate,
-                    source_to_form = |ts| to_form(ts),
-                    form_to_source = |dt| to_model(dt),
-                    component(crate::DatePickerState)
-                )]
+                #[gpui_form(component(
+                    crate::DatePickerState,
+                    value(
+                        type = chrono::NaiveDate,
+                        from_source = |ts| to_form(ts),
+                        into_source = |dt| to_model(dt),
+                    )
+                ))]
                 birth_date: Option<Timestamp>,
 
                 #[gpui_form(skip)]
@@ -548,7 +554,7 @@ mod gpui_form_tests {
 
         assert!(
             !compact.contains("compile_error!"),
-            "skip + source_to_form should no longer emit a compile_error"
+            "skip plus a converted component field should not emit a compile_error"
         );
         assert!(
             compact.contains("::core::convert::From<TestForm>forTestFormFormValueHolder",),
@@ -556,7 +562,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains("birth_date:from.birth_date.map(") && compact.contains("to_form"),
-            "From<Original> for FormValueHolder should still apply `source_to_form` conversion"
+            "From<Original> for FormValueHolder should still apply `from_source` conversion"
         );
         assert!(
             !compact.contains("::core::convert::From<TestFormFormValueHolder>forTestForm",),
@@ -575,12 +581,14 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    type = chrono::NaiveDate,
-                    source_to_form = |ts| to_form(ts),
-                    form_to_source = |dt| to_model(dt),
-                    component(crate::DatePickerState)
-                )]
+                #[gpui_form(component(
+                    crate::DatePickerState,
+                    value(
+                        type = chrono::NaiveDate,
+                        from_source = |ts| to_form(ts),
+                        into_source = |dt| to_model(dt),
+                    )
+                ))]
                 birth_date: Option<Timestamp>,
 
                 #[gpui_form(skip)]
@@ -606,7 +614,7 @@ mod gpui_form_tests {
             compact.contains(
                 "letconverted=self.birth_date.clone().map(|value|(|dt|to_model(dt))(value));"
             ),
-            "present_fields_json() should apply `form_to_source` conversion for optional override fields"
+            "present_fields_json() should apply `into_source` conversion for optional override fields"
         );
         assert!(
             compact.contains("format!(\"{:?}\",converted)"),
@@ -669,7 +677,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(crate::Input), default = "test@example.com")]
+                #[gpui_form(component(crate::Input, default = "test@example.com"))]
                 email: String,
             }
         };
@@ -695,7 +703,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(crate::Input), default = "test@example.com")]
+                #[gpui_form(component(crate::Input, default = "test@example.com"))]
                 email: String,
 
                 #[gpui_form(skip)]
@@ -846,7 +854,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::input::Input::<_>), default = "test@example.com")]
+                #[gpui_form(component(gpui_form_collection::input::Input::<_>, default = "test@example.com"))]
                 email: String,
 
                 #[gpui_form(component(gpui_form_collection::switch::Switch))]
@@ -949,7 +957,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(type = String, type = std::string::String)]
+                #[gpui_form(component(crate::Input, value(type = String, type = std::string::String)))]
                 name: String,
 
                 #[gpui_form(skip, skip)]
@@ -1015,12 +1023,14 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(
-                    component(crate::Input),
-                    type = crate::types::AccountCode,
-                    source_to_form = crate::types::AccountCode::new,
-                    form_to_source = crate::types::AccountCode::into_string
-                )]
+                #[gpui_form(component(
+                    crate::Input,
+                    value(
+                        type = crate::types::AccountCode,
+                        from_source = crate::types::AccountCode::new,
+                        into_source = crate::types::AccountCode::into_string
+                    )
+                ))]
                 account_no: String,
             }
         };

@@ -493,7 +493,7 @@ pub struct FieldVariant {
     /// `Country` or `some_lib::country::Country`), not just a bare identifier.
     value_type: RustType,
     /// Rust type path for the source model's base value type before any
-    /// `#[gpui_form(type = ...)]` override is applied.
+    /// intent-scoped `value(type = ...)` override is applied.
     source_value_type: RustType,
     value_presence: FieldValuePresence,
     /// List of validation rule identifiers applied to this field (for diagnostics/rendering).

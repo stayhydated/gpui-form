@@ -142,9 +142,9 @@ Responsibilities:
    while generated fields store their backing state entities.
 1. Runtime date selection emits `DatePickerEvent::Change`.
 1. Shape-owned value adapters convert selected `jiff::civil::Date` values into
-   `chrono::NaiveDate` holder field values, with any `type`,
-   `source_to_form`, and `form_to_source` conversion hooks handled by the
-   generated form value holder.
+   `chrono::NaiveDate` holder field values, with any intent-scoped
+   `value(type = ..., from_source = ..., into_source = ...)` conversion hooks
+   handled by the generated form value holder.
 1. Manual range-picking UI can store `Entity<DateRangePickerState>`, render
    `DateRangePicker`, and subscribe to `DateRangePickerEvent::Change`.
 

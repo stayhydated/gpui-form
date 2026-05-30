@@ -38,8 +38,8 @@ Important parse-time responsibilities:
 - generic expression paths may use `_` with turbofish syntax, such as
   `gpui_form_collection::input::Input::<_>`
 - `_` is resolved once during derive planning to a `ResolvedComponentShape`
-  using the field's form-side type, including any `#[gpui_form(type = ...)]`
-  override
+  using the field's form-side type, including any intent-scoped
+  `value(type = ...)` override
 - generated type checks use field-named assertions for declared-shape,
   value-compatibility, and value-binding checks so diagnostics point at the
   field component shape while preserving component-specific trait messages

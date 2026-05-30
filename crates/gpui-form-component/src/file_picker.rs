@@ -101,15 +101,14 @@ pub struct FilePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-#[gpui_form_derive::component_value_binding]
-impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
+impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>> for FilePickerState {
     type Event = FilePickerEvent;
 
     fn seed_value_binding_state(
-        state: &mut Self::State,
+        state: &mut Self,
         value: Option<&Vec<PathBuf>>,
         window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
+        cx: &mut Context<'_, Self>,
     ) {
         match value {
             Some(value) => state.set_paths(value.clone(), window, cx),
@@ -117,10 +116,7 @@ impl ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
         }
     }
 
-    fn form_value_change(
-        _state: &Self::State,
-        event: &Self::Event,
-    ) -> FormValueChange<Vec<PathBuf>> {
+    fn form_value_change(_state: &Self, event: &Self::Event) -> FormValueChange<Vec<PathBuf>> {
         file_picker_form_value_change(event)
     }
 }

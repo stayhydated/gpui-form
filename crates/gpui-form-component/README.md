@@ -297,11 +297,10 @@ compatibility impls in the same `component_shape!` block.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping
-subscriptions, add `value_binding` to `#[gpui_form_shape(...)]` and put
-`#[gpui_form_derive::component_value_binding]` on the backing state's
-`ComponentValueBinding<T>` impl. The attribute compiles that impl as
-`ComponentStateValueBinding<T>`, which component-derived shapes delegate
-through.
+subscriptions, add `value_binding` to `#[gpui_form_shape(...)]` and implement
+`ComponentStateValueBinding<T>` on the backing state. Component-derived shapes
+delegate their shape-level `ComponentValueBinding<T>` impl through that
+state-level contract.
 For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
 `ComponentValueBinding<T>` impl inside the macro block to emit the impl with
 the shape, and add `value_binding;` to publish shape-level value-binding

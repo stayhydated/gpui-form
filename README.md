@@ -144,23 +144,24 @@ Common field-level helpers:
   `hidden`, or `skip`.
 - `#[gpui_form(hidden)]` keeps a field in the generated value holder without
   generating a GPUI component.
-- `#[gpui_form(hidden, default = <expr>)]` seeds a hidden generated value holder
+- `#[gpui_form(hidden(default = <expr>))]` seeds a hidden generated value holder
   field.
-- `#[gpui_form(component(<shape>), default = <expr>)]` seeds a
+- `#[gpui_form(component(<shape>, default = <expr>))]` seeds a
   component-backed generated value holder field.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
   allowing prefill from the original model. It cannot be combined with
-  component, hidden, default, or conversion options on the same field.
-- `#[gpui_form(type = <form_type>, source_to_form = <expr>, form_to_source = <expr>)]`
-  lets the generated form edit a type that differs from the original field type;
-  combine it with either a component shape or `hidden`.
-- Structured syntax keeps value conversion options attached to the field
-  intent: `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
-  and `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`.
-  The flat `type`, `source_to_form`, and `form_to_source` forms remain accepted.
+  component or hidden intent on the same field.
+- `value(type = <form_type>, from_source = <expr>, into_source = <expr>)`
+  lets the generated form edit a type that differs from the original field type.
+  Put it inside the field intent:
+  `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]`
+  or `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]`.
+  Defaults are also intent-scoped, for example
+  `#[gpui_form(component(<shape>, value(...), default = <expr>))]`.
 - `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
   value types with `FromStr` in prototyping output, so value objects can use
-  `type`, `source_to_form`, and `form_to_source` while the source model keeps its storage type.
+  `value(type = ..., from_source = ..., into_source = ...)` while the source
+  model keeps its storage type.
 - `gpui_form_collection::number_input::NumberInput::<_>` uses `FromStr` for
   non-`String` form-side values when parsing edits.
 - `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr` for
@@ -176,8 +177,9 @@ Common field-level helpers:
   `ComponentPrototyping::field_suffix(...)` calls validate the same contract in
   const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
-  onto the generated value holder, including fields that use `type`,
-  `source_to_form`, and `form_to_source` to validate a form-side type.
+  onto the generated value holder, including fields that use intent-scoped
+  `value(type = ..., from_source = ..., into_source = ...)` to validate a
+  form-side type.
 
 `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
 field type to derive `gpui_form_component::InfiniteSelect`, which implements
@@ -305,13 +307,13 @@ pub struct Account {
 ```
 
 The `_` generic is resolved to the field's form-side type, including any
-`#[gpui_form(type = ...)]` override. `Combobox<T>` is the exception: its
+intent-scoped `value(type = ...)` override. `Combobox<T>` is the exception: its
 generic is the selected item type, so a `Vec<Country>` field uses
 `Combobox::<Country>`. The collection combobox publishes
 `value_storage = direct`: an empty selection is emitted as
 `FormValueChange::Clear`, so optional fields clear to `None` and
 non-optional `Vec<T>` fields reset to their declared
-`#[gpui_form(default = ...)]` when present, otherwise `Vec::default()`.
+intent-scoped `default = ...` when present, otherwise `Vec::default()`.
 
 ### 2. Derive on an owned component
 
@@ -380,9 +382,9 @@ Generated `GpuiForm` component fields compile against
 `gpui_form::runtime::shape`, which is re-exported by the facade crate. Normal
 application crates do not add `gpui-form-runtime` just because a field uses a
 component shape. Add `gpui-form-runtime` directly only for lower-level shape
-crates that use `#[derive(ComponentShape)]`, `component_shape!`,
-or `component_value_binding`; those macros emit direct runtime paths and
-resolve renamed runtime dependencies.
+crates that use `#[derive(ComponentShape)]`, `component_shape!`, or direct
+runtime shape contracts; those proc macros emit direct runtime paths and resolve
+renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from the derive or `component_shape!`,
 provide manual `ComponentShapeFor<Value>` impls for each supported form-side
 value type. Do not combine value metadata with manual `ComponentShapeFor`
@@ -392,15 +394,13 @@ usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.
 
 Component-derived shapes can opt into generated value synchronization by adding
-`value_binding` to `#[gpui_form_shape(...)]` and placing
-`#[gpui_form_derive::component_value_binding]` on the backing state's binding
-impl:
+`value_binding` to `#[gpui_form_shape(...)]` and implementing
+`ComponentStateValueBinding<T>` on the backing state:
 
 ```rs
 pub struct TagsInputState;
 
-#[gpui_form_derive::component_value_binding]
-impl gpui_form_runtime::shape::ComponentValueBinding<Vec<String>> for TagsInputState {
+impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<String>> for TagsInputState {
     type Event = TagsInputEvent;
     /* seed_value_binding_state and form_value_change */
 }
@@ -466,16 +466,20 @@ the shape stores `FilePickerState` as its backing entity state.
 ## Date Conversion
 
 `date_picker` fields can edit a different form-side type than the original model
-field by combining `type`, `source_to_form`, and `form_to_source`:
+field with an intent-scoped `value(...)` conversion:
 
 ```rs
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 pub struct User {
     #[gpui_form(
-        component(gpui_form_collection::date_picker::DatePicker),
-        type = chrono::NaiveDate,
-        source_to_form = to_form_date,
-        form_to_source = to_model_timestamp
+        component(
+            gpui_form_collection::date_picker::DatePicker,
+            value(
+                type = chrono::NaiveDate,
+                from_source = to_form_date,
+                into_source = to_model_timestamp,
+            )
+        )
     )]
     pub birth_date: Option<Timestamp>,
 }
@@ -513,9 +517,11 @@ use the GPUI app context so they follow the active Storybook locale through
 `gpui-es-fluent`. Value-bound shape-backed fields use helper functions and
 runtime aliases from `gpui_form::runtime::shape` for state and event
 projections, keeping handler signatures based on names such as
-`on_email_input_event`. The adapter uses the derive-emitted
-`holder_conversion_can_fail` inventory flag so generated debug output matches
-the holder's `into_original` or `try_into_original` API.
+`on_email_input_event`. Shape-backed prototyping fails with a field-specific
+`PrototypingError` when required render, value-binding, shape path, or default
+storage metadata is missing instead of generating placeholder UI. The adapter
+uses the derive-emitted `holder_conversion_can_fail` inventory flag so generated
+debug output matches the holder's `into_original` or `try_into_original` API.
 Generic forms are not registered in inventory because inventory metadata must
 name one concrete source type and module path. When the `inventory` feature is
 enabled, add `#[gpui_form(no_inventory)]` to generic forms that should still

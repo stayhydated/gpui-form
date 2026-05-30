@@ -1,17 +1,93 @@
-use gpui_form_schema::registry::{FieldVariant, GpuiFormShape};
+use gpui_form_schema::registry::{
+    ComponentCapabilities, FieldVariant, GpuiFormShape, StorageCapability,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::Expr;
 
+use crate::error::PrototypingResult;
 use crate::imports::ImportItem;
 
 use super::{
     FieldCodeGenerator, GeneratedSubscription, ResolvedField, generate_entity_creation,
-    generate_entity_field_initializer, render_standard_field,
+    generate_entity_field_initializer, missing_component_capability, render_standard_field,
 };
 
 /// Component shape support initializes generated form fields and wires
 /// shape-owned value bindings when the metadata opts in.
 pub struct ShapeCodeGenerator;
+
+fn unwrap_expr(expr: &Expr) -> &Expr {
+    match expr {
+        Expr::Group(group) => unwrap_expr(&group.expr),
+        Expr::Paren(paren) => unwrap_expr(&paren.expr),
+        Expr::Block(block) if block.block.stmts.len() == 1 => {
+            if let syn::Stmt::Expr(expr, None) = &block.block.stmts[0] {
+                unwrap_expr(expr)
+            } else {
+                expr
+            }
+        },
+        _ => expr,
+    }
+}
+
+fn should_wrap_default_into(expr: &Expr) -> bool {
+    matches!(unwrap_expr(expr), Expr::Lit(_))
+}
+
+fn source_default_tokens(expr: &Expr) -> TokenStream {
+    if should_wrap_default_into(expr) {
+        quote! { ::core::convert::Into::into(#expr) }
+    } else {
+        quote! { #expr }
+    }
+}
+
+fn form_default_tokens(field: &ResolvedField<'_>, expr: &Expr) -> TokenStream {
+    let source_default = source_default_tokens(expr);
+    if let Some(from_expr) = field.from_expr() {
+        quote! { (#from_expr)(#source_default) }
+    } else {
+        source_default
+    }
+}
+
+fn component_capabilities(
+    field: &ResolvedField<'_>,
+    component: &GpuiFormShape,
+) -> PrototypingResult<ComponentCapabilities> {
+    field
+        .component_capabilities()
+        .ok_or_else(|| missing_component_capability(component, field, "component metadata"))
+}
+
+fn runtime_shape_path(
+    field: &ResolvedField<'_>,
+    component: &GpuiFormShape,
+) -> PrototypingResult<syn::Path> {
+    field
+        .runtime_shape_path()
+        .ok_or_else(|| missing_component_capability(component, field, "shape path"))
+}
+
+fn ensure_default_storage_support(
+    field: &ResolvedField<'_>,
+    component: &GpuiFormShape,
+) -> PrototypingResult<()> {
+    if !field.value_holder_uses_option()
+        && field.default_expr().is_none()
+        && component_capabilities(field, component)?.storage() == StorageCapability::ShapePolicy
+    {
+        return Err(missing_component_capability(
+            component,
+            field,
+            "default storage support",
+        ));
+    }
+
+    Ok(())
+}
 
 impl FieldCodeGenerator for ShapeCodeGenerator {
     fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
@@ -32,70 +108,61 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> TokenStream {
-        generate_entity_creation(field, component)
+    ) -> PrototypingResult<TokenStream> {
+        Ok(generate_entity_creation(field, component))
     }
 
     fn generate_field_initializers(
         &self,
         field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> TokenStream {
-        generate_entity_field_initializer(field)
+    ) -> PrototypingResult<TokenStream> {
+        Ok(generate_entity_field_initializer(field))
     }
 
     fn generate_render_child(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> TokenStream {
+    ) -> PrototypingResult<TokenStream> {
         let field_in_struct_name_ident = field.field_ident_with_component_suffix();
+        let capabilities = component_capabilities(field, component)?;
 
-        let child_tokens = if field.render_component() {
-            let shape_path = field.runtime_shape_path();
-            let Some(shape_path) = shape_path else {
-                let field_name = field.field_name();
-                return render_standard_field(
-                    field,
-                    component,
-                    quote! {
-                        div().child(format!(
-                            "Component field `{}` is missing shape metadata",
-                            #field_name
-                        ))
-                    },
-                );
-            };
-            quote! {
-                <<#shape_path as gpui_form::runtime::shape::ComponentShape>::RenderComponent
-                    as gpui_form::runtime::shape::ComponentRender<
-                        <#shape_path as gpui_form::runtime::shape::ComponentShape>::State
-                    >>::new(&self.fields.#field_in_struct_name_ident)
-            }
-        } else {
-            let field_name = field.field_name();
-            quote! {
-                div().child(format!(
-                    "Component shape `{}` – wire rendering via self.fields.{}",
-                    #field_name,
-                    stringify!(#field_in_struct_name_ident)
-                ))
-            }
+        if !capabilities.render_component() {
+            return Err(missing_component_capability(
+                component,
+                field,
+                "render metadata",
+            ));
+        }
+
+        let shape_path = runtime_shape_path(field, component)?;
+        let child_tokens = quote! {
+            <<#shape_path as gpui_form::runtime::shape::ComponentShape>::RenderComponent
+                as gpui_form::runtime::shape::ComponentRender<
+                    <#shape_path as gpui_form::runtime::shape::ComponentShape>::State
+                >>::new(&self.fields.#field_in_struct_name_ident)
         };
 
-        render_standard_field(field, component, child_tokens)
+        Ok(render_standard_field(field, component, child_tokens))
     }
 
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,
-        _component: &GpuiFormShape,
-    ) -> Option<GeneratedSubscription> {
-        if !field.value_binding() {
-            return None;
+        component: &GpuiFormShape,
+    ) -> PrototypingResult<GeneratedSubscription> {
+        let capabilities = component_capabilities(field, component)?;
+        if !capabilities.value_binding_enabled() {
+            return Err(missing_component_capability(
+                component,
+                field,
+                "value binding metadata",
+            ));
         }
+        ensure_default_storage_support(field, component)?;
 
-        let shape = field.runtime_shape_path()?;
+        let shape = runtime_shape_path(field, component)?;
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_component_suffix();
         let field_name_ident = field.field_ident();
@@ -115,6 +182,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let clear_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = None; }
         } else if let Some(default_expr) = field.default_expr() {
+            let default_expr = form_default_tokens(field, default_expr);
             quote! { self.current_data.#field_name_ident = #default_expr; }
         } else {
             quote! {
@@ -154,7 +222,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             }
         };
 
-        Some(GeneratedSubscription {
+        Ok(GeneratedSubscription {
             calls,
             handlers: vec![handler],
         })
@@ -163,15 +231,18 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
     fn generate_post_subscription_initialization(
         &self,
         field: &ResolvedField<'_>,
-        _component: &GpuiFormShape,
-    ) -> TokenStream {
-        if !field.value_binding() {
-            return TokenStream::new();
+        component: &GpuiFormShape,
+    ) -> PrototypingResult<TokenStream> {
+        let capabilities = component_capabilities(field, component)?;
+        if !capabilities.value_binding_enabled() {
+            return Err(missing_component_capability(
+                component,
+                field,
+                "value binding metadata",
+            ));
         }
 
-        let Some(shape) = field.runtime_shape_path() else {
-            return TokenStream::new();
-        };
+        let shape = runtime_shape_path(field, component)?;
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_component_suffix();
         let field_name_ident = field.field_ident();
@@ -181,7 +252,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             quote! { Some(&current_data.#field_name_ident) }
         };
 
-        quote! {
+        Ok(quote! {
             #field_var_name_ident.update(cx, |state, cx| {
                 seed_value_binding_state::<#shape, #field_type>(
                     state,
@@ -190,7 +261,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
                     cx,
                 );
             });
-        }
+        })
     }
 }
 
@@ -288,7 +359,9 @@ mod tests {
     fn shape_generator_initializes_state_entity() {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&SHAPE_FIELDS[0]).unwrap();
-        let tokens = generator.generate_cx_new_call(&field, &DEMO_SHAPE);
+        let tokens = generator
+            .generate_cx_new_call(&field, &DEMO_SHAPE)
+            .expect("valid shape-backed fields should initialize state entities");
 
         insta::assert_snapshot!(pretty_tokens(tokens));
     }
@@ -297,7 +370,9 @@ mod tests {
     fn shape_generator_initializes_form_fields_struct() {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&SHAPE_FIELDS[0]).unwrap();
-        let tokens = generator.generate_field_initializers(&field, &DEMO_SHAPE);
+        let tokens = generator
+            .generate_field_initializers(&field, &DEMO_SHAPE)
+            .expect("valid shape-backed fields should initialize form field structs");
 
         insta::assert_snapshot!(pretty_tokens(tokens));
     }
@@ -322,7 +397,9 @@ mod tests {
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS_WITH_COMPONENT[0]).unwrap();
-        let tokens = generator.generate_render_child(&field, &SHAPE);
+        let tokens = generator
+            .generate_render_child(&field, &SHAPE)
+            .expect("render-enabled shape-backed fields should generate render children");
 
         #[cfg(feature = "fluent")]
         insta::assert_snapshot!(pretty_tokens(tokens));
@@ -370,7 +447,9 @@ mod tests {
             pretty_tokens(generated.handlers[0].clone())
         );
 
-        let init = generator.generate_post_subscription_initialization(&field, &SHAPE);
+        let init = generator
+            .generate_post_subscription_initialization(&field, &SHAPE)
+            .expect("value-bound shape-backed fields should seed initial values");
         insta::assert_snapshot!(
             "shape_generator_wires_shape_value_binding_seed",
             pretty_tokens(init)
@@ -435,6 +514,69 @@ mod tests {
     }
 
     #[test]
+    fn shape_generator_clear_converts_literal_declared_default() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("code")
+            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
+            .with_value_presence(FieldValuePresence::DirectStorage)
+            .component(
+                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                    "gpui_form_collection::otp_input::OtpInput<String>",
+                ))
+                .with_value_binding(true),
+            )
+            .with_default(RustExpr::from_macro_tokens_unchecked("\"123456\""))];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("demo"),
+            false,
+        );
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound direct-storage fields should generate subscriptions");
+
+        insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
+    }
+
+    #[test]
+    fn shape_generator_clear_converts_source_default_to_form_value() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("birth_date")
+            .with_value_type(RustType::from_macro_tokens_unchecked("chrono::NaiveDate"))
+            .with_value_presence(FieldValuePresence::DirectStorage)
+            .component(
+                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                    "gpui_form_collection::date_picker::DatePicker",
+                ))
+                .with_value_binding(true),
+            )
+            .with_source_value_type(RustType::from_macro_tokens_unchecked("Timestamp"))
+            .with_conversions(
+                Some(RustExpr::from_macro_tokens_unchecked("to_form_datetime")),
+                Some(RustExpr::from_macro_tokens_unchecked("to_model_timestamp")),
+            )
+            .with_default(RustExpr::from_macro_tokens_unchecked(
+                "Timestamp::from_micros_since_unix_epoch(0)",
+            ))];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("demo"),
+            false,
+        );
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let generated = generator
+            .generate_subscription(&field, &SHAPE)
+            .expect("value-bound converted fields should generate subscriptions");
+
+        insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
+    }
+
+    #[test]
     fn shape_generator_uses_declared_suffix_for_component_names() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("country")
             .with_value_type(RustType::from_macro_tokens_unchecked("CountryCode"))
@@ -455,7 +597,9 @@ mod tests {
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
-        let created = generator.generate_cx_new_call(&field, &SHAPE);
+        let created = generator
+            .generate_cx_new_call(&field, &SHAPE)
+            .expect("valid shape-backed fields should initialize state entities");
         let generated = generator
             .generate_subscription(&field, &SHAPE)
             .expect("value-bound shape-backed fields should generate subscriptions");
@@ -501,7 +645,9 @@ mod tests {
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
-        let tokens = generator.generate_render_child(&field, &SHAPE);
+        let tokens = generator
+            .generate_render_child(&field, &SHAPE)
+            .expect("render-enabled generic shape-backed fields should generate render children");
 
         #[cfg(feature = "fluent")]
         insta::assert_snapshot!(pretty_tokens(tokens));

@@ -11,7 +11,6 @@ layer, including component-shape derives and helper macros.
 - `#[derive(GpuiForm)]`
 - `#[derive(ComponentShape)]`
 - `component_shape! { ... }`
-- `#[gpui_form_derive::component_value_binding]`
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by
@@ -73,21 +72,17 @@ Supporting field attributes:
 
 - `#[gpui_form(component(<shape>))]`
 - `#[gpui_form(hidden)]`
-- `#[gpui_form(component(<shape>), default = <expr>)]`
-- `#[gpui_form(hidden, default = <expr>)]`
+- `#[gpui_form(component(<shape>, default = <expr>))]`
+- `#[gpui_form(hidden(default = <expr>))]`
 - `#[gpui_form(skip)]`
-- `#[gpui_form(type = <form_type>)]`
-- `#[gpui_form(source_to_form = <expr>)]`
-- `#[gpui_form(form_to_source = <expr>)]`
 - `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
 - `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
 
 Every non-empty-form field must choose exactly one intent: component, hidden,
-or skipped. Use `hidden` for value-holder-only fields; `default`, `type`,
-`source_to_form`, and `form_to_source` are helpers that must be combined with a component shape or
-`hidden`. The structured `value(...)` form keeps type and conversion options
-inside the component or hidden intent; `from_source` maps source model values
-into form values, and `into_source` maps form values back into source values.
+or skipped. Use `hidden` for value-holder-only fields. Defaults and value
+conversion options belong inside the component or hidden intent; `from_source`
+maps source model values into form values, and `into_source` maps form values
+back into source values.
 
 Supporting struct attributes:
 
@@ -122,8 +117,8 @@ Behavior notes:
 - generated `GpuiForm` component field code references
   `gpui_form::runtime::shape`; normal application crates do not need
   `gpui-form-runtime` directly just because a field uses a component shape
-- `type`/`source_to_form`/`form_to_source` let the generated holder edit a type that differs from
-  the original model field
+- `value(type = ..., from_source = ..., into_source = ...)` lets the generated
+  holder edit a type that differs from the original model field
 - `gpui_form_collection::input::Input::<_>`,
   `gpui_form_collection::number_input::NumberInput::<_>`, and
   `gpui_form_collection::otp_input::OtpInput::<_>` prototyping code parse
@@ -142,8 +137,7 @@ Behavior notes:
 - when skipped fields are present, the generated value holder keeps builder
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion
-- `skip` cannot be combined with component, `default`, `type`, `source_to_form`, or
-  `form_to_source` options on the same field
+- `skip` cannot be combined with component or hidden intent on the same field
 
 ## `#[derive(ComponentShape)]`
 
@@ -199,14 +193,12 @@ checks and schema/prototyping metadata.
 prototyping generators a reusable field/helper suffix without relying on shape
 name heuristics.
 
-Use `value_binding` on the shape metadata and
-`#[gpui_form_derive::component_value_binding]` on the backing state's binding
-impl when the component-derived shape should delegate value binding to that
-state:
+Use `value_binding` on the shape metadata and implement
+`ComponentStateValueBinding<T>` on the backing state when the component-derived
+shape should delegate value binding to that state:
 
 ```rs
-#[gpui_form_derive::component_value_binding]
-impl gpui_form_runtime::shape::ComponentValueBinding<Vec<PathBuf>> for FilePickerState {
+impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>> for FilePickerState {
     type Event = FilePickerEvent;
     /* seed_value_binding_state and form_value_change */
 }

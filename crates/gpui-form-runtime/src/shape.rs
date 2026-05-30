@@ -226,7 +226,7 @@ pub trait ValueStorage<T>: ComponentValueStoragePolicy {
 /// Storage policies that can synthesize missing/default value-holder storage.
 #[diagnostic::on_unimplemented(
     message = "gpui-form cannot synthesize direct storage for `{T}` with this component shape policy",
-    note = "add `#[gpui_form(default = ...)]`, make `{T}` implement `Default`, or make the shape use `value_storage = require_value`"
+    note = "add an intent-scoped `default = ...`, make `{T}` implement `Default`, or make the shape use `value_storage = require_value`"
 )]
 pub trait DefaultValueStorage<T>: ValueStorage<T> {
     /// Construct a missing/default value-holder field.
@@ -470,7 +470,7 @@ where
 /// their GPUI entity state.
 #[diagnostic::on_unimplemented(
     message = "gpui-form component state `{Self}` does not implement value binding for `{T}`",
-    note = "implement `ComponentStateValueBinding<T>` for the backing state, usually with `#[gpui_form_derive::component_value_binding]`"
+    note = "implement `ComponentStateValueBinding<T>` for the backing state"
 )]
 pub trait ComponentStateValueBinding<T>: gpui::EventEmitter<Self::Event> {
     /// Event emitted by the backing component state.

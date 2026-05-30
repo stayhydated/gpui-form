@@ -38,7 +38,10 @@ struct RequiredDemo {
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DefaultedDemo {
-    #[gpui_form(component(RequiredShape), default = NonDefault("fallback".to_string()))]
+    #[gpui_form(component(
+        RequiredShape,
+        default = NonDefault("fallback".to_string())
+    ))]
     value: NonDefault,
 }
 

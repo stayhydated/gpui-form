@@ -42,10 +42,10 @@ pub struct User {
     )]
     pub username: String,
 
-    #[gpui_form(
-        component(gpui_form_collection::input::Input::<_>),
+    #[gpui_form(component(
+        gpui_form_collection::input::Input::<_>,
         default = "test@example.com"
-    )]
+    ))]
     #[koruma(EmailValidation::<_>::builder())]
     pub email: String,
 
@@ -53,10 +53,10 @@ pub struct User {
     #[koruma(RangeValidation::<_>::builder().min(18).max(167))]
     pub age: Option<u32>,
 
-    #[gpui_form(
-        component(gpui_form_collection::input::Input::<_>),
+    #[gpui_form(component(
+        gpui_form_collection::input::Input::<_>,
         default = 67
-    )]
+    ))]
     #[koruma(PositiveValidation::<_>::builder())]
     pub balance: rust_decimal::Decimal,
 
@@ -91,19 +91,22 @@ pub struct User {
     #[gpui_form(component(gpui_form_collection::select::Select::<_>))]
     pub preferred: PreferredLanguage,
 
-    #[gpui_form(
-        component(gpui_form_collection::select::Select::<_>),
+    #[gpui_form(component(
+        gpui_form_collection::select::Select::<_>,
         default = EnumCountry::France
-    )]
+    ))]
     pub country: Option<EnumCountry>,
 
-    #[gpui_form(
-        type = chrono::NaiveDate,
-        source_to_form = to_form_datetime,
-        form_to_source = to_model_timestamp,
-        component(gpui_form_collection::date_picker::DatePicker)
-    )]
-    pub birth_date: Option<Timestamp>,
+    #[gpui_form(component(
+        gpui_form_collection::date_picker::DatePicker,
+        value(
+            type = chrono::NaiveDate,
+            from_source = to_form_datetime,
+            into_source = to_model_timestamp,
+        ),
+        default = Timestamp::from_micros_since_unix_epoch(0)
+    ))]
+    pub birth_date: Timestamp,
 
     #[gpui_form(skip)]
     #[fluent_variants(skip)]

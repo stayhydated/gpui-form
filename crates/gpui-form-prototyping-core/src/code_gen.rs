@@ -138,27 +138,22 @@ impl<'a> FormShapeAdapter<'a> {
                 let field = resolved.raw();
                 let generator = field_generator();
                 let imports = generator.generate_imports(field);
-                let subscription = if field.subscribable() {
-                    generator.generate_subscription(&resolved, self.shape_data)
-                } else {
-                    None
-                }
-                .unwrap_or_default();
+                let subscription = generator.generate_subscription(&resolved, self.shape_data)?;
 
                 Ok(GeneratedField {
                     imports,
                     cx_new_call: generator
-                        .generate_cx_new_call(&resolved, self.shape_data)
+                        .generate_cx_new_call(&resolved, self.shape_data)?
                         .into(),
                     field_initializer: generator
-                        .generate_field_initializers(&resolved, self.shape_data)
+                        .generate_field_initializers(&resolved, self.shape_data)?
                         .into(),
                     render_child: generator
-                        .generate_render_child(&resolved, self.shape_data)
+                        .generate_render_child(&resolved, self.shape_data)?
                         .into(),
                     subscription,
                     post_subscription_initialization: generator
-                        .generate_post_subscription_initialization(&resolved, self.shape_data)
+                        .generate_post_subscription_initialization(&resolved, self.shape_data)?
                         .into(),
                     _resolved: resolved,
                 })
@@ -512,7 +507,7 @@ mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
     use gpui_form_schema::registry::{
-        FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType,
+        FieldComponentVariant, FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType,
     };
 
     fn compact(input: &str) -> String {
@@ -528,6 +523,17 @@ mod tests {
             .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
             .with_value_presence(value_presence)
             .hidden()
+    }
+
+    const fn component_field(
+        field_name: &'static str,
+        value_type: &'static str,
+        component: FieldComponentVariant,
+    ) -> FieldVariant {
+        FieldVariant::builder(field_name)
+            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
+            .with_value_presence(FieldValuePresence::DirectStorage)
+            .component(component)
     }
 
     #[test]
@@ -583,6 +589,70 @@ mod tests {
                 } if field_name == "country" && value == "Vec<"
             ),
             "unexpected error: {error:?}"
+        );
+    }
+
+    #[test]
+    fn parts_return_error_for_missing_component_render_metadata() {
+        const FIELDS: [FieldVariant; 1] = [component_field(
+            "country",
+            "CountryCode",
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::CountryShape",
+            ))
+            .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
+            false,
+        );
+
+        let error = match FormShapeAdapter::new(&SHAPE).parts() {
+            Ok(_) => panic!("missing render metadata should return an error"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error,
+            PrototypingError::MissingComponentCapability {
+                struct_name: "Demo".to_string(),
+                field_name: "country".to_string(),
+                capability: "render metadata",
+            }
+        );
+    }
+
+    #[test]
+    fn parts_return_error_for_missing_component_value_binding_metadata() {
+        const FIELDS: [FieldVariant; 1] = [component_field(
+            "country",
+            "CountryCode",
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::CountryShape",
+            ))
+            .with_render_component(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
+            false,
+        );
+
+        let error = match FormShapeAdapter::new(&SHAPE).parts() {
+            Ok(_) => panic!("missing value binding metadata should return an error"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error,
+            PrototypingError::MissingComponentCapability {
+                struct_name: "Demo".to_string(),
+                field_name: "country".to_string(),
+                capability: "value binding metadata",
+            }
         );
     }
 

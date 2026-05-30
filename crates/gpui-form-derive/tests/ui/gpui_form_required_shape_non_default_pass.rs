@@ -24,7 +24,7 @@ struct Demo {
     #[gpui_form(component(RequiredShape))]
     value: NonDefault,
 
-    #[gpui_form(hidden, default = String::new())]
+    #[gpui_form(hidden(default = String::new()))]
     name: String,
 }
 

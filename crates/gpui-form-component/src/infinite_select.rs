@@ -1263,8 +1263,7 @@ where
 }
 
 #[cfg(feature = "component-shape")]
-#[gpui_form_derive::component_value_binding]
-impl<T, D> gpui_form_runtime::shape::ComponentValueBinding<T> for InfiniteSelectState<T, D>
+impl<T, D> gpui_form_runtime::shape::ComponentStateValueBinding<T> for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1272,10 +1271,10 @@ where
     type Event = InfiniteSelectEvent<T>;
 
     fn seed_value_binding_state(
-        state: &mut Self::State,
+        state: &mut Self,
         value: Option<&T>,
         window: &mut Window,
-        cx: &mut Context<'_, Self::State>,
+        cx: &mut Context<'_, Self>,
     ) {
         if let Some(value) = value {
             state.set_value(value.clone(), window, cx);
@@ -1283,7 +1282,7 @@ where
     }
 
     fn form_value_change(
-        _state: &Self::State,
+        _state: &Self,
         event: &Self::Event,
     ) -> gpui_form_runtime::shape::FormValueChange<T> {
         gpui_form_runtime::shape::FormValueChange::Set(event.value().clone())

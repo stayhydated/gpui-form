@@ -8,6 +8,7 @@ use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
+use crate::error::{PrototypingError, PrototypingResult};
 use crate::imports::ImportItem;
 
 static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
@@ -37,32 +38,44 @@ pub trait FieldCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> TokenStream;
+    ) -> PrototypingResult<TokenStream>;
 
     fn generate_field_initializers(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> TokenStream;
+    ) -> PrototypingResult<TokenStream>;
 
     fn generate_render_child(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> TokenStream;
+    ) -> PrototypingResult<TokenStream>;
 
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> Option<GeneratedSubscription>;
+    ) -> PrototypingResult<GeneratedSubscription>;
 
     fn generate_post_subscription_initialization(
         &self,
         _field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> TokenStream {
-        TokenStream::new()
+    ) -> PrototypingResult<TokenStream> {
+        Ok(TokenStream::new())
+    }
+}
+
+pub fn missing_component_capability(
+    component: &GpuiFormShape,
+    field: &ResolvedField<'_>,
+    capability: &'static str,
+) -> PrototypingError {
+    PrototypingError::MissingComponentCapability {
+        struct_name: component.struct_name.to_string(),
+        field_name: field.field_name().to_string(),
+        capability,
     }
 }
 

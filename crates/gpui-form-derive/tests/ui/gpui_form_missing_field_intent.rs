@@ -6,8 +6,8 @@ struct MissingIntent {
 }
 
 #[derive(GpuiForm)]
-struct DefaultWithoutIntent {
-    #[gpui_form(default = String::new())]
+struct EmptyAttribute {
+    #[gpui_form()]
     value: String,
 }
 
