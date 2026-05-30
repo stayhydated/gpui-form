@@ -17,6 +17,10 @@ fn __snapshot() {
                             .child(div().child(description.clone()))
                     }
                 })
-                .child(<TagsInput>::new(&self.fields.tags_shape)),
+                .child(
+                    <<crate::shapes::TagsInputShape as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                        <crate::shapes::TagsInputShape as gpui_form::runtime::shape::ComponentShape>::State,
+                    >>::new(&self.fields.tags_shape),
+                ),
         );
 }

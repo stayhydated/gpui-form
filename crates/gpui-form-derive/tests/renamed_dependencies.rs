@@ -135,6 +135,12 @@ impl DerivedState {
 
 pub struct DerivedEvent;
 
+impl DerivedComponent {
+    fn new(_entity: &renamed_gpui::Entity<DerivedState>) -> renamed_gpui::Div {
+        renamed_gpui::div()
+    }
+}
+
 impl renamed_gpui::EventEmitter<DerivedEvent> for DerivedState {}
 
 #[gpui_form_derive::component_value_binding]
@@ -170,8 +176,8 @@ pub struct MacroComponent;
 pub struct MacroEvent;
 
 impl MacroComponent {
-    fn new(_entity: &renamed_gpui::Entity<MacroState>) -> Self {
-        Self
+    fn new(_entity: &renamed_gpui::Entity<MacroState>) -> renamed_gpui::Div {
+        renamed_gpui::div()
     }
 }
 

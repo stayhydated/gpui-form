@@ -167,13 +167,16 @@ pub struct TagsInput {
 ```
 
 `state = ...` supplies `ComponentShape::State`. If `component = ...` is omitted,
-`ComponentShape::COMPONENT_TYPE` defaults to the derived type's module path.
+the generated `ComponentShape::RenderComponent` contract renders the derived
+type.
+The rendered component type, whether inferred or supplied with `component = ...`,
+must provide `new(&gpui::Entity<State>) -> impl gpui::IntoElement`.
 By default, the generated implementation calls `<State>::new(window, cx)`.
 `state` and `new` use normal Rust path resolution, so short in-scope names are
 fine. `new = ...` accepts a constructor expression. Function paths and closures
 are called with `(window, cx)`; full constructor expressions such as
 `TagsState::with_label(window, cx, "tags")` are emitted as written.
-The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
+The `component = ...` option publishes a `RenderComponent` adapter for
 generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The value must be a path-like type. `field_suffix = "..."` must be a

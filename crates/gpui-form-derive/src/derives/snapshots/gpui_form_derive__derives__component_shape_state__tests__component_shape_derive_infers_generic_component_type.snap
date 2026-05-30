@@ -12,9 +12,19 @@ impl<T, D> ::gpui_form_runtime::shape::ComponentShape for Picker<T, D> {
     }
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
-    const COMPONENT_TYPE: Option<&'static str> = Some(
-        concat!(module_path!(), "::", stringify!(Picker < _, _ >)),
-    );
+    type RenderComponent = __PickerRenderComponent<T, D>;
 }
-impl<T, D> Picker<T, D> {}
+#[doc(hidden)]
+struct __PickerRenderComponent<T, D = Vec<T>>(
+    ::core::marker::PhantomData<fn() -> (T, D)>,
+);
+impl<T, D> ::gpui_form_runtime::shape::ComponentRender<crate::state::PickerState<T, D>>
+for __PickerRenderComponent<T, D> {
+    const RENDERS: bool = true;
+    fn new(
+        entity: &::gpui::Entity<crate::state::PickerState<T, D>>,
+    ) -> impl ::gpui::IntoElement {
+        <Picker<T, D>>::new(entity)
+    }
+}
 impl<T, D> ::gpui_form_runtime::shape::DeclaredComponentShape for Picker<T, D> {}

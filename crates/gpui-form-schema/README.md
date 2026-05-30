@@ -32,6 +32,8 @@ expected. `RustType::new`, `RustPath::new`, and `RustExpr::new` validate the
 fragment with `syn`; macro-generated inventory uses explicit unchecked const
 constructors because the derive layer stringifies syntax it already parsed.
 Use the wrapper `.parse()` methods when tooling needs the `syn` representation.
+`ComponentSuffix` is re-exported from `gpui-form-core`, so schema inventory and
+runtime prototyping metadata share the same suffix contract.
 
 ## Example
 

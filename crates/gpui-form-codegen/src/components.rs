@@ -381,7 +381,7 @@ impl ShapeOptions {
     ) -> TokenStream {
         let schema_crate = CratePaths::resolve().gpui_form;
         let shape = rust_path_tokens(&schema_crate, &self.resolved_shape(field_type));
-        let component_type_tokens = self.component_type_tokens(field_type);
+        let render_component_tokens = self.render_component_tokens(field_type);
         let value_binding_tokens = self.value_binding_tokens(field_type);
         let prototyping_tokens = self.prototyping_tokens(field_type, field_name);
 
@@ -389,23 +389,23 @@ impl ShapeOptions {
             #schema_crate::schema::registry::FieldComponentVariant::new(
                 #shape
             )
-            #component_type_tokens
+            #render_component_tokens
             #value_binding_tokens
             #prototyping_tokens
         }
     }
 
-    fn component_type_tokens(&self, field_type: &syn::Type) -> TokenStream {
+    fn render_component_tokens(&self, field_type: &syn::Type) -> TokenStream {
         let shape = self.resolved_shape(field_type);
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
-        let schema_crate = crate_paths.gpui_form;
 
         quote! {
-            .with_component_type_opt(
-                #schema_crate::schema::registry::RustType::new_opt_unchecked(
-                    <#shape as #runtime_crate::shape::ComponentShape>::COMPONENT_TYPE
-                )
+            .with_render_component(
+                <<#shape as #runtime_crate::shape::ComponentShape>::RenderComponent
+                    as #runtime_crate::shape::ComponentRender<
+                        <#shape as #runtime_crate::shape::ComponentShape>::State
+                    >>::RENDERS
             )
         }
     }
@@ -435,9 +435,7 @@ impl ShapeOptions {
         quote! {
             .with_prototyping_field_suffix(
                 match <#shape as #runtime_crate::shape::ComponentShape>::PROTOTYPING.field_suffix {
-                    Some(suffix) => Some(
-                        #schema_crate::schema::registry::ComponentSuffix::new(suffix)
-                    ),
+                    Some(suffix) => Some(suffix),
                     None => Some(
                         #schema_crate::schema::registry::ComponentSuffix::new(#suffix)
                     ),

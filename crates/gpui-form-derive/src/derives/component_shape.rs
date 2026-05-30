@@ -1,6 +1,6 @@
 use gpui_form_codegen::CratePaths;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream};
 use syn::{
     Attribute, GenericParam, Generics, Ident, ItemImpl, Result, Token, Type, Visibility, braced,
@@ -183,8 +183,21 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let gpui_crate = CratePaths::resolve().gpui;
     let constructor_body = metadata.constructor_body_or(quote! { <#state>::new(window, cx) });
-    let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate);
-    let render_component_contract = metadata.render_component_contract_tokens(&gpui_crate, &state);
+    let render_component_adapter_ident = format_ident!("__{}RenderComponent", ident);
+    let (render_component_assoc, render_component_adapter) =
+        match ComponentShapeMetadata::render_component_tokens(
+            &gpui_crate,
+            &runtime_crate,
+            &vis,
+            &render_component_adapter_ident,
+            &state,
+            metadata.component(),
+            &generics,
+        ) {
+            Ok(tokens) => tokens,
+            Err(error) => return error.to_compile_error(),
+        };
+    let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate, render_component_assoc);
     let component_shape_for_impls = if has_explicit_component_shape_for_impl(&impls) {
         None
     } else {
@@ -210,9 +223,7 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             #metadata_impl_items
         }
 
-        impl #impl_generics #ident #ty_generics #where_clause {
-            #render_component_contract
-        }
+        #render_component_adapter
 
         impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}
 

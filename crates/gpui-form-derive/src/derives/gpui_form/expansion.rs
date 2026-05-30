@@ -14,9 +14,7 @@ use crate::derives::gpui_form::planner::plan_form;
 use crate::derives::gpui_form::structs::{
     ComponentStruct, FieldPlan, GpuiFormOptions, StoragePlan, ValidationRule,
 };
-use crate::derives::gpui_form::value_holder::{
-    generate_value_holder, holder_conversion_can_fail_metadata_tokens,
-};
+use crate::derives::gpui_form::value_holder::{generate_value_holder, holder_conversion_plan};
 
 fn field_value_presence_tokens(was_optional: bool, required_value: &RequiredValue) -> TokenStream {
     let facade_crate = CratePaths::resolve().gpui_form;
@@ -110,9 +108,15 @@ pub fn expand_gpui_form(
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
         let empty_fields: Vec<FieldPlan> = Vec::new();
+        let conversion_plan = match holder_conversion_plan(&empty_fields) {
+            Ok(conversion_plan) => conversion_plan,
+            Err(error) => return error.to_compile_error(),
+        };
+        let conversion_can_fail = conversion_plan.can_fail_tokens();
         let value_holder_tokens = match generate_value_holder(
             &original_input,
             &empty_fields,
+            &conversion_plan,
             enable_koruma,
             enable_koruma_fluent,
         ) {
@@ -128,7 +132,7 @@ pub fn expand_gpui_form(
                         #facade_crate::schema::registry::RustPath::new_unchecked(module_path!()),
                         #enable_koruma
                     ).with_skipped_fields(false)
-                    .with_holder_conversion_can_fail(false)
+                    .with_holder_conversion_can_fail(#conversion_can_fail)
                 }
             }
         } else {
@@ -186,35 +190,40 @@ pub fn expand_gpui_form(
         Ok(plan) => plan,
         Err(error) => return error.to_compile_error(),
     };
-    let field_plans = form_plan.fields;
     let has_skipped_fields = form_plan.has_skipped_fields;
     let enable_koruma_fluent = form_plan.enable_koruma_fluent;
     let effective_enable_koruma = form_plan.effective_enable_koruma;
 
-    let field_structure_tokens: Vec<TokenStream> = field_plans
-        .iter()
-        .filter_map(|field| field.component_layout())
-        .map(|layout| layout.field_structure_tokens.clone())
+    let field_structure_tokens: Vec<TokenStream> = form_plan
+        .component_fields()
+        .map(|field| field.component_layout.field_structure_tokens.clone())
         .collect();
-    let field_base_declarations_tokens: Vec<TokenStream> = field_plans
-        .iter()
-        .filter_map(|field| field.component_layout())
-        .map(|layout| layout.field_base_declarations_tokens.clone())
+    let field_base_declarations_tokens: Vec<TokenStream> = form_plan
+        .component_fields()
+        .map(|field| {
+            field
+                .component_layout
+                .field_base_declarations_tokens
+                .clone()
+        })
         .collect();
+    let field_plans = form_plan.fields;
+    let conversion_plan = match holder_conversion_plan(&field_plans) {
+        Ok(conversion_plan) => conversion_plan,
+        Err(error) => return error.to_compile_error(),
+    };
 
     let value_holder_tokens = match generate_value_holder(
         &original_input,
         &field_plans,
+        &conversion_plan,
         effective_enable_koruma,
         enable_koruma_fluent,
     ) {
         Ok(value_holder_tokens) => value_holder_tokens,
         Err(error) => return error.to_compile_error(),
     };
-    let conversion_can_fail = match holder_conversion_can_fail_metadata_tokens(&field_plans) {
-        Ok(conversion_can_fail) => conversion_can_fail,
-        Err(error) => return error.to_compile_error(),
-    };
+    let conversion_can_fail = conversion_plan.can_fail_tokens();
 
     let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()

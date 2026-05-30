@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{DeriveInput, Result, parse_macro_input};
+use quote::{format_ident, quote};
+use syn::{DeriveInput, Result, Type, parse_macro_input};
 
 use gpui_form_codegen::CratePaths;
 
@@ -71,26 +71,25 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
     let runtime_crate = ComponentShapeMetadata::runtime_crate_path();
     let gpui_crate = CratePaths::resolve().gpui;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let metadata_impl_items = meta.impl_items_tokens(&runtime_crate);
-    let render_component_contract = meta.render_component_contract_tokens(&gpui_crate, &state);
     let component_shape_for_impls = meta.value_impl_tokens(&runtime_crate, ident, &input.generics);
-    let inferred_component_type = if input.generics.params.is_empty() {
-        quote! { #ident }
+    let inferred_component_type: Type = if input.generics.params.is_empty() {
+        syn::parse_quote!(#ident)
     } else {
-        let inferred_args = input.generics.params.iter().map(|param| match param {
-            syn::GenericParam::Lifetime(_) => quote! { '_ },
-            syn::GenericParam::Type(_) | syn::GenericParam::Const(_) => quote! { _ },
-        });
-        quote! { #ident < #(#inferred_args),* > }
+        syn::parse2(quote! { #ident #ty_generics })?
     };
-    let inferred_component_const = if !meta.has_component() {
-        Some(quote! {
-            const COMPONENT_TYPE: Option<&'static str> =
-                Some(concat!(module_path!(), "::", stringify!(#inferred_component_type)));
-        })
-    } else {
-        None
-    };
+    let render_component = meta.component().unwrap_or(&inferred_component_type);
+    let render_component_adapter_ident = format_ident!("__{}RenderComponent", ident);
+    let (render_component_assoc, render_component_adapter) =
+        ComponentShapeMetadata::render_component_tokens(
+            &gpui_crate,
+            &runtime_crate,
+            &input.vis,
+            &render_component_adapter_ident,
+            &state,
+            Some(render_component),
+            &input.generics,
+        )?;
+    let metadata_impl_items = meta.impl_items_tokens(&runtime_crate, render_component_assoc);
     let binding_impl = if meta.has_value_binding() {
         let mut binding_generics = input.generics.clone();
         binding_generics
@@ -151,12 +150,9 @@ fn expand(input: DeriveInput) -> Result<TokenStream> {
             }
 
             #metadata_impl_items
-            #inferred_component_const
         }
 
-        impl #impl_generics #ident #ty_generics #where_clause {
-            #render_component_contract
-        }
+        #render_component_adapter
 
         impl #impl_generics #runtime_crate::shape::DeclaredComponentShape for #ident #ty_generics #where_clause {}
 

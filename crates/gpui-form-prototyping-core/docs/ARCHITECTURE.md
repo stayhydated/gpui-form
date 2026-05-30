@@ -27,8 +27,11 @@ This crate exists to:
 1. A caller iterates `inventory::iter::<GpuiFormShape>()`.
 1. The caller constructs `FormShapeAdapter::new(shape)`.
 1. The adapter validates and resolves the raw shape into typed field analysis.
-1. Component-specific generators produce cached render fragments, event
-   handlers, imports, subscriptions, and initialization code.
+1. Component-specific generators produce cached typed fragments, event
+   handlers, imports, subscriptions, and initialization code. Optional
+   generator outputs are normalized into empty semantic fragments at collection
+   time, so later assembly works with structured fragment fields rather than
+   optional raw token plumbing.
    Infinite-select fields are generated against one runtime
    `InfiniteSelect` subscription instead of raw select-tree glue code,
    render through `InfiniteSelect::form_fields()`, and consume the richer
@@ -101,9 +104,10 @@ All component fields are shape-backed:
 - generated local variable, field, and handler names use
   `FieldVariant::field_name_with_component_suffix`, which uses precomputed
   component-shape prototyping suffix metadata
-- if `FieldVariant::component_type` is present, the generator parses its
-  `RustType` payload as a Rust type and emits `<Component>::new(&entity)`
-- if that metadata is missing, the generator falls back to a placeholder row
+- if `FieldVariant::render_component` is true, the generator emits
+  `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
+  runtime `ComponentRender` contract
+- if that metadata is false, the generator falls back to a placeholder row
 - component subscriptions are generated only when `FieldVariant::value_binding`
   is true; the field's shape must provide the generic
   `ComponentValueBinding<T>` hook that maps component events to

@@ -13,6 +13,6 @@ impl ::gpui_form_runtime::shape::ComponentShape for LocalInputShape {
     }
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+    type RenderComponent = ::gpui_form_runtime::shape::NoRenderComponent;
 }
-impl LocalInputShape {}
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for LocalInputShape {}

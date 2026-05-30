@@ -12,9 +12,17 @@ impl ::gpui_form_runtime::shape::ComponentShape for SwitchInput {
     }
     type ValueStoragePolicy = ::gpui_form_runtime::shape::DirectValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
-    const COMPONENT_TYPE: Option<&'static str> = Some(
-        concat!(module_path!(), "::", stringify!(SwitchInput)),
-    );
+    type RenderComponent = __SwitchInputRenderComponent;
 }
-impl SwitchInput {}
+#[doc(hidden)]
+struct __SwitchInputRenderComponent(::core::marker::PhantomData<fn() -> ()>);
+impl ::gpui_form_runtime::shape::ComponentRender<crate::state::SwitchState>
+for __SwitchInputRenderComponent {
+    const RENDERS: bool = true;
+    fn new(
+        entity: &::gpui::Entity<crate::state::SwitchState>,
+    ) -> impl ::gpui::IntoElement {
+        <SwitchInput>::new(entity)
+    }
+}
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for SwitchInput {}

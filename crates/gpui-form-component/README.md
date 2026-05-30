@@ -285,7 +285,7 @@ paths and closures are called with
 `gpui_form_derive::component_shape!`, omitting `new` calls
 `<State>::new(window, cx)`. For `#[derive(ComponentShape)]`, `state = ...` is
 required and omitting `new` also calls `<State>::new(window, cx)`.
-The `component = ...` option also publishes `COMPONENT_TYPE` metadata for
+The `component = ...` option publishes a `RenderComponent` adapter for
 generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The value must be a path-like type. `field_suffix = "..."` must be a

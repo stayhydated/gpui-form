@@ -452,6 +452,13 @@ mod gpui_form_tests {
             "From<FormValueHolder> for Original should apply `into` conversion"
         );
         assert!(
+            compact.contains("fnassert_source_to_form<F>(_:F)")
+                && compact.contains("F:::core::ops::FnOnce(Timestamp)->chrono::NaiveDate")
+                && compact.contains("fnassert_form_to_source<F>(_:F)")
+                && compact.contains("F:::core::ops::FnOnce(chrono::NaiveDate)->Timestamp"),
+            "Generated holders should assert explicit conversion signatures: {compact}"
+        );
+        assert!(
             compact.contains("pubfninto_original(self)->TestForm"),
             "Infallible holders should expose into_original(self): {compact}"
         );
@@ -711,8 +718,8 @@ mod gpui_form_tests {
         );
 
         assert!(
-            compact.contains("with_component_type_opt("),
-            "FieldVariant should inherit the component type from the shape: {compact}"
+            compact.contains("with_render_component(<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::RenderComponentas::gpui_form::runtime::shape::ComponentRender<"),
+            "FieldVariant should inherit render component metadata from the shape: {compact}"
         );
         assert!(
             compact.contains(

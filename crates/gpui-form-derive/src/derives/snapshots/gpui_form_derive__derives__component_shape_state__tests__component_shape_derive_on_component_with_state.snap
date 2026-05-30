@@ -12,11 +12,19 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
     }
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
+    type RenderComponent = __TagsInputRenderComponent;
     const PROTOTYPING: ::gpui_form_runtime::shape::ComponentPrototyping = ::gpui_form_runtime::shape::ComponentPrototyping::new()
         .field_suffix("tags");
-    const COMPONENT_TYPE: Option<&'static str> = Some(
-        concat!(module_path!(), "::", stringify!(TagsInput)),
-    );
 }
-impl TagsInput {}
+#[doc(hidden)]
+struct __TagsInputRenderComponent(::core::marker::PhantomData<fn() -> ()>);
+impl ::gpui_form_runtime::shape::ComponentRender<crate::state::TagsState>
+for __TagsInputRenderComponent {
+    const RENDERS: bool = true;
+    fn new(
+        entity: &::gpui::Entity<crate::state::TagsState>,
+    ) -> impl ::gpui::IntoElement {
+        <TagsInput>::new(entity)
+    }
+}
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for TagsInput {}

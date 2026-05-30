@@ -5,8 +5,8 @@ pub struct EmailInput;
 pub struct ExternalState;
 
 impl EmailInput {
-    fn new(_entity: &gpui::Entity<ExternalState>) -> Self {
-        Self
+    fn new(_entity: &gpui::Entity<ExternalState>) -> gpui::Div {
+        gpui::div()
     }
 }
 

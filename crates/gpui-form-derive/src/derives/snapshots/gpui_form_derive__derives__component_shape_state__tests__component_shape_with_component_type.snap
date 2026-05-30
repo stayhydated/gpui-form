@@ -12,13 +12,16 @@ impl ::gpui_form_runtime::shape::ComponentShape for TagsInput {
     }
     type ValueStoragePolicy = ::gpui_form_runtime::shape::RequiredValueStorage;
     type ValueBindingPolicy = ::gpui_form_runtime::shape::NoComponentValueBinding;
-    const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(crate ::ui::TagsInput));
+    type RenderComponent = __TagsInputRenderComponent;
 }
-impl TagsInput {
-    #[allow(dead_code)]
-    fn __gpui_form_assert_render_component_contract(
+#[doc(hidden)]
+struct __TagsInputRenderComponent(::core::marker::PhantomData<fn() -> ()>);
+impl ::gpui_form_runtime::shape::ComponentRender<crate::state::TagsState>
+for __TagsInputRenderComponent {
+    const RENDERS: bool = true;
+    fn new(
         entity: &::gpui::Entity<crate::state::TagsState>,
-    ) -> crate::ui::TagsInput {
+    ) -> impl ::gpui::IntoElement {
         <crate::ui::TagsInput>::new(entity)
     }
 }

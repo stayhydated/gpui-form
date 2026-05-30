@@ -11,12 +11,14 @@ in runtime UI dependencies.
 At the moment the crate is intentionally narrow:
 
 - numeric text-entry validation for custom wrappers and future generated code
-- ASCII component suffix validation shared by runtime and schema metadata
+- `ComponentSuffix` plus ASCII component suffix validation shared by runtime
+  and schema metadata
 
 ## Modules
 
 - `src/lib.rs`: module export surface
-- `src/component_suffix.rs`: shared non-empty ASCII identifier suffix checks
+- `src/component_suffix.rs`: shared component suffix newtype and non-empty
+  ASCII identifier suffix checks
 - `src/numeric.rs`: signed and unsigned text-entry validation helpers
 
 ## Numeric Validation Semantics
@@ -45,9 +47,9 @@ the text shape or also verifies that the text can parse into `T`.
    `gpui_form::core::numeric::*` or depend on `gpui-form-core` directly.
 1. Runtime component wrappers remain free to use their own validation strategy
    when they own GPUI state and event behavior.
-1. Runtime shape metadata and schema registry metadata both call
-   `component_suffix::is_valid_ascii_identifier_suffix` so const suffix
-   validation stays aligned without either layer depending on the other.
+1. Runtime shape metadata and schema registry metadata both use
+   `component_suffix::ComponentSuffix`, so suffix validation and inventory
+   storage stay aligned without either layer depending on the other.
 
 ## Boundary
 

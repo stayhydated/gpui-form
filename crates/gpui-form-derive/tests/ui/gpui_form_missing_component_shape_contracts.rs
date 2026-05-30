@@ -10,6 +10,12 @@ impl State {
     }
 }
 
+impl DerivedShape {
+    fn new(_entity: &gpui::Entity<State>) -> gpui::Div {
+        gpui::div()
+    }
+}
+
 #[derive(ComponentShape)]
 #[gpui_form_shape(state = State, value = String, value_binding)]
 struct DerivedShape;

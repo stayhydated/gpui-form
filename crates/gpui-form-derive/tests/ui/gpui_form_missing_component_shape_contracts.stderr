@@ -1,7 +1,7 @@
 error[E0277]: gpui-form component state `State` does not implement value binding for `std::string::String`
-  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:19:17
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:25:17
    |
-19 |     #[gpui_form(component(DerivedShape))]
+25 |     #[gpui_form(component(DerivedShape))]
    |                 ^^^^^^^^^ unsatisfied trait bound
    |
 help: the trait `ComponentStateValueBinding<std::string::String>` is not implemented for `State`
@@ -20,12 +20,12 @@ help: the trait `AssertComponentValueBindingPolicy<Shape, Value>` is implemented
    | |     ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
    | |________________________________________________________________________________^
 note: required for `DerivedShape` to implement `ComponentValueBinding<std::string::String>`
-  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:15:8
+  --> tests/ui/gpui_form_missing_component_shape_contracts.rs:21:8
    |
-13 | #[derive(ComponentShape)]
+19 | #[derive(ComponentShape)]
    |          -------------- type parameter would need to implement `ComponentValueBinding<std::string::String>`
-14 | #[gpui_form_shape(state = State, value = String, value_binding)]
-15 | struct DerivedShape;
+20 | #[gpui_form_shape(state = State, value = String, value_binding)]
+21 | struct DerivedShape;
    |        ^^^^^^^^^^^^
    = help: consider manually implementing `ComponentValueBinding<std::string::String>` to avoid undesired bounds
    = note: required for `InheritedComponentValueBinding` to implement `AssertComponentValueBindingPolicy<DerivedShape, std::string::String>`

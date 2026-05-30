@@ -5,8 +5,8 @@ use syn::DeriveInput;
 
 use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::structs::{
-    ComponentFieldIntent, ComponentStruct, FieldPlan, KorumaOptions, SharedFieldPlan, StoragePlan,
-    ValidationMetadata, ValidationRule,
+    ComponentFieldIntent, ComponentFieldPlan, ComponentStruct, FieldPlan, KorumaOptions,
+    SharedFieldPlan, StoragePlan, ValidationMetadata, ValidationRule,
 };
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 
@@ -15,6 +15,17 @@ pub struct FormPlan {
     pub has_skipped_fields: bool,
     pub enable_koruma_fluent: bool,
     pub effective_enable_koruma: bool,
+}
+
+impl FormPlan {
+    #[allow(dead_code)]
+    pub fn non_skipped_fields(&self) -> impl Iterator<Item = &SharedFieldPlan> {
+        self.fields.iter().filter_map(FieldPlan::shared)
+    }
+
+    pub fn component_fields(&self) -> impl Iterator<Item = &ComponentFieldPlan> {
+        self.fields.iter().filter_map(FieldPlan::component_plan)
+    }
 }
 
 pub fn plan_form(
@@ -58,6 +69,10 @@ pub fn plan_form(
             .r#type
             .as_ref()
             .map(|rendered_type| rendered_type.value.0.clone());
+        let override_type_span = rendered
+            .r#type
+            .as_ref()
+            .map(|rendered_type| rendered_type.span);
         let form_type = override_type
             .as_ref()
             .map(|ty| extract_option_inner_type(ty).1)
@@ -108,13 +123,21 @@ pub fn plan_form(
             validation,
             validation_metadata,
             default_expr: rendered.default.map(|expr| expr.value.0.clone()),
+            default_span: rendered.default.map(|expr| expr.span),
             override_type,
+            override_type_span,
             into_expr: rendered
                 .form_to_source
                 .map(|form_to_source| form_to_source.value.clone()),
+            into_expr_span: rendered
+                .form_to_source
+                .map(|form_to_source| form_to_source.span),
             from_expr: rendered
                 .source_to_form
                 .map(|source_to_form| source_to_form.value.clone()),
+            from_expr_span: rendered
+                .source_to_form
+                .map(|source_to_form| source_to_form.span),
         };
 
         if let (Some(component), Some(component_layout)) = (component, component_layout) {
@@ -128,17 +151,12 @@ pub fn plan_form(
         }
     }
 
-    let has_fields_needing_required = fields.iter().any(|field| {
-        field.needs_required_validation()
-            && !field
-                .validation()
-                .map(|validation| validation.is_newtype)
-                .unwrap_or(false)
-    });
-    let has_any_koruma_validations = fields.iter().any(|field| {
-        let Some(validation) = field.validation() else {
-            return false;
-        };
+    let has_fields_needing_required = fields
+        .iter()
+        .filter_map(FieldPlan::shared)
+        .any(|field| field.needs_required_validation() && !field.validation().is_newtype);
+    let has_any_koruma_validations = fields.iter().filter_map(FieldPlan::shared).any(|field| {
+        let validation = field.validation();
         !validation.field_validators.is_empty()
             || !validation.element_validators.is_empty()
             || validation.is_nested

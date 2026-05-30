@@ -65,6 +65,9 @@ sites. Their public `new` constructors validate Rust syntax with `syn`;
 unchecked const constructors are reserved for macro-generated inventory, where
 the derive layer stringifies syntax it already parsed. Consumers call
 `.as_str()` before parsing with `syn`.
+`ComponentSuffix` is re-exported from `gpui-form-core`, not owned by schema, so
+runtime shape metadata and inventory metadata use the same validated suffix
+type.
 
 `holder_conversion_can_fail` is emitted by `gpui-form-derive` from the same
 analysis that chooses the generated value-holder conversion methods. Downstream
@@ -113,7 +116,7 @@ This crate should not own:
 When adding or changing a reusable component shape:
 
 1. implement or derive `ComponentShape` for the shape
-1. publish shape-level metadata such as `COMPONENT_TYPE`, `ValueBindingPolicy`,
+1. publish shape-level metadata such as `RenderComponent`, `ValueBindingPolicy`,
    and `PROTOTYPING.field_suffix` when non-derive inventory producers need it
 1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
    crate if runtime support is required

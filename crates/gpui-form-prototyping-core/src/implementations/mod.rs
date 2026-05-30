@@ -26,18 +26,13 @@ pub struct ResolvedField<'a> {
     field_ident_with_component_suffix: Ident,
     value_type: Type,
     shape_path: Option<Path>,
-    component_type: Option<Type>,
+    render_component: bool,
     default_expr: Option<Expr>,
 }
 
 impl<'a> ResolvedField<'a> {
     pub fn new(field: &'a FieldVariant) -> PrototypingResult<Self> {
         let value_type = parse_field_type(field.field_name(), field.value_type())?;
-
-        let component_type = match field.component_type() {
-            Some(component_type) => Some(parse_field_type(field.field_name(), component_type)?),
-            None => None,
-        };
 
         let shape_path = match field.shape_path() {
             Some(shape_path) => Some(parse_shape_path(shape_path)?),
@@ -59,7 +54,7 @@ impl<'a> ResolvedField<'a> {
             ),
             value_type,
             shape_path,
-            component_type,
+            render_component: field.render_component(),
             default_expr,
         })
     }
@@ -100,12 +95,6 @@ impl<'a> ResolvedField<'a> {
         self.field.value_binding()
     }
 
-    pub fn component_type(&self) -> Option<&'a str> {
-        self.field
-            .component_type()
-            .map(|component| component.as_str())
-    }
-
     pub fn shape_path(&self) -> Option<&Path> {
         self.shape_path.as_ref()
     }
@@ -114,8 +103,8 @@ impl<'a> ResolvedField<'a> {
         self.shape_path.clone()
     }
 
-    pub fn component_type_parsed(&self) -> Option<&Type> {
-        self.component_type.as_ref()
+    pub fn render_component(&self) -> bool {
+        self.render_component
     }
 
     pub fn default_expr(&self) -> Option<&Expr> {
@@ -204,13 +193,13 @@ pub trait FieldCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> Option<TokenStream>;
+    ) -> TokenStream;
 
     fn generate_field_initializers(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> Option<TokenStream>;
+    ) -> TokenStream;
 
     fn generate_render_child(
         &self,
@@ -228,8 +217,8 @@ pub trait FieldCodeGenerator {
         &self,
         _field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> Option<TokenStream> {
-        None
+    ) -> TokenStream {
+        TokenStream::new()
     }
 }
 

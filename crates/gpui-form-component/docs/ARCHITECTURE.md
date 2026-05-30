@@ -198,7 +198,7 @@ When adding a new reusable component shape that needs runtime state:
 
 1. add the runtime helper in this crate
 1. expose it through `ComponentShape` or a helper macro/derive
-1. publish shape metadata such as `COMPONENT_TYPE`, `ValueStoragePolicy`,
+1. publish shape metadata such as `RenderComponent`, `ValueStoragePolicy`,
    `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generated
    scaffolds or value-holder storage need it
 1. update user-facing docs so normal generated forms use

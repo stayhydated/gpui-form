@@ -130,9 +130,81 @@ pub struct SharedFieldPlan {
     pub validation: ValidationInfo,
     pub validation_metadata: ValidationMetadata,
     pub default_expr: Option<Expr>,
+    pub default_span: Option<Span>,
     pub override_type: Option<Type>,
+    pub override_type_span: Option<Span>,
     pub into_expr: Option<Expr>,
+    pub into_expr_span: Option<Span>,
     pub from_expr: Option<Expr>,
+    pub from_expr_span: Option<Span>,
+}
+
+impl SharedFieldPlan {
+    pub fn field_name(&self) -> &Ident {
+        &self.field_name
+    }
+
+    pub fn original_type(&self) -> &Type {
+        &self.original_type
+    }
+
+    pub fn form_type(&self) -> &Type {
+        &self.form_type
+    }
+
+    pub fn storage(&self) -> &StoragePlan {
+        &self.storage
+    }
+
+    pub fn validation(&self) -> &ValidationInfo {
+        &self.validation
+    }
+
+    pub fn default_expr(&self) -> Option<&Expr> {
+        self.default_expr.as_ref()
+    }
+
+    pub fn default_expr_span(&self) -> Option<Span> {
+        self.default_span
+    }
+
+    pub fn override_type(&self) -> Option<&Type> {
+        self.override_type.as_ref()
+    }
+
+    pub fn override_type_span(&self) -> Option<Span> {
+        self.override_type_span
+    }
+
+    pub fn source_to_form_expr(&self) -> Option<&Expr> {
+        self.from_expr.as_ref()
+    }
+
+    pub fn source_to_form_span(&self) -> Option<Span> {
+        self.from_expr_span
+    }
+
+    pub fn form_to_source_expr(&self) -> Option<&Expr> {
+        self.into_expr.as_ref()
+    }
+
+    pub fn form_to_source_span(&self) -> Option<Span> {
+        self.into_expr_span
+    }
+
+    pub fn shape_policy_ident(&self) -> Option<&Ident> {
+        self.storage.shape_policy_ident()
+    }
+
+    /// Returns true if this rendered field needs the `RequiredValidation`
+    /// koruma validator.
+    pub fn needs_required_validation(&self) -> bool {
+        matches!(
+            self.storage,
+            StoragePlan::RequiredValue | StoragePlan::ShapePolicy { .. }
+        ) && !self.was_optional
+            && !self.validation.is_nested
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -149,8 +221,8 @@ pub struct HiddenFieldPlan {
 #[derive(Clone, Debug)]
 pub struct ComponentFieldPlan {
     pub shared: SharedFieldPlan,
-    pub component: Option<ShapeOptions>,
-    pub component_layout: Option<ComponentFieldContent>,
+    pub component: ShapeOptions,
+    pub component_layout: ComponentFieldContent,
 }
 
 /// Precomputed field facts shared by expansion, inventory, and value holders.
@@ -180,8 +252,8 @@ impl FieldPlan {
     ) -> Self {
         Self::Component(ComponentFieldPlan {
             shared,
-            component: Some(component),
-            component_layout: Some(component_layout),
+            component,
+            component_layout,
         })
     }
 
@@ -213,57 +285,18 @@ impl FieldPlan {
         }
     }
 
-    pub fn form_type(&self) -> Option<&Type> {
-        self.shared().map(|shared| &shared.form_type)
-    }
-
-    pub fn was_optional(&self) -> Option<bool> {
-        self.shared().map(|shared| shared.was_optional)
-    }
-
-    pub fn storage(&self) -> Option<&StoragePlan> {
-        self.shared().map(|shared| &shared.storage)
-    }
-
-    pub fn validation(&self) -> Option<&ValidationInfo> {
-        self.shared().map(|shared| &shared.validation)
-    }
-
-    pub fn default_expr(&self) -> Option<&Expr> {
-        self.shared()
-            .and_then(|shared| shared.default_expr.as_ref())
-    }
-
-    pub fn override_type(&self) -> Option<&Type> {
-        self.shared()
-            .and_then(|shared| shared.override_type.as_ref())
-    }
-
-    pub fn source_to_form_expr(&self) -> Option<&Expr> {
-        self.shared().and_then(|shared| shared.from_expr.as_ref())
-    }
-
-    pub fn form_to_source_expr(&self) -> Option<&Expr> {
-        self.shared().and_then(|shared| shared.into_expr.as_ref())
-    }
-
     pub fn component(&self) -> Option<&ShapeOptions> {
         match self {
-            Self::Component(plan) => plan.component.as_ref(),
+            Self::Component(plan) => Some(&plan.component),
             Self::Skipped(_) | Self::Hidden(_) => None,
         }
     }
 
-    pub fn component_layout(&self) -> Option<&ComponentFieldContent> {
+    pub fn component_plan(&self) -> Option<&ComponentFieldPlan> {
         match self {
-            Self::Component(plan) => plan.component_layout.as_ref(),
+            Self::Component(plan) => Some(plan),
             Self::Skipped(_) | Self::Hidden(_) => None,
         }
-    }
-
-    pub fn shape_policy_ident(&self) -> Option<&Ident> {
-        self.storage()
-            .and_then(|storage| storage.shape_policy_ident())
     }
 
     /// Returns true if this field needs the `RequiredValidation` koruma validator.

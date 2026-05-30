@@ -90,10 +90,17 @@ Important behaviors:
   conversion metadata
 - skipped fields reject component, hidden, default, and conversion metadata
   during field parsing
-- expansion builds one `AnalyzedField` list after component field generation;
-  inventory metadata, value-holder generation, type checks, validation wiring,
-  defaults, conversions, and shape requiredness all read from that list instead
-  of recomputing field type facts independently
+- expansion builds one `FormPlan` after component field generation; inventory
+  metadata, value-holder generation, type checks, validation wiring, defaults,
+  conversions, and shape requiredness all read from that plan instead of
+  recomputing field type facts independently
+- skipped fields are split from rendered `SharedFieldPlan` facts before value
+  holder emission, so holder storage, form type, validation, default, and
+  conversion code paths do not need defensive "maybe skipped" lookups
+- holder-to-model API shape is selected by `HolderConversionPlan`, with
+  `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The generated
+  holder impls and `holder_conversion_can_fail` inventory metadata consume the
+  same plan.
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
   missing without a default; `From` is reserved for holders the derive can prove
   infallible directly

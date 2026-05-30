@@ -10,6 +10,31 @@
 //! wrapper shapes, and `#[derive(gpui_form_derive::ComponentShape)]` on owned
 //! rendered component types with explicit `state = ...` metadata.
 
+pub use gpui_form_core::component_suffix::{
+    ComponentSuffix, is_valid_component_suffix as is_valid_component_field_suffix,
+};
+
+/// Renders a component UI value from a component state entity.
+pub trait ComponentRender<State: 'static>: 'static {
+    /// Whether this contract renders a real component.
+    const RENDERS: bool;
+
+    /// Build a render component from the generated form field entity.
+    fn new(entity: &gpui::Entity<State>) -> impl gpui::IntoElement;
+}
+
+/// Marker render contract for shapes that do not publish render metadata.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct NoRenderComponent;
+
+impl<State: 'static> ComponentRender<State> for NoRenderComponent {
+    const RENDERS: bool = false;
+
+    fn new(_entity: &gpui::Entity<State>) -> impl gpui::IntoElement {
+        gpui::div()
+    }
+}
+
 /// Shape contract for user-defined components.
 ///
 /// Implementations provide the component state type and how to construct it.
@@ -25,17 +50,11 @@ pub trait ComponentShape {
     /// inherit value binding by default.
     type ValueBindingPolicy: ComponentValueBindingPolicy;
 
+    /// Shape-owned render component contract for prototyping output.
+    type RenderComponent: ComponentRender<Self::State>;
+
     /// Build the component state.
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State;
-
-    /// Optional UI component type (e.g. `"TagsInput"` or `"Combobox<_>"`).
-    ///
-    /// When set here via `gpui_form_derive::component_shape!` or
-    /// `#[gpui_form_shape(component = ...)]`, the prototyping code generator can
-    /// emit `Component::new(&entity)` without requiring component UI metadata to
-    /// be repeated on every field annotation.
-    ///
-    const COMPONENT_TYPE: Option<&'static str> = None;
 
     /// Metadata used by prototyping generators.
     ///
@@ -357,13 +376,7 @@ impl<T> InfallibleValueStorage<T> for DirectValueStorage {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentPrototyping {
     /// Preferred generated field/helper suffix, such as `"input"` or `"select"`.
-    pub field_suffix: Option<&'static str>,
-}
-
-/// Returns whether a prototyping field suffix is a non-empty ASCII identifier
-/// suffix.
-pub const fn is_valid_component_field_suffix(suffix: &str) -> bool {
-    gpui_form_core::component_suffix::is_valid_ascii_identifier_suffix(suffix)
+    pub field_suffix: Option<ComponentSuffix>,
 }
 
 impl ComponentPrototyping {
@@ -372,11 +385,7 @@ impl ComponentPrototyping {
     }
 
     pub const fn field_suffix(mut self, suffix: &'static str) -> Self {
-        assert!(
-            is_valid_component_field_suffix(suffix),
-            "`field_suffix` must be a non-empty ASCII identifier suffix"
-        );
-        self.field_suffix = Some(suffix);
+        self.field_suffix = Some(ComponentSuffix::new(suffix));
         self
     }
 }
@@ -535,7 +544,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "`field_suffix` must be a non-empty ASCII identifier suffix")]
+    #[should_panic(expected = "component suffix must be a non-empty ASCII identifier suffix")]
     fn component_prototyping_rejects_invalid_field_suffixes() {
         let _ = ComponentPrototyping::new().field_suffix("input-field");
     }

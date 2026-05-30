@@ -32,16 +32,16 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> Option<TokenStream> {
-        Some(generate_entity_creation(field, component))
+    ) -> TokenStream {
+        generate_entity_creation(field, component)
     }
 
     fn generate_field_initializers(
         &self,
         field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> Option<TokenStream> {
-        Some(generate_entity_field_initializer(field))
+    ) -> TokenStream {
+        generate_entity_field_initializer(field)
     }
 
     fn generate_render_child(
@@ -51,11 +51,26 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
     ) -> TokenStream {
         let field_in_struct_name_ident = field.field_ident_with_component_suffix();
 
-        // When the component type is known, emit <Component>::new(&entity). The
-        // bracketed form works for generic component types such as Combobox<_>.
-        let child_tokens = if let Some(component_type) = field.component_type_parsed() {
+        let child_tokens = if field.render_component() {
+            let shape_path = field.runtime_shape_path();
+            let Some(shape_path) = shape_path else {
+                let field_name = field.field_name();
+                return render_standard_field(
+                    field,
+                    component,
+                    quote! {
+                        div().child(format!(
+                            "Component field `{}` is missing shape metadata",
+                            #field_name
+                        ))
+                    },
+                );
+            };
             quote! {
-                <#component_type>::new(&self.fields.#field_in_struct_name_ident)
+                <<#shape_path as gpui_form::runtime::shape::ComponentShape>::RenderComponent
+                    as gpui_form::runtime::shape::ComponentRender<
+                        <#shape_path as gpui_form::runtime::shape::ComponentShape>::State
+                    >>::new(&self.fields.#field_in_struct_name_ident)
             }
         } else {
             let field_name = field.field_name();
@@ -149,12 +164,14 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> Option<TokenStream> {
+    ) -> TokenStream {
         if !field.value_binding() {
-            return None;
+            return TokenStream::new();
         }
 
-        let shape = field.runtime_shape_path()?;
+        let Some(shape) = field.runtime_shape_path() else {
+            return TokenStream::new();
+        };
         let field_type = field.value_type();
         let field_var_name_ident = field.field_ident_with_component_suffix();
         let field_name_ident = field.field_ident();
@@ -164,7 +181,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             quote! { Some(&current_data.#field_name_ident) }
         };
 
-        Some(quote! {
+        quote! {
             #field_var_name_ident.update(cx, |state, cx| {
                 seed_value_binding_state::<#shape, #field_type>(
                     state,
@@ -173,7 +190,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
                     cx,
                 );
             });
-        })
+        }
     }
 }
 
@@ -271,9 +288,7 @@ mod tests {
     fn shape_generator_initializes_state_entity() {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&SHAPE_FIELDS[0]).unwrap();
-        let tokens = generator
-            .generate_cx_new_call(&field, &DEMO_SHAPE)
-            .expect("shape-backed fields should generate cx.new initialization");
+        let tokens = generator.generate_cx_new_call(&field, &DEMO_SHAPE);
 
         insta::assert_snapshot!(pretty_tokens(tokens));
     }
@@ -282,9 +297,7 @@ mod tests {
     fn shape_generator_initializes_form_fields_struct() {
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&SHAPE_FIELDS[0]).unwrap();
-        let tokens = generator
-            .generate_field_initializers(&field, &DEMO_SHAPE)
-            .expect("shape-backed fields should be included in FormFields initializer");
+        let tokens = generator.generate_field_initializers(&field, &DEMO_SHAPE);
 
         insta::assert_snapshot!(pretty_tokens(tokens));
     }
@@ -296,7 +309,7 @@ mod tests {
             RustType::new_unchecked("Vec<String>"),
             FieldValuePresence::RequiresValue,
             FieldComponentVariant::new(RustPath::new_unchecked("crate::shapes::TagsInputShape"))
-                .with_component_type(RustType::new_unchecked("TagsInput")),
+                .with_render_component(true),
         )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
@@ -349,9 +362,7 @@ mod tests {
             pretty_tokens(generated.handlers[0].clone())
         );
 
-        let init = generator
-            .generate_post_subscription_initialization(&field, &SHAPE)
-            .expect("value-bound shape-backed fields should seed state");
+        let init = generator.generate_post_subscription_initialization(&field, &SHAPE);
         insta::assert_snapshot!(
             "shape_generator_wires_shape_value_binding_seed",
             pretty_tokens(init)
@@ -422,9 +433,7 @@ mod tests {
 
         let generator = ShapeCodeGenerator;
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
-        let created = generator
-            .generate_cx_new_call(&field, &SHAPE)
-            .expect("shape-backed fields should generate cx.new initialization");
+        let created = generator.generate_cx_new_call(&field, &SHAPE);
         let generated = generator
             .generate_subscription(&field, &SHAPE)
             .expect("value-bound shape-backed fields should generate subscriptions");
@@ -456,9 +465,7 @@ mod tests {
             RustType::new_unchecked("Vec<Tag>"),
             FieldValuePresence::RequiresValue,
             FieldComponentVariant::new(RustPath::new_unchecked("crate::shapes::TagsComboboxShape"))
-                .with_component_type(RustType::new_unchecked(
-                    "gpui_component::combobox::Combobox<_>",
-                ))
+                .with_render_component(true)
                 .with_prototyping_field_suffix(Some(ComponentSuffix::new("combobox"))),
         )];
         const SHAPE: GpuiFormShape =

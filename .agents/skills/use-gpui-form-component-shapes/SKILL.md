@@ -60,6 +60,10 @@ pub struct TagsInput {
 pub struct TagsInputState;
 ```
 
+The rendered component type must provide
+`new(&gpui::Entity<TagsInputState>) -> impl gpui::IntoElement`; the derive uses
+that constructor through the generated `RenderComponent` associated type.
+
 Use the rendered component type as the field shape:
 
 ```rust

@@ -48,10 +48,11 @@ policy-owned holder field currently contains a value. `RequiredValueStorage` rep
 `None` as missing; `DirectValueStorage` always reports present because its
 storage is direct `T`.
 
-`ComponentPrototyping::field_suffix(...)` validates suffixes through
-`gpui-form-core`, using the same const ASCII identifier rules as schema
-metadata. This keeps shape declarations from publishing invalid prototyping
-metadata while preserving the runtime crate's no-schema-dependency boundary.
+`ComponentPrototyping::field_suffix(...)` stores
+`gpui_form_core::component_suffix::ComponentSuffix`, the same newtype used by
+schema inventory metadata. This keeps shape declarations from publishing
+invalid prototyping metadata while preserving the runtime crate's
+no-schema-dependency boundary.
 
 It should not depend on:
 

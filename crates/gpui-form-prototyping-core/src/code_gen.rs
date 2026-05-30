@@ -78,11 +78,11 @@ const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui::Subscripti
 
 struct GeneratedField<'a> {
     imports: Vec<ImportItem>,
-    cx_new_call: Option<TokenStream>,
-    field_initializer: Option<TokenStream>,
-    render_child: TokenStream,
-    subscription: Option<GeneratedSubscription>,
-    post_subscription_initialization: Option<TokenStream>,
+    cx_new_call: ComponentEntityInit,
+    field_initializer: FieldInitializerPlan,
+    render_child: RenderFieldPlan,
+    subscription: GeneratedSubscription,
+    post_subscription_initialization: PostSubscriptionInitPlan,
     _resolved: ResolvedField<'a>,
 }
 
@@ -152,17 +152,24 @@ impl<'a> FormShapeAdapter<'a> {
                     generator.generate_subscription(&resolved, self.shape_data)
                 } else {
                     None
-                };
+                }
+                .unwrap_or_default();
 
                 Ok(GeneratedField {
                     imports,
-                    cx_new_call: generator.generate_cx_new_call(&resolved, self.shape_data),
+                    cx_new_call: generator
+                        .generate_cx_new_call(&resolved, self.shape_data)
+                        .into(),
                     field_initializer: generator
-                        .generate_field_initializers(&resolved, self.shape_data),
-                    render_child: generator.generate_render_child(&resolved, self.shape_data),
+                        .generate_field_initializers(&resolved, self.shape_data)
+                        .into(),
+                    render_child: generator
+                        .generate_render_child(&resolved, self.shape_data)
+                        .into(),
                     subscription,
                     post_subscription_initialization: generator
-                        .generate_post_subscription_initialization(&resolved, self.shape_data),
+                        .generate_post_subscription_initialization(&resolved, self.shape_data)
+                        .into(),
                     _resolved: resolved,
                 })
             })
@@ -245,25 +252,23 @@ impl<'a> FormShapeAdapter<'a> {
 
         let component_creations: TokenStream = generated_fields
             .iter()
-            .filter_map(|field| field.cx_new_call.clone())
+            .map(|field| field.cx_new_call.to_token_stream())
             .collect();
         let field_initializers: TokenStream = generated_fields
             .iter()
-            .filter_map(|field| field.field_initializer.clone())
+            .map(|field| field.field_initializer.to_token_stream())
             .collect();
         let render_children: TokenStream = generated_fields
             .iter()
-            .map(|field| field.render_child.clone())
+            .map(|field| field.render_child.to_token_stream())
             .collect();
         let subscription_call_items: Vec<TokenStream> = generated_fields
             .iter()
-            .filter_map(|field| field.subscription.as_ref())
-            .flat_map(|subscription| subscription.calls.iter().cloned())
+            .flat_map(|field| field.subscription.calls.iter().cloned())
             .collect();
         let event_handler_items: Vec<TokenStream> = generated_fields
             .iter()
-            .filter_map(|field| field.subscription.as_ref())
-            .flat_map(|subscription| subscription.handlers.iter().cloned())
+            .flat_map(|field| field.subscription.handlers.iter().cloned())
             .collect();
         let subscription_calls = if subscription_call_items.is_empty() {
             TokenStream::new()
@@ -281,7 +286,7 @@ impl<'a> FormShapeAdapter<'a> {
         };
         let post_subscription_init: TokenStream = generated_fields
             .iter()
-            .filter_map(|field| field.post_subscription_initialization.clone())
+            .map(|field| field.post_subscription_initialization.to_token_stream())
             .collect();
 
         let validation_binding = if has_koruma {

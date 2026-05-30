@@ -3,8 +3,20 @@ use gpui_form_derive::ComponentShape;
 struct TagsInput;
 
 impl TagsInput {
-    fn new(_entity: &gpui::Entity<TagsState>) -> Self {
-        Self
+    fn new(_entity: &gpui::Entity<TagsState>) -> gpui::Div {
+        gpui::div()
+    }
+}
+
+impl DirectTagsInput {
+    fn new(_entity: &gpui::Entity<DirectTagsState>) -> gpui::Div {
+        gpui::div()
+    }
+}
+
+impl BoolBindingTagsInput {
+    fn new(_entity: &gpui::Entity<BoolBindingTagsState>) -> gpui::Div {
+        gpui::div()
     }
 }
 

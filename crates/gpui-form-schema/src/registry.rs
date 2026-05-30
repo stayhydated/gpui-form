@@ -1,5 +1,9 @@
 use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 
+pub use gpui_form_core::component_suffix::{
+    ComponentSuffix, ComponentSuffixError, is_valid_component_suffix, validate_component_suffix,
+};
+
 inventory::collect!(GpuiFormShape);
 
 /// Rust type syntax stored in inventory metadata.
@@ -161,68 +165,6 @@ impl RustExpr {
     }
 }
 
-/// Preferred component field/helper suffix stored in inventory metadata.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct ComponentSuffix(&'static str);
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ComponentSuffixError {
-    value: String,
-}
-
-impl ComponentSuffixError {
-    pub fn value(&self) -> &str {
-        &self.value
-    }
-}
-
-impl std::fmt::Display for ComponentSuffixError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "`field_suffix` must be a non-empty ASCII identifier suffix, got `{}`",
-            self.value
-        )
-    }
-}
-
-impl std::error::Error for ComponentSuffixError {}
-
-pub const fn is_valid_component_suffix(value: &str) -> bool {
-    gpui_form_core::component_suffix::is_valid_ascii_identifier_suffix(value)
-}
-
-pub fn validate_component_suffix(value: &str) -> Result<(), ComponentSuffixError> {
-    if is_valid_component_suffix(value) {
-        Ok(())
-    } else {
-        Err(ComponentSuffixError {
-            value: value.to_string(),
-        })
-    }
-}
-
-impl ComponentSuffix {
-    pub const fn new(value: &'static str) -> Self {
-        assert!(
-            is_valid_component_suffix(value),
-            "component suffix must be a non-empty ASCII identifier suffix"
-        );
-        Self(value)
-    }
-
-    pub const fn new_opt(value: Option<&'static str>) -> Option<Self> {
-        match value {
-            Some(value) => Some(Self::new(value)),
-            None => None,
-        }
-    }
-
-    pub const fn as_str(self) -> &'static str {
-        self.0
-    }
-}
-
 #[derive(Debug)]
 pub struct GpuiFormShape {
     pub struct_name: &'static str,
@@ -352,7 +294,7 @@ impl ValidationRuleId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldComponentVariant {
     shape_path: RustPath,
-    component_type: Option<RustType>,
+    render_component: bool,
     value_binding: bool,
     prototyping_field_suffix: Option<ComponentSuffix>,
 }
@@ -361,25 +303,16 @@ impl FieldComponentVariant {
     pub const fn new(shape_path: RustPath) -> Self {
         Self {
             shape_path,
-            component_type: None,
+            render_component: false,
             value_binding: false,
             prototyping_field_suffix: None,
         }
     }
 
-    /// Attach a UI component type to this component metadata.
-    pub const fn with_component_type(mut self, component: RustType) -> Self {
-        self.component_type = Some(component);
-        self
-    }
-
-    /// Attach an optional UI component type to this component metadata.
-    ///
-    /// Used when the component type may come from the shape's
-    /// `ComponentShape::COMPONENT_TYPE` constant rather than an explicit
-    /// field attribute value.
-    pub const fn with_component_type_opt(mut self, component: Option<RustType>) -> Self {
-        self.component_type = component;
+    /// Mark that this component shape publishes render metadata for generated
+    /// prototyping code.
+    pub const fn with_render_component(mut self, enabled: bool) -> Self {
+        self.render_component = enabled;
         self
     }
 
@@ -399,8 +332,8 @@ impl FieldComponentVariant {
         self.shape_path
     }
 
-    pub const fn component_type(&self) -> Option<RustType> {
-        self.component_type
+    pub const fn render_component(&self) -> bool {
+        self.render_component
     }
 
     pub const fn value_binding(&self) -> bool {
@@ -521,10 +454,10 @@ impl FieldVariant {
         }
     }
 
-    pub const fn component_type(&self) -> Option<RustType> {
+    pub const fn render_component(&self) -> bool {
         match self.component {
-            Some(component) => component.component_type,
-            None => None,
+            Some(component) => component.render_component,
+            None => false,
         }
     }
 
@@ -738,7 +671,7 @@ mod tests {
     fn component_metadata_is_constructed_before_field_variant() {
         let component =
             FieldComponentVariant::new(RustPath::new_unchecked("crate::fields::EmailInputShape"))
-                .with_component_type(RustType::new_unchecked("EmailInput"))
+                .with_render_component(true)
                 .with_value_binding(true)
                 .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
         let field = FieldVariant::component(
@@ -752,10 +685,7 @@ mod tests {
             field.shape_path().map(RustPath::as_str),
             Some("crate::fields::EmailInputShape")
         );
-        assert_eq!(
-            field.component_type().map(RustType::as_str),
-            Some("EmailInput")
-        );
+        assert!(field.render_component());
         assert!(field.value_binding());
         assert!(!field.value_holder_uses_option());
     }

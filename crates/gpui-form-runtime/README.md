@@ -40,7 +40,9 @@ default, or `InheritedComponentValueBinding` when fields should inherit
 shape-level `ComponentValueBinding<T>` synchronization.
 
 For owned components, derive on the rendered component and supply `state = ...`;
-generated forms store the backing state entity:
+generated forms store the backing state entity. The rendered component must
+provide `new(&gpui::Entity<State>) -> impl gpui::IntoElement` so the shape's
+`RenderComponent` associated type can render prototyping output:
 
 ```rust
 use gpui_form_derive::ComponentShape;
@@ -64,6 +66,7 @@ gpui_form_derive::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
+        component = gpui_component::input::Input;
         value = String;
         value_storage = direct;
         field_suffix = "input";
@@ -75,7 +78,8 @@ gpui_form_derive::component_shape! {
 `shape::ComponentPrototyping::field_suffix(...)` calls use the same runtime
 contract: the suffix must be a non-empty ASCII identifier suffix. The runtime
 API validates this in const evaluation so invalid suffixes fail at the shape
-implementation.
+implementation. `ComponentPrototyping` stores the shared
+`shape::ComponentSuffix` type, which is also used by schema inventory metadata.
 
 ## Value Binding
 

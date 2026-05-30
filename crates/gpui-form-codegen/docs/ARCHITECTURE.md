@@ -87,7 +87,7 @@ Inventory/prototyping metadata records:
 - explicit component field metadata via `FieldVariant::component(...)`
 - the field value-presence policy as `FieldValuePresence`
 - the resolved component shape path in `FieldComponentVariant`
-- the optional render component type inherited from `ComponentShape::COMPONENT_TYPE`
+- whether the component shape publishes a `RenderComponent` contract
 - the value-binding flag
 - the shape-level prototyping suffix, or the resolved component field suffix
 

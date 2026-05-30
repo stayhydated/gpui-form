@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    Expr, Ident, LitStr, Path, Result, Token, Type,
+    Expr, Ident, LitStr, Path, Result, Token, Type, Visibility,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
 };
@@ -41,8 +41,8 @@ pub(super) struct ComponentShapeMetadata {
     /// Optional backing state type when deriving on a render component.
     state: Option<Type>,
     /// Optional UI component type.
-    /// When set, `ComponentShape::COMPONENT_TYPE` is populated so that
-    /// field annotations do not need to repeat `component = ...`.
+    /// When set, generated prototyping code can render the component through
+    /// the shape's `RenderComponent` associated type.
     component: Option<Type>,
     /// Explicit form-side value types supported by this shape.
     values: Vec<Type>,
@@ -92,8 +92,8 @@ impl ComponentShapeMetadata {
         set_once(&mut self.component, component, span, "component")
     }
 
-    pub(super) fn has_component(&self) -> bool {
-        self.component.is_some()
+    pub(super) fn component(&self) -> Option<&Type> {
+        self.component.as_ref()
     }
 
     pub(super) fn add_value<T: quote::ToTokens>(&mut self, value: Type, _span: T) -> Result<()> {
@@ -198,30 +198,53 @@ impl ComponentShapeMetadata {
             .unwrap_or(default_body)
     }
 
-    pub(super) fn render_component_contract_tokens(
-        &self,
+    pub(super) fn render_component_tokens(
         gpui_crate: &Path,
+        runtime_crate: &Path,
+        vis: &Visibility,
+        adapter_ident: &Ident,
         state: &Type,
-    ) -> TokenStream {
-        let Some(component) = &self.component else {
-            return quote! {};
+        component: Option<&Type>,
+        generics: &syn::Generics,
+    ) -> Result<(TokenStream, TokenStream)> {
+        let Some(component) = component else {
+            return Ok((
+                quote! { type RenderComponent = #runtime_crate::shape::NoRenderComponent; },
+                quote! {},
+            ));
         };
 
-        if type_contains_infer(component) {
-            return quote! {};
-        }
+        let component = component.clone();
+        let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+        let phantom_type = phantom_type_tokens(generics);
 
-        quote! {
-            #[allow(dead_code)]
-            fn __gpui_form_assert_render_component_contract(
-                entity: &#gpui_crate::Entity<#state>,
-            ) -> #component {
-                <#component>::new(entity)
-            }
-        }
+        Ok((
+            quote! { type RenderComponent = #adapter_ident #ty_generics; },
+            quote! {
+                #[doc(hidden)]
+                #vis struct #adapter_ident #generics(
+                    ::core::marker::PhantomData<fn() -> #phantom_type>
+                ) #where_clause;
+
+                impl #impl_generics #runtime_crate::shape::ComponentRender<#state>
+                    for #adapter_ident #ty_generics
+                    #where_clause
+                {
+                    const RENDERS: bool = true;
+
+                    fn new(entity: &#gpui_crate::Entity<#state>) -> impl #gpui_crate::IntoElement {
+                        <#component>::new(entity)
+                    }
+                }
+            },
+        ))
     }
 
-    pub(super) fn impl_items_tokens(&self, runtime_crate: &Path) -> TokenStream {
+    pub(super) fn impl_items_tokens(
+        &self,
+        runtime_crate: &Path,
+        render_component_assoc: TokenStream,
+    ) -> TokenStream {
         let value_storage_policy = match self
             .value_storage
             .unwrap_or(ValueStoragePolicy::RequiredValueStorage)
@@ -242,11 +265,6 @@ impl ComponentShapeMetadata {
         let value_binding_policy_assoc = quote! {
             type ValueBindingPolicy = #value_binding_policy;
         };
-        let component_type_const = self.component.as_ref().map(|component| {
-            quote! {
-                const COMPONENT_TYPE: Option<&'static str> = Some(stringify!(#component));
-            }
-        });
         let prototyping_const = self.field_suffix.as_ref().map(|field_suffix| {
             quote! {
                 const PROTOTYPING: #runtime_crate::shape::ComponentPrototyping =
@@ -258,43 +276,33 @@ impl ComponentShapeMetadata {
         quote! {
             #value_storage_policy_assoc
             #value_binding_policy_assoc
-            #component_type_const
+            #render_component_assoc
             #prototyping_const
         }
     }
 }
 
-fn type_contains_infer(ty: &Type) -> bool {
-    match ty {
-        Type::Infer(_) => true,
-        Type::Path(path) => path.path.segments.iter().any(|segment| match &segment.arguments {
-            syn::PathArguments::AngleBracketed(args) => args.args.iter().any(|arg| match arg {
-                syn::GenericArgument::Type(ty) => type_contains_infer(ty),
-                syn::GenericArgument::AssocType(assoc) => type_contains_infer(&assoc.ty),
-                syn::GenericArgument::Constraint(constraint) => constraint
-                    .bounds
-                    .iter()
-                    .any(|bound| matches!(bound, syn::TypeParamBound::Trait(_))),
-                _ => false,
-            }),
-            syn::PathArguments::Parenthesized(args) => {
-                args.inputs.iter().any(type_contains_infer)
-                    || matches!(&args.output, syn::ReturnType::Type(_, ty) if type_contains_infer(ty))
+fn phantom_type_tokens(generics: &syn::Generics) -> TokenStream {
+    let params: Vec<TokenStream> = generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            syn::GenericParam::Type(param) => {
+                let ident = &param.ident;
+                Some(quote! { #ident })
             },
-            syn::PathArguments::None => false,
-        }),
-        Type::Array(array) => type_contains_infer(&array.elem),
-        Type::BareFn(function) => {
-            function.inputs.iter().any(|input| type_contains_infer(&input.ty))
-                || matches!(&function.output, syn::ReturnType::Type(_, ty) if type_contains_infer(ty))
-        },
-        Type::Group(group) => type_contains_infer(&group.elem),
-        Type::Paren(paren) => type_contains_infer(&paren.elem),
-        Type::Ptr(ptr) => type_contains_infer(&ptr.elem),
-        Type::Reference(reference) => type_contains_infer(&reference.elem),
-        Type::Slice(slice) => type_contains_infer(&slice.elem),
-        Type::Tuple(tuple) => tuple.elems.iter().any(type_contains_infer),
-        _ => false,
+            syn::GenericParam::Lifetime(param) => {
+                let lifetime = &param.lifetime;
+                Some(quote! { &#lifetime () })
+            },
+            syn::GenericParam::Const(_) => None,
+        })
+        .collect();
+
+    if params.is_empty() {
+        quote! { () }
+    } else {
+        quote! { (#(#params),*) }
     }
 }
 
