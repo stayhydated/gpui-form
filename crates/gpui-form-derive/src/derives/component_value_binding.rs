@@ -44,11 +44,16 @@ fn component_value_type(item: &ItemImpl) -> Result<Type> {
         ));
     }
 
-    match args.args.first().expect("checked len") {
-        GenericArgument::Type(ty) => Ok(ty.clone()),
-        arg => Err(syn::Error::new_spanned(
+    let mut iter = args.args.iter();
+    match iter.next() {
+        Some(GenericArgument::Type(ty)) => Ok(ty.clone()),
+        Some(arg) => Err(syn::Error::new_spanned(
             arg,
             "`ComponentValueBinding` argument must be a type",
+        )),
+        None => Err(syn::Error::new_spanned(
+            &args.args,
+            "`ComponentValueBinding` requires exactly one type argument",
         )),
     }
 }
@@ -83,8 +88,9 @@ fn rewrite_self_state_type(ty: &mut Type) {
     match ty {
         Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 2 => {
             let mut segments = path.path.segments.iter();
-            let first = segments.next().expect("checked len");
-            let second = segments.next().expect("checked len");
+            let (Some(first), Some(second)) = (segments.next(), segments.next()) else {
+                return;
+            };
             if first.ident == "Self" && second.ident == "State" {
                 *ty = parse_quote!(Self);
             }

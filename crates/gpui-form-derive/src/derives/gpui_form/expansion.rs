@@ -110,12 +110,15 @@ pub fn expand_gpui_form(
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
         let empty_fields: Vec<FieldPlan> = Vec::new();
-        let value_holder_tokens = generate_value_holder(
+        let value_holder_tokens = match generate_value_holder(
             &original_input,
             &empty_fields,
             enable_koruma,
             enable_koruma_fluent,
-        );
+        ) {
+            Ok(value_holder_tokens) => value_holder_tokens,
+            Err(error) => return error.to_compile_error(),
+        };
         let shape_impl = if generate_inventory {
             quote! {
                 #facade_crate::schema::registry::inventory::submit! {
@@ -159,7 +162,13 @@ pub fn expand_gpui_form(
 
     let fields_iter = match &parsed.data {
         darling::ast::Data::Struct(s) => &s.fields,
-        _ => unreachable!("GpuiForm derive only supports named structs"),
+        _ => {
+            return syn::Error::new_spanned(
+                &derive_input,
+                "`#[derive(GpuiForm)]` only supports named structs",
+            )
+            .to_compile_error();
+        },
     };
 
     if fields_iter.is_empty() {
@@ -193,13 +202,19 @@ pub fn expand_gpui_form(
         .map(|layout| layout.field_base_declarations_tokens.clone())
         .collect();
 
-    let value_holder_tokens = generate_value_holder(
+    let value_holder_tokens = match generate_value_holder(
         &original_input,
         &field_plans,
         effective_enable_koruma,
         enable_koruma_fluent,
-    );
-    let conversion_can_fail = holder_conversion_can_fail_metadata_tokens(&field_plans);
+    ) {
+        Ok(value_holder_tokens) => value_holder_tokens,
+        Err(error) => return error.to_compile_error(),
+    };
+    let conversion_can_fail = match holder_conversion_can_fail_metadata_tokens(&field_plans) {
+        Ok(conversion_can_fail) => conversion_can_fail,
+        Err(error) => return error.to_compile_error(),
+    };
 
     let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()

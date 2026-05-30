@@ -24,7 +24,12 @@ pub fn plan_form(
 ) -> syn::Result<FormPlan> {
     let fields_iter = match &parsed.data {
         darling::ast::Data::Struct(s) => &s.fields,
-        _ => unreachable!("GpuiForm derive only supports named structs"),
+        _ => {
+            return Err(syn::Error::new_spanned(
+                derive_input,
+                "`#[derive(GpuiForm)]` only supports named structs",
+            ));
+        },
     };
 
     let parsed_koruma_fields = parse_koruma_fields(derive_input)?;
@@ -43,9 +48,12 @@ pub fn plan_form(
 
         let field_name_str = field_name.to_string();
         let (was_optional, source_value_type) = extract_option_inner_type(&field.ty);
-        let rendered = field
-            .rendered()
-            .expect("non-skipped field intents should have rendered field options");
+        let rendered = field.rendered().ok_or_else(|| {
+            syn::Error::new_spanned(
+                &field_name,
+                "field attribute must provide rendered options unless the field is `skip`d",
+            )
+        })?;
         let override_type = rendered
             .r#type
             .as_ref()
@@ -57,7 +65,7 @@ pub fn plan_form(
 
         let (component, component_layout, required_value) = match field.component() {
             Some(component) => {
-                let layout = generate_component_field(field);
+                let layout = generate_component_field(&field_name, &source_value_type, &component);
                 (
                     Some(component.component.clone()),
                     Some(layout.clone()),
