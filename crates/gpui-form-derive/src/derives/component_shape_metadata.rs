@@ -4,6 +4,7 @@ use syn::{
     Expr, Ident, LitStr, Path, Result, Token, Type, Visibility,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
+    spanned::Spanned as _,
 };
 
 use gpui_form_codegen::{CratePaths, components::validate_shape_field_suffix};
@@ -12,6 +13,20 @@ use super::component_shape_constructor::constructor_body_tokens;
 
 pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `component = ...`, `value = ...`, `values(...)`, \
      `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
+
+pub(super) const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value = ...`, `values(...)`, \
+     `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
+
+pub(super) mod kw {
+    syn::custom_keyword!(component);
+    syn::custom_keyword!(field_suffix);
+    syn::custom_keyword!(new);
+    syn::custom_keyword!(state);
+    syn::custom_keyword!(value);
+    syn::custom_keyword!(values);
+    syn::custom_keyword!(value_storage);
+    syn::custom_keyword!(value_binding);
+}
 
 fn rust_type_key(ty: &Type) -> String {
     ty.to_token_stream()
@@ -61,6 +76,172 @@ pub(super) struct ComponentShapeMetadata {
     value_binding: bool,
     /// Preferred generated field/helper suffix for prototyping output.
     field_suffix: Option<LitStr>,
+}
+
+#[derive(Debug)]
+pub(super) enum ShapeOption {
+    New {
+        expr: Expr,
+        span: proc_macro2::Span,
+    },
+    State {
+        ty: Type,
+        span: proc_macro2::Span,
+    },
+    Component {
+        ty: Type,
+        span: proc_macro2::Span,
+    },
+    Value {
+        ty: Type,
+        span: proc_macro2::Span,
+    },
+    Values {
+        values: Vec<Type>,
+        span: proc_macro2::Span,
+    },
+    ValueStorage {
+        policy: ValueStoragePolicy,
+        span: proc_macro2::Span,
+    },
+    ValueBinding {
+        span: proc_macro2::Span,
+    },
+    FieldSuffix {
+        suffix: LitStr,
+        span: proc_macro2::Span,
+    },
+}
+
+impl ShapeOption {
+    pub(super) fn parse_function(input: ParseStream<'_>) -> Result<Self> {
+        if input.peek(kw::new) {
+            let key = input.parse::<kw::new>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::New {
+                expr: input.parse()?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::component) {
+            let key = input.parse::<kw::component>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Component {
+                ty: input.parse()?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::value) {
+            let key = input.parse::<kw::value>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Value {
+                ty: input.parse()?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::values) {
+            let key = input.parse::<kw::values>()?;
+            let values_content;
+            syn::parenthesized!(values_content in input);
+            return Ok(Self::Values {
+                values: ComponentShapeMetadata::parse_values(&values_content)?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::value_storage) {
+            let key = input.parse::<kw::value_storage>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::ValueStorage {
+                policy: input.parse()?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::value_binding) {
+            let key = input.parse::<kw::value_binding>()?;
+            return Ok(Self::ValueBinding { span: key.span });
+        }
+        if input.peek(kw::field_suffix) {
+            let key = input.parse::<kw::field_suffix>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::FieldSuffix {
+                suffix: input.parse()?,
+                span: key.span,
+            });
+        }
+
+        Err(input.error(format!("expected {FUNCTION_SHAPE_OPTIONS}")))
+    }
+
+    pub(super) fn from_nested_meta(meta: &syn::meta::ParseNestedMeta<'_>) -> Result<Self> {
+        let span = meta.path.span();
+        if meta.path.is_ident("new") {
+            Ok(Self::New {
+                expr: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("state") {
+            Ok(Self::State {
+                ty: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("component") {
+            Ok(Self::Component {
+                ty: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("value") {
+            Ok(Self::Value {
+                ty: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("values") {
+            let content;
+            syn::parenthesized!(content in meta.input);
+            Ok(Self::Values {
+                values: ComponentShapeMetadata::parse_values(&content)?,
+                span,
+            })
+        } else if meta.path.is_ident("value_storage") {
+            Ok(Self::ValueStorage {
+                policy: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("field_suffix") {
+            Ok(Self::FieldSuffix {
+                suffix: meta.value()?.parse()?,
+                span,
+            })
+        } else if meta.path.is_ident("value_binding") {
+            Ok(Self::ValueBinding { span })
+        } else {
+            Err(meta.error(format!(
+                "unsupported `gpui_form_shape` option; expected {SHAPE_METADATA_OPTIONS}",
+            )))
+        }
+    }
+
+    pub(super) fn apply(self, shape: &mut ComponentShapeMetadata) -> Result<()> {
+        match self {
+            Self::New { expr, span } => shape.set_new(expr, span_token("new", span)),
+            Self::State { ty, span } => shape.set_state(ty, span_token("state", span)),
+            Self::Component { ty, span } => shape.set_component(ty, span_token("component", span)),
+            Self::Value { ty, span } => shape.add_value(ty, span_token("value", span)),
+            Self::Values { values, span } => shape.add_values(values, span_token("values", span)),
+            Self::ValueStorage { policy, span } => {
+                shape.set_value_storage(policy, span_token("value_storage", span))
+            },
+            Self::ValueBinding { span } => {
+                shape.enable_value_binding(span_token("value_binding", span))
+            },
+            Self::FieldSuffix { suffix, span } => {
+                shape.set_field_suffix(suffix, span_token("field_suffix", span))
+            },
+        }
+    }
+}
+
+fn span_token(name: &str, span: proc_macro2::Span) -> Ident {
+    Ident::new(name, span)
 }
 
 impl ComponentShapeMetadata {

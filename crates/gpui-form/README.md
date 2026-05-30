@@ -133,10 +133,10 @@ generated value-holder storage as `T`. Shapes that require a present value use
 conversion back to the source model fails when the value is missing. Those
 fallible holder-to-model paths expose `holder.try_into_original()`; infallible
 paths expose `holder.into_original()` and implement `From` when the derive can
-prove infallibility directly. Define this behavior on the reusable component
-shape with `value_storage = direct`. Required shape-backed fields without a
-declared field default keep only `try_into_original()` so missing values cannot
-be hidden behind a panic-capable infallible API.
+prove infallibility directly, such as optional fields, direct fields, or
+shape-backed fields with a declared field default. Shape-backed fields without
+a declared field default keep the checked `try_into_original()` API even when
+the reusable shape uses `value_storage = direct`.
 
 Common field-level helpers:
 
@@ -154,6 +154,10 @@ Common field-level helpers:
 - `#[gpui_form(type = <form_type>, source_to_form = <expr>, form_to_source = <expr>)]`
   lets the generated form edit a type that differs from the original field type;
   combine it with either a component shape or `hidden`.
+- Structured syntax keeps value conversion options attached to the field
+  intent: `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
+  and `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`.
+  The flat `type`, `source_to_form`, and `form_to_source` forms remain accepted.
 - `gpui_form_collection::input::Input::<_>` and
   `gpui_form_collection::number_input::NumberInput::<_>` parse non-`String`
   form-side value types with `FromStr` in prototyping output, so value objects

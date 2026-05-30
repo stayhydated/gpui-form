@@ -7,20 +7,9 @@ use syn::{
     parse_macro_input,
 };
 
-use super::component_shape_metadata::ComponentShapeMetadata;
-
-const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value = ...`, `values(...)`, \
-     `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
-
-mod kw {
-    syn::custom_keyword!(component);
-    syn::custom_keyword!(field_suffix);
-    syn::custom_keyword!(new);
-    syn::custom_keyword!(value);
-    syn::custom_keyword!(values);
-    syn::custom_keyword!(value_storage);
-    syn::custom_keyword!(value_binding);
-}
+use super::component_shape_metadata::{
+    ComponentShapeMetadata, FUNCTION_SHAPE_OPTIONS, ShapeOption, kw,
+};
 
 struct ComponentShapeInput {
     attrs: Vec<Attribute>,
@@ -66,41 +55,9 @@ impl Parse for ComponentShapeInput {
                     ));
                 }
                 parse_option_separator(&content)?;
-            } else if content.peek(kw::new) {
-                let key = content.parse::<kw::new>()?;
-                content.parse::<Token![=]>()?;
-                metadata.set_new(content.parse()?, key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::component) {
-                let key = content.parse::<kw::component>()?;
-                content.parse::<Token![=]>()?;
-                metadata.set_component(content.parse()?, key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::value) {
-                let key = content.parse::<kw::value>()?;
-                content.parse::<Token![=]>()?;
-                metadata.add_value(content.parse()?, key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::values) {
-                let key = content.parse::<kw::values>()?;
-                let values_content;
-                syn::parenthesized!(values_content in content);
-                let values = ComponentShapeMetadata::parse_values(&values_content)?;
-                metadata.add_values(values, key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::value_storage) {
-                let key = content.parse::<kw::value_storage>()?;
-                content.parse::<Token![=]>()?;
-                metadata.set_value_storage(content.parse()?, key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::value_binding) {
-                let key = content.parse::<kw::value_binding>()?;
-                metadata.enable_value_binding(key)?;
-                parse_option_separator(&content)?;
-            } else if content.peek(kw::field_suffix) {
-                let key = content.parse::<kw::field_suffix>()?;
-                content.parse::<Token![=]>()?;
-                metadata.set_field_suffix(content.parse()?, key)?;
+            } else if is_shape_option_start(&content) {
+                let option = content.call(ShapeOption::parse_function)?;
+                option.apply(&mut metadata)?;
                 parse_option_separator(&content)?;
             } else if content.peek(Token![impl]) || content.peek(Token![#]) {
                 let impl_item: ItemImpl = content.parse()?;
@@ -122,6 +79,16 @@ impl Parse for ComponentShapeInput {
             impls,
         })
     }
+}
+
+fn is_shape_option_start(input: ParseStream<'_>) -> bool {
+    input.peek(kw::new)
+        || input.peek(kw::component)
+        || input.peek(kw::value)
+        || input.peek(kw::values)
+        || input.peek(kw::value_storage)
+        || input.peek(kw::value_binding)
+        || input.peek(kw::field_suffix)
 }
 
 fn parse_option_separator(input: ParseStream<'_>) -> Result<()> {

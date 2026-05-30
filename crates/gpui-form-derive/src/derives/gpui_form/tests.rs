@@ -389,14 +389,15 @@ mod gpui_form_tests {
             "shape-inherited requiredness should use the policy-aware validator and conditional metadata: {compact}"
         );
         assert!(
-            compact.contains("impl<__GpuiFormNameValueStoragePolicy>::core::convert::TryFrom<__TestFormFormValueHolderStorage<__GpuiFormNameValueStoragePolicy>>forTestForm"),
+            compact.contains("impl::core::convert::TryFrom<TestFormFormValueHolder>forTestForm"),
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
-            compact.contains(
-                "with_holder_conversion_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE)"
-            ),
-            "Inventory metadata should inherit holder conversion fallibility from the shape policy: {compact}"
+            compact.contains("with_holder_conversion_can_fail(true)")
+                && compact.contains(
+                    "with_holder_conversion_runtime_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE)"
+                ),
+            "Inventory metadata should record the fallible API shape and runtime policy predicate: {compact}"
         );
         assert!(
             compact.contains(
@@ -550,7 +551,7 @@ mod gpui_form_tests {
             "skip + source_to_form should no longer emit a compile_error"
         );
         assert!(
-            compact.contains("::core::convert::From<TestForm>for__TestFormFormValueHolderStorage",),
+            compact.contains("::core::convert::From<TestForm>forTestFormFormValueHolder",),
             "From<Original> for FormValueHolder should be generated even with skipped fields"
         );
         assert!(
@@ -558,8 +559,7 @@ mod gpui_form_tests {
             "From<Original> for FormValueHolder should still apply `source_to_form` conversion"
         );
         assert!(
-            !compact
-                .contains("::core::convert::From<__TestFormFormValueHolderStorage>forTestForm",),
+            !compact.contains("::core::convert::From<TestFormFormValueHolder>forTestForm",),
             "Reverse From<FormValueHolder> for Original should remain disabled when skipped fields exist"
         );
         assert!(
@@ -615,6 +615,56 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn test_structured_field_attribute_grammar() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            struct TestForm {
+                #[gpui_form(component(
+                    crate::DatePickerState,
+                    value(
+                        type = chrono::NaiveDate,
+                        from_source = |ts| to_form(ts),
+                        into_source = |dt| to_model(dt)
+                    ),
+                    default = Timestamp::now()
+                ))]
+                birth_date: Timestamp,
+
+                #[gpui_form(hidden(
+                    value(type = String, from_source = |id| id.to_string(), into_source = |id| id.parse().unwrap()),
+                    default = 1_u64
+                ))]
+                account_id: u64,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\")")
+                && compact.contains("pubaccount_id:String"),
+            "structured value(type = ...) should drive component metadata and hidden holder storage: {compact}"
+        );
+        assert!(
+            compact.contains("to_form") && compact.contains("to_model"),
+            "structured from_source/into_source conversions should be emitted: {compact}"
+        );
+        assert!(
+            compact.contains(".with_default(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"Timestamp::now()\"))")
+                && compact.contains("::core::convert::Into::into(1_u64)"),
+            "structured default options should be emitted for inventory and value-holder defaults: {compact}"
+        );
+    }
+
+    #[test]
     fn test_default_uses_into_conversion() {
         let tokens = quote! {
             #[derive(GpuiForm)]
@@ -664,7 +714,7 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("::core::convert::From<TestForm>for__TestFormFormValueHolderStorage",),
+            compact.contains("::core::convert::From<TestForm>forTestFormFormValueHolder",),
             "Skipped-field forms should still generate From<Original> for value holder"
         );
         assert!(
@@ -718,7 +768,7 @@ mod gpui_form_tests {
         );
 
         assert!(
-            compact.contains("with_render_component(<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::RenderComponentas::gpui_form::runtime::shape::ComponentRender<"),
+            compact.contains("with_render(if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::RenderComponentas::gpui_form::runtime::shape::ComponentRender<"),
             "FieldVariant should inherit render component metadata from the shape: {compact}"
         );
         assert!(
@@ -728,7 +778,7 @@ mod gpui_form_tests {
             "FieldVariant should carry the component shape path: {compact}"
         );
         assert!(
-            compact.contains("with_value_binding(<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueBindingPolicyas::gpui_form::runtime::shape::ComponentValueBindingPolicy>::VALUE_BINDING)"),
+            compact.contains("with_value_binding(if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueBindingPolicyas::gpui_form::runtime::shape::ComponentValueBindingPolicy>::VALUE_BINDING"),
             "FieldVariant should inherit component value binding metadata from the shape: {compact}"
         );
         assert!(

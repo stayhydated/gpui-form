@@ -12,10 +12,13 @@ mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(default);
     syn::custom_keyword!(form_to_source);
+    syn::custom_keyword!(from_source);
     syn::custom_keyword!(hidden);
+    syn::custom_keyword!(into_source);
     syn::custom_keyword!(source_to_form);
     syn::custom_keyword!(shape);
     syn::custom_keyword!(skip);
+    syn::custom_keyword!(value);
 }
 
 #[derive(Clone, Debug)]
@@ -45,12 +48,12 @@ pub enum StoragePlan {
     OriginallyOptional,
     RequiredValue,
     Direct,
-    ShapePolicy { shape: Path, policy_ident: Ident },
+    ShapePolicy { shape: Path },
 }
 
 impl StoragePlan {
     pub fn from_required_value(
-        field_name: &Ident,
+        _field_name: &Ident,
         was_optional: bool,
         required_value: RequiredValue,
     ) -> syn::Result<Self> {
@@ -60,10 +63,7 @@ impl StoragePlan {
             match required_value {
                 RequiredValue::Explicit(true) => Ok(Self::RequiredValue),
                 RequiredValue::Explicit(false) => Ok(Self::Direct),
-                RequiredValue::Shape(shape) => Ok(Self::ShapePolicy {
-                    shape,
-                    policy_ident: value_storage_policy_ident_for_field(field_name)?,
-                }),
+                RequiredValue::Shape(shape) => Ok(Self::ShapePolicy { shape }),
             }
         }
     }
@@ -73,13 +73,6 @@ impl StoragePlan {
             Self::OriginallyOptional | Self::Direct => RequiredValue::explicit(false),
             Self::RequiredValue => RequiredValue::explicit(true),
             Self::ShapePolicy { shape, .. } => RequiredValue::Shape(shape.clone()),
-        }
-    }
-
-    pub fn shape_policy_ident(&self) -> Option<&Ident> {
-        match self {
-            Self::ShapePolicy { policy_ident, .. } => Some(policy_ident),
-            _ => None,
         }
     }
 }
@@ -190,10 +183,6 @@ impl SharedFieldPlan {
 
     pub fn form_to_source_span(&self) -> Option<Span> {
         self.into_expr_span
-    }
-
-    pub fn shape_policy_ident(&self) -> Option<&Ident> {
-        self.storage.shape_policy_ident()
     }
 
     /// Returns true if this rendered field needs the `RequiredValidation`
@@ -317,32 +306,6 @@ impl FieldPlan {
     }
 }
 
-pub fn value_storage_policy_ident_for_field(field_name: &Ident) -> syn::Result<Ident> {
-    let field_name_ident = field_name;
-    let field_name = field_name_ident.to_string();
-    let field_name = field_name.strip_prefix("r#").unwrap_or(&field_name);
-    let mut pascal = String::new();
-    let mut uppercase_next = true;
-    for ch in field_name.chars() {
-        if ch == '_' {
-            uppercase_next = true;
-        } else if uppercase_next {
-            pascal.extend(ch.to_uppercase());
-            uppercase_next = false;
-        } else {
-            pascal.push(ch);
-        }
-    }
-
-    let ident = format!("__GpuiForm{pascal}ValueStoragePolicy");
-    syn::parse_str::<Ident>(&ident).map_err(|err| {
-        syn::Error::new_spanned(
-            field_name_ident,
-            format!("failed to generate value-storage policy identifier `{ident}`: {err}"),
-        )
-    })
-}
-
 #[derive(Clone, Debug)]
 pub struct KorumaOptions {
     pub fluent: bool,
@@ -399,6 +362,7 @@ enum GpuiFormFieldOption {
     },
     Hidden {
         span: kw::hidden,
+        options: FieldOptions,
     },
     Type {
         span: Token![type],
@@ -419,6 +383,7 @@ enum GpuiFormFieldOption {
     Component {
         span: kw::component,
         shape: Path,
+        options: FieldOptions,
     },
 }
 
@@ -429,12 +394,12 @@ impl Parse for GpuiFormFieldOption {
             let content;
             syn::parenthesized!(content in input);
             let shape = content.parse::<Path>()?;
-            if !content.is_empty() {
-                return Err(content.error(
-                    "`component(...)` only accepts a single component shape path, for example `component(MyShape)`",
-                ));
-            }
-            return Ok(Self::Component { span: key, shape });
+            let options = parse_structured_field_options(&content, true)?;
+            return Ok(Self::Component {
+                span: key,
+                shape,
+                options,
+            });
         }
 
         if input.peek(Token![type]) {
@@ -480,7 +445,14 @@ impl Parse for GpuiFormFieldOption {
 
         if input.peek(kw::hidden) {
             let key = input.parse::<kw::hidden>()?;
-            return Ok(Self::Hidden { span: key });
+            let options = if input.peek(syn::token::Paren) {
+                let content;
+                syn::parenthesized!(content in input);
+                parse_structured_field_options(&content, false)?
+            } else {
+                FieldOptions::default()
+            };
+            return Ok(Self::Hidden { span: key, options });
         }
 
         if input.peek(Ident) {
@@ -504,6 +476,89 @@ impl Parse for GpuiFormFieldOption {
     }
 }
 
+fn parse_structured_field_options(
+    input: ParseStream<'_>,
+    needs_leading_comma: bool,
+) -> syn::Result<FieldOptions> {
+    let mut options = FieldOptions::default();
+    let mut first = true;
+    while !input.is_empty() {
+        if needs_leading_comma || !first {
+            input.parse::<Token![,]>()?;
+        }
+        first = false;
+        if input.peek(kw::value) {
+            let _key = input.parse::<kw::value>()?;
+            let content;
+            syn::parenthesized!(content in input);
+            parse_structured_value_options(&content, &mut options)?;
+            if content.is_empty() {
+                continue;
+            }
+            return Err(content.error("unexpected tokens in `value(...)`"));
+        }
+        if input.peek(kw::default) {
+            let key = input.parse::<kw::default>()?;
+            input.parse::<Token![=]>()?;
+            if options.default.is_some() {
+                return Err(syn::Error::new_spanned(key, "duplicate `default` option"));
+            }
+            options.default = Some(Spanned::new(DefaultExpr(input.parse()?), &key));
+            continue;
+        }
+        return Err(input.error(
+            "expected `value(...)` or `default = ...` in structured `gpui_form` field option",
+        ));
+    }
+    Ok(options)
+}
+
+fn parse_structured_value_options(
+    input: ParseStream<'_>,
+    options: &mut FieldOptions,
+) -> syn::Result<()> {
+    while !input.is_empty() {
+        if input.peek(Token![type]) {
+            let key = input.parse::<Token![type]>()?;
+            input.parse::<Token![=]>()?;
+            if options.r#type.is_some() {
+                return Err(syn::Error::new_spanned(key, "duplicate `type` option"));
+            }
+            options.r#type = Some(Spanned::new(TypeOverride(input.parse()?), &key));
+        } else if input.peek(kw::from_source) {
+            let key = input.parse::<kw::from_source>()?;
+            input.parse::<Token![=]>()?;
+            if options.source_to_form.is_some() {
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate `from_source` option",
+                ));
+            }
+            options.source_to_form = Some(Spanned::new(input.parse()?, &key));
+        } else if input.peek(kw::into_source) {
+            let key = input.parse::<kw::into_source>()?;
+            input.parse::<Token![=]>()?;
+            if options.form_to_source.is_some() {
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate `into_source` option",
+                ));
+            }
+            options.form_to_source = Some(Spanned::new(input.parse()?, &key));
+        } else {
+            return Err(input.error(
+                "expected `type = ...`, `from_source = ...`, or `into_source = ...` in `value(...)`",
+            ));
+        }
+
+        if input.is_empty() {
+            break;
+        }
+        input.parse::<Token![,]>()?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub struct ComponentField {
     pub ident: Ident,
@@ -511,7 +566,7 @@ pub struct ComponentField {
     intent: ParsedFieldIntent,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct FieldOptions {
     r#type: Option<Spanned<TypeOverride>>,
     form_to_source: Option<Spanned<Expr>>,
@@ -768,7 +823,10 @@ fn parse_gpui_form_item(
 ) -> darling::Result<()> {
     match item {
         GpuiFormFieldOption::Skip { span } => set_skip(field, true, &span),
-        GpuiFormFieldOption::Hidden { span } => set_hidden(field, &span),
+        GpuiFormFieldOption::Hidden { span, options } => {
+            set_hidden(field, &span)?;
+            merge_field_options(field, options, &span)
+        },
         GpuiFormFieldOption::Type { span, ty } => {
             let options = field_options_mut(field, FieldOptionKey::Type, &span)?;
             set_once(
@@ -805,8 +863,49 @@ fn parse_gpui_form_item(
                 &span,
             )
         },
-        GpuiFormFieldOption::Component { span, shape } => set_shape(field, shape, &span),
+        GpuiFormFieldOption::Component {
+            span,
+            shape,
+            options,
+        } => {
+            set_shape(field, shape, &span)?;
+            merge_field_options(field, options, &span)
+        },
     }
+}
+
+fn merge_field_options<S: syn::spanned::Spanned>(
+    field: &mut ComponentField,
+    incoming: FieldOptions,
+    span: &S,
+) -> darling::Result<()> {
+    if let Some(value) = incoming.r#type {
+        let options = field_options_mut(field, FieldOptionKey::Type, span)?;
+        set_once(&mut options.r#type, value, FieldOptionKey::Type, span)?;
+    }
+    if let Some(value) = incoming.source_to_form {
+        let options = field_options_mut(field, FieldOptionKey::SourceToForm, span)?;
+        set_once(
+            &mut options.source_to_form,
+            value,
+            FieldOptionKey::SourceToForm,
+            span,
+        )?;
+    }
+    if let Some(value) = incoming.form_to_source {
+        let options = field_options_mut(field, FieldOptionKey::FormToSource, span)?;
+        set_once(
+            &mut options.form_to_source,
+            value,
+            FieldOptionKey::FormToSource,
+            span,
+        )?;
+    }
+    if let Some(value) = incoming.default {
+        let options = field_options_mut(field, FieldOptionKey::Default, span)?;
+        set_once(&mut options.default, value, FieldOptionKey::Default, span)?;
+    }
+    Ok(())
 }
 
 fn set_shape<S: syn::spanned::Spanned>(

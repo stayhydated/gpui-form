@@ -79,11 +79,15 @@ Supporting field attributes:
 - `#[gpui_form(type = <form_type>)]`
 - `#[gpui_form(source_to_form = <expr>)]`
 - `#[gpui_form(form_to_source = <expr>)]`
+- `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
+- `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
 
 Every non-empty-form field must choose exactly one intent: component, hidden,
 or skipped. Use `hidden` for value-holder-only fields; `default`, `type`,
 `source_to_form`, and `form_to_source` are helpers that must be combined with a component shape or
-`hidden`.
+`hidden`. The structured `value(...)` form keeps type and conversion options
+inside the component or hidden intent; `from_source` maps source model values
+into form values, and `into_source` maps form values back into source values.
 
 Supporting struct attributes:
 
@@ -106,8 +110,9 @@ Behavior notes:
   missing. Generated `validate()` reports missing required shape values.
   Fallible holder-to-model paths expose `holder.try_into_original()`;
   infallible paths expose `holder.into_original()` and implement `From` when
-  the derive can prove infallibility directly. Required shape-backed fields
-  without a field default keep only the checked `try_into_original()` path.
+  the derive can prove infallibility directly, such as optional fields, direct
+  fields, or shape-backed fields with a declared field default. Shape-backed
+  fields without a field default keep the checked `try_into_original()` path.
 - set `value_storage = direct` on the reusable shape definition when the
   component can synthesize default values
 - shape-level `ValueBindingPolicy` records that the component shape implements

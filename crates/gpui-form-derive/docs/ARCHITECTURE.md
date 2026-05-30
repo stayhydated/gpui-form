@@ -87,6 +87,10 @@ Important behaviors:
 - every field is normalized as component, hidden, or skipped intent during
   parsing; missing intent is a compile error so a field cannot silently become
   value-holder-only
+- structured field syntax nests value conversion/default metadata inside the
+  component or hidden intent: `component(Shape, value(...), default = ...)` and
+  `hidden(value(...), default = ...)`. The flat syntax is adapted into the same
+  typed field option model.
 - hidden fields are explicit value-holder-only fields and may use default and
   conversion metadata
 - skipped fields reject component, hidden, default, and conversion metadata
@@ -99,9 +103,9 @@ Important behaviors:
   holder emission, so holder storage, form type, validation, default, and
   conversion code paths do not need defensive "maybe skipped" lookups
 - holder-to-model API shape is selected by `HolderConversionPlan`, with
-  `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The generated
-  holder impls and `holder_conversion_can_fail` inventory metadata consume the
-  same plan.
+  `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The plan stores
+  semantic fallibility as `ConversionFallibility` and renders predicates only
+  when emitting inventory metadata.
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
   missing without a default; `From` is reserved for holders the derive can prove
   infallible directly
@@ -109,6 +113,9 @@ Important behaviors:
   when requiredness is inherited from the shape policy. A field-level default
   makes that field statically infallible and lets the normal infallible holder
   path apply.
+- generated `FooFormValueHolder` is the public holder struct. Shape policy
+  storage appears through associated type projections and where clauses rather
+  than a hidden storage struct plus public alias.
 - non-optional shape-backed fields whose `ValueStoragePolicy` can represent
   missing values also get generated Koruma validators so `validate()` reports
   missing shape-required values before holder-to-model conversion
@@ -150,6 +157,8 @@ When the `inventory` feature is enabled:
 - defaults constructor wiring to `<State>::new(window, cx)`
 - accepts a constructor expression for `new = ...`; paths and closures receive
   `(window, cx)`, while direct constructor expressions are emitted as written
+- parses shape metadata through the shared `ShapeOption` option model used by
+  `component_shape!`
 - optionally stores a component type for prototyping output
 - sets shape-level `ValueBindingPolicy` only when `value_binding` is present,
   for `ComponentValueBinding<T>` prototyping hooks, including
@@ -168,6 +177,8 @@ When the `inventory` feature is enabled:
 - accepts caller generics, where clauses, and outer attributes
 - accepts `new`, `component`, `value_storage = require_value|direct`,
   `value_binding`, and `field_suffix` metadata keys
+- parses shape metadata through the shared `ShapeOption` option model used by
+  `#[derive(ComponentShape)]`
 - uses semicolon separators between metadata entries
 - accepts nested `impl` items and emits them after the generated
   `ComponentShape` impl

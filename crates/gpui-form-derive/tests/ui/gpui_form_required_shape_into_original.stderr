@@ -1,4 +1,4 @@
-error[E0599]: the method `into_original` exists for struct `__DemoFormValueHolderStorage<RequiredValueStorage>`, but its trait bounds were not satisfied
+error[E0599]: no method named `into_original` found for struct `DemoFormValueHolder` in the current scope
   --> tests/ui/gpui_form_required_shape_into_original.rs:30:20
    |
 22 | #[derive(GpuiForm)]
@@ -7,15 +7,7 @@ error[E0599]: the method `into_original` exists for struct `__DemoFormValueHolde
 30 |     let _ = holder.into_original();
    |                    ^^^^^^^^^^^^^
    |
-  ::: $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
+help: there is a method `try_into_original` with a similar name
    |
-   | pub struct RequiredValueStorage;
-   | ------------------------------- doesn't satisfy `_: InfallibleValueStorage<NonDefault>`
-   |
-note: trait bound `RequiredValueStorage: InfallibleValueStorage<NonDefault>` was not satisfied
-  --> tests/ui/gpui_form_required_shape_into_original.rs:22:10
-   |
-22 | #[derive(GpuiForm)]
-   |          ^^^^^^^^ unsatisfied bound `RequiredValueStorage: InfallibleValueStorage<NonDefault>` introduced here
-   = help: consider manually implementing the trait to avoid undesired bounds
-   = note: this error originates in the derive macro `GpuiForm` (in Nightly builds, run with -Z macro-backtrace for more info)
+30 |     let _ = holder.try_into_original();
+   |                    ++++

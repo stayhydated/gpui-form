@@ -1,11 +1,12 @@
-use gpui_form_schema::registry::GpuiFormShape;
+use gpui_form_schema::{
+    registry::GpuiFormShape,
+    resolved::{ResolveError, ResolvedField, ResolvedGpuiFormShape},
+};
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::quote;
 
 use crate::error::{PrototypingError, PrototypingResult};
-use crate::implementations::{
-    GeneratedSubscription, ResolvedField, ShapeIdentities as _, field_generator,
-};
+use crate::implementations::{GeneratedSubscription, field_generator};
 use crate::imports::{Alias, ImportItem, ImportSet};
 
 macro_rules! semantic_fragment {
@@ -86,11 +87,33 @@ struct GeneratedField<'a> {
     _resolved: ResolvedField<'a>,
 }
 
-fn parse_ident(kind: &'static str, value: &str) -> PrototypingResult<syn::Ident> {
-    syn::parse_str::<syn::Ident>(value).map_err(|_| PrototypingError::InvalidIdentifier {
-        kind,
-        value: value.to_string(),
-    })
+fn map_resolve_error(error: ResolveError) -> PrototypingError {
+    match error {
+        ResolveError::InvalidIdentifier { kind, value } => {
+            PrototypingError::InvalidIdentifier { kind, value }
+        },
+        ResolveError::InvalidPath { kind, value, error } => {
+            PrototypingError::InvalidPath { kind, value, error }
+        },
+        ResolveError::InvalidType {
+            field_name,
+            value,
+            error,
+        } => PrototypingError::InvalidType {
+            field_name,
+            value,
+            error,
+        },
+        ResolveError::InvalidExpression {
+            field_name,
+            value,
+            error,
+        } => PrototypingError::InvalidExpression {
+            field_name,
+            value,
+            error,
+        },
+    }
 }
 
 pub struct FormShapeAdapter<'a> {
@@ -102,50 +125,17 @@ impl<'a> FormShapeAdapter<'a> {
         Self { shape_data }
     }
 
-    fn validate_shape_data(&self) -> PrototypingResult<()> {
-        let data = self.shape_data;
-
-        parse_ident("struct name", data.struct_name)?;
-        parse_ident("generated form ident", &format!("{}Form", data.struct_name))?;
-        parse_ident(
-            "generated form fields ident",
-            &format!("{}FormFields", data.struct_name),
-        )?;
-        parse_ident(
-            "generated form value holder ident",
-            &format!("{}FormValueHolder", data.struct_name),
-        )?;
-
-        data.source_module_path
-            .parse()
-            .map_err(|error| PrototypingError::InvalidPath {
-                kind: "source module path",
-                value: error.value().to_string(),
-                error: error.source_error().to_string(),
-            })?;
-
-        for field in data.fields {
-            parse_ident("field name", field.field_name())?;
-            let _ = ResolvedField::new(field)?;
-        }
-
-        Ok(())
-    }
-
-    fn collect_fields(&self) -> PrototypingResult<Vec<GeneratedField<'a>>> {
-        self.shape_data
-            .fields
+    fn collect_fields(
+        &self,
+        resolved_shape: &ResolvedGpuiFormShape<'a>,
+    ) -> PrototypingResult<Vec<GeneratedField<'a>>> {
+        resolved_shape
+            .fields()
             .iter()
-            .filter(|field| field.is_component())
-            .map(|field| {
-                parse_ident("field name", field.field_name())?;
-                parse_ident("field pascal ident", &field.field_name_pascal())?;
-                parse_ident(
-                    "field component ident",
-                    &field.field_name_with_component_suffix(),
-                )?;
-
-                let resolved = ResolvedField::new(field)?;
+            .filter(|field| field.raw().is_component())
+            .map(|resolved| {
+                let resolved = resolved.clone();
+                let field = resolved.raw();
                 let generator = field_generator();
                 let imports = generator.generate_imports(field);
                 let subscription = if field.subscribable() {
@@ -223,27 +213,18 @@ impl<'a> FormShapeAdapter<'a> {
     /// Returns a [`PrototypingError`] when the input shape metadata cannot be
     /// converted into valid Rust identifiers, types, or paths.
     pub fn parts(&self) -> PrototypingResult<FormParts> {
-        self.validate_shape_data()?;
+        let resolved_shape =
+            ResolvedGpuiFormShape::new(self.shape_data).map_err(map_resolve_error)?;
         let data = self.shape_data;
-        let generated_fields = self.collect_fields()?;
+        let generated_fields = self.collect_fields(&resolved_shape)?;
 
-        let struct_name_ident = parse_ident("struct name", data.struct_name)?;
-        let form_value_holder_ident = format_ident!("{}FormValueHolder", struct_name_ident);
-        let form_ident = parse_ident("generated form ident", &format!("{}Form", data.struct_name))?;
-        let form_fields_ident = parse_ident(
-            "generated form fields ident",
-            &format!("{}FormFields", data.struct_name),
-        )?;
-        let form_id_literal = data.form_id_literal();
-        let context_str = format!("{}Form", data.struct_name);
-        let source_module_path =
-            data.source_module_path
-                .parse()
-                .map_err(|error| PrototypingError::InvalidPath {
-                    kind: "source module path",
-                    value: error.value().to_string(),
-                    error: error.source_error().to_string(),
-                })?;
+        let struct_name_ident = resolved_shape.name().ident().clone();
+        let form_value_holder_ident = resolved_shape.name().value_holder_ident().clone();
+        let form_ident = resolved_shape.name().form_ident().clone();
+        let form_fields_ident = resolved_shape.name().fields_ident().clone();
+        let form_id_literal = resolved_shape.name().form_id().to_string();
+        let context_str = format!("{}Form", resolved_shape.name().source());
+        let source_module_path = resolved_shape.source_module_path().clone();
         let has_skipped_fields = data.has_skipped_fields();
         let holder_conversion_can_fail = data.holder_conversion_can_fail();
 

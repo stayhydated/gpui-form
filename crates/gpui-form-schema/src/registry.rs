@@ -184,6 +184,9 @@ pub struct GpuiFormShape {
     /// the generated value-holder methods, so downstream generators do not need
     /// to reconstruct conversion behavior from field-level metadata.
     pub holder_conversion_can_fail: bool,
+    /// Whether holder-to-model conversion can fail after resolving shape-owned
+    /// storage policies.
+    pub holder_conversion_runtime_can_fail: bool,
 }
 
 impl GpuiFormShape {
@@ -200,6 +203,7 @@ impl GpuiFormShape {
             koruma_enabled,
             has_skipped_fields: false,
             holder_conversion_can_fail: false,
+            holder_conversion_runtime_can_fail: false,
         }
     }
 
@@ -216,6 +220,16 @@ impl GpuiFormShape {
         holder_conversion_can_fail: bool,
     ) -> Self {
         self.holder_conversion_can_fail = holder_conversion_can_fail;
+        self
+    }
+
+    /// Marks whether holder-to-model conversion can fail at runtime after
+    /// shape-owned storage policies are evaluated.
+    pub const fn with_holder_conversion_runtime_can_fail(
+        mut self,
+        holder_conversion_runtime_can_fail: bool,
+    ) -> Self {
+        self.holder_conversion_runtime_can_fail = holder_conversion_runtime_can_fail;
         self
     }
 
@@ -242,6 +256,10 @@ impl GpuiFormShape {
     pub const fn holder_conversion_can_fail(&self) -> bool {
         self.holder_conversion_can_fail
     }
+
+    pub const fn holder_conversion_runtime_can_fail(&self) -> bool {
+        self.holder_conversion_runtime_can_fail
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -265,6 +283,14 @@ impl FieldValuePresence {
 
     pub const fn value_holder_uses_option(self) -> bool {
         matches!(self, Self::Optional | Self::RequiresValue)
+    }
+
+    pub const fn component_storage_capability(self) -> StorageCapability {
+        match self {
+            Self::Optional => StorageCapability::OptionalValue,
+            Self::RequiresValue => StorageCapability::RequiredValue,
+            Self::DirectStorage => StorageCapability::DirectValue,
+        }
     }
 }
 
@@ -292,10 +318,99 @@ impl ValidationRuleId {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RenderCapability {
+    None,
+    Component,
+}
+
+impl RenderCapability {
+    pub const fn enabled(self) -> bool {
+        matches!(self, Self::Component)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ValueBindingCapability {
+    None,
+    Inherited,
+}
+
+impl ValueBindingCapability {
+    pub const fn enabled(self) -> bool {
+        matches!(self, Self::Inherited)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StorageCapability {
+    OptionalValue,
+    RequiredValue,
+    DirectValue,
+    ShapePolicy,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ComponentCapabilities {
+    render: RenderCapability,
+    value_binding: ValueBindingCapability,
+    storage: StorageCapability,
+}
+
+impl ComponentCapabilities {
+    pub const fn new() -> Self {
+        Self {
+            render: RenderCapability::None,
+            value_binding: ValueBindingCapability::None,
+            storage: StorageCapability::ShapePolicy,
+        }
+    }
+
+    pub const fn with_render(mut self, render: RenderCapability) -> Self {
+        self.render = render;
+        self
+    }
+
+    pub const fn with_value_binding(mut self, value_binding: ValueBindingCapability) -> Self {
+        self.value_binding = value_binding;
+        self
+    }
+
+    pub const fn with_storage(mut self, storage: StorageCapability) -> Self {
+        self.storage = storage;
+        self
+    }
+
+    pub const fn render(self) -> RenderCapability {
+        self.render
+    }
+
+    pub const fn value_binding(self) -> ValueBindingCapability {
+        self.value_binding
+    }
+
+    pub const fn storage(self) -> StorageCapability {
+        self.storage
+    }
+
+    pub const fn render_component(self) -> bool {
+        self.render.enabled()
+    }
+
+    pub const fn value_binding_enabled(self) -> bool {
+        self.value_binding.enabled()
+    }
+}
+
+impl Default for ComponentCapabilities {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldComponentVariant {
     shape_path: RustPath,
-    render_component: bool,
-    value_binding: bool,
+    capabilities: ComponentCapabilities,
     prototyping_field_suffix: Option<ComponentSuffix>,
 }
 
@@ -303,22 +418,41 @@ impl FieldComponentVariant {
     pub const fn new(shape_path: RustPath) -> Self {
         Self {
             shape_path,
-            render_component: false,
-            value_binding: false,
+            capabilities: ComponentCapabilities::new(),
             prototyping_field_suffix: None,
         }
+    }
+
+    /// Attach the complete component capabilities metadata for this field.
+    pub const fn with_capabilities(mut self, capabilities: ComponentCapabilities) -> Self {
+        self.capabilities = capabilities;
+        self
     }
 
     /// Mark that this component shape publishes render metadata for generated
     /// prototyping code.
     pub const fn with_render_component(mut self, enabled: bool) -> Self {
-        self.render_component = enabled;
+        self.capabilities = self.capabilities.with_render(if enabled {
+            RenderCapability::Component
+        } else {
+            RenderCapability::None
+        });
         self
     }
 
     /// Marks this component shape as value-bound for generated prototyping code.
     pub const fn with_value_binding(mut self, enabled: bool) -> Self {
-        self.value_binding = enabled;
+        self.capabilities = self.capabilities.with_value_binding(if enabled {
+            ValueBindingCapability::Inherited
+        } else {
+            ValueBindingCapability::None
+        });
+        self
+    }
+
+    /// Attach the value-holder storage capability inferred for this field.
+    pub const fn with_storage_capability(mut self, storage: StorageCapability) -> Self {
+        self.capabilities = self.capabilities.with_storage(storage);
         self
     }
 
@@ -332,12 +466,16 @@ impl FieldComponentVariant {
         self.shape_path
     }
 
+    pub const fn capabilities(&self) -> ComponentCapabilities {
+        self.capabilities
+    }
+
     pub const fn render_component(&self) -> bool {
-        self.render_component
+        self.capabilities.render_component()
     }
 
     pub const fn value_binding(&self) -> bool {
-        self.value_binding
+        self.capabilities.value_binding_enabled()
     }
 
     pub const fn prototyping_field_suffix(&self) -> Option<ComponentSuffix> {
@@ -404,6 +542,8 @@ impl FieldVariantBuilder {
 
     pub const fn component(self, component: FieldComponentVariant) -> FieldVariant {
         let (field_name, value_type, value_presence) = self.finish();
+        let component =
+            component.with_storage_capability(value_presence.component_storage_capability());
         FieldVariant {
             field_name,
             value_type,
@@ -488,14 +628,14 @@ impl FieldVariant {
 
     pub const fn render_component(&self) -> bool {
         match self.component {
-            Some(component) => component.render_component,
+            Some(component) => component.render_component(),
             None => false,
         }
     }
 
     pub const fn value_binding(&self) -> bool {
         match self.component {
-            Some(component) => component.value_binding,
+            Some(component) => component.value_binding(),
             None => false,
         }
     }

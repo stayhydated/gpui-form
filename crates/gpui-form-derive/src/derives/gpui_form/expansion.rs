@@ -112,7 +112,8 @@ pub fn expand_gpui_form(
             Ok(conversion_plan) => conversion_plan,
             Err(error) => return error.to_compile_error(),
         };
-        let conversion_can_fail = conversion_plan.can_fail_tokens();
+        let conversion_can_fail = conversion_plan.uses_fallible_api_tokens();
+        let conversion_runtime_can_fail = conversion_plan.can_fail_tokens();
         let value_holder_tokens = match generate_value_holder(
             &original_input,
             &empty_fields,
@@ -133,6 +134,7 @@ pub fn expand_gpui_form(
                         #enable_koruma
                     ).with_skipped_fields(false)
                     .with_holder_conversion_can_fail(#conversion_can_fail)
+                    .with_holder_conversion_runtime_can_fail(#conversion_runtime_can_fail)
                 }
             }
         } else {
@@ -223,7 +225,8 @@ pub fn expand_gpui_form(
         Ok(value_holder_tokens) => value_holder_tokens,
         Err(error) => return error.to_compile_error(),
     };
-    let conversion_can_fail = conversion_plan.can_fail_tokens();
+    let conversion_can_fail = conversion_plan.uses_fallible_api_tokens();
+    let conversion_runtime_can_fail = conversion_plan.can_fail_tokens();
 
     let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()
@@ -378,6 +381,7 @@ pub fn expand_gpui_form(
                         #effective_enable_koruma
                     ).with_skipped_fields(#has_skipped_fields)
                     .with_holder_conversion_can_fail(#conversion_can_fail)
+                    .with_holder_conversion_runtime_can_fail(#conversion_runtime_can_fail)
                 }
             }
         }

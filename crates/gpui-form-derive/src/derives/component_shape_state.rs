@@ -4,7 +4,7 @@ use syn::{DeriveInput, Result, Type, parse_macro_input};
 
 use gpui_form_codegen::CratePaths;
 
-use super::component_shape_metadata::{ComponentShapeMetadata, SHAPE_METADATA_OPTIONS};
+use super::component_shape_metadata::{ComponentShapeMetadata, ShapeOption};
 
 fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
     let mut shape = ComponentShapeMetadata::default();
@@ -13,44 +13,7 @@ fn parse_meta(attrs: &[syn::Attribute]) -> Result<ComponentShapeMetadata> {
         .iter()
         .filter(|attr| attr.path().is_ident("gpui_form_shape"))
     {
-        attr.parse_nested_meta(|meta| {
-            if meta.path.is_ident("new") {
-                let value = meta.value()?;
-                let new = value.parse()?;
-                shape.set_new(new, &meta.path)
-            } else if meta.path.is_ident("state") {
-                let value = meta.value()?;
-                let state = value.parse()?;
-                shape.set_state(state, &meta.path)
-            } else if meta.path.is_ident("component") {
-                let value = meta.value()?;
-                let component = value.parse()?;
-                shape.set_component(component, &meta.path)
-            } else if meta.path.is_ident("value") {
-                let value = meta.value()?;
-                let ty = value.parse()?;
-                shape.add_value(ty, &meta.path)
-            } else if meta.path.is_ident("values") {
-                let content;
-                syn::parenthesized!(content in meta.input);
-                let values = ComponentShapeMetadata::parse_values(&content)?;
-                shape.add_values(values, &meta.path)
-            } else if meta.path.is_ident("value_storage") {
-                let value = meta.value()?;
-                let value_storage = value.parse()?;
-                shape.set_value_storage(value_storage, &meta.path)
-            } else if meta.path.is_ident("field_suffix") {
-                let value = meta.value()?;
-                let field_suffix = value.parse()?;
-                shape.set_field_suffix(field_suffix, &meta.path)
-            } else if meta.path.is_ident("value_binding") {
-                shape.enable_value_binding(&meta.path)
-            } else {
-                Err(meta.error(format!(
-                    "unsupported `gpui_form_shape` option; expected {SHAPE_METADATA_OPTIONS}",
-                )))
-            }
-        })?;
+        attr.parse_nested_meta(|meta| ShapeOption::from_nested_meta(&meta)?.apply(&mut shape))?;
     }
 
     Ok(shape)

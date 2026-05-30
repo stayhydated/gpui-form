@@ -1,175 +1,19 @@
 pub mod shape;
 
-use gpui_form_schema::registry::{
-    FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType, ValidationRuleId,
+use gpui_form_schema::{
+    registry::{FieldVariant, GpuiFormShape},
+    resolved::ResolvedField,
 };
 use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Expr, Ident, Path, Type};
 
-use crate::{
-    error::{PrototypingError, PrototypingResult},
-    imports::ImportItem,
-};
+use crate::imports::ImportItem;
 
 static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
 
 pub fn field_generator() -> &'static dyn FieldCodeGenerator {
     &SHAPE_GENERATOR
-}
-
-pub struct ResolvedField<'a> {
-    field: &'a FieldVariant,
-    field_ident: Ident,
-    field_ident_pascal: Ident,
-    field_ident_with_component_suffix: Ident,
-    value_type: Type,
-    shape_path: Option<Path>,
-    render_component: bool,
-    default_expr: Option<Expr>,
-}
-
-impl<'a> ResolvedField<'a> {
-    pub fn new(field: &'a FieldVariant) -> PrototypingResult<Self> {
-        let value_type = parse_field_type(field.field_name(), field.value_type())?;
-
-        let shape_path = match field.shape_path() {
-            Some(shape_path) => Some(parse_shape_path(shape_path)?),
-            None => None,
-        };
-
-        let default_expr = match field.default_expr() {
-            Some(default_expr) => Some(parse_field_expr(field.field_name(), default_expr)?),
-            None => None,
-        };
-
-        Ok(Self {
-            field,
-            field_ident: format_ident!("{}", field.field_name()),
-            field_ident_pascal: format_ident!("{}", field.field_name_pascal()),
-            field_ident_with_component_suffix: format_ident!(
-                "{}",
-                field.field_name_with_component_suffix()
-            ),
-            value_type,
-            shape_path,
-            render_component: field.render_component(),
-            default_expr,
-        })
-    }
-
-    pub fn raw(&self) -> &FieldVariant {
-        self.field
-    }
-
-    pub fn field_name(&self) -> &'a str {
-        self.field.field_name()
-    }
-
-    pub fn field_ident(&self) -> &Ident {
-        &self.field_ident
-    }
-
-    pub fn field_ident_pascal(&self) -> &Ident {
-        &self.field_ident_pascal
-    }
-
-    pub fn field_ident_with_component_suffix(&self) -> &Ident {
-        &self.field_ident_with_component_suffix
-    }
-
-    pub fn value_type(&self) -> &Type {
-        &self.value_type
-    }
-
-    pub fn optional(&self) -> bool {
-        self.field.optional()
-    }
-
-    pub fn value_holder_uses_option(&self) -> bool {
-        self.field.value_holder_uses_option()
-    }
-
-    pub fn value_binding(&self) -> bool {
-        self.field.value_binding()
-    }
-
-    pub fn shape_path(&self) -> Option<&Path> {
-        self.shape_path.as_ref()
-    }
-
-    pub fn runtime_shape_path(&self) -> Option<Path> {
-        self.shape_path.clone()
-    }
-
-    pub fn render_component(&self) -> bool {
-        self.render_component
-    }
-
-    pub fn default_expr(&self) -> Option<&Expr> {
-        self.default_expr.as_ref()
-    }
-
-    pub fn kebab_id(&self) -> String {
-        self.field.kebab_id()
-    }
-
-    pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
-        self.field.validation_rules()
-    }
-
-    pub fn has_validation_rule(&self, rule: ValidationRuleId) -> bool {
-        self.validation_rules().contains(&rule)
-    }
-
-    pub fn uses_optional_inner_validation_errors(&self) -> bool {
-        self.optional()
-            && (self.has_validation_rule(ValidationRuleId::Newtype)
-                || self.has_validation_rule(ValidationRuleId::Nested))
-    }
-
-    pub fn suffixed_ident(&self, suffix: &str) -> Ident {
-        format_ident!("{}_{}", self.field.field_name(), suffix)
-    }
-
-    pub fn prefixed_ident(&self, prefix: &str) -> Ident {
-        format_ident!("{}_{}", prefix, self.field.field_name())
-    }
-
-    pub fn component_event_handler_ident(&self) -> Ident {
-        format_ident!("on_{}_event", self.field_ident_with_component_suffix)
-    }
-}
-
-fn parse_field_type(field_name: &str, value: RustType) -> PrototypingResult<Type> {
-    value
-        .parse()
-        .map_err(|error| PrototypingError::InvalidType {
-            field_name: field_name.to_string(),
-            value: error.value().to_string(),
-            error: error.source_error().to_string(),
-        })
-}
-
-fn parse_shape_path(value: RustPath) -> PrototypingResult<Path> {
-    value
-        .parse()
-        .map_err(|error| PrototypingError::InvalidPath {
-            kind: "component shape path",
-            value: error.value().to_string(),
-            error: error.source_error().to_string(),
-        })
-}
-
-fn parse_field_expr(field_name: &str, value: RustExpr) -> PrototypingResult<Expr> {
-    value
-        .parse()
-        .map_err(|error| PrototypingError::InvalidExpression {
-            field_name: field_name.to_string(),
-            value: error.value().to_string(),
-            error: error.source_error().to_string(),
-        })
 }
 
 #[derive(Default)]

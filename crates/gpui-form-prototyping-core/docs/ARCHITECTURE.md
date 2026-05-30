@@ -26,7 +26,8 @@ This crate exists to:
 
 1. A caller iterates `inventory::iter::<GpuiFormShape>()`.
 1. The caller constructs `FormShapeAdapter::new(shape)`.
-1. The adapter validates and resolves the raw shape into typed field analysis.
+1. The adapter asks `gpui-form-schema` for `ResolvedGpuiFormShape`, which
+   validates identifiers and parses Rust type/path/expression metadata once.
 1. Component-specific generators produce cached typed fragments, event
    handlers, imports, subscriptions, and initialization code. Optional
    generator outputs are normalized into empty semantic fragments at collection
@@ -82,19 +83,18 @@ need.
 
 ## Field Resolution
 
-The generator resolves `RustType`, `RustPath`, and `RustExpr` registry values
-through their schema-owned parse helpers, not by open-coding string parsing in
-field generators. `FieldVariant::value_type` is treated as a full Rust type,
-not just a bare identifier. That is important because inventory metadata may
-carry:
+The generator consumes `ResolvedGpuiFormShape` / `ResolvedField` from
+`gpui-form-schema`, not raw string metadata. `FieldVariant::value_type` is
+treated as a full Rust type, not just a bare identifier. That is important
+because inventory metadata may carry:
 
 - crate-qualified enum paths
 - nested module paths
 - type overrides emitted by the derive layer
 - source/form conversion metadata and required-value holder behavior
 
-Each field is resolved once into a typed internal representation before shape
-generation runs.
+Each field is resolved once into the schema-owned typed representation before
+shape generation runs.
 
 ## Component Shape Behavior
 
@@ -104,12 +104,12 @@ All component fields are shape-backed:
 - generated local variable, field, and handler names use
   `FieldVariant::field_name_with_component_suffix`, which uses precomputed
   component-shape prototyping suffix metadata
-- if `FieldVariant::render_component` is true, the generator emits
+- if the field's render capability is enabled, the generator emits
   `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
   runtime `ComponentRender` contract
 - if that metadata is false, the generator falls back to a placeholder row
-- component subscriptions are generated only when `FieldVariant::value_binding`
-  is true; the field's shape must provide the generic
+- component subscriptions are generated only when the field's value-binding
+  capability is enabled; the field's shape must provide the generic
   `ComponentValueBinding<T>` hook that maps component events to
   `FormValueChange<T>`
 - value-bound component subscriptions use runtime projection aliases and helper

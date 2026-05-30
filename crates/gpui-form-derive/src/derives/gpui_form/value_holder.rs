@@ -13,12 +13,16 @@ fn form_base_type(field: &SharedFieldPlan) -> Type {
     field.form_type().clone()
 }
 
-fn shape_policy_ident(field: &SharedFieldPlan) -> ValueHolderResult<&syn::Ident> {
-    field.shape_policy_ident().ok_or_else(|| {
-        syn::Error::new_spanned(
+fn shape_policy_type_tokens(field: &SharedFieldPlan) -> ValueHolderResult<TokenStream> {
+    let StoragePlan::ShapePolicy { shape, .. } = field.storage() else {
+        return Err(syn::Error::new_spanned(
             field.field_name(),
-            "only shape-policy storage has a generated policy identifier",
-        )
+            "only shape-policy storage has a generated policy type",
+        ));
+    };
+    let runtime_crate = runtime_crate_path();
+    Ok(quote! {
+        <#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
     })
 }
 
@@ -26,7 +30,7 @@ fn shape_policy_storage_type_tokens(
     field: &SharedFieldPlan,
     base_type: &Type,
 ) -> ValueHolderResult<TokenStream> {
-    let policy = shape_policy_ident(field)?;
+    let policy = shape_policy_type_tokens(field)?;
     let runtime_crate = runtime_crate_path();
     Ok(quote! {
         <#policy as #runtime_crate::shape::ValueStorage<#base_type>>::Storage
@@ -93,10 +97,51 @@ pub(super) enum HolderConversionMode {
 }
 
 #[derive(Clone, Debug)]
+enum ShapePolicyPredicate {
+    RequiresValue { shape: syn::Path },
+}
+
+impl ShapePolicyPredicate {
+    fn to_tokens(&self) -> TokenStream {
+        let runtime_crate = runtime_crate_path();
+        match self {
+            Self::RequiresValue { shape } => {
+                quote! {
+                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
+                }
+            },
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum ConversionFallibility {
+    Never,
+    Always,
+    DependsOnShape(Vec<ShapePolicyPredicate>),
+}
+
+impl ConversionFallibility {
+    fn to_tokens(&self) -> TokenStream {
+        match self {
+            Self::Never => quote! { false },
+            Self::Always => quote! { true },
+            Self::DependsOnShape(predicates) => {
+                let predicates = predicates
+                    .iter()
+                    .map(ShapePolicyPredicate::to_tokens)
+                    .collect::<Vec<_>>();
+                quote! { false #(|| #predicates)* }
+            },
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct HolderConversionPlan {
     mode: HolderConversionMode,
-    can_fail_tokens: TokenStream,
-    has_hard_fallible_field: bool,
+    fallibility: ConversionFallibility,
 }
 
 impl HolderConversionPlan {
@@ -104,19 +149,19 @@ impl HolderConversionPlan {
         self.mode
     }
 
-    pub fn can_fail_tokens(&self) -> &TokenStream {
-        &self.can_fail_tokens
+    pub fn can_fail_tokens(&self) -> TokenStream {
+        self.fallibility.to_tokens()
     }
 
-    fn can_fail_at_runtime(&self) -> bool {
-        matches!(
+    pub fn uses_fallible_api_tokens(&self) -> TokenStream {
+        if matches!(
             self.mode,
             HolderConversionMode::FallibleRequired | HolderConversionMode::SkippedFields
-        )
-    }
-
-    fn only_shape_policy_can_fail(&self) -> bool {
-        self.can_fail_at_runtime() && !self.has_hard_fallible_field
+        ) {
+            quote! { true }
+        } else {
+            quote! { false }
+        }
     }
 }
 
@@ -127,7 +172,6 @@ pub(super) fn holder_conversion_plan(
     let mut has_maybe_fallible_field = false;
     let mut has_hard_fallible_field = false;
     let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
-    let runtime_crate = runtime_crate_path();
 
     for field in fields.iter().filter_map(FieldPlan::shared) {
         if field.default_expr().is_some() {
@@ -138,23 +182,23 @@ pub(super) fn holder_conversion_plan(
             StoragePlan::RequiredValue => {
                 has_maybe_fallible_field = true;
                 has_hard_fallible_field = true;
-                predicates.push(quote! { true });
             },
             StoragePlan::ShapePolicy { shape, .. } => {
                 has_maybe_fallible_field = true;
-                predicates.push(quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
+                predicates.push(ShapePolicyPredicate::RequiresValue {
+                    shape: shape.clone(),
                 });
             },
             StoragePlan::OriginallyOptional | StoragePlan::Direct => {},
         }
     }
 
-    let can_fail_tokens = if predicates.is_empty() {
-        quote! { false }
+    let fallibility = if has_skipped_fields || has_hard_fallible_field {
+        ConversionFallibility::Always
+    } else if predicates.is_empty() {
+        ConversionFallibility::Never
     } else {
-        quote! { false #(|| #predicates)* }
+        ConversionFallibility::DependsOnShape(predicates)
     };
     let mode = if has_skipped_fields {
         HolderConversionMode::SkippedFields
@@ -164,11 +208,7 @@ pub(super) fn holder_conversion_plan(
         HolderConversionMode::Infallible
     };
 
-    Ok(HolderConversionPlan {
-        mode,
-        can_fail_tokens,
-        has_hard_fallible_field,
-    })
+    Ok(HolderConversionPlan { mode, fallibility })
 }
 
 fn conversion_signature_assertions(
@@ -274,7 +314,7 @@ fn try_from_field_tokens(
             let base_type = form_base_type(field);
             let field_name_str = field_name.to_string();
             let converted = apply_into_conversion(field, quote! { value });
-            let policy = shape_policy_ident(field)?;
+            let policy = shape_policy_type_tokens(field)?;
             let runtime_crate = runtime_crate_path();
             Ok(quote! {
                 #field_name: <#policy
@@ -362,7 +402,7 @@ fn generate_default_impl(
                         })
                     },
                     StoragePlan::ShapePolicy { .. } => {
-                        let policy = shape_policy_ident(f)?;
+                        let policy = shape_policy_type_tokens(f)?;
                         let runtime_crate = runtime_crate_path();
                         Ok(quote! {
                             #field_name: <#policy
@@ -387,7 +427,7 @@ fn generate_default_impl(
                         })
                     },
                     StoragePlan::ShapePolicy { .. } => {
-                        let policy = shape_policy_ident(f)?;
+                        let policy = shape_policy_type_tokens(f)?;
                         let runtime_crate = runtime_crate_path();
                         Ok(quote_spanned! {field_name.span()=>
                             #field_name: <#policy
@@ -559,7 +599,7 @@ fn generate_to_wrapped_field(field: &SharedFieldPlan) -> ValueHolderResult<Token
         },
         StoragePlan::ShapePolicy { .. } => {
             let base_type = form_base_type(field);
-            let policy = shape_policy_ident(field)?;
+            let policy = shape_policy_type_tokens(field)?;
             let runtime_crate = runtime_crate_path();
             if let Some(default_expr) = field.default_expr() {
                 let default_span = field.default_expr_span().unwrap_or_else(Span::call_site);
@@ -645,7 +685,7 @@ fn generate_from_wrapped_field(field: &SharedFieldPlan) -> ValueHolderResult<Tok
         StoragePlan::ShapePolicy { .. } => {
             let base_type = form_base_type(field);
             let converted = apply_into_conversion(field, quote! { value });
-            let policy = shape_policy_ident(field)?;
+            let policy = shape_policy_type_tokens(field)?;
             let runtime_crate = runtime_crate_path();
             if let Some(default_expr) = field.default_expr() {
                 let default_span = field.default_expr_span().unwrap_or_else(Span::call_site);
@@ -670,29 +710,6 @@ fn generate_from_wrapped_field(field: &SharedFieldPlan) -> ValueHolderResult<Tok
                 })
             }
         },
-    }
-}
-
-fn generate_infallible_from_wrapped_field(
-    field: &SharedFieldPlan,
-) -> ValueHolderResult<TokenStream> {
-    let field_name = field.field_name();
-
-    match field.storage() {
-        StoragePlan::ShapePolicy { .. } if field.default_expr().is_none() => {
-            let base_type = form_base_type(field);
-            let converted = apply_into_conversion(field, quote! { value });
-            let policy = shape_policy_ident(field)?;
-            let runtime_crate = runtime_crate_path();
-            Ok(quote! {
-                #field_name: <#policy
-                    as #runtime_crate::shape::InfallibleValueStorage<#base_type>>::map_into_value(
-                        from.#field_name,
-                        |value| #converted
-                    )
-            })
-        },
-        _ => generate_from_wrapped_field(field),
     }
 }
 
@@ -776,7 +793,7 @@ fn generate_present_fields_json_entry(field: &SharedFieldPlan) -> ValueHolderRes
         StoragePlan::ShapePolicy { .. } => {
             let base_type = form_base_type(field);
             let converted = apply_into_conversion(field, quote! { value });
-            let policy = shape_policy_ident(field)?;
+            let policy = shape_policy_type_tokens(field)?;
             let runtime_crate = runtime_crate_path();
             Ok(quote! {
                 if let Some(value) =
@@ -959,7 +976,7 @@ fn required_validation_builder_tokens(
         })),
         StoragePlan::ShapePolicy { .. } => {
             let base_type = form_base_type(field);
-            let policy = shape_policy_ident(field)?;
+            let policy = shape_policy_type_tokens(field)?;
             Ok(Some(quote! {
                 #validator_ident::<
                     #target_ident<
@@ -986,7 +1003,7 @@ pub(super) fn generate_value_holder(
         fields.iter().filter_map(FieldPlan::shared).collect();
     let original_ident = &original_input.ident;
     let wrapped_ident = format_ident!("{}FormValueHolder", original_ident);
-    let storage_ident = format_ident!("__{}Storage", wrapped_ident);
+    let storage_ident = wrapped_ident.clone();
     let conversion_error_ident = format_ident!("{}ConversionError", wrapped_ident);
     let required_policy_validator_ident =
         format_ident!("__{}ValueStoragePolicyValidation", wrapped_ident);
@@ -1101,40 +1118,19 @@ pub(super) fn generate_value_holder(
         quote! { #original_impl_generics },
         quote! { #where_clause },
     )?;
-    let mut holder_declaration_generics = original_input.generics.clone();
-    let mut holder_impl_generics = original_input.generics.clone();
+    let holder_declaration_generics = original_input.generics.clone();
+    let holder_impl_generics = original_input.generics.clone();
     let mut holder_where_clause = where_clause.cloned();
     for f in &rendered_fields {
         if f.was_optional {
             continue;
         }
 
-        if let StoragePlan::ShapePolicy { shape, .. } = f.storage() {
+        if matches!(f.storage(), StoragePlan::ShapePolicy { .. }) {
             let base_type = form_base_type(f);
-            let policy = shape_policy_ident(f)?;
+            let policy = shape_policy_type_tokens(f)?;
             let runtime_crate = runtime_crate_path();
             let validation = f.validation();
-            if needs_koruma_derive
-                && (!validation.field_validators.is_empty()
-                    || !validation.element_validators.is_empty()
-                    || validation.is_nested
-                    || validation.is_newtype)
-            {
-                holder_declaration_generics.params.push(syn::parse_quote! {
-                    #policy: #runtime_crate::shape::ValueStorage<
-                        #base_type,
-                        Storage = #base_type
-                    > = <#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                });
-            } else {
-                holder_declaration_generics.params.push(syn::parse_quote! {
-                    #policy: #runtime_crate::shape::ValueStorage<#base_type>
-                        = <#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                });
-            }
-            holder_impl_generics.params.push(syn::parse_quote! {
-                #policy
-            });
             let wc = holder_where_clause.get_or_insert_with(|| syn::parse_quote!(where));
             if needs_koruma_derive
                 && (!validation.field_validators.is_empty()
@@ -1156,7 +1152,6 @@ pub(super) fn generate_value_holder(
         }
     }
     let (holder_impl_generics, holder_ty_generics, _) = holder_impl_generics.split_for_impl();
-    let public_alias_generics = &original_input.generics;
     let mut default_storage_assertions: Vec<TokenStream> = Vec::new();
     for f in &rendered_fields {
         if !f.was_optional && f.default_expr().is_none() {
@@ -1219,24 +1214,6 @@ pub(super) fn generate_value_holder(
         .collect::<ValueHolderResult<Vec<_>>>()?;
 
     let from_where_clause = holder_where_clause.clone();
-    let mut shape_policy_into_original_where_clause = holder_where_clause.clone();
-    for f in &rendered_fields {
-        if f.was_optional || f.default_expr().is_some() {
-            continue;
-        }
-
-        if let StoragePlan::ShapePolicy { .. } = f.storage() {
-            let base_type = form_base_type(f);
-            let policy = shape_policy_ident(f)?;
-            let runtime_crate = runtime_crate_path();
-            let wc = shape_policy_into_original_where_clause
-                .get_or_insert_with(|| syn::parse_quote!(where));
-            wc.predicates.push(syn::parse_quote! {
-                #policy: #runtime_crate::shape::InfallibleValueStorage<#base_type>
-            });
-        }
-    }
-
     let skipped_params: Vec<TokenStream> = fields
         .iter()
         .filter(|f| f.is_skipped())
@@ -1259,34 +1236,6 @@ pub(super) fn generate_value_holder(
             }
         })
         .collect::<ValueHolderResult<Vec<_>>>()?;
-
-    let infallible_into_original_fields: Vec<TokenStream> = fields
-        .iter()
-        .map(|f| -> ValueHolderResult<TokenStream> {
-            if f.is_skipped() {
-                let field_name = f.field_name();
-                Ok(quote! { #field_name })
-            } else {
-                let shared = f.shared().expect("non-skipped fields carry shared plans");
-                generate_infallible_from_wrapped_field(shared)
-            }
-        })
-        .collect::<ValueHolderResult<Vec<_>>>()?;
-
-    let shape_policy_into_original_impl = if conversion_plan.only_shape_policy_can_fail() {
-        quote! {
-            impl #holder_impl_generics #storage_ident #holder_ty_generics #shape_policy_into_original_where_clause {
-                pub fn into_original(self) -> #original_ident #ty_generics {
-                    let from = self;
-                    #original_ident {
-                        #(#infallible_into_original_fields),*
-                    }
-                }
-            }
-        }
-    } else {
-        quote! {}
-    };
 
     let skipped_fields_impl = match conversion_plan.mode() {
         HolderConversionMode::SkippedFields => {
@@ -1353,8 +1302,6 @@ pub(super) fn generate_value_holder(
                         >>::try_from(self)
                     }
                 }
-
-                #shape_policy_into_original_impl
             }
         },
         HolderConversionMode::Infallible => {
@@ -1374,8 +1321,6 @@ pub(super) fn generate_value_holder(
                         ::core::convert::From::from(self)
                     }
                 }
-
-                #shape_policy_into_original_impl
             }
         },
     };
@@ -1403,8 +1348,6 @@ pub(super) fn generate_value_holder(
             #(#field_definitions),*
         }
 
-        pub type #wrapped_ident #public_alias_generics = #storage_ident #ty_generics;
-
         impl #holder_impl_generics ::core::convert::From<#original_ident #ty_generics>
             for #storage_ident #holder_ty_generics #holder_where_clause
         {
@@ -1426,7 +1369,7 @@ pub(super) fn generate_value_holder(
 
         if matches!(f.storage(), StoragePlan::ShapePolicy { .. }) {
             let base_type = form_base_type(f);
-            let policy = shape_policy_ident(f)?;
+            let policy = shape_policy_type_tokens(f)?;
             let runtime_crate = runtime_crate_path();
             let wc = default_where_clause.get_or_insert_with(|| syn::parse_quote!(where));
             wc.predicates.push(syn::parse_quote! {

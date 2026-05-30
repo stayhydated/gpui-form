@@ -13,15 +13,17 @@ This crate is the runtime-safe metadata boundary between:
 
 It should describe component contract metadata and discovered form shape
 information, but not own proc-macro parsing or token emission. String metadata
-is confined to inventory-safe `RustType`, `RustPath`, and `RustExpr` wrappers;
-downstream tooling asks those wrappers to parse back into `syn` types at the
-inventory boundary.
+is confined to inventory-safe `RustType`, `RustPath`, and `RustExpr` wrappers.
+The `resolved` module converts raw inventory values into typed `syn`-backed
+shape and field IR at the inventory boundary.
 
 ## Modules
 
-- `src/lib.rs`: exports `registry`
+- `src/lib.rs`: exports `registry` and `resolved`
 - `src/registry.rs`: `GpuiFormShape`, `FieldVariant`, and `inventory`
   collection
+- `src/resolved.rs`: `ResolvedGpuiFormShape`, `ResolvedField`, and validated
+  generated-name helpers for downstream tooling
 
 ## Metadata Model
 
@@ -37,6 +39,7 @@ Important fields:
 - `koruma_enabled`
 - `has_skipped_fields`
 - `holder_conversion_can_fail`
+- `holder_conversion_runtime_can_fail`
 
 ### `FieldVariant`
 
@@ -52,8 +55,10 @@ value-holder-only metadata. Value presence is stored as `FieldValuePresence`
 instead of independent `optional` and value-presence booleans, so construction
 sites must choose `Optional`, `RequiresValue`, or `DirectStorage` directly.
 Component-only metadata is built as `FieldComponentVariant` before it is
-attached to a field, so builders cannot represent value binding, component
-type, or component suffix metadata without a shape path.
+attached to a field, so builders cannot represent component capabilities or
+component suffix metadata without a shape path. Render, value-binding, and
+storage behavior are grouped as `ComponentCapabilities` rather than separate
+booleans.
 
 Rust syntax fragments are stored as typed string wrappers:
 
@@ -74,8 +79,10 @@ type.
 
 `holder_conversion_can_fail` is emitted by `gpui-form-derive` from the same
 analysis that chooses the generated value-holder conversion methods. Downstream
-generators consume that flag instead of recomputing conversion fallibility from
-field-level metadata.
+generators consume that flag instead of recomputing conversion API shape from
+field-level metadata. `holder_conversion_runtime_can_fail` records the
+shape-policy predicate for tooling that needs runtime fallibility rather than
+API shape.
 
 `FieldVariant::field_name_with_component_suffix()` derives the generated
 component field name from resolved component suffix metadata emitted by derive
@@ -98,8 +105,8 @@ on the shape.
    registration.
 1. When inventory registration is enabled, `gpui-form-derive` submits a
    `GpuiFormShape`.
-1. `gpui-form-prototyping-core` reads that metadata and generates scaffolded
-   code.
+1. `gpui-form-prototyping-core` resolves that metadata through
+   `ResolvedGpuiFormShape` and generates scaffolded code.
 
 ## Boundary Rules
 

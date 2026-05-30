@@ -84,11 +84,12 @@ fn defaulted_required_shape_value_remains_infallible() {
 }
 
 #[test]
-fn direct_storage_shape_value_exposes_infallible_into_original() {
+fn direct_storage_shape_value_try_into_original_succeeds() {
     let model = DirectStorageDemoFormValueHolder {
         value: "ready".to_string(),
     }
-    .into_original();
+    .try_into_original()
+    .expect("direct storage shape always contains a value");
 
     assert_eq!(
         model,

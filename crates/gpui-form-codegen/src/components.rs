@@ -440,45 +440,46 @@ impl ResolvedComponentShape {
     pub fn component_variant_tokens(&self) -> TokenStream {
         let schema_crate = CratePaths::resolve().gpui_form;
         let shape = rust_path_tokens(&schema_crate, self.shape());
-        let render_component_tokens = self.render_component_tokens();
-        let value_binding_tokens = self.value_binding_tokens();
+        let capabilities_tokens = self.capabilities_tokens();
         let prototyping_tokens = self.prototyping_tokens();
 
         quote! {
             #schema_crate::schema::registry::FieldComponentVariant::new(
                 #shape
             )
-            #render_component_tokens
-            #value_binding_tokens
+            .with_capabilities(#capabilities_tokens)
             #prototyping_tokens
         }
     }
 
-    fn render_component_tokens(&self) -> TokenStream {
+    fn capabilities_tokens(&self) -> TokenStream {
         let shape = self.shape();
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
+        let schema_crate = crate_paths.gpui_form;
 
         quote! {
-            .with_render_component(
-                <<#shape as #runtime_crate::shape::ComponentShape>::RenderComponent
-                    as #runtime_crate::shape::ComponentRender<
-                        <#shape as #runtime_crate::shape::ComponentShape>::State
-                    >>::RENDERS
-            )
-        }
-    }
-
-    fn value_binding_tokens(&self) -> TokenStream {
-        let shape = self.shape();
-        let crate_paths = CratePaths::resolve();
-        let runtime_crate = crate_paths.gpui_form_facade_runtime();
-
-        quote! {
-            .with_value_binding(
-                <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
-                    as #runtime_crate::shape::ComponentValueBindingPolicy>::VALUE_BINDING
-            )
+            #schema_crate::schema::registry::ComponentCapabilities::new()
+                .with_render(
+                    if <<#shape as #runtime_crate::shape::ComponentShape>::RenderComponent
+                        as #runtime_crate::shape::ComponentRender<
+                            <#shape as #runtime_crate::shape::ComponentShape>::State
+                        >>::RENDERS
+                    {
+                        #schema_crate::schema::registry::RenderCapability::Component
+                    } else {
+                        #schema_crate::schema::registry::RenderCapability::None
+                    }
+                )
+                .with_value_binding(
+                    if <<#shape as #runtime_crate::shape::ComponentShape>::ValueBindingPolicy
+                        as #runtime_crate::shape::ComponentValueBindingPolicy>::VALUE_BINDING
+                    {
+                        #schema_crate::schema::registry::ValueBindingCapability::Inherited
+                    } else {
+                        #schema_crate::schema::registry::ValueBindingCapability::None
+                    }
+                )
         }
     }
 
