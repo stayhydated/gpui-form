@@ -4,6 +4,9 @@ use koruma::ValidationError as _;
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct NonDefault(String);
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct SourceCode(String);
+
 struct State;
 
 impl State {
@@ -46,6 +49,20 @@ struct DefaultedDemo {
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+struct ConvertedDefaultDemo {
+    #[gpui_form(component(
+        RequiredShape,
+        value(
+            type = String,
+            from_source = |value: SourceCode| value.0,
+            into_source = SourceCode,
+        ),
+        default = SourceCode("fallback".to_string())
+    ))]
+    value: SourceCode,
+}
+
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 struct DirectStorageDemo {
     #[gpui_form(component(AllowShape))]
     value: String,
@@ -82,6 +99,31 @@ fn defaulted_required_shape_value_remains_infallible() {
         model,
         DefaultedDemo {
             value: NonDefault("fallback".to_string())
+        }
+    );
+}
+
+#[test]
+fn defaulted_converted_required_shape_uses_storage_strategy() {
+    let holder = ConvertedDefaultDemoFormValueHolder::default();
+    assert_eq!(holder.value, Some("fallback".to_string()));
+
+    let defaulted = ConvertedDefaultDemoFormValueHolder { value: None }.into_original();
+    assert_eq!(
+        defaulted,
+        ConvertedDefaultDemo {
+            value: SourceCode("fallback".to_string())
+        }
+    );
+
+    let converted = ConvertedDefaultDemoFormValueHolder {
+        value: Some("custom".to_string()),
+    }
+    .into_original();
+    assert_eq!(
+        converted,
+        ConvertedDefaultDemo {
+            value: SourceCode("custom".to_string())
         }
     );
 }

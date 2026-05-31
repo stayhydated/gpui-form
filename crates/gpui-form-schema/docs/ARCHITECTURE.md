@@ -37,28 +37,27 @@ Important fields:
 - `fields`
 - `source_module_path`
 - `koruma_enabled`
-- `has_skipped_fields`
-- `holder_conversion_can_fail`
-- `holder_conversion_runtime_can_fail`
+- `holder_conversion`
 
 ### `FieldVariant`
 
 Per-field metadata for one non-skipped form field. Inventory scope is all
 rendered form fields: component-backed fields and explicit hidden
-value-holder-only fields. Skipped source fields are represented by
-`GpuiFormShape::has_skipped_fields`, not by a `FieldVariant`.
+value-holder-only fields. Skipped source fields are represented by the
+`HolderConversionShape::NeedsSkippedFields` variant in
+`GpuiFormShape::holder_conversion`, not by a `FieldVariant`.
 
-`FieldVariant` has private fields and exposes a const builder:
-`FieldVariant::builder(field_name).with_value_type(...).with_value_presence(...)`
-followed by `.component(...)` for component-backed inventory or `.hidden()` for
-value-holder-only metadata. Value presence is stored as `FieldValuePresence`
-instead of independent `optional` and value-presence booleans, so construction
-sites must choose `Optional`, `RequiresValue`, or `DirectStorage` directly.
-Component-only metadata is built as `FieldComponentVariant` before it is
-attached to a field, so builders cannot represent component capabilities or
-component suffix metadata without a shape path. Render, value-binding, and
-storage behavior are grouped as `ComponentCapabilities` rather than separate
-booleans.
+`FieldVariant` has private fields and is constructed through complete typed
+constructors: build `FieldValueSpec` first, then call
+`FieldVariant::component(field_name, value, component)` for component-backed
+inventory or `FieldVariant::hidden(field_name, value)` for value-holder-only
+metadata. Value presence is stored as `FieldValuePresence` instead of
+independent `optional` and value-presence booleans, so construction sites must
+choose `Optional`, `RequiresValue`, or `DirectStorage` directly. Component-only
+metadata is built as `FieldComponentVariant` before it is attached to a field,
+so schema construction cannot represent component capabilities or component
+suffix metadata without a shape path. Render, value-binding, and storage
+behavior are grouped as `ComponentCapabilities` rather than separate booleans.
 
 Rust syntax fragments are stored as typed string wrappers:
 
@@ -77,12 +76,12 @@ the derive layer stringifies syntax it already parsed. Consumers call
 runtime shape metadata and inventory metadata use the same validated suffix
 type.
 
-`holder_conversion_can_fail` is emitted by `gpui-form-derive` from the same
+`HolderConversionMetadata` is emitted by `gpui-form-derive` from the same
 analysis that chooses the generated value-holder conversion methods. Downstream
-generators consume that flag instead of recomputing conversion API shape from
-field-level metadata. `holder_conversion_runtime_can_fail` records the
-shape-policy predicate for tooling that needs runtime fallibility rather than
-API shape.
+generators consume `HolderConversionShape::{Infallible, FallibleRequired,
+NeedsSkippedFields}` instead of recomputing conversion API shape from
+field-level metadata. `runtime_can_fail` records the shape-policy predicate for
+tooling that needs runtime fallibility rather than API shape.
 
 `FieldVariant::field_name_with_component_suffix()` derives the generated
 component field name from resolved component suffix metadata emitted by derive

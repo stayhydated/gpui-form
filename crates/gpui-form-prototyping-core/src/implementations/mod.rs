@@ -288,32 +288,37 @@ pub fn generate_description_fn_tokens(
 mod tests {
     use super::{ResolvedField, generate_description_fn_tokens};
     use gpui_form_schema::registry::{
-        FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType, ValidationRuleId,
+        FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape, RustPath, RustType,
+        ValidationRuleId,
     };
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
-    const fn hidden_field(
+    const fn hidden_field_with_validations(
         field_name: &'static str,
         value_type: &'static str,
         value_presence: FieldValuePresence,
+        validations: &'static [ValidationRuleId],
     ) -> FieldVariant {
-        FieldVariant::builder(field_name)
-            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
-            .with_value_presence(value_presence)
-            .hidden()
+        let value_type = RustType::from_macro_tokens_unchecked(value_type);
+        FieldVariant::hidden(
+            field_name,
+            FieldValueSpec::new(value_type, value_type, value_presence)
+                .with_validations(validations),
+        )
     }
 
     #[test]
     fn description_uses_direct_all_for_non_optional_newtype_errors() {
         const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Newtype];
-        const FIELDS: [FieldVariant; 1] =
-            [
-                hidden_field("index", "Age", FieldValuePresence::RequiresValue)
-                    .with_validations(VALIDATIONS),
-            ];
+        const FIELDS: [FieldVariant; 1] = [hidden_field_with_validations(
+            "index",
+            "Age",
+            FieldValuePresence::RequiresValue,
+            VALIDATIONS,
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -337,9 +342,12 @@ mod tests {
     #[test]
     fn description_unwraps_optional_newtype_inner_errors_before_all() {
         const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Newtype];
-        const FIELDS: [FieldVariant; 1] =
-            [hidden_field("age", "Age", FieldValuePresence::Optional)
-                .with_validations(VALIDATIONS)];
+        const FIELDS: [FieldVariant; 1] = [hidden_field_with_validations(
+            "age",
+            "Age",
+            FieldValuePresence::Optional,
+            VALIDATIONS,
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -361,11 +369,12 @@ mod tests {
     #[test]
     fn description_unwraps_optional_nested_inner_errors_before_all() {
         const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Nested];
-        const FIELDS: [FieldVariant; 1] =
-            [
-                hidden_field("address", "Address", FieldValuePresence::Optional)
-                    .with_validations(VALIDATIONS),
-            ];
+        const FIELDS: [FieldVariant; 1] = [hidden_field_with_validations(
+            "address",
+            "Address",
+            FieldValuePresence::Optional,
+            VALIDATIONS,
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,

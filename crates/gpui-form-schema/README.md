@@ -9,7 +9,7 @@ prototyping flows around generated form metadata.
 ## What It Provides
 
 - `registry::GpuiFormShape`
-- `registry::FieldVariant`
+- `registry::{FieldValueSpec, FieldVariant}`
 - `registry::{ComponentCapabilities, FieldComponentVariant, FieldValuePresence}`
 - `registry::{RustType, RustPath, RustExpr, ComponentSuffix}`
 - `registry::inventory`
@@ -20,11 +20,12 @@ component-backed fields and explicit hidden value-holder-only fields.
 `FieldVariant` records both source-model and form-side value types,
 required-value holder behavior, conversion expressions, component shape
 metadata, resolved component suffixes, and opt-in value-binding metadata for
-generators. Its fields are private; construct fields with
-`FieldVariant::builder(field_name).with_value_type(...).with_value_presence(...)`
-before choosing `.component(...)` or `.hidden()`. That keeps
-`FieldValuePresence` explicit and avoids order-sensitive positional schema
-constructors. Component-only metadata is built through
+generators. Its fields are private; construct complete value metadata with
+`FieldValueSpec::new(value_type, source_value_type, value_presence)` before
+calling `FieldVariant::component(field_name, value, component)` or
+`FieldVariant::hidden(field_name, value)`. That keeps `FieldValuePresence`
+explicit and prevents incomplete schema field construction. Component-only
+metadata is built through
 `FieldComponentVariant::new(shape_path)` before attaching it to a field, so
 metadata cannot represent value-bound-without-shape. Helpers such as
 `field_name_with_component_suffix()` keep inventory consumers aligned with the

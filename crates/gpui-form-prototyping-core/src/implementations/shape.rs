@@ -270,10 +270,18 @@ mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::FieldCodeGenerator as _;
     use gpui_form_schema::registry::{
-        ComponentSuffix, FieldComponentVariant, FieldValuePresence, FieldVariant, GpuiFormShape,
-        RustExpr, RustPath, RustType,
+        ComponentSuffix, ConversionMetadata, FieldComponentVariant, FieldValuePresence,
+        FieldValueSpec, FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType,
     };
     use quote::quote;
+
+    const fn value_spec(
+        value_type: &'static str,
+        value_presence: FieldValuePresence,
+    ) -> FieldValueSpec {
+        let value_type = RustType::from_macro_tokens_unchecked(value_type);
+        FieldValueSpec::new(value_type, value_type, value_presence)
+    }
 
     const fn shape_field(
         field_name: &'static str,
@@ -281,12 +289,11 @@ mod tests {
         value_presence: FieldValuePresence,
         shape_path: &'static str,
     ) -> FieldVariant {
-        FieldVariant::builder(field_name)
-            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
-            .with_value_presence(value_presence)
-            .component(FieldComponentVariant::new(
-                RustPath::from_macro_tokens_unchecked(shape_path),
-            ))
+        FieldVariant::component(
+            field_name,
+            value_spec(value_type, value_presence),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(shape_path)),
+        )
     }
 
     const SHAPE_FIELDS: [FieldVariant; 1] = [shape_field(
@@ -379,15 +386,14 @@ mod tests {
 
     #[test]
     fn shape_generator_emits_component_call_when_component_known() {
-        const FIELDS_WITH_COMPONENT: [FieldVariant; 1] = [FieldVariant::builder("tags")
-            .with_value_type(RustType::from_macro_tokens_unchecked("Vec<String>"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::TagsInputShape",
-                ))
-                .with_render_component(true),
-            )];
+        const FIELDS_WITH_COMPONENT: [FieldVariant; 1] = [FieldVariant::component(
+            "tags",
+            value_spec("Vec<String>", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::TagsInputShape",
+            ))
+            .with_render_component(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS_WITH_COMPONENT,
@@ -412,15 +418,14 @@ mod tests {
 
     #[test]
     fn shape_generator_wires_shape_value_binding() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("country")
-            .with_value_type(RustType::from_macro_tokens_unchecked("CountryCode"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::CountryShape",
-                ))
-                .with_value_binding(true),
-            )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "country",
+            value_spec("CountryCode", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::CountryShape",
+            ))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -458,15 +463,14 @@ mod tests {
 
     #[test]
     fn shape_generator_clear_resets_direct_value_storage() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("code")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::OtpInput<String>",
-                ))
-                .with_value_binding(true),
-            )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "code",
+            value_spec("String", FieldValuePresence::DirectStorage),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::OtpInput<String>",
+            ))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -485,18 +489,16 @@ mod tests {
 
     #[test]
     fn shape_generator_clear_resets_direct_value_storage_to_declared_default() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("code")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::OtpInput<String>",
-                ))
-                .with_value_binding(true),
-            )
-            .with_default(RustExpr::from_macro_tokens_unchecked(
-                "String::from(\"123456\")",
-            ))];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "code",
+            value_spec("String", FieldValuePresence::DirectStorage).with_default(
+                RustExpr::from_macro_tokens_unchecked("String::from(\"123456\")"),
+            ),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::OtpInput<String>",
+            ))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -515,16 +517,15 @@ mod tests {
 
     #[test]
     fn shape_generator_clear_converts_literal_declared_default() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("code")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::OtpInput<String>",
-                ))
-                .with_value_binding(true),
-            )
-            .with_default(RustExpr::from_macro_tokens_unchecked("\"123456\""))];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "code",
+            value_spec("String", FieldValuePresence::DirectStorage)
+                .with_default(RustExpr::from_macro_tokens_unchecked("\"123456\"")),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::OtpInput<String>",
+            ))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -543,23 +544,25 @@ mod tests {
 
     #[test]
     fn shape_generator_clear_converts_source_default_to_form_value() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("birth_date")
-            .with_value_type(RustType::from_macro_tokens_unchecked("chrono::NaiveDate"))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::DatePicker",
-                ))
-                .with_value_binding(true),
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "birth_date",
+            FieldValueSpec::new(
+                RustType::from_macro_tokens_unchecked("chrono::NaiveDate"),
+                RustType::from_macro_tokens_unchecked("Timestamp"),
+                FieldValuePresence::DirectStorage,
             )
-            .with_source_value_type(RustType::from_macro_tokens_unchecked("Timestamp"))
-            .with_conversions(
+            .with_conversions(ConversionMetadata::new(
                 Some(RustExpr::from_macro_tokens_unchecked("to_form_datetime")),
                 Some(RustExpr::from_macro_tokens_unchecked("to_model_timestamp")),
-            )
+            ))
             .with_default(RustExpr::from_macro_tokens_unchecked(
                 "Timestamp::from_micros_since_unix_epoch(0)",
-            ))];
+            )),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::DatePicker",
+            ))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -578,16 +581,15 @@ mod tests {
 
     #[test]
     fn shape_generator_uses_declared_suffix_for_component_names() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("country")
-            .with_value_type(RustType::from_macro_tokens_unchecked("CountryCode"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::CountrySelectShape",
-                ))
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")))
-                .with_value_binding(true),
-            )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "country",
+            value_spec("CountryCode", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::CountrySelectShape",
+            ))
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("select")))
+            .with_value_binding(true),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,
@@ -626,16 +628,15 @@ mod tests {
 
     #[test]
     fn shape_generator_renders_generic_component_type() {
-        const FIELDS: [FieldVariant; 1] = [FieldVariant::builder("tags")
-            .with_value_type(RustType::from_macro_tokens_unchecked("Vec<Tag>"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::shapes::TagsComboboxShape",
-                ))
-                .with_render_component(true)
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("combobox"))),
-            )];
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "tags",
+            value_spec("Vec<Tag>", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::TagsComboboxShape",
+            ))
+            .with_render_component(true)
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("combobox"))),
+        )];
         const SHAPE: GpuiFormShape = GpuiFormShape::new(
             "Demo",
             &FIELDS,

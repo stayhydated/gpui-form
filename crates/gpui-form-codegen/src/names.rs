@@ -8,10 +8,18 @@ pub struct ComponentFieldName(pub Ident);
 
 impl ComponentFieldName {
     pub fn try_new(component_name: &str, field_name: &str) -> syn::Result<Self> {
+        Self::try_new_spanned(component_name, field_name, Span::call_site())
+    }
+
+    pub fn try_new_spanned(
+        component_name: &str,
+        field_name: &str,
+        span: Span,
+    ) -> syn::Result<Self> {
         let raw = format!("{}_{}", field_name, component_name);
         syn::parse_str::<Ident>(&raw).map(Self).map_err(|err| {
             syn::Error::new(
-                Span::call_site(),
+                span,
                 format!("failed to generate component field identifier `{raw}`: {err}"),
             )
         })

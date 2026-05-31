@@ -8,8 +8,7 @@ layer used by `gpui-form-derive`.
 This crate exists to:
 
 1. parse component shape paths into a typed internal model
-1. emit generated `FormFields` and `FormComponents` tokens from a
-   `ComponentShape`
+1. plan semantic component field facts from a `ComponentShape`
 1. emit schema metadata aligned with the same component-shape contract
 
 It should stay proc-macro-adjacent rather than becoming a second proc-macro
@@ -21,10 +20,9 @@ crate.
 - `src/crate_paths.rs`: shared proc-macro crate path resolver used by
   `gpui-form-derive`, `gpui-form-component-derive`, and
   `gpui-form-collection-derive`, including renamed downstream dependencies
-- `src/components.rs`: parses component shape options and emits metadata
+- `src/components.rs`: parses component shape options, plans
+  `ComponentFieldIr`, and emits component metadata/type-check tokens
 - `src/names.rs`: helper naming utilities for generated identifiers
-- `src/implementations/shape.rs`: `ComponentLayout` implementation for shape-backed
-  component shapes
 
 ## Parse-Time Component Model
 
@@ -55,15 +53,22 @@ shape's `ComponentShape::new` implementation, `ComponentShapeFor<Value>` impls,
 or a dedicated wrapper shape. This crate does not know about selects, inputs,
 date pickers, or any other component family.
 
-## Component Layout Emission
+## Component Field IR
 
-The shape layout emits two things:
+`ResolvedComponentShape::field_ir()` computes semantic facts needed by
+`gpui-form-derive` to emit component-backed fields:
 
-- a `FormFields` entry with `Entity<<Shape as ComponentShape>::State>`
-- a `FormComponents` constructor that delegates to
-  `<Shape as ComponentShape>::new(window, cx)`
+- the generated component field identifier
+- the resolved component shape path and field value type
+- the shape-owned required-value policy
 
-For `GpuiForm` output, emitted runtime paths target
+`gpui-form-codegen` does not emit `FormFields` or `FormComponents` layout token
+fragments. `gpui-form-derive` renders those final declarations from
+`ComponentFieldIr`, keeping layout emission at the derive boundary while
+sharing the same resolved component facts with inventory metadata and type
+checks.
+
+For `GpuiForm` output, rendered runtime paths target
 `gpui_form::runtime::shape` through the facade dependency. Downstream crates
 that use component-backed fields depend on `gpui-form` plus the crate that owns
 the concrete shape type; they do not need a direct `gpui-form-runtime`
@@ -86,7 +91,8 @@ can define local shapes.
 
 Inventory/prototyping metadata records:
 
-- explicit component field metadata via `FieldVariant::builder(...).component(...)`
+- explicit component field metadata via `FieldValueSpec` and
+  `FieldVariant::component(...)`
 - the field value-presence policy as `FieldValuePresence`
 - the resolved component shape path in `FieldComponentVariant`
 - whether the component shape publishes a `RenderComponent` contract

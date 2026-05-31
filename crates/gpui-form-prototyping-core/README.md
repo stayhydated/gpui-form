@@ -69,9 +69,10 @@ projections so the output stays readable.
 On `FormValueChange::Clear`, optional fields reset to `None`; non-optional
 fields reset to the intent-scoped source default converted into the form-side
 value when one exists, otherwise to the shape's default storage policy.
-The adapter also consumes `GpuiFormShape::holder_conversion_can_fail()` from
-inventory metadata, so generated debug rows use the same `into_original` versus
-`try_into_original` shape as the derive-generated value holder.
+The adapter also consumes `GpuiFormShape::holder_conversion_shape()` from
+inventory metadata, so generated debug rows use the same `into_original`,
+`try_into_original`, or skipped-field reconstruction shape as the
+derive-generated value holder.
 
 ## Feature Flags
 

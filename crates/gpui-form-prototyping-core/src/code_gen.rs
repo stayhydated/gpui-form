@@ -1,5 +1,5 @@
 use gpui_form_schema::{
-    registry::GpuiFormShape,
+    registry::{GpuiFormShape, HolderConversionShape},
     resolved::{ResolveError, ResolvedField, ResolvedGpuiFormShape},
 };
 use proc_macro2::TokenStream;
@@ -220,8 +220,8 @@ impl<'a> FormShapeAdapter<'a> {
         let form_id_literal = resolved_shape.name().form_id().to_string();
         let context_str = format!("{}Form", resolved_shape.name().source());
         let source_module_path = resolved_shape.source_module_path().clone();
-        let has_skipped_fields = data.has_skipped_fields();
-        let holder_conversion_can_fail = data.holder_conversion_can_fail();
+        let holder_conversion_shape = data.holder_conversion_shape();
+        let has_skipped_fields = holder_conversion_shape.needs_skipped_fields();
 
         let is_empty = data.fields.is_empty();
         let has_koruma = data.has_koruma();
@@ -297,7 +297,10 @@ impl<'a> FormShapeAdapter<'a> {
                             self.current_data.present_fields_json()
                         ))
                     }
-                } else if holder_conversion_can_fail {
+                } else if matches!(
+                    holder_conversion_shape,
+                    HolderConversionShape::FallibleRequired
+                ) {
                     quote! {
                         .child(format!(
                             "try_into_original: {:?}",
@@ -376,7 +379,7 @@ impl<'a> FormShapeAdapter<'a> {
             is_empty,
             has_koruma,
             has_skipped_fields,
-            holder_conversion_can_fail,
+            holder_conversion_shape,
             imports: imports.into(),
             component_creations: component_creations.into(),
             field_initializers: field_initializers.into(),
@@ -449,11 +452,10 @@ pub struct FormParts {
     pub is_empty: bool,
     /// True when koruma validation is enabled.
     pub has_koruma: bool,
-    /// True when at least one source field was marked with `#[gpui_form(skip)]`.
+    /// True when holder conversion needs caller-provided skipped field values.
     pub has_skipped_fields: bool,
-    /// True when holder-to-model conversion may fail because a required
-    /// shape-backed value can be missing and no field default was declared.
-    pub holder_conversion_can_fail: bool,
+    /// Generated holder-to-model conversion API shape.
+    pub holder_conversion_shape: HolderConversionShape,
 
     // ── Semantic generated fragments ──────────────────────────────────────────
     /// Grouped `use` statements (source module glob + framework base + per-component items).
@@ -507,8 +509,17 @@ mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
     use gpui_form_schema::registry::{
-        FieldComponentVariant, FieldValuePresence, FieldVariant, GpuiFormShape, RustPath, RustType,
+        FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape,
+        HolderConversionMetadata, HolderConversionShape, RustPath, RustType,
     };
+
+    const fn value_spec(
+        value_type: &'static str,
+        value_presence: FieldValuePresence,
+    ) -> FieldValueSpec {
+        let value_type = RustType::from_macro_tokens_unchecked(value_type);
+        FieldValueSpec::new(value_type, value_type, value_presence)
+    }
 
     fn compact(input: &str) -> String {
         input.chars().filter(|c| !c.is_whitespace()).collect()
@@ -519,10 +530,7 @@ mod tests {
         value_type: &'static str,
         value_presence: FieldValuePresence,
     ) -> FieldVariant {
-        FieldVariant::builder(field_name)
-            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
-            .with_value_presence(value_presence)
-            .hidden()
+        FieldVariant::hidden(field_name, value_spec(value_type, value_presence))
     }
 
     const fn component_field(
@@ -530,10 +538,11 @@ mod tests {
         value_type: &'static str,
         component: FieldComponentVariant,
     ) -> FieldVariant {
-        FieldVariant::builder(field_name)
-            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(component)
+        FieldVariant::component(
+            field_name,
+            value_spec(value_type, FieldValuePresence::DirectStorage),
+            component,
+        )
     }
 
     #[test]
@@ -698,7 +707,10 @@ mod tests {
         let parts = FormShapeAdapter::new(&INFALLIBLE_SHAPE)
             .parts()
             .expect("valid infallible shape metadata should generate parts");
-        assert!(!parts.holder_conversion_can_fail);
+        assert_eq!(
+            parts.holder_conversion_shape,
+            HolderConversionShape::Infallible
+        );
 
         const OPTIONAL_FIELDS: [FieldVariant; 1] =
             [hidden_field("name", "String", FieldValuePresence::Optional)];
@@ -708,11 +720,17 @@ mod tests {
             RustPath::from_macro_tokens_unchecked("some_lib::demo"),
             false,
         )
-        .with_holder_conversion_can_fail(true);
+        .with_holder_conversion(HolderConversionMetadata::new(
+            HolderConversionShape::FallibleRequired,
+            true,
+        ));
 
         let parts = FormShapeAdapter::new(&FALLIBLE_SHAPE)
             .parts()
             .expect("valid fallible shape metadata should generate parts");
-        assert!(parts.holder_conversion_can_fail);
+        assert_eq!(
+            parts.holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        );
     }
 }

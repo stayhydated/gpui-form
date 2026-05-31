@@ -28,7 +28,7 @@ pub fn rust_expr_tokens(schema_crate: &syn::Path, expr: &syn::Expr) -> TokenStre
 
 pub fn optional_rust_expr_tokens(
     schema_crate: &syn::Path,
-    expr: &Option<syn::Expr>,
+    expr: Option<&syn::Expr>,
 ) -> TokenStream {
     match expr {
         Some(expr) => {

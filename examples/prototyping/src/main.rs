@@ -1,4 +1,4 @@
-use gpui_form::schema::registry::GpuiFormShape;
+use gpui_form::schema::registry::{GpuiFormShape, HolderConversionShape};
 use gpui_form_prototyping_core::{FormLayout, FormParts, FormShapeAdapter};
 use heck::ToSnakeCase as _;
 use quote::quote;
@@ -26,7 +26,7 @@ impl FormLayout for StorybookLayout {
             is_empty,
             has_koruma,
             has_skipped_fields,
-            holder_conversion_can_fail,
+            holder_conversion_shape,
             imports,
             component_creations,
             event_handlers,
@@ -54,13 +54,19 @@ impl FormLayout for StorybookLayout {
             }
         } else if *has_koruma {
             quote! { Result<Option<#struct_name_ident>, String> }
-        } else if *holder_conversion_can_fail {
+        } else if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
             quote! { Option<#struct_name_ident> }
         } else {
             quote! { #struct_name_ident }
         };
 
-        let fallible_submit_payload = if *holder_conversion_can_fail {
+        let fallible_submit_payload = if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
             quote! { self.current_data.clone().try_into_original().ok() }
         } else {
             quote! { Some(self.current_data.clone().into_original()) }
@@ -86,7 +92,10 @@ impl FormLayout for StorybookLayout {
                     Err(error) => Err(format!("{error:?}")),
                 }
             }
-        } else if *holder_conversion_can_fail {
+        } else if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
             fallible_submit_payload
         } else {
             quote! { self.current_data.clone().into_original() }

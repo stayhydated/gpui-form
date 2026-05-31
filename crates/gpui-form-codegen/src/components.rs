@@ -5,7 +5,6 @@ use syn::Path;
 use syn::spanned::Spanned as _;
 
 use crate::CratePaths;
-use crate::implementations::ComponentLayout as _;
 use crate::metadata::rust_path_tokens;
 
 fn tokens_with_span<T: quote::ToTokens>(value: &T, span: Span) -> TokenStream {
@@ -44,27 +43,10 @@ pub fn validate_shape_field_suffix(value: &str) -> Result<(), String> {
     validate_component_suffix(value).map_err(|err| err.to_string())
 }
 
-pub trait ComponentOption {}
-
-pub struct FieldInformation<T: ComponentOption> {
-    pub options: T,
-    pub name: String,
-    pub r#type: syn::Type,
-}
-
-impl<T: ComponentOption> FieldInformation<T> {
-    pub fn new(options: T, name: String, r#type: syn::Type) -> Self {
-        Self {
-            options,
-            name,
-            r#type,
-        }
-    }
-}
-
-pub struct GeneratedFieldLayout {
-    pub field_structure_tokens: TokenStream,
-    pub field_base_declarations_tokens: TokenStream,
+#[derive(Clone, Debug)]
+pub struct ComponentFieldIr {
+    pub shape: ResolvedComponentShape,
+    pub field_ident: syn::Ident,
     pub required_value: RequiredValue,
 }
 
@@ -416,25 +398,17 @@ impl ResolvedComponentShape {
         }
     }
 
-    pub fn generate_field_layout(&self, _field_default: Option<syn::Expr>) -> GeneratedFieldLayout {
-        let mut field_structure_tokens = TokenStream::new();
-        let mut field_base_declarations_tokens = TokenStream::new();
-
-        let component = ShapeComponent(FieldInformation::new(
-            self.clone(),
-            self.field_name.clone(),
-            self.field_type.clone(),
-        ));
-        component.field_tokens(
-            &mut field_structure_tokens,
-            &mut field_base_declarations_tokens,
-        );
-
-        GeneratedFieldLayout {
-            field_structure_tokens,
-            field_base_declarations_tokens,
+    pub fn field_ir(&self) -> syn::Result<ComponentFieldIr> {
+        let field_ident = crate::names::ComponentFieldName::try_new_spanned(
+            self.component_suffix(),
+            &self.field_name,
+            self.span,
+        )?;
+        Ok(ComponentFieldIr {
+            shape: self.clone(),
+            field_ident: field_ident.0,
             required_value: self.required_value(),
-        }
+        })
     }
 
     pub fn component_variant_tokens(&self) -> TokenStream {
@@ -502,19 +476,14 @@ impl ResolvedComponentShape {
     }
 }
 
-impl ComponentOption for ResolvedComponentShape {}
-
-pub struct ShapeComponent(pub FieldInformation<ResolvedComponentShape>);
-
 impl ShapeOptions {
-    pub fn generate_field_layout(
+    pub fn field_ir(
         &self,
         field_name: String,
         field_type: syn::Type,
-        field_default: Option<syn::Expr>,
-    ) -> GeneratedFieldLayout {
-        self.resolve(field_name, field_type)
-            .generate_field_layout(field_default)
+        _field_default: Option<syn::Expr>,
+    ) -> syn::Result<ComponentFieldIr> {
+        self.resolve(field_name, field_type).field_ir()
     }
 }
 
@@ -529,6 +498,28 @@ mod tests {
             .chars()
             .filter(|ch| !ch.is_whitespace())
             .collect()
+    }
+
+    fn compact_path(path: &syn::Path) -> String {
+        path.to_token_stream()
+            .to_string()
+            .chars()
+            .filter(|ch| !ch.is_whitespace())
+            .collect()
+    }
+
+    #[test]
+    fn component_field_ir_plans_identifier_shape_and_required_policy() {
+        let options = ShapeOptions::from_shape(syn::parse_quote!(crate::Input<_>));
+        let field_type: syn::Type = syn::parse_quote!(String);
+
+        let ir = options
+            .field_ir("email".to_string(), field_type, None)
+            .expect("valid component field should plan semantic IR");
+
+        assert_eq!(ir.field_ident.to_string(), "email_input");
+        assert_eq!(compact_path(ir.shape.shape()), "crate::Input<String>");
+        assert!(matches!(ir.required_value, RequiredValue::Shape(_)));
     }
 
     #[test]

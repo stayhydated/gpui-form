@@ -85,6 +85,10 @@ Important behaviors:
 - every field is normalized as component, hidden, or skipped intent during
   parsing; missing intent is a compile error so a field cannot silently become
   value-holder-only
+- parsed field intent carries `FieldContext` and `FieldAttrContext` forward
+  into planning, so component planning and value conversion assertions can
+  anchor generated diagnostics to the relevant field or `gpui_form` option
+  span instead of recomputing spans later
 - structured field syntax nests value conversion/default metadata inside the
   component or hidden intent: `component(Shape, value(...), default = ...)` and
   `hidden(value(...), default = ...)`. Flat top-level `type`, `source_to_form`,
@@ -96,9 +100,17 @@ Important behaviors:
   metadata, value-holder generation, type checks, validation wiring, defaults,
   conversions, and shape requiredness all read from that plan instead of
   recomputing field type facts independently
-- skipped fields are split from rendered `SharedFieldPlan` facts before value
+- skipped fields are split from rendered `HolderFieldIr` facts before value
   holder emission, so holder storage, form type, validation, default, and
   conversion code paths do not need defensive "maybe skipped" lookups
+- rendered field storage is represented as `HolderStoragePlan`; value-holder
+  emission routes storage type, present-value wrapping, default storage,
+  holder/source conversion, present-field JSON, and required validation builder
+  selection through a shared storage strategy instead of duplicating those
+  decisions at each call site
+- value-holder emission receives the same `DeriveContext` as expansion, so
+  holder-specific tokens reuse the already-resolved facade/runtime crate paths
+  instead of resolving paths independently
 - holder-to-model API shape is selected by `HolderConversionPlan`, with
   `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The plan stores
   semantic fallibility as `ConversionFallibility` and renders predicates only

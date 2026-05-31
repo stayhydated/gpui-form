@@ -5,21 +5,20 @@ use syn::DeriveInput;
 
 use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::structs::{
-    ComponentFieldIntent, ComponentFieldPlan, ComponentStruct, FieldPlan, KorumaOptions,
-    SharedFieldPlan, StoragePlan, ValidationMetadata, ValidationRule,
+    ComponentFieldIntent, ComponentFieldPlan, ComponentStruct, FieldPlan, HolderFieldIr,
+    HolderStoragePlan, KorumaOptions, RenderedValueIntent, ValidationMetadata, ValidationRule,
 };
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 
 pub struct FormPlan {
     pub fields: Vec<FieldPlan>,
-    pub has_skipped_fields: bool,
     pub enable_koruma_fluent: bool,
     pub effective_enable_koruma: bool,
 }
 
 impl FormPlan {
     #[allow(dead_code)]
-    pub fn non_skipped_fields(&self) -> impl Iterator<Item = &SharedFieldPlan> {
+    pub fn non_skipped_fields(&self) -> impl Iterator<Item = &HolderFieldIr> {
         self.fields.iter().filter_map(FieldPlan::shared)
     }
 
@@ -49,47 +48,48 @@ pub fn plan_form(
 
     let mut fields = Vec::new();
     for field in fields_iter {
-        let field_name = field.ident.clone();
+        let field_name = field.context.field_ident.clone();
         let intent = field.intent();
 
         if matches!(intent, ComponentFieldIntent::Skipped(_)) {
-            fields.push(FieldPlan::skipped(field_name, field.ty.clone()));
+            fields.push(FieldPlan::skipped(
+                field_name,
+                field.context.field_ty.clone(),
+            ));
             continue;
         }
 
         let field_name_str = field_name.to_string();
-        let (was_optional, source_value_type) = extract_option_inner_type(&field.ty);
+        let (was_optional, source_value_type) = extract_option_inner_type(&field.context.field_ty);
         let rendered = field.rendered().ok_or_else(|| {
             syn::Error::new_spanned(
                 &field_name,
                 "field attribute must provide rendered options unless the field is `skip`d",
             )
         })?;
-        let override_type = rendered
-            .r#type
-            .as_ref()
-            .map(|rendered_type| rendered_type.value.0.clone());
-        let override_type_span = rendered
-            .r#type
-            .as_ref()
-            .map(|rendered_type| rendered_type.span);
-        let form_type = override_type
-            .as_ref()
-            .map(|ty| extract_option_inner_type(ty).1)
-            .unwrap_or_else(|| source_value_type.clone());
-
-        let (component, component_layout, required_value) = match field.component() {
-            Some(component) => {
-                let layout = generate_component_field(&field_name, &source_value_type, &component);
-                (
-                    Some(layout.component.clone()),
-                    Some(layout.clone()),
-                    layout.required_value,
-                )
+        let value_mapping = rendered.value.clone();
+        let form_type = match &value_mapping {
+            RenderedValueIntent::Identity => source_value_type.clone(),
+            RenderedValueIntent::Converted(converted) => {
+                extract_option_inner_type(&converted.form_type.value.0).1
             },
-            None => (None, None, RequiredValue::explicit(false)),
         };
-        let storage = StoragePlan::from_required_value(&field_name, was_optional, required_value)?;
+
+        let (component, required_value) = match field.component() {
+            Some(component) => {
+                let component = generate_component_field(
+                    &field_name,
+                    &form_type,
+                    component.component,
+                    component.rendered.context,
+                )?;
+                let required_value = component.required_value.clone();
+                (Some(component), required_value)
+            },
+            None => (None, RequiredValue::explicit(false)),
+        };
+        let storage =
+            HolderStoragePlan::from_required_value(&field_name, was_optional, required_value)?;
 
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info
@@ -113,9 +113,9 @@ pub fn plan_form(
             }
         }
 
-        let shared = SharedFieldPlan {
+        let shared = HolderFieldIr {
             field_name,
-            original_type: field.ty.clone(),
+            original_type: field.context.field_ty.clone(),
             source_value_type,
             form_type,
             was_optional,
@@ -124,28 +124,12 @@ pub fn plan_form(
             validation_metadata,
             default_expr: rendered.default.map(|expr| expr.value.0.clone()),
             default_span: rendered.default.map(|expr| expr.span),
-            override_type,
-            override_type_span,
-            into_expr: rendered
-                .form_to_source
-                .map(|form_to_source| form_to_source.value.clone()),
-            into_expr_span: rendered
-                .form_to_source
-                .map(|form_to_source| form_to_source.span),
-            from_expr: rendered
-                .source_to_form
-                .map(|source_to_form| source_to_form.value.clone()),
-            from_expr_span: rendered
-                .source_to_form
-                .map(|source_to_form| source_to_form.span),
+            value_mapping,
+            context: rendered.context.clone(),
         };
 
-        if let (Some(component), Some(component_layout)) = (component, component_layout) {
-            fields.push(FieldPlan::component_field(
-                shared,
-                component,
-                component_layout,
-            ));
+        if let Some(component) = component {
+            fields.push(FieldPlan::component_field(shared, component));
         } else {
             fields.push(FieldPlan::hidden(shared));
         }
@@ -163,11 +147,8 @@ pub fn plan_form(
     });
     let effective_enable_koruma =
         enable_koruma || (has_fields_needing_required && has_any_koruma_validations);
-    let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
-
     Ok(FormPlan {
         fields,
-        has_skipped_fields,
         enable_koruma_fluent,
         effective_enable_koruma,
     })

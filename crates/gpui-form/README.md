@@ -515,8 +515,9 @@ projections, keeping handler signatures based on names such as
 `on_email_input_event`. Shape-backed prototyping fails with a field-specific
 `PrototypingError` when required render, value-binding, shape path, or default
 storage metadata is missing instead of generating placeholder UI. The adapter
-uses the derive-emitted `holder_conversion_can_fail` inventory flag so generated
-debug output matches the holder's `into_original` or `try_into_original` API.
+uses the derive-emitted holder conversion shape metadata so generated debug
+output matches the holder's `into_original`, `try_into_original`, or
+skipped-field reconstruction API.
 Generic forms are not registered in inventory because inventory metadata must
 name one concrete source type and module path. When the `inventory` feature is
 enabled, add `#[gpui_form(no_inventory)]` to generic forms that should still

@@ -393,9 +393,9 @@ mod gpui_form_tests {
             "Fallible holders should keep the standard TryFrom impl: {compact}"
         );
         assert!(
-            compact.contains("with_holder_conversion_can_fail(true)")
+            compact.contains("with_holder_conversion(::gpui_form::schema::registry::HolderConversionMetadata::new(::gpui_form::schema::registry::HolderConversionShape::FallibleRequired")
                 && compact.contains(
-                    "with_holder_conversion_runtime_can_fail(false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE)"
+                    "false||<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
                 ),
             "Inventory metadata should record the fallible API shape and runtime policy predicate: {compact}"
         );
@@ -440,7 +440,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::builder(\"birth_date\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\")).with_value_presence(::gpui_form::schema::registry::FieldValuePresence::Optional).component("
+                "FieldVariant::component(\"birth_date\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"Timestamp\"),::gpui_form::schema::registry::FieldValuePresence::Optional)"
             ),
             "FieldVariant should use override type for metadata"
         );
@@ -466,7 +466,7 @@ mod gpui_form_tests {
             "Infallible holders should expose into_original(self): {compact}"
         );
         assert!(
-            compact.contains("with_holder_conversion_can_fail(false)"),
+            compact.contains("with_holder_conversion(::gpui_form::schema::registry::HolderConversionMetadata::new(::gpui_form::schema::registry::HolderConversionShape::Infallible,false))"),
             "Inventory metadata should publish infallible holder conversion API shape: {compact}"
         );
         assert!(
@@ -504,7 +504,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::builder(\"amount\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"rust_decimal::Decimal\")).with_value_presence(if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
+                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"rust_decimal::Decimal\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"f64\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -573,6 +573,10 @@ mod gpui_form_tests {
                 "pubfninto_original(self,skip_me:bool)->Result<TestForm,TestFormFormValueHolderConversionError>"
             ),
             "Skipped-field forms should keep strict into_original(self, skipped...) conversion"
+        );
+        assert!(
+            compact.contains("with_holder_conversion(::gpui_form::schema::registry::HolderConversionMetadata::new(::gpui_form::schema::registry::HolderConversionShape::NeedsSkippedFields,true))"),
+            "Inventory metadata should record skipped-field holder conversion shape: {compact}"
         );
     }
 
@@ -770,7 +774,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::builder(\"bio\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\")).with_value_presence(if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
+                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
         );
@@ -1047,14 +1051,12 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::builder(\"account_no\").with_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"crate::types::AccountCode\")).with_value_presence(if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
+                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"crate::types::AccountCode\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::Inputas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );
         assert!(
-            compact.contains(
-                "with_source_value_type(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"))"
-            ),
+            compact.contains("RustType::from_macro_tokens_unchecked(\"String\")"),
             "FieldVariant should store the source model value type: {compact}"
         );
         assert!(
@@ -1064,7 +1066,7 @@ mod gpui_form_tests {
             "FieldVariant should inherit generated value-storage policy from the shape: {compact}"
         );
         assert!(
-            compact.contains("with_conversions(Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::into_string\")))"),
+            compact.contains("with_conversions(::gpui_form::schema::registry::ConversionMetadata::new(Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::new\")),Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"crate::types::AccountCode::into_string\"))))"),
             "FieldVariant should store source/form conversion expressions: {compact}"
         );
     }

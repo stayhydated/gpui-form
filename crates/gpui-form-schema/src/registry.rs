@@ -173,20 +173,12 @@ pub struct GpuiFormShape {
     pub source_module_path: RustPath,
     /// Whether the struct has koruma validation enabled at the struct level.
     pub koruma_enabled: bool,
-    /// Whether the original struct contains any `#[gpui_form(skip)]` fields.
+    /// Holder-to-model conversion shape emitted by `#[derive(GpuiForm)]`.
     ///
-    /// When true, generated `FormValueHolder` cannot be converted back into the
-    /// original struct without additional skipped-field values.
-    pub has_skipped_fields: bool,
-    /// Whether the generated holder-to-model conversion API is fallible.
-    ///
-    /// This is emitted by `#[derive(GpuiForm)]` from the same analysis used for
-    /// the generated value-holder methods, so downstream generators do not need
-    /// to reconstruct conversion behavior from field-level metadata.
-    pub holder_conversion_can_fail: bool,
-    /// Whether holder-to-model conversion can fail after resolving shape-owned
-    /// storage policies.
-    pub holder_conversion_runtime_can_fail: bool,
+    /// This is the same analysis used for generated value-holder methods, so
+    /// downstream generators do not need to reconstruct conversion behavior
+    /// from field-level metadata.
+    pub holder_conversion: HolderConversionMetadata,
 }
 
 impl GpuiFormShape {
@@ -201,35 +193,16 @@ impl GpuiFormShape {
             fields,
             source_module_path,
             koruma_enabled,
-            has_skipped_fields: false,
-            holder_conversion_can_fail: false,
-            holder_conversion_runtime_can_fail: false,
+            holder_conversion: HolderConversionMetadata::infallible(),
         }
     }
 
-    /// Marks whether the original struct has any `#[gpui_form(skip)]` fields.
-    pub const fn with_skipped_fields(mut self, has_skipped_fields: bool) -> Self {
-        self.has_skipped_fields = has_skipped_fields;
-        self
-    }
-
-    /// Marks whether generated holder-to-model conversion uses the fallible
-    /// `try_into_original()` shape.
-    pub const fn with_holder_conversion_can_fail(
+    /// Attach generated holder-to-model conversion metadata.
+    pub const fn with_holder_conversion(
         mut self,
-        holder_conversion_can_fail: bool,
+        holder_conversion: HolderConversionMetadata,
     ) -> Self {
-        self.holder_conversion_can_fail = holder_conversion_can_fail;
-        self
-    }
-
-    /// Marks whether holder-to-model conversion can fail at runtime after
-    /// shape-owned storage policies are evaluated.
-    pub const fn with_holder_conversion_runtime_can_fail(
-        mut self,
-        holder_conversion_runtime_can_fail: bool,
-    ) -> Self {
-        self.holder_conversion_runtime_can_fail = holder_conversion_runtime_can_fail;
+        self.holder_conversion = holder_conversion;
         self
     }
 
@@ -248,17 +221,63 @@ impl GpuiFormShape {
 
     /// Returns true when at least one source field is marked `#[gpui_form(skip)]`.
     pub const fn has_skipped_fields(&self) -> bool {
-        self.has_skipped_fields
+        self.holder_conversion.shape.needs_skipped_fields()
     }
 
-    /// Returns true when generated holder-to-model conversion exposes
-    /// `try_into_original()` for non-skipped fields.
-    pub const fn holder_conversion_can_fail(&self) -> bool {
-        self.holder_conversion_can_fail
+    pub const fn holder_conversion(&self) -> HolderConversionMetadata {
+        self.holder_conversion
     }
 
-    pub const fn holder_conversion_runtime_can_fail(&self) -> bool {
-        self.holder_conversion_runtime_can_fail
+    pub const fn holder_conversion_shape(&self) -> HolderConversionShape {
+        self.holder_conversion.shape
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HolderConversionShape {
+    Infallible,
+    FallibleRequired,
+    NeedsSkippedFields,
+}
+
+impl HolderConversionShape {
+    pub const fn uses_fallible_api(self) -> bool {
+        matches!(self, Self::FallibleRequired | Self::NeedsSkippedFields)
+    }
+
+    pub const fn needs_skipped_fields(self) -> bool {
+        matches!(self, Self::NeedsSkippedFields)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct HolderConversionMetadata {
+    shape: HolderConversionShape,
+    runtime_can_fail: bool,
+}
+
+impl HolderConversionMetadata {
+    pub const fn new(shape: HolderConversionShape, runtime_can_fail: bool) -> Self {
+        Self {
+            shape,
+            runtime_can_fail,
+        }
+    }
+
+    pub const fn infallible() -> Self {
+        Self::new(HolderConversionShape::Infallible, false)
+    }
+
+    pub const fn shape(self) -> HolderConversionShape {
+        self.shape
+    }
+
+    pub const fn runtime_can_fail(self) -> bool {
+        self.runtime_can_fail
+    }
+
+    pub const fn uses_fallible_api(self) -> bool {
+        self.shape.uses_fallible_api()
     }
 }
 
@@ -484,6 +503,78 @@ impl FieldComponentVariant {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ConversionMetadata {
+    from_expr: Option<RustExpr>,
+    into_expr: Option<RustExpr>,
+}
+
+impl ConversionMetadata {
+    pub const fn identity() -> Self {
+        Self {
+            from_expr: None,
+            into_expr: None,
+        }
+    }
+
+    pub const fn new(from_expr: Option<RustExpr>, into_expr: Option<RustExpr>) -> Self {
+        Self {
+            from_expr,
+            into_expr,
+        }
+    }
+
+    pub const fn from_expr(self) -> Option<RustExpr> {
+        self.from_expr
+    }
+
+    pub const fn into_expr(self) -> Option<RustExpr> {
+        self.into_expr
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FieldValueSpec {
+    value_type: RustType,
+    source_value_type: RustType,
+    value_presence: FieldValuePresence,
+    conversions: ConversionMetadata,
+    default_expr: Option<RustExpr>,
+    validations: &'static [ValidationRuleId],
+}
+
+impl FieldValueSpec {
+    pub const fn new(
+        value_type: RustType,
+        source_value_type: RustType,
+        value_presence: FieldValuePresence,
+    ) -> Self {
+        Self {
+            value_type,
+            source_value_type,
+            value_presence,
+            conversions: ConversionMetadata::identity(),
+            default_expr: None,
+            validations: &[],
+        }
+    }
+
+    pub const fn with_conversions(mut self, conversions: ConversionMetadata) -> Self {
+        self.conversions = conversions;
+        self
+    }
+
+    pub const fn with_default(mut self, default_expr: RustExpr) -> Self {
+        self.default_expr = Some(default_expr);
+        self
+    }
+
+    pub const fn with_validations(mut self, validations: &'static [ValidationRuleId]) -> Self {
+        self.validations = validations;
+        self
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldVariant {
     field_name: &'static str,
     /// Rust type path for the field's value type.
@@ -507,75 +598,36 @@ pub struct FieldVariant {
     component: Option<FieldComponentVariant>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct FieldVariantBuilder {
-    field_name: &'static str,
-    value_type: Option<RustType>,
-    value_presence: Option<FieldValuePresence>,
-}
-
-impl FieldVariantBuilder {
-    pub const fn with_value_type(mut self, value_type: RustType) -> Self {
-        self.value_type = Some(value_type);
-        self
-    }
-
-    pub const fn with_value_presence(mut self, value_presence: FieldValuePresence) -> Self {
-        self.value_presence = Some(value_presence);
-        self
-    }
-
-    pub const fn hidden(self) -> FieldVariant {
-        let (field_name, value_type, value_presence) = self.finish();
-        FieldVariant {
-            field_name,
-            value_type,
-            source_value_type: value_type,
-            value_presence,
-            validations: &[],
-            default_expr: None,
-            from_expr: None,
-            into_expr: None,
-            component: None,
-        }
-    }
-
-    pub const fn component(self, component: FieldComponentVariant) -> FieldVariant {
-        let (field_name, value_type, value_presence) = self.finish();
-        let component =
-            component.with_storage_capability(value_presence.component_storage_capability());
-        FieldVariant {
-            field_name,
-            value_type,
-            source_value_type: value_type,
-            value_presence,
-            validations: &[],
-            default_expr: None,
-            from_expr: None,
-            into_expr: None,
-            component: Some(component),
-        }
-    }
-
-    const fn finish(self) -> (&'static str, RustType, FieldValuePresence) {
-        let value_type = match self.value_type {
-            Some(value_type) => value_type,
-            None => panic!("FieldVariantBuilder requires value_type"),
-        };
-        let value_presence = match self.value_presence {
-            Some(value_presence) => value_presence,
-            None => panic!("FieldVariantBuilder requires value_presence"),
-        };
-        (self.field_name, value_type, value_presence)
-    }
-}
-
 impl FieldVariant {
-    pub const fn builder(field_name: &'static str) -> FieldVariantBuilder {
-        FieldVariantBuilder {
+    pub const fn hidden(field_name: &'static str, value: FieldValueSpec) -> Self {
+        Self::from_parts(field_name, value, None)
+    }
+
+    pub const fn component(
+        field_name: &'static str,
+        value: FieldValueSpec,
+        component: FieldComponentVariant,
+    ) -> Self {
+        let component =
+            component.with_storage_capability(value.value_presence.component_storage_capability());
+        Self::from_parts(field_name, value, Some(component))
+    }
+
+    const fn from_parts(
+        field_name: &'static str,
+        value: FieldValueSpec,
+        component: Option<FieldComponentVariant>,
+    ) -> Self {
+        Self {
             field_name,
-            value_type: None,
-            value_presence: None,
+            value_type: value.value_type,
+            source_value_type: value.source_value_type,
+            value_presence: value.value_presence,
+            validations: value.validations,
+            default_expr: value.default_expr,
+            from_expr: value.conversions.from_expr,
+            into_expr: value.conversions.into_expr,
+            component,
         }
     }
 
@@ -647,29 +699,6 @@ impl FieldVariant {
         }
     }
 
-    /// Attach the source model value type when it differs from the form-side value type.
-    pub const fn with_source_value_type(mut self, source_value_type: RustType) -> Self {
-        self.source_value_type = source_value_type;
-        self
-    }
-
-    /// Attach optional source/form conversion expressions.
-    pub const fn with_conversions(
-        mut self,
-        from_expr: Option<RustExpr>,
-        into_expr: Option<RustExpr>,
-    ) -> Self {
-        self.from_expr = from_expr;
-        self.into_expr = into_expr;
-        self
-    }
-
-    /// Attach a default value expression to this field metadata.
-    pub const fn with_default(mut self, default_expr: RustExpr) -> Self {
-        self.default_expr = Some(default_expr);
-        self
-    }
-
     /// Returns true when the generated value holder stores this field as `Option<T>`.
     pub const fn value_holder_uses_option(&self) -> bool {
         self.value_presence.value_holder_uses_option()
@@ -703,12 +732,6 @@ impl FieldVariant {
     pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
         self.validations
     }
-
-    /// Attach validation rule identifiers to this field metadata.
-    pub const fn with_validations(mut self, validations: &'static [ValidationRuleId]) -> Self {
-        self.validations = validations;
-        self
-    }
 }
 
 pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
@@ -730,21 +753,29 @@ pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<St
 #[cfg(test)]
 mod tests {
     use super::{
-        ComponentSuffix, FieldComponentVariant, FieldValuePresence, FieldVariant, RustExpr,
-        RustPath, RustSyntaxKind, RustType, is_valid_component_suffix, validate_component_suffix,
+        ComponentSuffix, FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant,
+        GpuiFormShape, HolderConversionMetadata, HolderConversionShape, RustExpr, RustPath,
+        RustSyntaxKind, RustType, is_valid_component_suffix, validate_component_suffix,
     };
+
+    const fn value_spec(
+        value_type: &'static str,
+        value_presence: FieldValuePresence,
+    ) -> FieldValueSpec {
+        let value_type = RustType::from_macro_tokens_unchecked(value_type);
+        FieldValueSpec::new(value_type, value_type, value_presence)
+    }
 
     const fn shape_field(
         field_name: &'static str,
         value_type: &'static str,
         shape_path: &'static str,
     ) -> FieldVariant {
-        FieldVariant::builder(field_name)
-            .with_value_type(RustType::from_macro_tokens_unchecked(value_type))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(FieldComponentVariant::new(
-                RustPath::from_macro_tokens_unchecked(shape_path),
-            ))
+        FieldVariant::component(
+            field_name,
+            value_spec(value_type, FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(shape_path)),
+        )
     }
 
     #[test]
@@ -787,59 +818,76 @@ mod tests {
 
     #[test]
     fn prototyping_suffix_drives_component_suffix() {
-        let field = FieldVariant::builder("country")
-            .with_value_type(RustType::from_macro_tokens_unchecked("Country"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::fields::CountrySelectorState",
-                ))
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("select"))),
-            );
+        let field = FieldVariant::component(
+            "country",
+            value_spec("Country", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::fields::CountrySelectorState",
+            ))
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("select"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "country_select");
     }
 
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
-        let field = FieldVariant::builder("email")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::fields::TextInputShape",
-                ))
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input"))),
-            );
+        let field = FieldVariant::component(
+            "email",
+            value_spec("String", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::fields::TextInputShape",
+            ))
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("email_input"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "email_input");
     }
 
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
-        let field = FieldVariant::builder("tags")
-            .with_value_type(RustType::from_macro_tokens_unchecked("Vec<String>"))
-            .with_value_presence(FieldValuePresence::RequiresValue)
-            .component(
-                FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "crate::fields::TagsInputShape",
-                ))
-                .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags"))),
-            );
+        let field = FieldVariant::component(
+            "tags",
+            value_spec("Vec<String>", FieldValuePresence::RequiresValue),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::fields::TagsInputShape",
+            ))
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("tags"))),
+        );
 
         assert_eq!(field.field_name_with_component_suffix(), "tags_shape");
     }
 
     #[test]
     fn optional_presence_uses_value_holder_option() {
-        let field = FieldVariant::builder("email")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::Optional)
-            .hidden();
+        let field =
+            FieldVariant::hidden("email", value_spec("String", FieldValuePresence::Optional));
 
         assert!(field.optional());
         assert!(!field.requires_value());
         assert!(field.value_holder_uses_option());
+    }
+
+    #[test]
+    fn holder_conversion_metadata_encodes_api_shape() {
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &[],
+            RustPath::from_macro_tokens_unchecked("crate::demo"),
+            false,
+        )
+        .with_holder_conversion(HolderConversionMetadata::new(
+            HolderConversionShape::NeedsSkippedFields,
+            true,
+        ));
+
+        assert_eq!(
+            SHAPE.holder_conversion_shape(),
+            HolderConversionShape::NeedsSkippedFields
+        );
+        assert!(SHAPE.has_skipped_fields());
+        assert!(SHAPE.holder_conversion().uses_fallible_api());
+        assert!(SHAPE.holder_conversion().runtime_can_fail());
     }
 
     #[test]
@@ -850,10 +898,11 @@ mod tests {
         .with_render_component(true)
         .with_value_binding(true)
         .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
-        let field = FieldVariant::builder("email")
-            .with_value_type(RustType::from_macro_tokens_unchecked("String"))
-            .with_value_presence(FieldValuePresence::DirectStorage)
-            .component(component);
+        let field = FieldVariant::component(
+            "email",
+            value_spec("String", FieldValuePresence::DirectStorage),
+            component,
+        );
 
         assert_eq!(
             field.shape_path().map(RustPath::as_str),
