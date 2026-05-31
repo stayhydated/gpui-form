@@ -444,6 +444,10 @@ impl<'a> ResolvedField<'a> {
             .is_some_and(ComponentCapabilities::value_binding_enabled)
     }
 
+    pub fn subscribable(&self) -> bool {
+        self.value_binding()
+    }
+
     pub fn render_component(&self) -> bool {
         self.component_capabilities()
             .is_some_and(ComponentCapabilities::render_component)

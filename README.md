@@ -155,6 +155,8 @@ Common field-level helpers:
   require `into_original(skipped_value, ...)` for reconstruction.
 - `value(type = <form_type>, from_source = <expr>, into_source = <expr>)`
   lets the generated form edit a type that differs from the original field type.
+  `type = ...` is the form-side base value type, so write `type = T` rather
+  than `type = Option<T>`; source field optionality controls holder storage.
   Put it inside the field intent:
   `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]`
   or `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]`.
@@ -376,7 +378,10 @@ The block may also contain `impl` items. `value = ...` and `values(...)` emit
 `ComponentShapeFor<T>` compatibility impls for supported form-side value types.
 Each value type may be listed once. Do not combine value metadata with manual
 `ComponentShapeFor<T>` impls in the same `component_shape!` block; omit the
-metadata when a manual impl needs custom bounds or diagnostics.
+metadata when a manual impl needs custom bounds or diagnostics. Manual
+compatibility impls inside `component_shape!` must name the canonical
+`gpui_form_runtime::shape::ComponentShapeFor` trait; local or aliased traits
+named `ComponentShapeFor` are rejected as ambiguous.
 A nested `ComponentValueBinding<T>` impl is emitted with the shape. Add `value_binding;` when that wrapper should
 publish shape-level value-binding metadata for prototyping subscriptions.
 
@@ -390,7 +395,9 @@ renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from the derive or `component_shape!`,
 provide manual `ComponentShapeFor<Value>` impls for each supported form-side
 value type. Do not combine value metadata with manual `ComponentShapeFor`
-impls in the same `component_shape!` block. The shape declaration owns both policy associated types:
+impls in the same `component_shape!` block. In `component_shape!`, manual impls
+must use `gpui_form_runtime::shape::ComponentShapeFor`, not a local or aliased
+trait with the same final segment. The shape declaration owns both policy associated types:
 `ValueStoragePolicy` controls value-holder storage, and `ValueBindingPolicy` is
 usually `NoComponentValueBinding` unless the shape should inherit
 `ComponentValueBinding<T>` synchronization by default.

@@ -1,0 +1,5 @@
+error: `component_shape!` only treats manual compatibility impls as `gpui_form_runtime::shape::ComponentShapeFor`; local or aliased traits named `ComponentShapeFor` are ambiguous inside the macro block
+  --> tests/ui/component_shape_ambiguous_component_shape_for.rs:11:14
+   |
+11 |         impl ComponentShapeFor<String> for AmbiguousShape {}
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^

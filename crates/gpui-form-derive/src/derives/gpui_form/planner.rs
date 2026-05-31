@@ -1,4 +1,4 @@
-use gpui_form_codegen::components::RequiredValue;
+use gpui_form_codegen::components::ComponentStoragePolicy;
 use syn::DeriveInput;
 
 use crate::derives::gpui_form::components::generate_component_field;
@@ -76,7 +76,7 @@ pub fn plan_form(
             },
         };
 
-        let (component, required_value) = match field.component() {
+        let (component, storage_policy) = match field.component() {
             Some(component) => {
                 let component = generate_component_field(
                     &field_name,
@@ -84,13 +84,16 @@ pub fn plan_form(
                     component.component,
                     component.rendered.context,
                 )?;
-                let required_value = component.required_value.clone();
-                (Some(component), required_value)
+                let storage_policy = component.storage_policy.clone();
+                (Some(component), storage_policy)
             },
-            None => (None, RequiredValue::explicit(false)),
+            None => (None, ComponentStoragePolicy::direct()),
         };
-        let storage =
-            HolderStoragePlan::from_required_value(&field_name, was_optional, required_value)?;
+        let storage = HolderStoragePlan::from_component_storage_policy(
+            &field_name,
+            was_optional,
+            storage_policy,
+        )?;
 
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info

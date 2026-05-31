@@ -3,10 +3,11 @@ use quote::{format_ident, quote, quote_spanned};
 use std::collections::HashMap;
 use syn::{DeriveInput, Type};
 
-use crate::derives::gpui_form::ir::{
-    DeriveContext, FieldPlan, HolderConversionMode, HolderConversionPlan, HolderFieldIr,
-    HolderStoragePlan,
+use crate::derives::gpui_form::holder_plan::{
+    HolderConversionMode, HolderFieldPlan, HolderOriginalFieldPlan, PresentFieldPlan,
+    ValueHolderPlan,
 };
+use crate::derives::gpui_form::ir::{DeriveContext, HolderFieldIr, HolderStoragePlan};
 use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
 
 type ValueHolderResult<T> = syn::Result<T>;
@@ -567,14 +568,14 @@ fn needs_into_conversion(field: &HolderFieldIr) -> bool {
 }
 
 fn conversion_signature_assertions(
-    fields: &[FieldPlan],
+    fields: &[HolderFieldPlan<'_>],
     wrapped_ident: &syn::Ident,
     original_impl_generics: TokenStream,
     where_clause: TokenStream,
 ) -> ValueHolderResult<TokenStream> {
     let mut assertions = Vec::new();
 
-    for shared in fields.iter().filter_map(FieldPlan::shared) {
+    for shared in fields.iter().map(|plan| plan.field) {
         let field_name = shared.field_name();
         let source_type = &shared.source_value_type;
         let form_type = &shared.form_type;
@@ -873,22 +874,24 @@ fn present_field_variant_ident(field_name: &syn::Ident) -> syn::Ident {
 fn present_field_variant_type_tokens<'a>(
     field: &'a HolderFieldIr,
     present_lifetime: &'a syn::Lifetime,
+    present: &PresentFieldPlan,
 ) -> TokenStream {
     let source_type = &field.source_value_type;
 
-    if field.storage().is_shape_policy() || needs_into_conversion(field) {
-        quote! { #source_type }
-    } else {
+    if present.borrows_source_value {
         quote! { &#present_lifetime #source_type }
+    } else {
+        quote! { #source_type }
     }
 }
 
 fn generate_present_field_variant(
     field: &HolderFieldIr,
     present_lifetime: &syn::Lifetime,
+    present: &PresentFieldPlan,
 ) -> TokenStream {
     let variant_ident = present_field_variant_ident(field.field_name());
-    let variant_type = present_field_variant_type_tokens(field, present_lifetime);
+    let variant_type = present_field_variant_type_tokens(field, present_lifetime, present);
 
     quote! {
         #variant_ident(#variant_type)
@@ -1079,14 +1082,14 @@ fn required_validation_builder_tokens(
 pub(super) fn generate_value_holder(
     context: &DeriveContext,
     original_input: &DeriveInput,
-    fields: &[FieldPlan],
-    conversion_plan: &HolderConversionPlan,
+    holder_plan: &ValueHolderPlan<'_>,
     enable_koruma: bool,
     enable_koruma_fluent: bool,
 ) -> ValueHolderResult<TokenStream> {
-    let has_skipped_fields = fields.iter().any(|f| f.is_skipped());
+    let has_skipped_fields = holder_plan.has_skipped_fields();
+    let rendered_field_plans = holder_plan.rendered_fields();
     let rendered_fields: Vec<&HolderFieldIr> =
-        fields.iter().filter_map(FieldPlan::shared).collect();
+        rendered_field_plans.iter().map(|plan| plan.field).collect();
     let original_ident = &original_input.ident;
     let wrapped_ident = format_ident!("{}FormValueHolder", original_ident);
     let storage_ident = wrapped_ident.clone();
@@ -1099,16 +1102,13 @@ pub(super) fn generate_value_holder(
         format_ident!("__{}ValueStoragePolicyValidationTarget", wrapped_ident);
     let required_policy_validator_target_trait_ident =
         format_ident!("__{}ValueStoragePolicyValidationTargetTrait", wrapped_ident);
-    let has_any_required = rendered_fields
-        .iter()
-        .any(|f| f.needs_required_validation());
-    let has_shape_policy_required = rendered_fields.iter().any(|shared| {
-        !shared.was_optional && shared.storage.is_shape_policy() && !shared.validation.is_nested
-    });
+    let has_any_required = holder_plan.has_any_required();
+    let has_shape_policy_required = holder_plan.has_shape_policy_required();
 
     let mut field_attrs: HashMap<String, Vec<TokenStream>> = HashMap::new();
 
-    for f in &rendered_fields {
+    for planned_field in rendered_field_plans {
+        let f = planned_field.field;
         let field_name = f.field_name().to_string();
 
         if enable_koruma {
@@ -1120,9 +1120,9 @@ pub(super) fn generate_value_holder(
             )?;
 
             let validation = f.validation();
-            let has_existing_validations = !validation.field_validators.is_empty()
-                || !validation.element_validators.is_empty();
-            let has_newtype = validation.is_newtype;
+            let validation_plan = &planned_field.validation;
+            let has_existing_validations = validation_plan.has_existing_validations;
+            let has_newtype = validation_plan.is_newtype;
 
             if required_validation.is_some() || has_existing_validations || has_newtype {
                 let mut koruma_items: Vec<TokenStream> = Vec::new();
@@ -1149,10 +1149,10 @@ pub(super) fn generate_value_holder(
                 }
 
                 // Add newtype/nested as separate attributes
-                if validation.is_newtype {
+                if validation_plan.is_newtype {
                     attrs.insert(0, quote! { #[koruma(newtype)] });
                 }
-                if validation.is_nested {
+                if validation_plan.is_nested {
                     attrs.insert(0, quote! { #[koruma(nested)] });
                 }
 
@@ -1197,29 +1197,33 @@ pub(super) fn generate_value_holder(
     let conversion_error_type = generate_conversion_error_type(&conversion_error_ident);
     let (original_impl_generics, ty_generics, where_clause) =
         original_input.generics.split_for_impl();
-    let conversion_signature_assertions = conversion_signature_assertions(
-        fields,
-        &wrapped_ident,
-        quote! { #original_impl_generics },
-        quote! { #where_clause },
-    )?;
+    let conversion_signature_assertions = if holder_plan.has_any_conversion() {
+        conversion_signature_assertions(
+            rendered_field_plans,
+            &wrapped_ident,
+            quote! { #original_impl_generics },
+            quote! { #where_clause },
+        )?
+    } else {
+        quote! {}
+    };
     let holder_declaration_generics = original_input.generics.clone();
     let holder_impl_generics = original_input.generics.clone();
     let mut holder_where_clause = where_clause.cloned();
-    for f in &rendered_fields {
-        if f.was_optional {
-            continue;
-        }
+    if holder_plan.has_shape_policy_storage() {
+        for planned_field in rendered_field_plans {
+            let f = planned_field.field;
+            if planned_field.storage.was_optional || !planned_field.storage.is_shape_policy {
+                continue;
+            }
 
-        if f.storage().is_shape_policy() {
             let base_type = form_base_type(f);
             let policy = shape_policy_type_tokens(context, f)?;
             let runtime_crate = context.paths.gpui_form_facade_runtime();
-            let validation = f.validation();
+            let validation = &planned_field.validation;
             let wc = holder_where_clause.get_or_insert_with(|| syn::parse_quote!(where));
             if needs_koruma_derive
-                && (!validation.field_validators.is_empty()
-                    || !validation.element_validators.is_empty()
+                && (validation.has_existing_validations
                     || validation.is_nested
                     || validation.is_newtype)
             {
@@ -1238,11 +1242,9 @@ pub(super) fn generate_value_holder(
     }
     let (holder_impl_generics, holder_ty_generics, _) = holder_impl_generics.split_for_impl();
     let mut default_storage_assertions: Vec<TokenStream> = Vec::new();
-    for f in &rendered_fields {
-        if !f.was_optional && f.default_expr().is_none() {
-            let Some(shape) = f.storage().shape_policy() else {
-                continue;
-            };
+    for planned_field in rendered_field_plans {
+        if let Some(shape) = planned_field.default.shape_default_policy {
+            let f = planned_field.field;
             let base_type = form_base_type(f);
             let runtime_crate = context.paths.gpui_form_facade_runtime();
             let assert_ident = format_ident!(
@@ -1301,9 +1303,9 @@ pub(super) fn generate_value_holder(
         syn::GenericParam::Lifetime(syn::parse_quote!('__gpui_form_present)),
     );
     let (_, present_field_ty_generics, _) = present_field_generics.split_for_impl();
-    let present_field_variants: Vec<TokenStream> = rendered_fields
+    let present_field_variants: Vec<TokenStream> = rendered_field_plans
         .iter()
-        .map(|f| generate_present_field_variant(f, &present_lifetime))
+        .map(|plan| generate_present_field_variant(plan.field, &present_lifetime, &plan.present))
         .collect();
     let present_field_enum = quote! {
         #[derive(Debug)]
@@ -1317,30 +1319,33 @@ pub(super) fn generate_value_holder(
         .collect::<ValueHolderResult<Vec<_>>>()?;
 
     let from_where_clause = holder_where_clause.clone();
-    let skipped_params: Vec<TokenStream> = fields
+    let skipped_params: Vec<TokenStream> = holder_plan
+        .skipped_fields()
         .iter()
-        .filter(|f| f.is_skipped())
         .map(|f| {
-            let field_name = f.field_name();
-            let ty = f.original_type();
+            let field_name = &f.field.field_name;
+            let ty = &f.field.original_type;
             quote! { #field_name: #ty }
         })
         .collect();
 
-    let into_original_fields: Vec<TokenStream> = fields
+    let into_original_fields: Vec<TokenStream> = holder_plan
+        .original_fields()
         .iter()
-        .map(|f| -> ValueHolderResult<TokenStream> {
-            if f.is_skipped() {
-                let field_name = f.field_name();
-                Ok(quote! { #field_name })
-            } else {
-                let shared = f.shared().expect("non-skipped fields carry shared plans");
-                try_from_field_tokens(context, shared, quote! { self }, &conversion_error_ident)
+        .map(|field| -> ValueHolderResult<TokenStream> {
+            match field {
+                HolderOriginalFieldPlan::Skipped(skipped) => {
+                    let field_name = &skipped.field_name;
+                    Ok(quote! { #field_name })
+                },
+                HolderOriginalFieldPlan::Rendered(shared) => {
+                    try_from_field_tokens(context, shared, quote! { self }, &conversion_error_ident)
+                },
             }
         })
         .collect::<ValueHolderResult<Vec<_>>>()?;
 
-    let skipped_fields_impl = match conversion_plan.mode() {
+    let skipped_fields_impl = match holder_plan.conversion_mode() {
         HolderConversionMode::SkippedFields => {
             quote! {
                 #present_field_enum
@@ -1449,12 +1454,9 @@ pub(super) fn generate_value_holder(
     };
 
     let mut default_where_clause = holder_where_clause.clone();
-    for f in &rendered_fields {
-        if f.was_optional || f.default_expr().is_some() {
-            continue;
-        }
-
-        if f.storage().is_shape_policy() {
+    for planned_field in rendered_field_plans {
+        if planned_field.default.shape_default_policy.is_some() {
+            let f = planned_field.field;
             let base_type = form_base_type(f);
             let policy = shape_policy_type_tokens(context, f)?;
             let runtime_crate = context.paths.gpui_form_facade_runtime();

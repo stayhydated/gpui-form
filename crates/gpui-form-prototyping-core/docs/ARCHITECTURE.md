@@ -87,6 +87,11 @@ Imports are tracked close to where they are needed:
 - component-specific imports live in each field generator
 - `ImportSet` deduplicates and groups them into compact `use` statements
 
+`FormShapeAdapter::required_imports()` resolves the full shape through
+`ResolvedGpuiFormShape` before collecting imports, matching the main generation
+path and surfacing malformed metadata as `PrototypingError` instead of
+opportunistically parsing individual raw fields.
+
 This avoids layouts having to rediscover which imports the generated fragments
 need.
 

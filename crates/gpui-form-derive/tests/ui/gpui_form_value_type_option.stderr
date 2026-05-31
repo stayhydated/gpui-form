@@ -1,0 +1,5 @@
+error: `value(type = ...)` expects the form-side base value type, not Option<T>; use type = T and let the source field optionality control holder storage
+ --> tests/ui/gpui_form_value_type_option.rs:6:9
+  |
+6 |         type = Option<String>,
+  |         ^^^^

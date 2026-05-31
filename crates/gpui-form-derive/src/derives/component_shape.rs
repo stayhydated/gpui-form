@@ -124,14 +124,50 @@ fn phantom_type_tokens(generics: &Generics) -> TokenStream {
     }
 }
 
-fn has_explicit_component_shape_for_impl(impls: &[ItemImpl]) -> bool {
-    impls.iter().any(|impl_item| {
-        impl_item
-            .trait_
-            .as_ref()
-            .and_then(|(_, path, _)| path.segments.last())
-            .is_some_and(|segment| segment.ident == "ComponentShapeFor")
-    })
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum NestedShapeImplKind {
+    ComponentShapeFor,
+    ComponentValueBinding,
+    AmbiguousComponentShapeFor,
+    Other,
+}
+
+fn classify_nested_shape_impl(impl_item: &ItemImpl) -> NestedShapeImplKind {
+    let Some((_, path, _)) = impl_item.trait_.as_ref() else {
+        return NestedShapeImplKind::Other;
+    };
+    let Some(last) = path.segments.last() else {
+        return NestedShapeImplKind::Other;
+    };
+
+    if last.ident == "ComponentShapeFor" {
+        if is_canonical_runtime_shape_trait(path, "ComponentShapeFor") {
+            NestedShapeImplKind::ComponentShapeFor
+        } else {
+            NestedShapeImplKind::AmbiguousComponentShapeFor
+        }
+    } else if last.ident == "ComponentValueBinding"
+        && is_canonical_runtime_shape_trait(path, "ComponentValueBinding")
+    {
+        NestedShapeImplKind::ComponentValueBinding
+    } else {
+        NestedShapeImplKind::Other
+    }
+}
+
+fn is_canonical_runtime_shape_trait(path: &syn::Path, trait_ident: &str) -> bool {
+    let mut segments = path.segments.iter().rev();
+    let Some(last) = segments.next() else {
+        return false;
+    };
+    let Some(shape) = segments.next() else {
+        return false;
+    };
+    let Some(runtime) = segments.next() else {
+        return false;
+    };
+
+    last.ident == trait_ident && shape.ident == "shape" && runtime.ident == "gpui_form_runtime"
 }
 
 fn expand(input: ComponentShapeInput) -> TokenStream {
@@ -165,7 +201,27 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
             Err(error) => return error.to_compile_error(),
         };
     let metadata_impl_items = metadata.impl_items_tokens(&runtime_crate, render_component_assoc);
-    let component_shape_for_impls = if has_explicit_component_shape_for_impl(&impls) {
+    let nested_impl_kinds = impls
+        .iter()
+        .map(classify_nested_shape_impl)
+        .collect::<Vec<_>>();
+    if let Some(impl_item) = impls.iter().find(|impl_item| {
+        classify_nested_shape_impl(impl_item) == NestedShapeImplKind::AmbiguousComponentShapeFor
+    }) {
+        let path = impl_item
+            .trait_
+            .as_ref()
+            .map(|(_, path, _)| path)
+            .expect("ambiguous nested impls always have a trait path");
+        return syn::Error::new_spanned(
+            path,
+            "`component_shape!` only treats manual compatibility impls as `gpui_form_runtime::shape::ComponentShapeFor`; local or aliased traits named `ComponentShapeFor` are ambiguous inside the macro block",
+        )
+        .to_compile_error();
+    }
+    let component_shape_for_impls = if nested_impl_kinds
+        .contains(&NestedShapeImplKind::ComponentShapeFor)
+    {
         if let Some(value) = metadata.first_value() {
             return syn::Error::new_spanned(
                 value,
@@ -213,7 +269,7 @@ pub fn function(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 #[cfg(test)]
 mod tests {
-    use super::{ComponentShapeInput, expand};
+    use super::{ComponentShapeInput, NestedShapeImplKind, classify_nested_shape_impl, expand};
     use quote::quote;
 
     fn compact_tokens(tokens: &str) -> String {
@@ -320,6 +376,39 @@ mod tests {
         assert!(
             expanded.contains("cannot be combined with manual `ComponentShapeFor` impls"),
             "value metadata plus manual ComponentShapeFor impl should emit a compile error: {expanded}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_rejects_ambiguous_component_shape_for_trait() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+
+                impl ComponentShapeFor<String> for InputShape {}
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input).to_string();
+
+        assert!(
+            expanded.contains("local or aliased traits named `ComponentShapeFor` are ambiguous"),
+            "ambiguous ComponentShapeFor impl should emit a targeted compile error: {expanded}"
+        );
+    }
+
+    #[test]
+    fn nested_impl_classification_accepts_value_binding_impl() {
+        let impl_item: syn::ItemImpl = syn::parse_quote! {
+            impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T> {
+                type Event = crate::InputEvent;
+            }
+        };
+
+        assert_eq!(
+            classify_nested_shape_impl(&impl_item),
+            NestedShapeImplKind::ComponentValueBinding
         );
     }
 

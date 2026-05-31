@@ -1,7 +1,8 @@
-use gpui_form_codegen::components::{ComponentFieldIr, RequiredValue, ResolvedComponentShape};
+use gpui_form_codegen::components::{
+    ComponentFieldIr, ComponentStoragePolicy, ResolvedComponentShape,
+};
 use koruma_derive_core::ValidationInfo;
-use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use proc_macro2::Span;
 use syn::{Expr, Ident, Path, Type};
 
 #[derive(Clone, Debug)]
@@ -126,27 +127,19 @@ pub enum HolderStoragePlan {
 }
 
 impl HolderStoragePlan {
-    pub fn from_required_value(
+    pub fn from_component_storage_policy(
         _field_name: &Ident,
         was_optional: bool,
-        required_value: RequiredValue,
+        storage_policy: ComponentStoragePolicy,
     ) -> syn::Result<Self> {
         if was_optional {
             Ok(Self::OriginallyOptional)
         } else {
-            match required_value {
-                RequiredValue::Explicit(true) => Ok(Self::RequiredValue),
-                RequiredValue::Explicit(false) => Ok(Self::Direct),
-                RequiredValue::Shape(shape) => Ok(Self::ShapePolicy { shape }),
+            match storage_policy {
+                ComponentStoragePolicy::Required => Ok(Self::RequiredValue),
+                ComponentStoragePolicy::Direct => Ok(Self::Direct),
+                ComponentStoragePolicy::ShapeOwned { shape } => Ok(Self::ShapePolicy { shape }),
             }
-        }
-    }
-
-    pub fn required_value(&self) -> RequiredValue {
-        match self {
-            Self::OriginallyOptional | Self::Direct => RequiredValue::explicit(false),
-            Self::RequiredValue => RequiredValue::explicit(true),
-            Self::ShapePolicy { shape, .. } => RequiredValue::Shape(shape.clone()),
         }
     }
 
@@ -340,14 +333,6 @@ impl FieldPlan {
         }
     }
 
-    pub fn original_type(&self) -> &Type {
-        match self {
-            Self::Skipped(plan) => &plan.original_type,
-            Self::Hidden(plan) => &plan.shared.original_type,
-            Self::Component(plan) => &plan.shared.original_type,
-        }
-    }
-
     pub fn component(&self) -> Option<&ResolvedComponentShape> {
         match self {
             Self::Component(plan) => Some(&plan.component.shape),
@@ -378,132 +363,4 @@ impl FieldPlan {
         ) && !shared.was_optional
             && !shared.validation.is_nested
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum HolderConversionMode {
-    Infallible,
-    FallibleRequired,
-    SkippedFields,
-}
-
-#[derive(Clone, Debug)]
-enum ShapePolicyPredicate {
-    RequiresValue { shape: Path },
-}
-
-impl ShapePolicyPredicate {
-    fn to_tokens(&self, context: &DeriveContext) -> TokenStream {
-        let runtime_crate = context.paths.gpui_form_facade_runtime();
-        match self {
-            Self::RequiresValue { shape } => {
-                quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
-                }
-            },
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-enum ConversionFallibility {
-    Never,
-    Always,
-    DependsOnShape(Vec<ShapePolicyPredicate>),
-}
-
-impl ConversionFallibility {
-    fn to_tokens(&self, context: &DeriveContext) -> TokenStream {
-        match self {
-            Self::Never => quote! { false },
-            Self::Always => quote! { true },
-            Self::DependsOnShape(predicates) => {
-                let predicates = predicates
-                    .iter()
-                    .map(|predicate| predicate.to_tokens(context))
-                    .collect::<Vec<_>>();
-                quote! { false #(|| #predicates)* }
-            },
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct HolderConversionPlan {
-    mode: HolderConversionMode,
-    fallibility: ConversionFallibility,
-}
-
-impl HolderConversionPlan {
-    pub fn mode(&self) -> HolderConversionMode {
-        self.mode
-    }
-
-    pub fn can_fail_tokens(&self, context: &DeriveContext) -> TokenStream {
-        self.fallibility.to_tokens(context)
-    }
-
-    pub fn metadata_tokens(&self, context: &DeriveContext) -> TokenStream {
-        let facade_crate = &context.paths.gpui_form;
-        let shape = match self.mode {
-            HolderConversionMode::Infallible => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::Infallible }
-            },
-            HolderConversionMode::FallibleRequired => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::FallibleRequired }
-            },
-            HolderConversionMode::SkippedFields => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::NeedsSkippedFields }
-            },
-        };
-        let runtime_can_fail = self.can_fail_tokens(context);
-
-        quote! {
-            #facade_crate::schema::registry::HolderConversionMetadata::new(
-                #shape,
-                #runtime_can_fail
-            )
-        }
-    }
-}
-
-pub fn holder_conversion_plan(fields: &[FieldPlan]) -> syn::Result<HolderConversionPlan> {
-    let mut predicates = Vec::new();
-    let mut has_maybe_fallible_field = false;
-    let mut has_hard_fallible_field = false;
-    let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
-
-    for field in fields.iter().filter_map(FieldPlan::shared) {
-        if field.default_expr().is_some() {
-            continue;
-        }
-
-        if matches!(field.storage(), HolderStoragePlan::RequiredValue) {
-            has_maybe_fallible_field = true;
-            has_hard_fallible_field = true;
-        } else if let Some(shape) = field.storage().shape_policy() {
-            has_maybe_fallible_field = true;
-            predicates.push(ShapePolicyPredicate::RequiresValue {
-                shape: shape.clone(),
-            });
-        }
-    }
-
-    let fallibility = if has_skipped_fields || has_hard_fallible_field {
-        ConversionFallibility::Always
-    } else if predicates.is_empty() {
-        ConversionFallibility::Never
-    } else {
-        ConversionFallibility::DependsOnShape(predicates)
-    };
-    let mode = if has_skipped_fields {
-        HolderConversionMode::SkippedFields
-    } else if has_maybe_fallible_field {
-        HolderConversionMode::FallibleRequired
-    } else {
-        HolderConversionMode::Infallible
-    };
-
-    Ok(HolderConversionPlan { mode, fallibility })
 }

@@ -172,40 +172,37 @@ impl<'a> FormShapeAdapter<'a> {
     /// Starts with imports needed by prototyping-core's own generated fragments,
     /// then asks each field's generator for its own requirements. The result can
     /// be rendered as grouped `use` statements via [`ImportSet::to_token_stream`].
-    pub fn required_imports(&self) -> ImportSet {
+    pub fn required_imports(&self) -> PrototypingResult<ImportSet> {
+        let resolved_shape =
+            ResolvedGpuiFormShape::new(self.shape_data).map_err(map_resolve_error)?;
         let mut set = ImportSet::default();
         set.extend_items(FRAGMENT_IMPORTS);
-        if self
-            .shape_data
-            .fields
+        if resolved_shape
+            .fields()
             .iter()
-            .any(|field| field.is_component())
+            .any(ResolvedField::is_component)
         {
             set.extend_items(FIELD_FRAGMENT_IMPORTS);
         }
         if self.shape_data.has_validations() {
             set.extend_items(VALIDATION_FRAGMENT_IMPORTS);
         }
-        if self
-            .shape_data
-            .fields
+        if resolved_shape
+            .fields()
             .iter()
-            .any(|field| field.subscribable())
+            .any(ResolvedField::subscribable)
         {
             set.extend_items(SUBSCRIPTION_IMPORTS);
         }
-        for field in self
-            .shape_data
-            .fields
+        for resolved in resolved_shape
+            .fields()
             .iter()
             .filter(|field| field.is_component())
         {
             let generator = field_generator();
-            if let Ok(resolved) = ResolvedField::new(field) {
-                set.extend(generator.generate_imports(&resolved));
-            }
+            set.extend(generator.generate_imports(resolved));
         }
-        set
+        Ok(set)
     }
 
     /// Compute all token-stream fragments and identifiers for this form.
@@ -583,6 +580,38 @@ mod tests {
             PrototypingError::InvalidPath {
                 kind: "source module path",
                 value: "demo::".to_string(),
+                error: "unexpected end of input, expected identifier".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn required_imports_resolves_shape_metadata_once() {
+        const FIELDS: [FieldVariant; 1] = [component_field(
+            "country",
+            "CountryCode",
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::"))
+                .with_render_component(true)
+                .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
+            false,
+        );
+
+        let error = match FormShapeAdapter::new(&SHAPE).required_imports() {
+            Ok(_) => panic!("required imports should resolve metadata before generating imports"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error,
+            PrototypingError::InvalidFieldPath {
+                field_name: "country".to_string(),
+                kind: "component shape path",
+                value: "crate::".to_string(),
                 error: "unexpected end of input, expected identifier".to_string(),
             }
         );

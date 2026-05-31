@@ -163,7 +163,9 @@ block may also contain `impl` items.
 Use `value = ...` / `values(...)` for simple compatibility impls, or omit value
 metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
 shape needs custom bounds or diagnostics. Do not mix the two forms in one
-`component_shape!` block.
+`component_shape!` block. Manual compatibility impls inside `component_shape!`
+must use the canonical `gpui_form_runtime::shape::ComponentShapeFor` path;
+local or aliased traits named `ComponentShapeFor` are ambiguous and rejected.
 
 Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
 `#[gpui_form(component(...))]` field shape. `#[derive(GpuiForm)]` requires the

@@ -1,7 +1,6 @@
 use darling::FromDeriveInput as _;
 use gpui_form_codegen::{
     CratePaths,
-    components::RequiredValue,
     metadata::{optional_rust_expr_tokens, rust_expr_tokens, rust_type_tokens},
 };
 use proc_macro2::TokenStream;
@@ -10,9 +9,10 @@ use syn::DeriveInput;
 use syn::GenericParam;
 
 use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
+use crate::derives::gpui_form::holder_plan::ValueHolderPlan;
 use crate::derives::gpui_form::intent::ComponentStruct;
 use crate::derives::gpui_form::ir::{
-    ComponentFieldPlan, DeriveContext, FieldPlan, ValidationRule, holder_conversion_plan,
+    ComponentFieldPlan, DeriveContext, FieldPlan, HolderStoragePlan, ValidationRule,
 };
 use crate::derives::gpui_form::planner::plan_form;
 use crate::derives::gpui_form::structs::GpuiFormOptions;
@@ -20,23 +20,37 @@ use crate::derives::gpui_form::value_holder::generate_value_holder;
 
 fn field_value_presence_tokens(
     context: &DeriveContext,
-    was_optional: bool,
-    required_value: &RequiredValue,
+    storage: &HolderStoragePlan,
 ) -> TokenStream {
     let facade_crate = &context.paths.gpui_form;
-    if was_optional {
-        quote! {
-            #facade_crate::schema::registry::FieldValuePresence::Optional
-        }
-    } else {
-        let requires_value_tokens = required_value.metadata_tokens();
-        quote! {
-            if #requires_value_tokens {
+    match storage {
+        HolderStoragePlan::OriginallyOptional => {
+            quote! {
+                #facade_crate::schema::registry::FieldValuePresence::Optional
+            }
+        },
+        HolderStoragePlan::RequiredValue => {
+            quote! {
                 #facade_crate::schema::registry::FieldValuePresence::RequiresValue
-            } else {
+            }
+        },
+        HolderStoragePlan::Direct => {
+            quote! {
                 #facade_crate::schema::registry::FieldValuePresence::DirectStorage
             }
-        }
+        },
+        HolderStoragePlan::ShapePolicy { shape } => {
+            let runtime_crate = context.paths.gpui_form_facade_runtime();
+            quote! {
+                if <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                    as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
+                {
+                    #facade_crate::schema::registry::FieldValuePresence::RequiresValue
+                } else {
+                    #facade_crate::schema::registry::FieldValuePresence::DirectStorage
+                }
+            }
+        },
     }
 }
 
@@ -155,16 +169,15 @@ pub fn expand_gpui_form(
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
         let empty_fields: Vec<FieldPlan> = Vec::new();
-        let conversion_plan = match holder_conversion_plan(&empty_fields) {
-            Ok(conversion_plan) => conversion_plan,
+        let holder_plan = match ValueHolderPlan::new(&empty_fields) {
+            Ok(holder_plan) => holder_plan,
             Err(error) => return error.to_compile_error(),
         };
-        let conversion_metadata = conversion_plan.metadata_tokens(&context);
+        let conversion_metadata = holder_plan.conversion_metadata_tokens(&context);
         let value_holder_tokens = match generate_value_holder(
             &context,
             &original_input,
-            &empty_fields,
-            &conversion_plan,
+            &holder_plan,
             enable_koruma,
             enable_koruma_fluent,
         ) {
@@ -249,23 +262,22 @@ pub fn expand_gpui_form(
         .map(|field| component_base_declaration_tokens(&context, field))
         .collect();
     let field_plans = form_plan.fields;
-    let conversion_plan = match holder_conversion_plan(&field_plans) {
-        Ok(conversion_plan) => conversion_plan,
+    let holder_plan = match ValueHolderPlan::new(&field_plans) {
+        Ok(holder_plan) => holder_plan,
         Err(error) => return error.to_compile_error(),
     };
 
     let value_holder_tokens = match generate_value_holder(
         &context,
         &original_input,
-        &field_plans,
-        &conversion_plan,
+        &holder_plan,
         effective_enable_koruma,
         enable_koruma_fluent,
     ) {
         Ok(value_holder_tokens) => value_holder_tokens,
         Err(error) => return error.to_compile_error(),
     };
-    let conversion_metadata = conversion_plan.metadata_tokens(&context);
+    let conversion_metadata = holder_plan.conversion_metadata_tokens(&context);
 
     let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()
@@ -277,11 +289,7 @@ pub fn expand_gpui_form(
             let component_def = field.component()?;
             let shared = field.shared()?;
             let field_name_str = field.field_name().to_string();
-            let value_presence_tokens = field_value_presence_tokens(
-                &context,
-                shared.was_optional,
-                &shared.storage.required_value(),
-            );
+            let value_presence_tokens = field_value_presence_tokens(&context, &shared.storage);
 
             let field_type_tokens = rust_type_tokens(&facade_crate, &shared.form_type);
             let source_value_type_tokens =

@@ -1,7 +1,7 @@
 use darling::FromMeta;
 use proc_macro2::Span;
 use syn::{
-    Expr, Ident, Path, Token,
+    Expr, Ident, Path, Token, Type,
     parse::{Parse, ParseStream},
 };
 
@@ -231,6 +231,7 @@ impl ParsedValueOptions {
                 "expected `type = ...`, `from_source = ...`, or `into_source = ...` in `value(...)`",
             )),
             (Some(form_type), Some(from_source), Some(into_source)) => {
+                reject_option_form_type_override(&form_type.value.0, form_type.span)?;
                 Ok(RenderedValueIntent::Converted(ConvertedValueIntent {
                     form_type,
                     from_source,
@@ -253,6 +254,35 @@ impl ParsedValueOptions {
                 into_source.span,
                 "`into_source = ...` requires `type = ...` in the same `value(...)` option",
             )),
+        }
+    }
+}
+
+fn reject_option_form_type_override(ty: &Type, span: Span) -> syn::Result<()> {
+    let ty = peel_type_wrappers(ty);
+    if let Type::Path(type_path) = ty
+        && type_path.qself.is_none()
+        && type_path
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "Option")
+    {
+        return Err(syn::Error::new(
+            span,
+            "`value(type = ...)` expects the form-side base value type, not Option<T>; use type = T and let the source field optionality control holder storage",
+        ));
+    }
+
+    Ok(())
+}
+
+fn peel_type_wrappers(mut ty: &Type) -> &Type {
+    loop {
+        match ty {
+            Type::Group(group) => ty = &group.elem,
+            Type::Paren(paren) => ty = &paren.elem,
+            _ => return ty,
         }
     }
 }
@@ -318,6 +348,25 @@ mod tests {
             error
                 .to_string()
                 .contains("requires an explicit `into_source = ...` conversion"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn raw_value_options_reject_option_type_override() {
+        let error = parse_options(quote! {
+            hidden(value(
+                type = Option<String>,
+                from_source = to_form,
+                into_source = to_source,
+            ))
+        })
+        .expect_err("Option<T> form type override should fail");
+
+        assert!(
+            error
+                .to_string()
+                .contains("expects the form-side base value type, not Option<T>"),
             "unexpected error: {error}"
         );
     }

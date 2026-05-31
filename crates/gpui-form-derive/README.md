@@ -118,7 +118,9 @@ Behavior notes:
   `gpui_form::runtime::shape`; normal application crates do not need
   `gpui-form-runtime` directly just because a field uses a component shape
 - `value(type = ..., from_source = ..., into_source = ...)` lets the generated
-  holder edit a type that differs from the original model field
+  holder edit a type that differs from the original model field. The `type = ...`
+  option is the form-side base value type; use `type = T`, not
+  `type = Option<T>`, even when the source field is optional.
 - `gpui_form_collection::input::Input::<_>`,
   `gpui_form_collection::number_input::NumberInput::<_>`, and
   `gpui_form_collection::otp_input::OtpInput::<_>` prototyping code parse
@@ -257,7 +259,9 @@ contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
 for `value = ...` / `values(...)` metadata. Omit value metadata when the block
 contains a manual `ComponentShapeFor` impl with custom bounds or diagnostics.
 Combining value metadata with manual `ComponentShapeFor` impls is rejected so
-compatibility behavior stays explicit.
+compatibility behavior stays explicit. Manual compatibility impls inside the
+macro block must name `gpui_form_runtime::shape::ComponentShapeFor`; local or
+aliased traits named `ComponentShapeFor` are rejected as ambiguous.
 
 ## Feature Flags
 

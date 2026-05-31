@@ -60,7 +60,8 @@ date pickers, or any other component family.
 
 - the generated component field identifier
 - the resolved component shape path and field value type
-- the shape-owned required-value policy
+- the component storage policy, such as direct storage, required storage, or a
+  shape-owned value-storage policy projection
 
 `gpui-form-codegen` does not emit `FormFields` or `FormComponents` layout token
 fragments. `gpui-form-derive` renders those final declarations from

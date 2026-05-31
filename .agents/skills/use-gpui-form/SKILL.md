@@ -47,7 +47,9 @@ helpers and component-specific derives explicitly:
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
    `#[gpui_form(component(Shape, value(type = ..., from_source = ..., into_source = ...), default = ...))]`
    when the UI edits a form-side type that differs from the model field. Do not
-   combine `skip` with component or hidden intent on the same field. Text input
+   use `Option<T>` in `value(type = ...)`; write the form-side base type `T`
+   and let the source field optionality control holder storage. Do not combine
+   `skip` with component or hidden intent on the same field. Text input
    prototyping parses non-`String` form-side types with `FromStr`.
 7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
    `inventory` feature is enabled; generic forms cannot register concrete

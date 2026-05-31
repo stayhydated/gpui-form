@@ -30,6 +30,8 @@ that crate's `derive` feature is enabled.
   type normalization or holder/component planning
 - `src/derives/gpui_form/ir.rs`: normalized semantic form/field IR shared by
   planning, value-holder emission, inventory emission, and type checks
+- `src/derives/gpui_form/holder_plan.rs`: value-holder subplans for storage,
+  defaults, holder conversion, validation, and present-field snapshots
 - `src/derives/gpui_form/structs.rs`: macro entry options passed from
   `src/lib.rs`
 - `src/derives/gpui_form/expansion.rs`: top-level `GpuiForm` expansion pipeline
@@ -118,13 +120,23 @@ Important behaviors:
   holder/source conversion, typed present-field snapshots, and required validation builder
   selection through a shared storage strategy instead of duplicating those
   decisions at each call site
+- `ValueHolderPlan` collects per-field subplans before token rendering so
+  generated holder code can consume semantic storage/default/conversion/
+  validation/present-field facts instead of re-deriving broad field facts from
+  `FieldPlan`. It also preserves skipped-field and original-field ordering for
+  holder API emission, so `value_holder.rs` no longer branches over raw
+  `FieldPlan` variants when rendering `present_fields()` or `into_original`.
+- component fields cross the `gpui-form-codegen` boundary with a typed
+  `ComponentStoragePolicy`; derive planning combines that policy with source
+  optionality once, then inventory presence metadata reads the resulting
+  `HolderStoragePlan`
 - value-holder emission receives the same `DeriveContext` as expansion, so
   holder-specific tokens reuse the already-resolved facade/runtime crate paths
   instead of resolving paths independently
-- holder-to-model API shape is selected by `HolderConversionPlan`, with
-  `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The plan stores
-  semantic fallibility as `ConversionFallibility` and renders predicates only
-  when emitting inventory metadata.
+- holder-to-model API shape is selected inside `ValueHolderPlan`, with
+  `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The holder plan
+  stores semantic fallibility as `ConversionFallibility` and renders predicates
+  only when emitting inventory metadata.
 - holder-to-model conversion uses `TryFrom` when any non-skipped field can be
   missing without a default; `From` is reserved for holders the derive can prove
   infallible directly
@@ -211,6 +223,9 @@ When the `inventory` feature is enabled:
   metadata entry
 - rejects duplicate value metadata and rejects mixing value metadata with
   manual `ComponentShapeFor` impls in the same block
+- classifies nested impls by canonical trait path; manual compatibility impls
+  must target `gpui_form_runtime::shape::ComponentShapeFor`, while local or
+  aliased traits named `ComponentShapeFor` are rejected as ambiguous
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_runtime::shape` by default

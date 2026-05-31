@@ -5,7 +5,7 @@ use gpui_component::{
     searchable_list::SearchableListDelegate,
     select::SelectItem,
 };
-use gpui_form_runtime::shape::{ComponentShapeFor, ComponentValueBinding, FormValueChange};
+use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
 #[diagnostic::on_unimplemented(
@@ -74,7 +74,7 @@ gpui_form_derive::component_shape! {
             }
         }
 
-        impl<T, D, Value> ComponentShapeFor<Value> for Combobox<T, D>
+        impl<T, D, Value> gpui_form_runtime::shape::ComponentShapeFor<Value> for Combobox<T, D>
         where
             T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
             D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static,

@@ -47,36 +47,27 @@ pub fn validate_shape_field_suffix(value: &str) -> Result<(), String> {
 pub struct ComponentFieldIr {
     pub shape: ResolvedComponentShape,
     pub field_ident: syn::Ident,
-    pub required_value: RequiredValue,
+    pub storage_policy: ComponentStoragePolicy,
 }
 
 #[derive(Clone, Debug)]
-pub enum RequiredValue {
-    Explicit(bool),
-    Shape(syn::Path),
+pub enum ComponentStoragePolicy {
+    Direct,
+    Required,
+    ShapeOwned { shape: syn::Path },
 }
 
-impl RequiredValue {
-    pub fn explicit(value: bool) -> Self {
-        Self::Explicit(value)
+impl ComponentStoragePolicy {
+    pub fn direct() -> Self {
+        Self::Direct
     }
 
-    pub fn shape(shape: syn::Path) -> Self {
-        Self::Shape(shape)
+    pub fn required() -> Self {
+        Self::Required
     }
 
-    pub fn metadata_tokens(&self) -> TokenStream {
-        match self {
-            Self::Explicit(value) => quote! { #value },
-            Self::Shape(shape) => {
-                let crate_paths = CratePaths::resolve();
-                let runtime_crate = crate_paths.gpui_form_facade_runtime();
-                quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
-                }
-            },
-        }
+    pub fn shape_owned(shape: syn::Path) -> Self {
+        Self::ShapeOwned { shape }
     }
 }
 
@@ -338,8 +329,8 @@ impl ResolvedComponentShape {
         }
     }
 
-    pub fn required_value(&self) -> RequiredValue {
-        RequiredValue::shape(self.shape.clone())
+    pub fn storage_policy(&self) -> ComponentStoragePolicy {
+        ComponentStoragePolicy::shape_owned(self.shape.clone())
     }
 
     pub fn type_check_tokens(&self) -> TokenStream {
@@ -407,7 +398,7 @@ impl ResolvedComponentShape {
         Ok(ComponentFieldIr {
             shape: self.clone(),
             field_ident: field_ident.0,
-            required_value: self.required_value(),
+            storage_policy: self.storage_policy(),
         })
     }
 
@@ -509,7 +500,7 @@ mod tests {
     }
 
     #[test]
-    fn component_field_ir_plans_identifier_shape_and_required_policy() {
+    fn component_field_ir_plans_identifier_shape_and_storage_policy() {
         let options = ShapeOptions::from_shape(syn::parse_quote!(crate::Input<_>));
         let field_type: syn::Type = syn::parse_quote!(String);
 
@@ -519,7 +510,10 @@ mod tests {
 
         assert_eq!(ir.field_ident.to_string(), "email_input");
         assert_eq!(compact_path(ir.shape.shape()), "crate::Input<String>");
-        assert!(matches!(ir.required_value, RequiredValue::Shape(_)));
+        assert!(matches!(
+            ir.storage_policy,
+            ComponentStoragePolicy::ShapeOwned { .. }
+        ));
     }
 
     #[test]

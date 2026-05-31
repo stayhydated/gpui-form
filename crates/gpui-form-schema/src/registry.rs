@@ -7,6 +7,12 @@ pub use gpui_form_core::component_suffix::{
 inventory::collect!(GpuiFormShape);
 
 /// Rust type syntax stored in inventory metadata.
+///
+/// This is a transport wrapper for `'static` inventory strings. Generators and
+/// other tooling that consume complete form metadata should prefer
+/// `gpui_form_schema::resolved::ResolvedField::value_type` or
+/// `ResolvedField::source_value_type`, which parse and validate the syntax once
+/// at the inventory boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RustType(&'static str);
 
@@ -110,6 +116,12 @@ impl RustType {
 }
 
 /// Rust path syntax stored in inventory metadata.
+///
+/// This is a transport wrapper for `'static` inventory strings. Generators and
+/// other tooling that consume complete form metadata should prefer
+/// `gpui_form_schema::resolved::ResolvedGpuiFormShape::source_module_path` or
+/// `ResolvedField::shape_path`, which parse and validate paths once at the
+/// inventory boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RustPath(&'static str);
 
@@ -138,6 +150,12 @@ impl RustPath {
 }
 
 /// Rust expression syntax stored in inventory metadata.
+///
+/// This is a transport wrapper for `'static` inventory strings. Generators and
+/// other tooling that consume complete form metadata should prefer
+/// `gpui_form_schema::resolved::ResolvedField::{default_expr, from_expr,
+/// into_expr}`, which parse and validate expressions once at the inventory
+/// boundary.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RustExpr(&'static str);
 
@@ -481,6 +499,10 @@ impl FieldComponentVariant {
         self
     }
 
+    /// Returns the serialized component shape path.
+    ///
+    /// Tooling that needs a parsed Rust path should prefer
+    /// `gpui_form_schema::resolved::ResolvedComponentMetadata::shape_path`.
     pub const fn shape_path(&self) -> RustPath {
         self.shape_path
     }

@@ -13,6 +13,7 @@ fn gpui_form_reports_invalid_field_attributes() {
     tests.compile_fail("tests/ui/gpui_form_malformed_attribute_*.rs");
     tests.compile_fail("tests/ui/gpui_form_missing_*.rs");
     tests.compile_fail("tests/ui/gpui_form_skip_*.rs");
+    tests.compile_fail("tests/ui/gpui_form_value_type_option.rs");
     tests.compile_fail("tests/ui/gpui_form_wrong_*.rs");
 }
 
@@ -28,6 +29,12 @@ fn gpui_form_accepts_generic_shape_backed_forms() {
 fn gpui_form_accepts_required_shape_non_default_values() {
     let tests = trybuild::TestCases::new();
     tests.pass("tests/ui/gpui_form_required_shape_non_default_pass.rs");
+}
+
+#[test]
+fn gpui_form_accepts_value_override_passes() {
+    let tests = trybuild::TestCases::new();
+    tests.pass("tests/ui/gpui_form_optional_value_override_pass.rs");
 }
 
 #[test]
@@ -47,4 +54,11 @@ fn component_shape_derive_accepts_constructor_expressions() {
     let tests = trybuild::TestCases::new();
     tests.pass("tests/ui/derive_component_shape_constructor_expr_pass.rs");
     tests.pass("tests/ui/function_shape_constructor_expr_pass.rs");
+    tests.pass("tests/ui/function_shape_values_pass.rs");
+}
+
+#[test]
+fn component_shape_accepts_nested_value_binding_impls() {
+    let tests = trybuild::TestCases::new();
+    tests.pass("tests/ui/function_shape_value_binding_impl_pass.rs");
 }
