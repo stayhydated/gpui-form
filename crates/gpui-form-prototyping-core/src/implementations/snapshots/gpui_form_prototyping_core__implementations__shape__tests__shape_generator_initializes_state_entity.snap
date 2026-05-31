@@ -3,5 +3,5 @@ source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
 expression: pretty_tokens(tokens)
 ---
 fn __snapshot() {
-    let tags_shape = cx.new(|cx| DemoFormComponents::tags_shape(window, cx));
+    let tags = cx.new(|cx| DemoFormComponents::tags(window, cx));
 }

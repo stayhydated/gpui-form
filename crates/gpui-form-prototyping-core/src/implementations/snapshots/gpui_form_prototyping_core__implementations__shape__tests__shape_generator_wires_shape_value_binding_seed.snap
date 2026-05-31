@@ -3,7 +3,7 @@ source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
 expression: pretty_tokens(init)
 ---
 fn __snapshot() {
-    country_shape
+    country
         .update(
             cx,
             |state, cx| {

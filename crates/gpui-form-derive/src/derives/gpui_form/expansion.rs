@@ -29,11 +29,6 @@ fn field_value_presence_tokens(
                 #facade_crate::schema::registry::FieldValuePresence::Optional
             }
         },
-        HolderStoragePlan::RequiredValue => {
-            quote! {
-                #facade_crate::schema::registry::FieldValuePresence::RequiresValue
-            }
-        },
         HolderStoragePlan::Direct => {
             quote! {
                 #facade_crate::schema::registry::FieldValuePresence::DirectStorage
@@ -286,7 +281,6 @@ pub fn expand_gpui_form(
                 return None;
             }
 
-            let component_def = field.component()?;
             let shared = field.shared()?;
             let field_name_str = field.field_name().to_string();
             let value_presence_tokens = field_value_presence_tokens(&context, &shared.storage);
@@ -367,7 +361,6 @@ pub fn expand_gpui_form(
                 }
             });
 
-            let component_variant_tokens = component_def.component_variant_tokens();
             let from_expr_tokens =
                 optional_rust_expr_tokens(&facade_crate, shared.source_to_form_expr());
             let into_expr_tokens =
@@ -388,13 +381,28 @@ pub fn expand_gpui_form(
                 #default_expr_tokens
             };
 
-            Some(quote! {
-                #facade_crate::schema::registry::FieldVariant::component(
-                    #field_name_str,
-                    #value_spec_tokens,
-                    #component_variant_tokens
-                )
-            })
+            let field_variant_tokens = match field.component() {
+                Some(component_def) => {
+                    let component_variant_tokens = component_def.component_variant_tokens();
+                    quote! {
+                        #facade_crate::schema::registry::FieldVariant::component(
+                            #field_name_str,
+                            #value_spec_tokens,
+                            #component_variant_tokens
+                        )
+                    }
+                },
+                None => {
+                    quote! {
+                        #facade_crate::schema::registry::FieldVariant::hidden(
+                            #field_name_str,
+                            #value_spec_tokens
+                        )
+                    }
+                },
+            };
+
+            Some(field_variant_tokens)
         })
         .collect();
 

@@ -127,12 +127,18 @@ Important behaviors:
   holder API emission, so `value_holder.rs` no longer branches over raw
   `FieldPlan` variants when rendering `present_fields()` or `into_original`.
 - component fields cross the `gpui-form-codegen` boundary with a typed
-  `ComponentStoragePolicy`; derive planning combines that policy with source
-  optionality once, then inventory presence metadata reads the resulting
-  `HolderStoragePlan`
+  `ComponentShapeStoragePolicy` that can only represent shape-owned component
+  storage. Derive planning combines that policy with source optionality once,
+  while hidden fields select non-component direct storage in the derive layer.
+  Inventory presence metadata reads the resulting `HolderStoragePlan`.
 - value-holder emission receives the same `DeriveContext` as expansion, so
   holder-specific tokens reuse the already-resolved facade/runtime crate paths
   instead of resolving paths independently
+- default and conversion expression lowering delegates to
+  `gpui-form-codegen::metadata`, shared with prototyping generation. The derive
+  supplies the original user-authored attribute spans for `default`,
+  `from_source`, and `into_source` expressions so diagnostics stay anchored to
+  the relevant field option.
 - holder-to-model API shape is selected inside `ValueHolderPlan`, with
   `Infallible`, `FallibleRequired`, and `SkippedFields` modes. The holder plan
   stores semantic fallibility as `ConversionFallibility` and renders predicates
@@ -177,10 +183,13 @@ When the `inventory` feature is enabled:
    the `inventory` feature is enabled. Inventory items must name one concrete
    source type and module path; the generated form code still carries the source
    generics.
-1. Each field becomes a `FieldVariant` with component contract metadata from
-   `gpui-form-codegen`.
+1. Each non-skipped field becomes a `FieldVariant`. Component fields use
+   `FieldVariant::component(...)` with component contract metadata from
+   `gpui-form-codegen`; hidden fields use `FieldVariant::hidden(...)` with the
+   same value/default/conversion/validation metadata and no component payload.
 1. Metadata includes validation rule identifiers, defaults, full value type
-   paths, component shape UI paths, and skipped-field information for
+   paths, component shape UI paths for component fields, and holder conversion
+   metadata that records skipped-field reconstruction requirements for
    downstream generators.
 
 ## Other Derives
@@ -210,7 +219,8 @@ When the `inventory` feature is enabled:
 
 - emits a local zero-sized shape type plus `ComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `value_storage = require_value|direct`,
+- accepts `new`, `component`, `value = ...`, `values(...)`,
+  `compatibility<Value> where ...`, `value_storage = require_value|direct`,
   `value_binding`, and `field_suffix` metadata keys
 - parses shape metadata through the shared `ShapeOption` option model used by
   `#[derive(ComponentShape)]`
@@ -219,13 +229,12 @@ When the `inventory` feature is enabled:
   `ComponentShape` impl
 - sets shape-level `ValueBindingPolicy` only when `value_binding;` is present
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
-- emits one `ComponentShapeFor<T>` impl per `value = ...` / `values(...)`
-  metadata entry
-- rejects duplicate value metadata and rejects mixing value metadata with
-  manual `ComponentShapeFor` impls in the same block
-- classifies nested impls by canonical trait path; manual compatibility impls
-  must target `gpui_form_runtime::shape::ComponentShapeFor`, while local or
-  aliased traits named `ComponentShapeFor` are rejected as ambiguous
+- emits `ComponentShapeFor<T>` impls from `value = ...`, `values(...)`, or
+  constrained `compatibility<Value> where ...;` metadata
+- rejects duplicate value metadata and rejects manual `ComponentShapeFor` impls
+  in the macro block
+- rejects `value_binding;` unless the macro block contains a nested
+  `ComponentValueBinding<T>` impl
 - targets external component/state pairs that cannot directly implement
   `ComponentShape` because both the trait and state type are foreign
 - emits the implementation against `gpui_form_runtime::shape` by default

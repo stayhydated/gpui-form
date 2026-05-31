@@ -1,5 +1,5 @@
-error: `value = ...` and `values(...)` cannot be combined with manual `ComponentShapeFor` impls; remove the value metadata or remove the manual impl
- --> tests/ui/component_shape_manual_value_metadata.rs:8:17
-  |
-8 |         value = String;
-  |                 ^^^^^^
+error: `component_shape!` no longer accepts manual `ComponentShapeFor` impls inside the macro block; use `value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata
+  --> tests/ui/component_shape_manual_value_metadata.rs:10:14
+   |
+10 |         impl gpui_form_runtime::shape::ComponentShapeFor<String> for ManualValueShape {}
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

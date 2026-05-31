@@ -3094,6 +3094,7 @@ dependencies = [
 name = "gpui-form-prototyping-core"
 version = "0.5.1"
 dependencies = [
+ "gpui-form-codegen",
  "gpui-form-schema",
  "heck 0.5.0",
  "insta",

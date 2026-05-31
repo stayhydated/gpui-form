@@ -18,17 +18,19 @@ impl State {
 gpui_form_derive::component_shape! {
     struct RequiredShape {
         type State = State;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for RequiredShape {}
+        compatibility<Value>
+        where
+            Value: 'static;
     }
 }
 
 gpui_form_derive::component_shape! {
     struct AllowShape {
         type State = State;
+        compatibility<Value>
+        where
+            Value: 'static;
         value_storage = direct;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for AllowShape {}
     }
 }
 

@@ -1,4 +1,8 @@
-use proc_macro2::{Span, TokenStream};
+use gpui_form_codegen::metadata::{
+    apply_form_to_source_conversion_tokens, apply_source_to_form_conversion_tokens,
+    source_default_tokens,
+};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned};
 use std::collections::HashMap;
 use syn::{DeriveInput, Type};
@@ -101,9 +105,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         field_name: &syn::Ident,
     ) -> ValueHolderResult<TokenStream> {
         match self {
-            HolderStoragePlan::OriginallyOptional | HolderStoragePlan::RequiredValue => {
-                Ok(quote! { Option<#base_type> })
-            },
+            HolderStoragePlan::OriginallyOptional => Ok(quote! { Option<#base_type> }),
             HolderStoragePlan::Direct => Ok(quote! { #base_type }),
             HolderStoragePlan::ShapePolicy { .. } => {
                 let policy = self.shape_policy_type_tokens(context, field_name)?;
@@ -123,9 +125,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         field_name: &syn::Ident,
     ) -> ValueHolderResult<TokenStream> {
         match self {
-            HolderStoragePlan::OriginallyOptional | HolderStoragePlan::RequiredValue => {
-                Ok(quote! { Some(#value) })
-            },
+            HolderStoragePlan::OriginallyOptional => Ok(quote! { Some(#value) }),
             HolderStoragePlan::Direct => Ok(value),
             HolderStoragePlan::ShapePolicy { .. } => {
                 let policy = self.shape_policy_type_tokens(context, field_name)?;
@@ -144,9 +144,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         field_name: &syn::Ident,
     ) -> ValueHolderResult<TokenStream> {
         match self {
-            HolderStoragePlan::OriginallyOptional | HolderStoragePlan::RequiredValue => {
-                Ok(quote! { None })
-            },
+            HolderStoragePlan::OriginallyOptional => Ok(quote! { None }),
             HolderStoragePlan::Direct => {
                 let runtime_crate = context.paths.gpui_form_facade_runtime();
                 Ok(quote_spanned! {field_name.span()=>
@@ -184,26 +182,6 @@ impl HolderStorageStrategy for HolderStoragePlan {
                     })
                 } else {
                     Ok(access)
-                }
-            },
-            HolderStoragePlan::RequiredValue => {
-                let field_name_str = field_name.to_string();
-                if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
-                    Ok(quote! {
-                        {
-                            let value = #access.ok_or(#error_type{
-                                field_name: #field_name_str
-                            })?;
-                            #converted
-                        }
-                    })
-                } else {
-                    Ok(quote! {
-                        #access.ok_or(#error_type{
-                            field_name: #field_name_str
-                        })?
-                    })
                 }
             },
             HolderStoragePlan::Direct => {
@@ -249,51 +227,6 @@ impl HolderStorageStrategy for HolderStoragePlan {
                     Ok(access)
                 }
             },
-            HolderStoragePlan::RequiredValue => {
-                if let Some(default_expr) = field.default_expr() {
-                    let default_span = field.default_expr_span();
-                    let default_original = default_expr_for_original(default_expr, default_span);
-                    let original_type = field.original_type();
-                    if needs_from_conversion(field) {
-                        let converted = apply_from_conversion(field, quote! { value });
-                        Ok(quote! {
-                            {
-                                let value = #access;
-                                let default_original: #original_type = #default_original;
-                                if value == default_original {
-                                    None
-                                } else {
-                                    Some(#converted)
-                                }
-                            }
-                        })
-                    } else {
-                        Ok(quote! {
-                            {
-                                let value = #access;
-                                let default_original: #original_type = #default_original;
-                                if value == default_original {
-                                    None
-                                } else {
-                                    Some(value)
-                                }
-                            }
-                        })
-                    }
-                } else if needs_from_conversion(field) {
-                    let converted = apply_from_conversion(field, quote! { value });
-                    Ok(quote! {
-                        {
-                            let value = #access;
-                            Some(#converted)
-                        }
-                    })
-                } else {
-                    Ok(quote! {
-                        Some(#access)
-                    })
-                }
-            },
             HolderStoragePlan::Direct => {
                 let converted = apply_from_conversion(field, access);
                 Ok(quote! {
@@ -306,7 +239,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
                 let runtime_crate = context.paths.gpui_form_facade_runtime();
                 if let Some(default_expr) = field.default_expr() {
                     let default_span = field.default_expr_span();
-                    let default_original = default_expr_for_original(default_expr, default_span);
+                    let default_original = source_default_tokens(default_expr, default_span);
                     let original_type = field.original_type();
                     let converted = apply_from_conversion(field, quote! { value });
                     let converted_default =
@@ -352,35 +285,6 @@ impl HolderStorageStrategy for HolderStoragePlan {
                     Ok(access)
                 }
             },
-            HolderStoragePlan::RequiredValue => {
-                if let Some(default_expr) = field.default_expr() {
-                    let default_span = field.default_expr_span();
-                    let default_original = default_expr_for_original(default_expr, default_span);
-                    if needs_into_conversion(field) {
-                        let converted = apply_into_conversion(field, quote! { value });
-                        Ok(quote! {
-                            #access
-                                .map(|value| #converted)
-                                .unwrap_or(#default_original)
-                        })
-                    } else {
-                        Ok(quote! {
-                            #access.unwrap_or(#default_original)
-                        })
-                    }
-                } else if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
-                    Ok(quote! {
-                        #access
-                            .map(|value| #converted)
-                            .unwrap_or_default()
-                    })
-                } else {
-                    Ok(quote! {
-                        #access.unwrap_or_default()
-                    })
-                }
-            },
             HolderStoragePlan::Direct => {
                 let converted = apply_into_conversion(field, access);
                 Ok(quote! {
@@ -394,7 +298,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
                 let runtime_crate = context.paths.gpui_form_facade_runtime();
                 if let Some(default_expr) = field.default_expr() {
                     let default_span = field.default_expr_span();
-                    let default_original = default_expr_for_original(default_expr, default_span);
+                    let default_original = source_default_tokens(default_expr, default_span);
                     Ok(quote! {
                         <#policy
                             as #runtime_crate::shape::ValueStorage<#base_type>>::map_into_value(
@@ -430,22 +334,6 @@ impl HolderStorageStrategy for HolderStoragePlan {
 
         match self {
             HolderStoragePlan::OriginallyOptional => {
-                if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
-                    Ok(quote! {
-                        if let Some(value) = self.#field_name.clone() {
-                            entries.push(#present_field_ident::#variant_ident(#converted));
-                        }
-                    })
-                } else {
-                    Ok(quote! {
-                        if let Some(value) = self.#field_name.as_ref() {
-                            entries.push(#present_field_ident::#variant_ident(value));
-                        }
-                    })
-                }
-            },
-            HolderStoragePlan::RequiredValue => {
                 if needs_into_conversion(field) {
                     let converted = apply_into_conversion(field, quote! { value });
                     Ok(quote! {
@@ -502,9 +390,6 @@ impl HolderStorageStrategy for HolderStoragePlan {
         target_ident: &syn::Ident,
     ) -> ValueHolderResult<Option<TokenStream>> {
         match self {
-            HolderStoragePlan::RequiredValue => Ok(Some(quote! {
-                koruma_collection::general::RequiredValidation::<Option<_>>::builder()
-            })),
             HolderStoragePlan::ShapePolicy { .. } => {
                 let base_type = form_base_type(field);
                 let policy = shape_policy_type_tokens(context, field)?;
@@ -542,21 +427,19 @@ fn form_field_type_tokens(
 }
 
 fn apply_from_conversion(field: &HolderFieldIr, value: TokenStream) -> TokenStream {
-    if let Some(expr) = field.source_to_form_expr() {
-        let span = field.source_to_form_span();
-        quote_spanned! {span=> (#expr)(#value) }
-    } else {
-        value
-    }
+    apply_source_to_form_conversion_tokens(
+        field.source_to_form_expr(),
+        field.source_to_form_span(),
+        value,
+    )
 }
 
 fn apply_into_conversion(field: &HolderFieldIr, value: TokenStream) -> TokenStream {
-    if let Some(expr) = field.form_to_source_expr() {
-        let span = field.form_to_source_span();
-        quote_spanned! {span=> (#expr)(#value) }
-    } else {
-        value
-    }
+    apply_form_to_source_conversion_tokens(
+        field.form_to_source_expr(),
+        field.form_to_source_span(),
+        value,
+    )
 }
 
 fn needs_from_conversion(field: &HolderFieldIr) -> bool {
@@ -659,27 +542,6 @@ fn generate_conversion_error_type(error_name: &syn::Ident) -> TokenStream {
 
 /// Generates a custom Default implementation for the FormValueHolder that uses
 /// the specified default expressions for fields that have them.
-fn unwrap_expr(expr: &syn::Expr) -> &syn::Expr {
-    match expr {
-        syn::Expr::Group(group) => unwrap_expr(&group.expr),
-        syn::Expr::Paren(paren) => unwrap_expr(&paren.expr),
-        _ => expr,
-    }
-}
-
-fn should_wrap_default_into(expr: &syn::Expr) -> bool {
-    matches!(unwrap_expr(expr), syn::Expr::Lit(_))
-}
-
-fn default_expr_for_original(expr: &syn::Expr, span: Span) -> TokenStream {
-    let expr_tokens = quote_spanned! {span=> #expr };
-    if should_wrap_default_into(expr) {
-        quote_spanned! {span=> ::core::convert::Into::into(#expr_tokens) }
-    } else {
-        expr_tokens
-    }
-}
-
 fn generate_default_impl(
     context: &DeriveContext,
     fields: &[&HolderFieldIr],
@@ -695,7 +557,7 @@ fn generate_default_impl(
             let base_type = form_base_type(f);
             if let Some(default_expr) = f.default_expr() {
                 let default_span = f.default_expr_span();
-                let default_original = default_expr_for_original(default_expr, default_span);
+                let default_original = source_default_tokens(default_expr, default_span);
                 let default_value = apply_from_conversion(f, default_original);
                 let storage =
                     f.storage()

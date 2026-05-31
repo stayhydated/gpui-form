@@ -95,18 +95,13 @@ impl LocationFormForm {
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = LocationFormFormValueHolder::default();
-        let name_input = cx.new(|cx| LocationFormFormComponents::name_input(window, cx));
-        let location_infinite_select =
-            cx.new(|cx| LocationFormFormComponents::location_infinite_select(window, cx));
+        let name = cx.new(|cx| LocationFormFormComponents::name(window, cx));
+        let location = cx.new(|cx| LocationFormFormComponents::location(window, cx));
         let mut _subscriptions = vec![
-            cx.subscribe_in(&name_input, window, Self::on_name_input_event),
-            cx.subscribe_in(
-                &location_infinite_select,
-                window,
-                Self::on_location_infinite_select_event,
-            ),
+            cx.subscribe_in(&name, window, Self::on_name_input_event),
+            cx.subscribe_in(&location, window, Self::on_location_infinite_select_event),
         ];
-        name_input.update(cx, |state, cx| {
+        name.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
                 Some(&current_data.name),
@@ -114,7 +109,7 @@ impl LocationFormForm {
                 cx,
             );
         });
-        location_infinite_select.update(cx, |state, cx| {
+        location.update(cx, |state, cx| {
             seed_value_binding_state::<
                 gpui_form_component::infinite_select::InfiniteSelect<Country>,
                 Country,
@@ -122,10 +117,7 @@ impl LocationFormForm {
         });
         Self {
             current_data,
-            fields: LocationFormFormFields {
-                name_input,
-                location_infinite_select,
-            },
+            fields: LocationFormFormFields { name, location },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -215,7 +207,7 @@ impl Render for LocationFormForm {
                                     <gpui_form_collection::input::Input<
                                         String,
                                     > as gpui_form::runtime::shape::ComponentShape>::State,
-                                >>::new(&self.fields.name_input),
+                                >>::new(&self.fields.name),
                             ),
                     )
                     .child(
@@ -244,7 +236,7 @@ impl Render for LocationFormForm {
                                     <gpui_form_component::infinite_select::InfiniteSelect<
                                         Country,
                                     > as gpui_form::runtime::shape::ComponentShape>::State,
-                                >>::new(&self.fields.location_infinite_select),
+                                >>::new(&self.fields.location),
                             ),
                     )
                     .child(

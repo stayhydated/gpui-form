@@ -52,8 +52,9 @@ impl State {
 gpui_form_derive::component_shape! {
     struct RenamedRuntimeShape {
         type State = State;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for RenamedRuntimeShape {}
+        compatibility<Value>
+        where
+            Value: 'static;
     }
 }
 

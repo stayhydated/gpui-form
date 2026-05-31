@@ -201,11 +201,11 @@ impl FieldIdent {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct ComponentFieldIdent(Ident);
+pub struct ComponentHelperIdent(Ident);
 
-impl ComponentFieldIdent {
+impl ComponentHelperIdent {
     fn new(value: &str) -> Result<Self, ResolveError> {
-        parse_ident("field component ident", value).map(Self)
+        parse_ident("field component helper ident", value).map(Self)
     }
 
     pub fn as_ident(&self) -> &Ident {
@@ -244,7 +244,7 @@ pub struct FieldName {
     source: &'static str,
     ident: FieldIdent,
     pascal_ident: FieldIdent,
-    component_ident: ComponentFieldIdent,
+    component_helper_ident: ComponentHelperIdent,
     kebab_id: KebabId,
     handler_ident: HandlerIdent,
 }
@@ -254,16 +254,16 @@ impl FieldName {
         let source = field.field_name();
         let ident = FieldIdent::new("field name", source)?;
         let pascal_ident = FieldIdent::new("field pascal ident", &source.to_pascal_case())?;
-        let component_name = field.field_name_with_component_suffix();
-        let component_ident = ComponentFieldIdent::new(&component_name)?;
-        let kebab_id = KebabId::new(component_name.to_kebab_case());
-        let handler_ident = HandlerIdent::new(&format!("on_{component_name}_event"))?;
+        let component_helper_name = field.field_name_with_component_suffix();
+        let component_helper_ident = ComponentHelperIdent::new(&component_helper_name)?;
+        let kebab_id = KebabId::new(component_helper_name.to_kebab_case());
+        let handler_ident = HandlerIdent::new(&format!("on_{component_helper_name}_event"))?;
 
         Ok(Self {
             source,
             ident,
             pascal_ident,
-            component_ident,
+            component_helper_ident,
             kebab_id,
             handler_ident,
         })
@@ -281,8 +281,8 @@ impl FieldName {
         self.pascal_ident.as_ident()
     }
 
-    pub fn component_ident(&self) -> &Ident {
-        self.component_ident.as_ident()
+    pub fn component_helper_ident(&self) -> &Ident {
+        self.component_helper_ident.as_ident()
     }
 
     pub fn kebab_id(&self) -> &str {
@@ -361,8 +361,8 @@ impl<'a> ResolvedField<'a> {
         self.name.pascal_ident()
     }
 
-    pub fn field_ident_with_component_suffix(&self) -> &Ident {
-        self.name.component_ident()
+    pub fn component_helper_ident(&self) -> &Ident {
+        self.name.component_helper_ident()
     }
 
     pub fn value_type(&self) -> &Type {
@@ -618,10 +618,8 @@ mod tests {
         assert!(field.is_component());
         assert!(field.value_holder_uses_option());
         assert!(field.value_binding());
-        assert_eq!(
-            field.field_ident_with_component_suffix().to_string(),
-            "country_shape"
-        );
+        assert_eq!(field.field_ident().to_string(), "country");
+        assert_eq!(field.component_helper_ident().to_string(), "country_shape");
         let shape_path = field
             .component()
             .expect("component metadata should exist")

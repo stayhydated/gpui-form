@@ -16,3 +16,4 @@ impl ::gpui_form_runtime::shape::ComponentShape for SwitchShape {
     type RenderComponent = ::gpui_form_runtime::shape::NoRenderComponent;
 }
 impl ::gpui_form_runtime::shape::DeclaredComponentShape for SwitchShape {}
+impl ::gpui_form_runtime::shape::ComponentShapeFor<bool> for SwitchShape {}

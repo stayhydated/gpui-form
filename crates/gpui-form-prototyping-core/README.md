@@ -60,9 +60,9 @@ adapter can scaffold them. Missing component capabilities return a
 capability instead of generating placeholder UI. For value-bound fields, the
 adapter emits generic seed and subscription hooks through
 `gpui_form::runtime::shape::ComponentValueBinding<T>`. Generated scaffolds use
-the resolved component field name for field and handler suffixes, such as
-`email_input` and `on_email_input_event`, then fall back to the generic `shape`
-suffix.
+the source field name for component entity fields and constructors, such as
+`email`, while suffix-bearing helper names such as `on_email_input_event` use
+resolved component suffix metadata and fall back to the generic `shape` suffix.
 Value-bound scaffolds use `seed_value_binding_state`, `form_value_change`,
 `FormValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.

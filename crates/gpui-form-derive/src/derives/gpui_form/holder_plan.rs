@@ -2,9 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Path;
 
-use crate::derives::gpui_form::ir::{
-    DeriveContext, FieldPlan, HolderFieldIr, HolderStoragePlan, SkippedFieldPlan,
-};
+use crate::derives::gpui_form::ir::{DeriveContext, FieldPlan, HolderFieldIr, SkippedFieldPlan};
 
 #[derive(Clone, Debug)]
 pub struct ValueHolderPlan<'a> {
@@ -170,7 +168,6 @@ impl HolderConversionPlan {
     fn from_fields(fields: &[FieldPlan]) -> syn::Result<Self> {
         let mut predicates = Vec::new();
         let mut has_maybe_fallible_field = false;
-        let mut has_hard_fallible_field = false;
         let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
 
         for field in fields.iter().filter_map(FieldPlan::shared) {
@@ -178,10 +175,7 @@ impl HolderConversionPlan {
                 continue;
             }
 
-            if matches!(field.storage(), HolderStoragePlan::RequiredValue) {
-                has_maybe_fallible_field = true;
-                has_hard_fallible_field = true;
-            } else if let Some(shape) = field.storage().shape_policy() {
+            if let Some(shape) = field.storage().shape_policy() {
                 has_maybe_fallible_field = true;
                 predicates.push(ShapePolicyPredicate::RequiresValue {
                     shape: shape.clone(),
@@ -189,7 +183,7 @@ impl HolderConversionPlan {
             }
         }
 
-        let fallibility = if has_skipped_fields || has_hard_fallible_field {
+        let fallibility = if has_skipped_fields {
             ConversionFallibility::Always
         } else if predicates.is_empty() {
             ConversionFallibility::Never
@@ -399,8 +393,8 @@ mod tests {
     }
 
     #[test]
-    fn holder_plan_records_optional_direct_field_subplans() {
-        let field = holder_field(HolderStoragePlan::Direct, true);
+    fn holder_plan_records_originally_optional_field_subplans() {
+        let field = holder_field(HolderStoragePlan::OriginallyOptional, true);
         let fields = vec![FieldPlan::hidden(field)];
 
         let plan = ValueHolderPlan::new(&fields).expect("holder should plan");

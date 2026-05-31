@@ -51,7 +51,11 @@ impl LocationFormForm {
                 self.current_data.name = value;
             },
             FormValueChange::Clear => {
-                self.current_data.name = ::core::default::Default::default();
+                self.current_data.name = <<gpui_form_collection::input::Input<
+                    String,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    String,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
@@ -80,25 +84,24 @@ impl LocationFormForm {
                 self.current_data.location = value;
             },
             FormValueChange::Clear => {
-                self.current_data.location = ::core::default::Default::default();
+                self.current_data.location = <<gpui_form_component::infinite_select::InfiniteSelect<
+                    Country,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    Country,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = LocationFormFormValueHolder::default();
-        let name_input = cx.new(|cx| LocationFormFormComponents::name_input(window, cx));
-        let location_infinite_select =
-            cx.new(|cx| LocationFormFormComponents::location_infinite_select(window, cx));
+        let name = cx.new(|cx| LocationFormFormComponents::name(window, cx));
+        let location = cx.new(|cx| LocationFormFormComponents::location(window, cx));
         let mut _subscriptions = vec![
-            cx.subscribe_in(&name_input, window, Self::on_name_input_event),
-            cx.subscribe_in(
-                &location_infinite_select,
-                window,
-                Self::on_location_infinite_select_event,
-            ),
+            cx.subscribe_in(&name, window, Self::on_name_input_event),
+            cx.subscribe_in(&location, window, Self::on_location_infinite_select_event),
         ];
-        name_input.update(cx, |state, cx| {
+        name.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<String>, String>(
                 state,
                 Some(&current_data.name),
@@ -106,7 +109,7 @@ impl LocationFormForm {
                 cx,
             );
         });
-        location_infinite_select.update(cx, |state, cx| {
+        location.update(cx, |state, cx| {
             seed_value_binding_state::<
                 gpui_form_component::infinite_select::InfiniteSelect<Country>,
                 Country,
@@ -114,10 +117,7 @@ impl LocationFormForm {
         });
         Self {
             current_data,
-            fields: LocationFormFormFields {
-                name_input,
-                location_infinite_select,
-            },
+            fields: LocationFormFormFields { name, location },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -200,7 +200,15 @@ impl Render for LocationFormForm {
                                         .child(div().child(description.clone()))
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(&self.fields.name_input)),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    String,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        String,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.name),
+                            ),
                     )
                     .child(
                         field()
@@ -222,23 +230,36 @@ impl Render for LocationFormForm {
                                 }
                             })
                             .child(
-                                <gpui_form_component::infinite_select::InfiniteSelect<_, _>>::new(
-                                    &self.fields.location_infinite_select,
-                                ),
+                                <<gpui_form_component::infinite_select::InfiniteSelect<
+                                    Country,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_component::infinite_select::InfiniteSelect<
+                                        Country,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.location),
                             ),
                     )
-                    .child(field().label_indent(false).child(self.action_buttons(
-                        cx,
-                        |payload, _, _| {
-                            let _ = payload;
-                        },
-                    ))),
+                    .child(
+                        field()
+                            .label_indent(false)
+                            .child(
+                                self
+                                    .action_buttons(
+                                        cx,
+                                        |payload, _, _| {
+                                            let _ = payload;
+                                        },
+                                    ),
+                            ),
+                    ),
             )
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
-            .child(format!(
-                "try_into_original: {:?}",
-                self.current_data.clone().try_into_original()
-            ))
+            .child(
+                format!(
+                    "try_into_original: {:?}", self.current_data.clone()
+                    .try_into_original()
+                ),
+            )
     }
 }

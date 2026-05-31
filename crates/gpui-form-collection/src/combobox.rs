@@ -29,6 +29,9 @@ gpui_form_derive::component_shape! {
         type State = ComboboxState<D>;
         new = Self::new_default;
         component = gpui_component::combobox::Combobox<_>;
+        compatibility<Value>
+        where
+            Value: ComboboxFormValue<T>;
         value_storage = direct;
         field_suffix = "combobox";
         value_binding;
@@ -74,13 +77,6 @@ gpui_form_derive::component_shape! {
             }
         }
 
-        impl<T, D, Value> gpui_form_runtime::shape::ComponentShapeFor<Value> for Combobox<T, D>
-        where
-            T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
-            D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static,
-            Value: ComboboxFormValue<T>,
-        {
-        }
     }
 }
 

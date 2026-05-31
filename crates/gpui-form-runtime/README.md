@@ -33,8 +33,9 @@ visible to generated `validate()` and fallible holder-to-model conversion.
 whose storage representation always contains a value.
 Generated forms also assert `ComponentShapeFor<T>` for the form-side value
 type. Derive and `component_shape!` shapes emit those impls from explicit
-`value = ...` or `values(...)` metadata; constrained shapes should implement it
-only for supported values inside the shape declaration.
+`value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata.
+Component-derived shapes may still provide manual `ComponentShapeFor<Value>`
+impls outside the derive when custom bounds or diagnostics are needed.
 Shapes also publish a `ValueBindingPolicy`: use `NoComponentValueBinding` by
 default, or `InheritedComponentValueBinding` when fields should inherit
 shape-level `ComponentValueBinding<T>` synchronization.

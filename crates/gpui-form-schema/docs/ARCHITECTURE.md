@@ -84,11 +84,12 @@ NeedsSkippedFields}` instead of recomputing conversion API shape from
 field-level metadata. `runtime_can_fail` records the shape-policy predicate for
 tooling that needs runtime fallibility rather than API shape.
 
-`FieldVariant::field_name_with_component_suffix()` derives the generated
-component field name from resolved component suffix metadata emitted by derive
-or another registry producer. Inventory consumers use this as their
-generated-code naming policy. The suffix is normalized against the field name
-before falling back to `"shape"`.
+`FieldVariant::field_name_with_component_suffix()` derives the suffix-bearing
+prototyping helper name from resolved component suffix metadata emitted by
+derive or another registry producer. Inventory consumers use the plain source
+field name for generated component entity fields and reserve this suffixed name
+for DOM IDs, event handlers, labels, or other helper identifiers. The suffix is
+normalized against the field name before falling back to `"shape"`.
 
 `gpui-form-derive` emits `FieldValuePresence` from the source field optionality
 and, for non-optional component fields, the shape's `ValueStoragePolicy`

@@ -64,10 +64,9 @@ impl ItemForm {
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = ItemFormValueHolder::default();
-        let index_input = cx.new(|cx| ItemFormComponents::index_input(window, cx));
-        let mut _subscriptions =
-            vec![cx.subscribe_in(&index_input, window, Self::on_index_input_event)];
-        index_input.update(cx, |state, cx| {
+        let index = cx.new(|cx| ItemFormComponents::index(window, cx));
+        let mut _subscriptions = vec![cx.subscribe_in(&index, window, Self::on_index_input_event)];
+        index.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<Age>, Age>(
                 state,
                 Some(&current_data.index),
@@ -77,7 +76,7 @@ impl ItemForm {
         });
         Self {
             current_data,
-            fields: ItemFormFields { index_input },
+            fields: ItemFormFields { index },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -200,7 +199,7 @@ impl Render for ItemForm {
                                     <gpui_form_collection::input::Input<
                                         Age,
                                     > as gpui_form::runtime::shape::ComponentShape>::State,
-                                >>::new(&self.fields.index_input),
+                                >>::new(&self.fields.index),
                             ),
                     )
                     .child(

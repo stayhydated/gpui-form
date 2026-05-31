@@ -47,27 +47,21 @@ pub fn validate_shape_field_suffix(value: &str) -> Result<(), String> {
 pub struct ComponentFieldIr {
     pub shape: ResolvedComponentShape,
     pub field_ident: syn::Ident,
-    pub storage_policy: ComponentStoragePolicy,
+    pub storage_policy: ComponentShapeStoragePolicy,
 }
 
 #[derive(Clone, Debug)]
-pub enum ComponentStoragePolicy {
-    Direct,
-    Required,
-    ShapeOwned { shape: syn::Path },
+pub struct ComponentShapeStoragePolicy {
+    shape: syn::Path,
 }
 
-impl ComponentStoragePolicy {
-    pub fn direct() -> Self {
-        Self::Direct
-    }
-
-    pub fn required() -> Self {
-        Self::Required
-    }
-
+impl ComponentShapeStoragePolicy {
     pub fn shape_owned(shape: syn::Path) -> Self {
-        Self::ShapeOwned { shape }
+        Self { shape }
+    }
+
+    pub fn shape(&self) -> &syn::Path {
+        &self.shape
     }
 }
 
@@ -329,8 +323,8 @@ impl ResolvedComponentShape {
         }
     }
 
-    pub fn storage_policy(&self) -> ComponentStoragePolicy {
-        ComponentStoragePolicy::shape_owned(self.shape.clone())
+    pub fn storage_policy(&self) -> ComponentShapeStoragePolicy {
+        ComponentShapeStoragePolicy::shape_owned(self.shape.clone())
     }
 
     pub fn type_check_tokens(&self) -> TokenStream {
@@ -390,11 +384,8 @@ impl ResolvedComponentShape {
     }
 
     pub fn field_ir(&self) -> syn::Result<ComponentFieldIr> {
-        let field_ident = crate::names::ComponentFieldName::try_new_spanned(
-            self.component_suffix(),
-            &self.field_name,
-            self.span,
-        )?;
+        let field_ident =
+            crate::names::ComponentEntityFieldName::try_new_spanned(&self.field_name, self.span)?;
         Ok(ComponentFieldIr {
             shape: self.clone(),
             field_ident: field_ident.0,
@@ -508,12 +499,12 @@ mod tests {
             .field_ir("email".to_string(), field_type, None)
             .expect("valid component field should plan semantic IR");
 
-        assert_eq!(ir.field_ident.to_string(), "email_input");
+        assert_eq!(ir.field_ident.to_string(), "email");
         assert_eq!(compact_path(ir.shape.shape()), "crate::Input<String>");
-        assert!(matches!(
-            ir.storage_policy,
-            ComponentStoragePolicy::ShapeOwned { .. }
-        ));
+        assert_eq!(
+            compact_path(ir.storage_policy.shape()),
+            "crate::Input<String>"
+        );
     }
 
     #[test]

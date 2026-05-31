@@ -118,9 +118,10 @@ with field context instead of being rediscovered during token rendering.
 All component fields are shape-backed:
 
 - the generator still initializes component state into generated `FormFields`
-- generated local variable, field, and handler names use the resolved component
-  field identifier, which is derived from precomputed component-shape
-  prototyping suffix metadata
+- generated component entity locals, `FormFields` members, and
+  `FormComponents` constructors use the plain source field identifier
+- event handler names and DOM IDs use the suffix-bearing helper identifier,
+  which is derived from precomputed component-shape prototyping suffix metadata
 - if the field's render capability is enabled, the generator emits
   `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
   runtime `ComponentRender` contract
@@ -137,6 +138,10 @@ All component fields are shape-backed:
 - clear events reset optional holder storage to `None`; for non-optional
   storage they use the declared source default lowered into the form-side value
   when present, then fall back to the shape-owned default storage policy
+- default and conversion token lowering is shared with `gpui-form-derive`
+  through `gpui-form-codegen::metadata`, so prototyping output and derive
+  holder generation use the same literal wrapping and `from_source` conversion
+  rules
 
 ## Coordination Rules
 

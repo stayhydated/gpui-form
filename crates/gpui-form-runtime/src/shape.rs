@@ -80,9 +80,9 @@ pub trait DeclaredComponentShape: ComponentShape {}
 ///
 /// Generated `GpuiForm` code asserts this alongside [`ComponentShape`] so
 /// reusable shapes can own value-type compatibility diagnostics. Shape macros
-/// emit implementations from explicit `value = ...` / `values(...)` metadata;
-/// component-specific shapes may implement this trait manually when custom
-/// bounds or diagnostics are needed.
+/// emit implementations from explicit `value = ...`, `values(...)`, or
+/// `compatibility<Value> where ...;` metadata. Component-derived shapes may
+/// implement this trait manually when custom bounds or diagnostics are needed.
 #[diagnostic::on_unimplemented(
     message = "gpui-form component shape `{Self}` is not compatible with form value `{Value}`",
     note = "implement `ComponentShapeFor<{Value}>` for `{Self}`, or choose a component shape whose value type matches the field"
@@ -375,7 +375,7 @@ impl<T> InfallibleValueStorage<T> for DirectValueStorage {
 /// Shape-owned metadata for prototyping generators.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentPrototyping {
-    /// Preferred generated field/helper suffix, such as `"input"` or `"select"`.
+    /// Preferred generated prototyping helper suffix, such as `"input"` or `"select"`.
     pub field_suffix: Option<ComponentSuffix>,
 }
 

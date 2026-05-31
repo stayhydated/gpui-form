@@ -39,9 +39,10 @@ disagree with their storage or binding policy.
 
 Generated field type compatibility checks dispatch through
 `ComponentShapeFor<Value>`. Shape macros emit implementations only for explicit
-`value = ...` / `values(...)` metadata; curated component shapes can provide
-narrower manual implementations so their own traits and
-`#[diagnostic::on_unimplemented]` notes describe unsupported field value types.
+`value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata.
+Curated `component_shape!` wrappers use the compatibility metadata for narrower
+impls so their own traits and `#[diagnostic::on_unimplemented]` notes describe
+unsupported field value types.
 
 Generated validation asks `ValueStorage::is_present` whether a
 policy-owned holder field currently contains a value. `RequiredValueStorage` reports

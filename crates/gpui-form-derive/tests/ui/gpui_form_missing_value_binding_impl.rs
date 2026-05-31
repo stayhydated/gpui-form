@@ -13,9 +13,8 @@ impl State {
 gpui_form_derive::component_shape! {
     struct InheritedBindingShape {
         type State = State;
+        value = String;
         value_binding;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InheritedBindingShape {}
     }
 }
 

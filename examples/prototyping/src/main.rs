@@ -318,11 +318,7 @@ fn rustfmt_generated_files(paths: &[PathBuf]) {
     }
 }
 
-fn main() {
-    let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("prototyping example manifest should live under examples/");
-    let output_dir = examples_dir.join("some-lib-forms/src/forms");
+fn generate_forms(output_dir: &Path) {
     fs::create_dir_all(&output_dir).expect("Failed to create output directory");
     for entry in fs::read_dir(&output_dir).expect("Failed to read output directory") {
         let entry = entry.expect("Failed to inspect output entry");
@@ -375,4 +371,17 @@ fn main() {
     rustfmt_generated_files(&generated_files);
     println!("Formatted generated files with rustfmt.");
     println!("Form generation complete.");
+}
+
+fn main() {
+    let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("prototyping example manifest should live under examples/");
+
+    for output_dir in [
+        examples_dir.join("some-lib-forms/src/forms"),
+        examples_dir.join("prototyping/output"),
+    ] {
+        generate_forms(&output_dir);
+    }
 }

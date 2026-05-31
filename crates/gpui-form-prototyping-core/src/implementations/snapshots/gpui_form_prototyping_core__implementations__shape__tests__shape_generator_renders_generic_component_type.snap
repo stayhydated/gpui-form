@@ -26,7 +26,7 @@ fn __snapshot() {
                 .child(
                     <<crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
                         <crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::ComponentShape>::State,
-                    >>::new(&self.fields.tags_combobox),
+                    >>::new(&self.fields.tags),
                 ),
         );
 }

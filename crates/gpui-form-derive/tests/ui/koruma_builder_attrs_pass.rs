@@ -18,18 +18,20 @@ impl InputState {
 gpui_form_derive::component_shape! {
     struct NumericShape {
         type State = NumericState;
+        compatibility<Value>
+        where
+            Value: 'static;
         value_storage = direct;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for NumericShape {}
     }
 }
 
 gpui_form_derive::component_shape! {
     struct InputShape {
         type State = InputState;
+        compatibility<Value>
+        where
+            Value: 'static;
         value_storage = direct;
-
-        impl<T> gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape {}
     }
 }
 

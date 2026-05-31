@@ -28,8 +28,9 @@ explicit and prevents incomplete schema field construction. Component-only
 metadata is built through
 `FieldComponentVariant::new(shape_path)` before attaching it to a field, so
 metadata cannot represent value-bound-without-shape. Helpers such as
-`field_name_with_component_suffix()` keep inventory consumers aligned with the
-field names emitted by `#[derive(GpuiForm)]`, with a `"shape"` fallback suffix.
+`field_name_with_component_suffix()` expose the suffix-bearing prototyping name
+used for DOM IDs, event handlers, and helper names, with a `"shape"` fallback
+suffix. Generated component entity fields should use the source field name.
 Component metadata groups render, value-binding, and storage behavior as
 `ComponentCapabilities`.
 

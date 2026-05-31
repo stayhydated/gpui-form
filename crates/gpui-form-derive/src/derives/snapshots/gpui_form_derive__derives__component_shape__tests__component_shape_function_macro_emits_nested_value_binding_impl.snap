@@ -58,3 +58,7 @@ where
         ::gpui_form_runtime::shape::FormValueChange::Unchanged
     }
 }
+impl<T> ::gpui_form_runtime::shape::ComponentShapeFor<T> for InputShape<T>
+where
+    T: ::std::str::FromStr + ::std::string::ToString + 'static,
+{}

@@ -24,6 +24,7 @@ component_shape! {
     pub struct DefaultExternalShape {
         type State = ExternalState;
         component = EmailInput;
+        value = String;
     }
 }
 
@@ -32,6 +33,7 @@ component_shape! {
         type State = ExternalState;
         new = ExternalState::new(window, cx).with_label("email");
         component = EmailInput;
+        value = String;
     }
 }
 
@@ -39,6 +41,7 @@ component_shape! {
     pub struct SuffixedExternalShape {
         type State = ExternalState;
         component = EmailInput;
+        value = String;
         field_suffix = "email";
     }
 }

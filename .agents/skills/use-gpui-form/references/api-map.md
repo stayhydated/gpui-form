@@ -276,10 +276,9 @@ gpui_form_derive::component_shape! {
 
 `gpui_form_derive::component_shape!` uses semicolons between options.
 Use `value = ...` or `values(...)` to publish supported form-side value types,
-or omit value metadata and write manual `ComponentShapeFor<Value>` impls for
-constrained compatibility. Inside `component_shape!`, manual compatibility
-impls must use `gpui_form_runtime::shape::ComponentShapeFor`; local or aliased
-traits named `ComponentShapeFor` are rejected as ambiguous.
+or use `compatibility<Value> where Value: SomeTrait<...>;` for constrained
+compatibility with custom bounds or diagnostics. Manual
+`ComponentShapeFor<Value>` impls are rejected inside `component_shape!`.
 Use `value_storage = direct` when the reusable shape can synthesize a
 missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
 the wrapper shape owns reusable synchronization; add `value_binding;` when the

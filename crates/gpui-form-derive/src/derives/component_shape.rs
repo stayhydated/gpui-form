@@ -1,6 +1,6 @@
 use gpui_form_codegen::CratePaths;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::{ToTokens as _, format_ident, quote};
 use syn::parse::{Parse, ParseStream};
 use syn::{
     Attribute, GenericParam, Generics, Ident, ItemImpl, Result, Token, Type, Visibility, braced,
@@ -86,6 +86,7 @@ fn is_shape_option_start(input: ParseStream<'_>) -> bool {
         || input.peek(kw::component)
         || input.peek(kw::value)
         || input.peek(kw::values)
+        || input.peek(kw::compatibility)
         || input.peek(kw::value_storage)
         || input.peek(kw::value_binding)
         || input.peek(kw::field_suffix)
@@ -126,9 +127,8 @@ fn phantom_type_tokens(generics: &Generics) -> TokenStream {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum NestedShapeImplKind {
-    ComponentShapeFor,
     ComponentValueBinding,
-    AmbiguousComponentShapeFor,
+    ComponentShapeFor,
     Other,
 }
 
@@ -141,33 +141,12 @@ fn classify_nested_shape_impl(impl_item: &ItemImpl) -> NestedShapeImplKind {
     };
 
     if last.ident == "ComponentShapeFor" {
-        if is_canonical_runtime_shape_trait(path, "ComponentShapeFor") {
-            NestedShapeImplKind::ComponentShapeFor
-        } else {
-            NestedShapeImplKind::AmbiguousComponentShapeFor
-        }
-    } else if last.ident == "ComponentValueBinding"
-        && is_canonical_runtime_shape_trait(path, "ComponentValueBinding")
-    {
+        NestedShapeImplKind::ComponentShapeFor
+    } else if last.ident == "ComponentValueBinding" {
         NestedShapeImplKind::ComponentValueBinding
     } else {
         NestedShapeImplKind::Other
     }
-}
-
-fn is_canonical_runtime_shape_trait(path: &syn::Path, trait_ident: &str) -> bool {
-    let mut segments = path.segments.iter().rev();
-    let Some(last) = segments.next() else {
-        return false;
-    };
-    let Some(shape) = segments.next() else {
-        return false;
-    };
-    let Some(runtime) = segments.next() else {
-        return false;
-    };
-
-    last.ident == trait_ident && shape.ident == "shape" && runtime.ident == "gpui_form_runtime"
 }
 
 fn expand(input: ComponentShapeInput) -> TokenStream {
@@ -206,33 +185,36 @@ fn expand(input: ComponentShapeInput) -> TokenStream {
         .map(classify_nested_shape_impl)
         .collect::<Vec<_>>();
     if let Some(impl_item) = impls.iter().find(|impl_item| {
-        classify_nested_shape_impl(impl_item) == NestedShapeImplKind::AmbiguousComponentShapeFor
+        classify_nested_shape_impl(impl_item) == NestedShapeImplKind::ComponentShapeFor
     }) {
         let path = impl_item
             .trait_
             .as_ref()
-            .map(|(_, path, _)| path)
-            .expect("ambiguous nested impls always have a trait path");
+            .map(|(_, path, _)| path.to_token_stream())
+            .expect("component shape compatibility impls always have a trait path");
         return syn::Error::new_spanned(
             path,
-            "`component_shape!` only treats manual compatibility impls as `gpui_form_runtime::shape::ComponentShapeFor`; local or aliased traits named `ComponentShapeFor` are ambiguous inside the macro block",
+            "`component_shape!` no longer accepts manual `ComponentShapeFor` impls inside the macro block; use `value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata",
         )
         .to_compile_error();
     }
-    let component_shape_for_impls = if nested_impl_kinds
-        .contains(&NestedShapeImplKind::ComponentShapeFor)
+    if !metadata.has_value_compatibility() {
+        return syn::Error::new_spanned(
+            ident,
+            "`component_shape!` requires explicit value compatibility; add `value = ...`, `values(...)`, or `compatibility<Value> where ...;`",
+        )
+        .to_compile_error();
+    }
+    if metadata.has_value_binding()
+        && !nested_impl_kinds.contains(&NestedShapeImplKind::ComponentValueBinding)
     {
-        if let Some(value) = metadata.first_value() {
-            return syn::Error::new_spanned(
-                value,
-                "`value = ...` and `values(...)` cannot be combined with manual `ComponentShapeFor` impls; remove the value metadata or remove the manual impl",
-            )
-            .to_compile_error();
-        }
-        None
-    } else {
-        Some(metadata.value_impl_tokens(&runtime_crate, &ident, &generics))
-    };
+        return syn::Error::new_spanned(
+            ident,
+            "`value_binding` requires a nested `ComponentValueBinding<T>` impl in the `component_shape!` block",
+        )
+        .to_compile_error();
+    }
+    let component_shape_for_impls = metadata.value_impl_tokens(&runtime_crate, &ident, &generics);
 
     quote! {
         #(#attrs)*
@@ -308,6 +290,7 @@ mod tests {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct LocalInputShape {
                 type State = crate::state::InputState;
+                value = String;
             }
         })
         .unwrap();
@@ -374,13 +357,13 @@ mod tests {
         let expanded = expand(input).to_string();
 
         assert!(
-            expanded.contains("cannot be combined with manual `ComponentShapeFor` impls"),
+            expanded.contains("no longer accepts manual `ComponentShapeFor` impls"),
             "value metadata plus manual ComponentShapeFor impl should emit a compile error: {expanded}"
         );
     }
 
     #[test]
-    fn component_shape_function_macro_rejects_ambiguous_component_shape_for_trait() {
+    fn component_shape_function_macro_rejects_manual_component_shape_for_trait() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape {
                 type State = crate::state::InputState;
@@ -393,8 +376,69 @@ mod tests {
         let expanded = expand(input).to_string();
 
         assert!(
-            expanded.contains("local or aliased traits named `ComponentShapeFor` are ambiguous"),
+            expanded.contains("no longer accepts manual `ComponentShapeFor` impls"),
             "ambiguous ComponentShapeFor impl should emit a targeted compile error: {expanded}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_emits_constrained_compatibility_impl() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct Combobox<T>
+            where
+                T: Clone + 'static,
+            {
+                type State = crate::state::ComboboxState<T>;
+                compatibility<Value>
+                where
+                    Value: crate::ComboboxFormValue<T>;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input);
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains(
+                "impl<T,Value>::gpui_form_runtime::shape::ComponentShapeFor<Value>forCombobox<T>"
+            ) && compact.contains("Value:crate::ComboboxFormValue<T>"),
+            "compatibility<Value> should emit a constrained compatibility impl: {compact}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_requires_value_compatibility() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input).to_string();
+
+        assert!(
+            expanded.contains("requires explicit value compatibility"),
+            "missing value compatibility should emit a targeted compile error: {expanded}"
+        );
+    }
+
+    #[test]
+    fn component_shape_function_macro_requires_compatibility_where_clause() {
+        let err = match syn::parse2::<ComponentShapeInput>(quote! {
+            pub struct InputShape {
+                type State = crate::state::InputState;
+                compatibility<Value>;
+            }
+        }) {
+            Ok(_) => panic!("component_shape! should reject unconstrained compatibility metadata"),
+            Err(err) => err,
+        };
+
+        assert!(
+            err.to_string().contains("requires a `where` clause"),
+            "compatibility<Value> without where should point users to value metadata: {err}"
         );
     }
 
@@ -418,6 +462,7 @@ mod tests {
             pub struct LocalInputShape {
                 type State = crate::state::InputState;
                 new = crate::state::InputState::new(window, cx).with_label("email");
+                value = String;
             }
         })
         .unwrap();
@@ -439,6 +484,7 @@ mod tests {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct SwitchShape {
                 type State = crate::state::SwitchState;
+                value = bool;
                 value_storage = direct;
             }
         })
@@ -454,6 +500,7 @@ mod tests {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct RequiredInputShape {
                 type State = crate::state::InputState;
+                value = String;
                 value_storage = require_value;
             }
         })
@@ -479,6 +526,7 @@ mod tests {
             {
                 type State = ::gpui_component::input::InputState;
                 component = ::gpui_component::input::Input;
+                value = T;
                 value_binding;
 
                 impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T>
@@ -516,6 +564,7 @@ mod tests {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape<T> {
                 type State = ::gpui_component::input::InputState;
+                value = T;
 
                 impl<T> ::gpui_form_runtime::shape::ComponentValueBinding<T> for InputShape<T> {
                     type Event = ::gpui_component::input::InputEvent;
@@ -543,10 +592,30 @@ mod tests {
     }
 
     #[test]
+    fn component_shape_function_macro_rejects_value_binding_without_impl() {
+        let input: ComponentShapeInput = syn::parse2(quote! {
+            pub struct InputShape<T> {
+                type State = ::gpui_component::input::InputState;
+                value = T;
+                value_binding;
+            }
+        })
+        .unwrap();
+
+        let expanded = expand(input).to_string();
+
+        assert!(
+            expanded.contains("requires a nested `ComponentValueBinding<T>` impl"),
+            "value_binding metadata without a nested binding impl should emit a targeted compile error: {expanded}"
+        );
+    }
+
+    #[test]
     fn component_shape_function_macro_ignores_unrelated_component_value_binding_names() {
         let input: ComponentShapeInput = syn::parse2(quote! {
             pub struct InputShape<T> {
                 type State = ::gpui_component::input::InputState;
+                value = T;
 
                 impl<T> unrelated::ComponentValueBinding<T> for InputShape<T> {}
             }

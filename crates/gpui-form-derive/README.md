@@ -128,11 +128,11 @@ Behavior notes:
   `String`s
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
-- generated `FormFields` and `FormComponents` suffixes derive from the shape
-  type name. Derive-generated inventory inherits shape-level
-  `field_suffix = "..."` metadata when available and otherwise records the
-  resolved shape-name suffix for prototyping output. Shape-level suffixes must
-  be non-empty identifier suffixes
+- generated `FormFields` members and `FormComponents` constructors use the
+  source field identifier. Derive-generated inventory still records
+  shape-level `field_suffix = "..."` metadata when available, or a resolved
+  shape-name fallback, for prototyping-specific DOM IDs, event handlers, and
+  helper names. Shape-level suffixes must be non-empty identifier suffixes
 - field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, which allows validating form-side override
   types without deriving `Koruma` on the original model
@@ -194,8 +194,8 @@ Component-derived shapes publish value-binding metadata only when
 `ValueBindingPolicy` associated type drives compile-time inherited binding
 checks and schema/prototyping metadata.
 `field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
-prototyping generators a reusable field/helper suffix without relying on shape
-name heuristics.
+prototyping generators a reusable helper suffix for DOM IDs, event handlers,
+and helper names without relying on shape name heuristics.
 
 Use `value_binding` on the shape metadata and implement
 `ComponentStateValueBinding<T>` on the backing state when the component-derived
@@ -244,7 +244,8 @@ the local wrapper type that owns the `ComponentShape` and
 `DeclaredComponentShape` implementations plus the wrapper's reusable
 `ComponentValueBinding<T>` impls.
 It accepts `new`, `component`, `value = ...`, `values(...)`,
-`value_storage = require_value|direct`, `value_binding`, and `field_suffix`
+`compatibility<Value> where ...`, `value_storage = require_value|direct`,
+`value_binding`, and `field_suffix`
 metadata, with `type State = ...` supplying the wrapped state type. If `new` is
 omitted, the generated implementation calls `<State>::new(window, cx)`.
 `value_storage = direct` publishes that non-optional fields using this shape can
@@ -256,12 +257,12 @@ Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
 contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
 `InheritedComponentValueBinding`; otherwise the macro uses
 `NoComponentValueBinding`. The macro emits `ComponentShapeFor<T>` impls only
-for `value = ...` / `values(...)` metadata. Omit value metadata when the block
-contains a manual `ComponentShapeFor` impl with custom bounds or diagnostics.
-Combining value metadata with manual `ComponentShapeFor` impls is rejected so
-compatibility behavior stays explicit. Manual compatibility impls inside the
-macro block must name `gpui_form_runtime::shape::ComponentShapeFor`; local or
-aliased traits named `ComponentShapeFor` are rejected as ambiguous.
+for `value = ...`, `values(...)`, or constrained
+`compatibility<Value> where ...;` metadata. `value = ...` and `values(...)`
+cover fixed form-side value types. Use `compatibility<Value> where
+Value: SomeTrait<...>;` when the shape needs custom bounds or diagnostics.
+Manual `ComponentShapeFor` impls are rejected inside `component_shape!` so
+compatibility behavior stays explicit.
 
 ## Feature Flags
 

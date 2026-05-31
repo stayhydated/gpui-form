@@ -1,4 +1,3 @@
-use gpui_form_codegen::components::ComponentStoragePolicy;
 use syn::DeriveInput;
 
 use crate::derives::gpui_form::components::generate_component_field;
@@ -76,7 +75,7 @@ pub fn plan_form(
             },
         };
 
-        let (component, storage_policy) = match field.component() {
+        let (component, storage) = match field.component() {
             Some(component) => {
                 let component = generate_component_field(
                     &field_name,
@@ -84,16 +83,17 @@ pub fn plan_form(
                     component.component,
                     component.rendered.context,
                 )?;
-                let storage_policy = component.storage_policy.clone();
-                (Some(component), storage_policy)
+                let storage = HolderStoragePlan::from_component_shape_storage_policy(
+                    was_optional,
+                    component.storage_policy.clone(),
+                );
+                (Some(component), storage)
             },
-            None => (None, ComponentStoragePolicy::direct()),
+            None => (
+                None,
+                HolderStoragePlan::from_non_component_field(was_optional),
+            ),
         };
-        let storage = HolderStoragePlan::from_component_storage_policy(
-            &field_name,
-            was_optional,
-            storage_policy,
-        )?;
 
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info

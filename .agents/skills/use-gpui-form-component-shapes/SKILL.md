@@ -86,16 +86,17 @@ Metadata rules:
 - Add `component = ...` only when generated metadata should use a path-like
   render component type different from the derived type.
 - Add `value = ...` or `values(...)` once for each form-side value type the
-  shape supports, unless you will implement `ComponentShapeFor<Value>`
-  manually.
+  component-derived shape supports, unless you will implement
+  `ComponentShapeFor<Value>` manually outside the derive.
 - Add `value_storage = direct` when the component can synthesize a default value
   and non-optional fields should use direct `T` value-holder storage by default.
 - Add `value_binding` when the derived shape should delegate value binding
   through the backing state's `ComponentStateValueBinding<T>` implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
-  generated prototyping suffix. Generated form field identifiers still derive
-  from the shape type name. The suffix must be a non-empty ASCII identifier
-  suffix; direct `ComponentPrototyping::field_suffix(...)` calls
+  generated prototyping suffix for DOM IDs, event handlers, and helper names.
+  Generated `FormFields` members and `FormComponents` constructors use the
+  source field name. The suffix must be a non-empty ASCII identifier suffix;
+  direct `ComponentPrototyping::field_suffix(...)` calls
   validate the same contract.
 
 ## External State Pattern
@@ -152,20 +153,19 @@ gpui_form_derive::component_shape! {
 ```
 
 The macro accepts `new`, `component`, `value = ...`, `values(...)`,
-`value_storage = require_value|direct`, `value_binding`, and `field_suffix`
-metadata, plus `type State = ...`.
+`compatibility<Value> where ...`, `value_storage = require_value|direct`,
+`value_binding`, and `field_suffix` metadata, plus `type State = ...`.
 If `new` is omitted, it calls `<State>::new(window, cx)`. Use
 `value_storage = direct` on reusable wrappers that can seed or synthesize a
 missing value; consuming field attributes do not accept `value_storage = ...`.
 Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
 for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.
-Use `value = ...` / `values(...)` for simple compatibility impls, or omit value
-metadata and put manual `ComponentShapeFor<Value>` impls in the block when the
-shape needs custom bounds or diagnostics. Do not mix the two forms in one
-`component_shape!` block. Manual compatibility impls inside `component_shape!`
-must use the canonical `gpui_form_runtime::shape::ComponentShapeFor` path;
-local or aliased traits named `ComponentShapeFor` are ambiguous and rejected.
+Use `value = ...` / `values(...)` for simple compatibility impls. Use
+`compatibility<Value> where Value: SomeTrait<...>;` when the wrapper shape
+needs custom bounds or diagnostics. Do not put manual `ComponentShapeFor<Value>`
+impls inside `component_shape!`; the macro rejects them so compatibility stays
+explicit in metadata. Add at least one value compatibility declaration.
 
 Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
 `#[gpui_form(component(...))]` field shape. `#[derive(GpuiForm)]` requires the

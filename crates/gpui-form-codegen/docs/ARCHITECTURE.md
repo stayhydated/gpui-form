@@ -60,14 +60,15 @@ date pickers, or any other component family.
 
 - the generated component field identifier
 - the resolved component shape path and field value type
-- the component storage policy, such as direct storage, required storage, or a
-  shape-owned value-storage policy projection
+- the component shape storage policy, represented as a shape-owned
+  value-storage policy projection
 
 `gpui-form-codegen` does not emit `FormFields` or `FormComponents` layout token
 fragments. `gpui-form-derive` renders those final declarations from
 `ComponentFieldIr`, keeping layout emission at the derive boundary while
 sharing the same resolved component facts with inventory metadata and type
-checks.
+checks. Non-component holder storage, such as hidden direct fields, is selected
+inside derive planning rather than crossing the codegen component boundary.
 
 For `GpuiForm` output, rendered runtime paths target
 `gpui_form::runtime::shape` through the facade dependency. Downstream crates
@@ -75,12 +76,13 @@ that use component-backed fields depend on `gpui-form` plus the crate that owns
 the concrete shape type; they do not need a direct `gpui-form-runtime`
 dependency for generated field code.
 
-Generated identifiers derive their suffix from the planned
-`ResolvedComponentShape`. The path fallback strips `Shape` or `State`, removes
-a duplicate field prefix, and falls back to `shape` when the suffix exactly
-matches the field name. For example, `birth_date: DatePicker` becomes
-`birth_date_date_picker`, while `tags: TagsState` falls back to `tags_shape`.
-Derive-emitted inventory suffix metadata reads
+Generated component entity identifiers use the source field name. Prototyping
+helper suffixes still derive from the planned `ResolvedComponentShape`. The
+path fallback strips `Shape` or `State`, removes a duplicate field prefix, and
+falls back to `shape` when the suffix exactly matches the field name. For
+example, `birth_date: DatePicker` keeps a `birth_date` entity field while
+publishing a `date_picker` helper suffix; `tags: TagsState` falls back to the
+`shape` helper suffix. Derive-emitted inventory suffix metadata reads
 `ComponentShape::PROTOTYPING.field_suffix` when the declared shape publishes a
 suffix and otherwise uses the same path fallback.
 
@@ -102,3 +104,11 @@ Inventory/prototyping metadata records:
 
 `gpui-form-prototyping-core` consumes this metadata through the same contract,
 so adding a new widget family does not require changing this crate.
+
+`metadata.rs` also owns shared token-level lowering helpers for defaults and
+value conversions used by both `gpui-form-derive` and
+`gpui-form-prototyping-core`. Literal defaults, including literals wrapped in
+simple groups, parentheses, or one-expression blocks, lower through
+`Into::into(...)`; non-literal defaults are emitted as written. Conversion
+helpers apply user-authored `from_source` and `into_source` expressions while
+preserving the span supplied by the caller.

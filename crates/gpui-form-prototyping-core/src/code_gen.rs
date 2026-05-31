@@ -795,7 +795,7 @@ mod tests {
         let [creation] = parts.component_creations.items() else {
             panic!("expected one component creation");
         };
-        assert_eq!(creation.component_ident().to_string(), "country_shape");
+        assert_eq!(creation.entity_ident().to_string(), "country");
         assert_eq!(
             creation.components_struct_ident().to_string(),
             "DemoFormComponents"
@@ -804,12 +804,12 @@ mod tests {
         let [initializer] = parts.field_initializers.items() else {
             panic!("expected one field initializer");
         };
-        assert_eq!(initializer.field_ident().to_string(), "country_shape");
+        assert_eq!(initializer.field_ident().to_string(), "country");
 
         let [binding] = parts.subscription_calls.items() else {
             panic!("expected one subscription binding");
         };
-        assert_eq!(binding.component_ident().to_string(), "country_shape");
+        assert_eq!(binding.entity_ident().to_string(), "country");
         assert_eq!(
             binding.handler_ident().to_string(),
             "on_country_shape_event"

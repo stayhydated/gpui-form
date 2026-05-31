@@ -1,8 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, Ident, LitStr, Path, Result, Token, Type, Visibility,
+    Expr, GenericParam, Ident, LitStr, Path, Result, Token, Type, Visibility, WhereClause,
     parse::{Parse, ParseStream},
+    parse_quote,
     punctuated::Punctuated,
     spanned::Spanned as _,
 };
@@ -15,10 +16,11 @@ pub(super) const SHAPE_METADATA_OPTIONS: &str = "`new = ...`, `state = ...`, `co
      `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
 
 pub(super) const FUNCTION_SHAPE_OPTIONS: &str = "`new = ...`, `component = ...`, `value = ...`, `values(...)`, \
-     `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
+     `compatibility<Value> where ...`, `value_storage = require_value|direct`, `value_binding`, or `field_suffix = ...`";
 
 pub(super) mod kw {
     syn::custom_keyword!(component);
+    syn::custom_keyword!(compatibility);
     syn::custom_keyword!(field_suffix);
     syn::custom_keyword!(new);
     syn::custom_keyword!(state);
@@ -58,6 +60,32 @@ impl Parse for ValueStoragePolicy {
     }
 }
 
+#[derive(Debug)]
+pub(super) struct ComponentShapeCompatibility {
+    value_ident: Ident,
+    where_clause: Option<WhereClause>,
+}
+
+impl ComponentShapeCompatibility {
+    fn new(
+        value_ident: Ident,
+        where_clause: Option<WhereClause>,
+        span: proc_macro2::Span,
+    ) -> Result<Self> {
+        if where_clause.is_none() {
+            return Err(syn::Error::new_spanned(
+                Ident::new("compatibility", span),
+                "`compatibility<Value>` requires a `where` clause; use `value = ...` for unconstrained value compatibility",
+            ));
+        }
+
+        Ok(Self {
+            value_ident,
+            where_clause,
+        })
+    }
+}
+
 #[derive(Debug, Default)]
 pub(super) struct ComponentShapeMetadata {
     new: Option<Expr>,
@@ -69,12 +97,14 @@ pub(super) struct ComponentShapeMetadata {
     component: Option<Type>,
     /// Explicit form-side value types supported by this shape.
     values: Vec<Type>,
+    /// Explicit constrained form-side compatibility declarations.
+    compatibilities: Vec<ComponentShapeCompatibility>,
     /// Storage policy for non-optional source fields in generated form value
     /// holders.
     value_storage: Option<ValueStoragePolicy>,
     /// Opt generated prototyping code into ComponentValueBinding by default.
     value_binding: bool,
-    /// Preferred generated field/helper suffix for prototyping output.
+    /// Preferred generated helper suffix for prototyping output.
     field_suffix: Option<LitStr>,
 }
 
@@ -98,6 +128,10 @@ pub(super) enum ShapeOption {
     },
     Values {
         values: Vec<Type>,
+        span: proc_macro2::Span,
+    },
+    Compatibility {
+        compatibility: ComponentShapeCompatibility,
         span: proc_macro2::Span,
     },
     ValueStorage {
@@ -145,6 +179,26 @@ impl ShapeOption {
             syn::parenthesized!(values_content in input);
             return Ok(Self::Values {
                 values: ComponentShapeMetadata::parse_values(&values_content)?,
+                span: key.span,
+            });
+        }
+        if input.peek(kw::compatibility) {
+            let key = input.parse::<kw::compatibility>()?;
+            input.parse::<Token![<]>()?;
+            let value_ident = input.parse::<Ident>()?;
+            input.parse::<Token![>]>()?;
+            let where_clause = if input.peek(Token![where]) {
+                Some(input.parse::<WhereClause>()?)
+            } else {
+                None
+            };
+
+            return Ok(Self::Compatibility {
+                compatibility: ComponentShapeCompatibility::new(
+                    value_ident,
+                    where_clause,
+                    key.span,
+                )?,
                 span: key.span,
             });
         }
@@ -227,6 +281,10 @@ impl ShapeOption {
             Self::Component { ty, span } => shape.set_component(ty, span_token("component", span)),
             Self::Value { ty, span } => shape.add_value(ty, span_token("value", span)),
             Self::Values { values, span } => shape.add_values(values, span_token("values", span)),
+            Self::Compatibility {
+                compatibility,
+                span,
+            } => shape.add_compatibility(compatibility, span_token("compatibility", span)),
             Self::ValueStorage { policy, span } => {
                 shape.set_value_storage(policy, span_token("value_storage", span))
             },
@@ -286,6 +344,16 @@ impl ComponentShapeMetadata {
     }
 
     pub(super) fn add_value<T: quote::ToTokens>(&mut self, value: Type, _span: T) -> Result<()> {
+        if let Some(compatibility) = self.compatibilities.first() {
+            return Err(syn::Error::new_spanned(
+                value,
+                format!(
+                    "`value = ...` and `values(...)` cannot be combined with `compatibility<{}>`; use one compatibility style per shape",
+                    compatibility.value_ident
+                ),
+            ));
+        }
+
         let value_key = rust_type_key(&value);
         if self
             .values
@@ -323,14 +391,41 @@ impl ComponentShapeMetadata {
         Ok(())
     }
 
+    pub(super) fn add_compatibility<T: quote::ToTokens>(
+        &mut self,
+        compatibility: ComponentShapeCompatibility,
+        span: T,
+    ) -> Result<()> {
+        if !self.values.is_empty() {
+            return Err(syn::Error::new_spanned(
+                span,
+                "`compatibility<Value>` cannot be combined with `value = ...` or `values(...)`; use one compatibility style per shape",
+            ));
+        }
+
+        if self
+            .compatibilities
+            .iter()
+            .any(|existing| existing.value_ident == compatibility.value_ident)
+        {
+            return Err(syn::Error::new_spanned(
+                compatibility.value_ident,
+                "duplicate `compatibility<Value>` declaration",
+            ));
+        }
+
+        self.compatibilities.push(compatibility);
+        Ok(())
+    }
+
     pub(super) fn parse_values(input: ParseStream<'_>) -> Result<Vec<Type>> {
         Ok(Punctuated::<Type, Token![,]>::parse_terminated(input)?
             .into_iter()
             .collect())
     }
 
-    pub(super) fn first_value(&self) -> Option<&Type> {
-        self.values.first()
+    pub(super) fn has_value_compatibility(&self) -> bool {
+        !self.values.is_empty() || !self.compatibilities.is_empty()
     }
 
     pub(super) fn value_impl_tokens(
@@ -340,7 +435,7 @@ impl ComponentShapeMetadata {
         generics: &syn::Generics,
     ) -> TokenStream {
         let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-        let impls = self.values.iter().map(|value| {
+        let value_impls = self.values.iter().map(|value| {
             quote! {
                 impl #impl_generics #runtime_crate::shape::ComponentShapeFor<#value>
                     for #ident #ty_generics
@@ -349,8 +444,33 @@ impl ComponentShapeMetadata {
                 }
             }
         });
+        let compatibility_impls = self.compatibilities.iter().map(|compatibility| {
+            let value_ident = &compatibility.value_ident;
+            let mut impl_generics = generics.clone();
+            impl_generics
+                .params
+                .push(GenericParam::Type(parse_quote! { #value_ident }));
+            let combined_where_clause = impl_generics.make_where_clause();
+            if let Some(where_clause) = &compatibility.where_clause {
+                combined_where_clause
+                    .predicates
+                    .extend(where_clause.predicates.clone());
+            }
+            let (impl_generics, _, where_clause) = impl_generics.split_for_impl();
 
-        quote! { #(#impls)* }
+            quote! {
+                impl #impl_generics #runtime_crate::shape::ComponentShapeFor<#value_ident>
+                    for #ident #ty_generics
+                    #where_clause
+                {
+                }
+            }
+        });
+
+        quote! {
+            #(#value_impls)*
+            #(#compatibility_impls)*
+        }
     }
 
     pub(super) fn set_value_storage<T: quote::ToTokens>(

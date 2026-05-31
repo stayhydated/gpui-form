@@ -1,7 +1,7 @@
+use gpui_form_codegen::metadata::{apply_source_to_form_conversion_tokens, source_default_tokens};
 use gpui_form_schema::registry::{ComponentCapabilities, GpuiFormShape, StorageCapability};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Expr;
 
 use crate::error::PrototypingResult;
 use crate::imports::ImportItem;
@@ -16,40 +16,15 @@ use super::{
 /// shape-owned value bindings when the metadata opts in.
 pub struct ShapeCodeGenerator;
 
-fn unwrap_expr(expr: &Expr) -> &Expr {
-    match expr {
-        Expr::Group(group) => unwrap_expr(&group.expr),
-        Expr::Paren(paren) => unwrap_expr(&paren.expr),
-        Expr::Block(block) if block.block.stmts.len() == 1 => {
-            if let syn::Stmt::Expr(expr, None) = &block.block.stmts[0] {
-                unwrap_expr(expr)
-            } else {
-                expr
-            }
-        },
-        _ => expr,
-    }
-}
-
-fn should_wrap_default_into(expr: &Expr) -> bool {
-    matches!(unwrap_expr(expr), Expr::Lit(_))
-}
-
-fn source_default_tokens(expr: &Expr) -> TokenStream {
-    if should_wrap_default_into(expr) {
-        quote! { ::core::convert::Into::into(#expr) }
-    } else {
-        quote! { #expr }
-    }
-}
-
-fn form_default_tokens(field: &ResolvedField<'_>, expr: &Expr) -> TokenStream {
-    let source_default = source_default_tokens(expr);
-    if let Some(from_expr) = field.from_expr() {
-        quote! { (#from_expr)(#source_default) }
-    } else {
-        source_default
-    }
+fn form_default_tokens(field: &ResolvedField<'_>, expr: &syn::Expr) -> TokenStream {
+    let source_default = source_default_tokens(expr, proc_macro2::Span::call_site());
+    apply_source_to_form_conversion_tokens(
+        field.from_expr(),
+        field
+            .from_expr()
+            .map_or_else(proc_macro2::Span::call_site, syn::spanned::Spanned::span),
+        source_default,
+    )
 }
 
 fn component_capabilities(
@@ -124,7 +99,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
     ) -> PrototypingResult<TokenStream> {
-        let field_in_struct_name_ident = field.field_ident_with_component_suffix();
+        let field_in_struct_name_ident = field.field_ident();
         let capabilities = component_capabilities(field, component)?;
 
         if !capabilities.render_component() {
@@ -163,7 +138,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 
         let shape = runtime_shape_path(field, component)?;
         let field_type = field.value_type();
-        let field_var_name_ident = field.field_ident_with_component_suffix();
+        let field_var_name_ident = field.field_ident();
         let field_name_ident = field.field_ident();
         let event_handler_fn_name_ident = field.component_event_handler_ident();
         let state_type = quote! { ComponentStateOf<#shape> };
@@ -247,7 +222,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 
         let shape = runtime_shape_path(field, component)?;
         let field_type = field.value_type();
-        let field_var_name_ident = field.field_ident_with_component_suffix();
+        let field_var_name_ident = field.field_ident();
         let field_name_ident = field.field_ident();
         let value_tokens = if field.value_holder_uses_option() {
             quote! { current_data.#field_name_ident.as_ref() }
@@ -621,8 +596,8 @@ mod tests {
             pretty_tokens(generated.handlers[0].clone())
         );
         assert!(
-            compact_created.contains("letcountry_select=cx.new"),
-            "declared prototyping suffixes should drive generated field suffixes: {compact_created}"
+            compact_created.contains("letcountry=cx.new"),
+            "declared prototyping suffixes should not affect generated entity fields: {compact_created}"
         );
         assert!(
             compact_handler.contains("fnon_country_select_event"),

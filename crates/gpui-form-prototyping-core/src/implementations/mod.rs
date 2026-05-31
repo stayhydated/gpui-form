@@ -28,20 +28,20 @@ impl GeneratedSubscription {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComponentCreation {
-    component_ident: syn::Ident,
+    entity_ident: syn::Ident,
     components_struct_ident: syn::Ident,
 }
 
 impl ComponentCreation {
-    pub fn new(component_ident: syn::Ident, components_struct_ident: syn::Ident) -> Self {
+    pub fn new(entity_ident: syn::Ident, components_struct_ident: syn::Ident) -> Self {
         Self {
-            component_ident,
+            entity_ident,
             components_struct_ident,
         }
     }
 
-    pub fn component_ident(&self) -> &syn::Ident {
-        &self.component_ident
+    pub fn entity_ident(&self) -> &syn::Ident {
+        &self.entity_ident
     }
 
     pub fn components_struct_ident(&self) -> &syn::Ident {
@@ -51,11 +51,11 @@ impl ComponentCreation {
 
 impl quote::ToTokens for ComponentCreation {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let component_ident = &self.component_ident;
+        let entity_ident = &self.entity_ident;
         let components_struct_ident = &self.components_struct_ident;
         tokens.extend(quote! {
-            let #component_ident =
-                cx.new(|cx| #components_struct_ident::#component_ident(window, cx));
+            let #entity_ident =
+                cx.new(|cx| #components_struct_ident::#entity_ident(window, cx));
         });
     }
 }
@@ -96,20 +96,20 @@ impl std::fmt::Display for FieldInitializer {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SubscriptionBinding {
-    component_ident: syn::Ident,
+    entity_ident: syn::Ident,
     handler_ident: syn::Ident,
 }
 
 impl SubscriptionBinding {
-    pub fn new(component_ident: syn::Ident, handler_ident: syn::Ident) -> Self {
+    pub fn new(entity_ident: syn::Ident, handler_ident: syn::Ident) -> Self {
         Self {
-            component_ident,
+            entity_ident,
             handler_ident,
         }
     }
 
-    pub fn component_ident(&self) -> &syn::Ident {
-        &self.component_ident
+    pub fn entity_ident(&self) -> &syn::Ident {
+        &self.entity_ident
     }
 
     pub fn handler_ident(&self) -> &syn::Ident {
@@ -119,10 +119,10 @@ impl SubscriptionBinding {
 
 impl quote::ToTokens for SubscriptionBinding {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let component_ident = &self.component_ident;
+        let entity_ident = &self.entity_ident;
         let handler_ident = &self.handler_ident;
         tokens.extend(quote! {
-            cx.subscribe_in(&#component_ident, window, Self::#handler_ident)
+            cx.subscribe_in(&#entity_ident, window, Self::#handler_ident)
         });
     }
 }
@@ -261,13 +261,13 @@ pub fn generate_entity_creation(
     component: &GpuiFormShape,
 ) -> ComponentCreation {
     let form_components_struct_ident = component.struct_form_components_ident();
-    let component_ident = field.field_ident_with_component_suffix().clone();
+    let component_ident = field.field_ident().clone();
 
     ComponentCreation::new(component_ident, form_components_struct_ident)
 }
 
 pub fn generate_entity_field_initializer(field: &ResolvedField<'_>) -> FieldInitializer {
-    let field_var_name_ident = field.field_ident_with_component_suffix();
+    let field_var_name_ident = field.field_ident();
     FieldInitializer::new(field_var_name_ident.clone())
 }
 

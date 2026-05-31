@@ -672,6 +672,61 @@ mod gpui_form_tests {
                 && compact.contains("::core::convert::Into::into(1_u64)"),
             "structured default options should be emitted for inventory and value-holder defaults: {compact}"
         );
+        assert!(
+            compact.contains("FieldVariant::hidden(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"u64\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
+                && compact.contains("with_conversions(::gpui_form::schema::registry::ConversionMetadata::new(Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"|id|id.to_string()\")),Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"|id|id.parse().unwrap()\"))))")
+                && compact.contains(".with_default(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"1_u64\"))"),
+            "hidden fields should be emitted into inventory with source/form types, conversions, direct storage, and defaults: {compact}"
+        );
+    }
+
+    #[test]
+    fn test_hidden_inventory_emits_validations_and_omits_skipped_fields() {
+        let tokens = quote! {
+            #[derive(GpuiForm)]
+            #[gpui_form(koruma)]
+            struct TestForm {
+                #[gpui_form(component(crate::Input))]
+                visible: String,
+
+                #[gpui_form(hidden(default = HiddenId::new()))]
+                #[koruma(newtype)]
+                account_id: HiddenId,
+
+                #[gpui_form(skip)]
+                skipped_secret: bool,
+            }
+        };
+
+        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: true,
+            },
+        );
+
+        let compact = compact_tokens(&expanded.to_string());
+
+        assert!(
+            compact.contains("FieldVariant::hidden(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
+                && compact.contains(".with_validations(&[::gpui_form::schema::registry::ValidationRuleId::Newtype])")
+                && compact.contains(".with_default(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"HiddenId::new()\"))"),
+            "hidden fields should publish validation IDs and defaults in inventory: {compact}"
+        );
+        assert!(
+            compact.contains("FieldVariant::component(\"visible\""),
+            "component field inventory should remain emitted: {compact}"
+        );
+        assert!(
+            !compact.contains("FieldVariant::hidden(\"skipped_secret\"")
+                && !compact.contains("FieldVariant::component(\"skipped_secret\""),
+            "skipped fields should stay out of field inventory: {compact}"
+        );
+        assert!(
+            compact.contains("with_holder_conversion(::gpui_form::schema::registry::HolderConversionMetadata::new(::gpui_form::schema::registry::HolderConversionShape::NeedsSkippedFields,true))"),
+            "skipped fields should still be represented by holder conversion metadata: {compact}"
+        );
     }
 
     #[test]
@@ -756,11 +811,11 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubbio_input:::gpui::Entity<")
+            compact.contains("pubbio:::gpui::Entity<")
                 && compact.contains(
                     "<crate::ui::BioInputas::gpui_form::runtime::shape::ComponentShape>::State"
                 ),
-            "Component shape field should use the shape-derived suffix and shape state type"
+            "Component shape field should use the source field name and shape state type"
         );
 
         assert!(
@@ -875,8 +930,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubemail_input:::gpui::Entity<"),
-            "explicit component shape syntax should generate a component-suffixed field: {compact}"
+            compact.contains("pubemail:::gpui::Entity<"),
+            "explicit component shape syntax should generate a source-named entity field: {compact}"
         );
         assert!(
             compact.contains("Into::into(\"test@example.com\")"),
@@ -1122,8 +1177,8 @@ mod gpui_form_tests {
             "component shape `_` should be resolved to the field type in FormFields: {compact}"
         );
         assert!(
-            compact.contains("pubaccount_no_input:::gpui::Entity<"),
-            "generated FormFields identifiers should use the component shape name suffix: {compact}"
+            compact.contains("pubaccount_no:::gpui::Entity<"),
+            "generated FormFields identifiers should use the source field name: {compact}"
         );
         assert!(
             compact.contains("PROTOTYPING.field_suffix")
@@ -1159,8 +1214,8 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubbirth_date_date_picker:::gpui::Entity<"),
-            "multiword shape names should produce component-suffixed generated fields: {compact}"
+            compact.contains("pubbirth_date:::gpui::Entity<"),
+            "multiword shape names should not affect generated component entity fields: {compact}"
         );
         assert!(
             compact.contains("PROTOTYPING.field_suffix")

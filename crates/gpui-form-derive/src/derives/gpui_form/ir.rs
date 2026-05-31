@@ -1,5 +1,5 @@
 use gpui_form_codegen::components::{
-    ComponentFieldIr, ComponentStoragePolicy, ResolvedComponentShape,
+    ComponentFieldIr, ComponentShapeStoragePolicy, ResolvedComponentShape,
 };
 use koruma_derive_core::ValidationInfo;
 use proc_macro2::Span;
@@ -121,24 +121,28 @@ impl Default for RenderedFieldIntent {
 #[derive(Clone, Debug)]
 pub enum HolderStoragePlan {
     OriginallyOptional,
-    RequiredValue,
     Direct,
     ShapePolicy { shape: Path },
 }
 
 impl HolderStoragePlan {
-    pub fn from_component_storage_policy(
-        _field_name: &Ident,
-        was_optional: bool,
-        storage_policy: ComponentStoragePolicy,
-    ) -> syn::Result<Self> {
+    pub fn from_non_component_field(was_optional: bool) -> Self {
         if was_optional {
-            Ok(Self::OriginallyOptional)
+            Self::OriginallyOptional
         } else {
-            match storage_policy {
-                ComponentStoragePolicy::Required => Ok(Self::RequiredValue),
-                ComponentStoragePolicy::Direct => Ok(Self::Direct),
-                ComponentStoragePolicy::ShapeOwned { shape } => Ok(Self::ShapePolicy { shape }),
+            Self::Direct
+        }
+    }
+
+    pub fn from_component_shape_storage_policy(
+        was_optional: bool,
+        storage_policy: ComponentShapeStoragePolicy,
+    ) -> Self {
+        if was_optional {
+            Self::OriginallyOptional
+        } else {
+            Self::ShapePolicy {
+                shape: storage_policy.shape().clone(),
             }
         }
     }
@@ -146,7 +150,7 @@ impl HolderStoragePlan {
     pub fn shape_policy(&self) -> Option<&Path> {
         match self {
             Self::ShapePolicy { shape } => Some(shape),
-            Self::OriginallyOptional | Self::RequiredValue | Self::Direct => None,
+            Self::OriginallyOptional | Self::Direct => None,
         }
     }
 
@@ -264,10 +268,8 @@ impl HolderFieldIr {
     /// Returns true if this rendered field needs the `RequiredValidation`
     /// koruma validator.
     pub fn needs_required_validation(&self) -> bool {
-        matches!(
-            self.storage,
-            HolderStoragePlan::RequiredValue | HolderStoragePlan::ShapePolicy { .. }
-        ) && !self.was_optional
+        matches!(self.storage, HolderStoragePlan::ShapePolicy { .. })
+            && !self.was_optional
             && !self.validation.is_nested
     }
 }
@@ -357,10 +359,8 @@ impl FieldPlan {
             return false;
         };
 
-        matches!(
-            shared.storage,
-            HolderStoragePlan::RequiredValue | HolderStoragePlan::ShapePolicy { .. }
-        ) && !shared.was_optional
+        matches!(shared.storage, HolderStoragePlan::ShapePolicy { .. })
+            && !shared.was_optional
             && !shared.validation.is_nested
     }
 }

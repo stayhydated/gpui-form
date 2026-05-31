@@ -310,8 +310,9 @@ Reusable shapes can also publish `ComponentPrototyping` metadata through the
 shape contract.
 Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`, or
 `#[gpui_form_shape(...)]` so inventory and prototyping generators can emit
-names such as `email_input` without deriving that suffix from the shape type.
-Generated form field identifiers still derive from the shape type name.
+helper names such as `on_email_input_event` without deriving that suffix from
+the shape type. Generated form entity fields and constructors use the source
+field name, such as `email`.
 Generated value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
 `seed_value_binding_state`, and `form_value_change` to avoid repeating
 associated-type projections at every call site.

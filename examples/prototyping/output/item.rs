@@ -53,17 +53,20 @@ impl ItemForm {
                 self.current_data.index = value;
             },
             FormValueChange::Clear => {
-                self.current_data.index = ::core::default::Default::default();
+                self.current_data.index = <<gpui_form_collection::input::Input<
+                    Age,
+                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                    Age,
+                >>::default_storage();
             },
             FormValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let current_data = ItemFormValueHolder::default();
-        let index_input = cx.new(|cx| ItemFormComponents::index_input(window, cx));
-        let mut _subscriptions =
-            vec![cx.subscribe_in(&index_input, window, Self::on_index_input_event)];
-        index_input.update(cx, |state, cx| {
+        let index = cx.new(|cx| ItemFormComponents::index(window, cx));
+        let mut _subscriptions = vec![cx.subscribe_in(&index, window, Self::on_index_input_event)];
+        index.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::input::Input<Age>, Age>(
                 state,
                 Some(&current_data.index),
@@ -73,7 +76,7 @@ impl ItemForm {
         });
         Self {
             current_data,
-            fields: ItemFormFields { index_input },
+            fields: ItemFormFields { index },
             focus_handle: cx.focus_handle(),
             _subscriptions,
         }
@@ -153,21 +156,22 @@ impl Render for ItemForm {
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
                                 let error = {
-                                    validation_errors.as_ref().and_then(|e| {
-                                        let errs = e.index().all();
-                                        if errs.is_empty() {
-                                            None
-                                        } else {
-                                            Some(
-                                                errs.iter()
-                                                    .map(|v| {
-                                                        gpui_es_fluent::localize_message(cx, v)
-                                                    })
-                                                    .collect::<Vec<_>>()
-                                                    .join("\n"),
-                                            )
-                                        }
-                                    })
+                                    validation_errors
+                                        .as_ref()
+                                        .and_then(|e| {
+                                            let errs = e.index().all();
+                                            if errs.is_empty() {
+                                                None
+                                            } else {
+                                                Some(
+                                                    errs
+                                                        .iter()
+                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
+                                                        .collect::<Vec<_>>()
+                                                        .join("\n"),
+                                                )
+                                            }
+                                        })
                                 };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
@@ -176,31 +180,49 @@ impl Render for ItemForm {
                                         .flex_col()
                                         .gap_1()
                                         .child(div().child(description.clone()))
-                                        .when(error.is_some(), |this| {
-                                            this.child(
-                                                div()
-                                                    .text_color(error_color)
-                                                    .child(error.clone().unwrap_or_default()),
-                                            )
-                                        })
+                                        .when(
+                                            error.is_some(),
+                                            |this| {
+                                                this.child(
+                                                    div()
+                                                        .text_color(error_color)
+                                                        .child(error.clone().unwrap_or_default()),
+                                                )
+                                            },
+                                        )
                                 }
                             })
-                            .child(<gpui_component::input::Input>::new(
-                                &self.fields.index_input,
-                            )),
+                            .child(
+                                <<gpui_form_collection::input::Input<
+                                    Age,
+                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                    <gpui_form_collection::input::Input<
+                                        Age,
+                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                >>::new(&self.fields.index),
+                            ),
                     )
-                    .child(field().label_indent(false).child(self.action_buttons(
-                        cx,
-                        |payload, _, _| {
-                            let _ = payload;
-                        },
-                    ))),
+                    .child(
+                        field()
+                            .label_indent(false)
+                            .child(
+                                self
+                                    .action_buttons(
+                                        cx,
+                                        |payload, _, _| {
+                                            let _ = payload;
+                                        },
+                                    ),
+                            ),
+                    ),
             )
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
-            .child(format!(
-                "try_into_original: {:?}",
-                self.current_data.clone().try_into_original()
-            ))
+            .child(
+                format!(
+                    "try_into_original: {:?}", self.current_data.clone()
+                    .try_into_original()
+                ),
+            )
     }
 }

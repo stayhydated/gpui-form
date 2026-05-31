@@ -28,7 +28,7 @@ const fn is_ascii_ident_continue(byte: u8) -> bool {
     is_ascii_ident_start(byte) || byte >= b'0' && byte <= b'9'
 }
 
-/// Preferred generated component field/helper suffix.
+/// Preferred generated prototyping helper suffix.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentSuffix(&'static str);
 

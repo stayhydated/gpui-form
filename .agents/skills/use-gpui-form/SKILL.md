@@ -126,11 +126,12 @@ Common patterns:
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
-  `file_picker`, `infinite_select`, and `otp_input`. Generated form identifiers derive from the
-  shape type name. Derive-emitted inventory uses shape-level `field_suffix = "..."` metadata when
-  available and otherwise falls back to the shape type name. Shape-level suffixes must be non-empty
-  ASCII identifier suffixes. Direct `ComponentPrototyping::field_suffix(...)` calls validate the
-  same suffix contract.
+  `file_picker`, `infinite_select`, and `otp_input`. Generated `FormFields` members and
+  `FormComponents` constructors use the source field name. Derive-emitted inventory uses
+  shape-level `field_suffix = "..."` metadata when available, or the shape type fallback otherwise,
+  for prototyping-specific DOM IDs, event handlers, and helper names. Shape-level suffixes must be
+  non-empty ASCII identifier suffixes. Direct `ComponentPrototyping::field_suffix(...)` calls
+  validate the same suffix contract.
 - Inventory prototyping fails fast when a shape-backed field is missing render,
   value-binding, shape path, or default-storage metadata. Fix the component
   shape metadata instead of relying on placeholder generated UI.

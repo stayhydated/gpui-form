@@ -124,8 +124,8 @@ Responsibilities:
    `FormComponents` constructors.
 1. Schema/prototyping metadata can optionally carry a concrete UI component type
    for scaffold generation.
-1. Shape-level prototyping metadata can carry a preferred field/helper suffix
-   for scaffold generation.
+1. Shape-level prototyping metadata can carry a preferred helper suffix for
+   scaffold DOM IDs, event handlers, and helper names.
 1. When the field opts into `value_binding`, prototyping code calls the
    shape-owned `ComponentValueBinding<T>` hooks instead of inferring any
    domain-specific event semantics; generated code can route those calls
