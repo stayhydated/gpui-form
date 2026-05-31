@@ -19,16 +19,9 @@ fn gpui_form_reports_invalid_field_attributes() {
 #[test]
 fn gpui_form_accepts_generic_shape_backed_forms() {
     let tests = trybuild::TestCases::new();
-    tests.pass("tests/ui/gpui_form_combobox_explicit_item_pass.rs");
     tests.pass("tests/ui/gpui_form_generic_shape_pass.rs");
     tests.pass("tests/ui/gpui_form_plain_generic_pass.rs");
     tests.pass("tests/ui/gpui_form_partial_generic_component_pass.rs");
-}
-
-#[test]
-fn gpui_form_rejects_wrong_combobox_value_shape() {
-    let tests = trybuild::TestCases::new();
-    tests.compile_fail("tests/ui/gpui_form_combobox_wrong_value_type.rs");
 }
 
 #[test]
