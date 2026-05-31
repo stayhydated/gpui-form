@@ -13,6 +13,7 @@ fn gpui_form_reports_invalid_field_attributes() {
     tests.compile_fail("tests/ui/gpui_form_malformed_attribute_*.rs");
     tests.compile_fail("tests/ui/gpui_form_missing_*.rs");
     tests.compile_fail("tests/ui/gpui_form_skip_*.rs");
+    tests.compile_fail("tests/ui/gpui_form_wrong_*.rs");
 }
 
 #[test]

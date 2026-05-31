@@ -581,7 +581,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_present_fields_json_uses_into_converted_debug_values_for_skipped_forms() {
+    fn test_present_fields_uses_typed_converted_values_for_skipped_forms() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -611,18 +611,16 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("pubfnpresent_fields_json(&self)->String"),
-            "Skipped-field value holders should generate present_fields_json()"
+            compact.contains("pubenumTestFormFormValueHolderPresentField"),
+            "Skipped-field value holders should generate a typed present-field enum"
         );
         assert!(
-            compact.contains(
-                "letconverted=self.birth_date.clone().map(|value|(|dt|to_model(dt))(value));"
-            ),
-            "present_fields_json() should apply `into_source` conversion for optional override fields"
+            compact.contains("pubfnpresent_fields<'__gpui_form_present>(&'__gpui_form_presentself)->Vec<TestFormFormValueHolderPresentField<'__gpui_form_present>>"),
+            "Skipped-field value holders should expose typed present_fields() snapshots"
         );
         assert!(
-            compact.contains("format!(\"{:?}\",converted)"),
-            "present_fields_json() should emit debug-formatted converted values"
+            compact.contains("entries.push(TestFormFormValueHolderPresentField::BirthDate((|dt|to_model(dt))(value)));"),
+            "present_fields() should apply `into_source` conversion for optional override fields"
         );
     }
 

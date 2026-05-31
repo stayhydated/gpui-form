@@ -24,11 +24,21 @@ that crate's `derive` feature is enabled.
 ## Module Layout
 
 - `src/derives/gpui_form/mod.rs`: `GpuiForm` entry module
+- `src/derives/gpui_form/attrs.rs`: raw `#[gpui_form(...)]` field option
+  grammar, struct marker attributes, and unknown/duplicate nested option errors
+- `src/derives/gpui_form/intent.rs`: parsed field and struct intent before
+  type normalization or holder/component planning
+- `src/derives/gpui_form/ir.rs`: normalized semantic form/field IR shared by
+  planning, value-holder emission, inventory emission, and type checks
+- `src/derives/gpui_form/structs.rs`: macro entry options passed from
+  `src/lib.rs`
 - `src/derives/gpui_form/expansion.rs`: top-level `GpuiForm` expansion pipeline
 - `src/derives/gpui_form/components.rs`: delegates component fields into
   codegen layouts
 - `src/derives/gpui_form/value_holder.rs`: generated holder types, defaults,
   conversion logic, and skip-field handling
+- `src/derives/gpui_form/validation.rs`: Koruma option parsing and projection
+  into gpui-form validation metadata
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
@@ -44,9 +54,9 @@ that crate's `derive` feature is enabled.
 1. Parse the input with `syn`.
 1. Flatten `cfg_attr` wrappers so downstream parsing sees effective
    `#[gpui_form(...)]` data.
-1. Parse struct-level and field-level `#[gpui_form(...)]` data with `darling`.
-   Field-level component shapes are parsed into a typed shape path from
-   `#[gpui_form(component(my::Shape))]`;
+1. Parse raw field options through `attrs.rs`, then assemble parsed field and
+   struct intents in `intent.rs` with `darling`. Field-level component shapes
+   are parsed into a typed shape path from `#[gpui_form(component(my::Shape))]`;
    arbitrary Rust expressions are only parsed for intent-scoped `default`,
    `value(from_source = ...)`, and `value(into_source = ...)`. The parser
    rejects duplicate component expressions before codegen and rejects
@@ -105,7 +115,7 @@ Important behaviors:
   conversion code paths do not need defensive "maybe skipped" lookups
 - rendered field storage is represented as `HolderStoragePlan`; value-holder
   emission routes storage type, present-value wrapping, default storage,
-  holder/source conversion, present-field JSON, and required validation builder
+  holder/source conversion, typed present-field snapshots, and required validation builder
   selection through a shared storage strategy instead of duplicating those
   decisions at each call site
 - value-holder emission receives the same `DeriveContext` as expansion, so
@@ -128,6 +138,10 @@ Important behaviors:
 - non-optional shape-backed fields whose `ValueStoragePolicy` can represent
   missing values also get generated Koruma validators so `validate()` reports
   missing shape-required values before holder-to-model conversion
+- skipped-field holders expose a generated typed `PresentField` enum and
+  `present_fields()` method for inspecting editable state. JSON/debug
+  formatting lives in examples or prototyping output, not in every generated
+  holder.
 
 ## Koruma Integration
 

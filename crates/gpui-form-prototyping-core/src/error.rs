@@ -11,6 +11,12 @@ pub enum PrototypingError {
         value: String,
         error: String,
     },
+    InvalidFieldPath {
+        field_name: String,
+        kind: &'static str,
+        value: String,
+        error: String,
+    },
     InvalidType {
         field_name: String,
         value: String,
@@ -38,6 +44,17 @@ impl fmt::Display for PrototypingError {
                 write!(
                     f,
                     "invalid {kind} `{value}` in prototyping metadata: {error}"
+                )
+            },
+            Self::InvalidFieldPath {
+                field_name,
+                kind,
+                value,
+                error,
+            } => {
+                write!(
+                    f,
+                    "invalid {kind} `{value}` for field `{field_name}` in prototyping metadata: {error}"
                 )
             },
             Self::InvalidType {

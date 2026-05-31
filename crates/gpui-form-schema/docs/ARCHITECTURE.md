@@ -22,8 +22,9 @@ shape and field IR at the inventory boundary.
 - `src/lib.rs`: exports `registry` and `resolved`
 - `src/registry.rs`: `GpuiFormShape`, `FieldVariant`, and `inventory`
   collection
-- `src/resolved.rs`: `ResolvedGpuiFormShape`, `ResolvedField`, and validated
-  generated-name helpers for downstream tooling
+- `src/resolved.rs`: `ResolvedGpuiFormShape`, `ResolvedField`,
+  `ResolvedComponentMetadata`, and validated generated-name helpers for
+  downstream tooling
 
 ## Metadata Model
 
@@ -93,6 +94,19 @@ before falling back to `"shape"`.
 and, for non-optional component fields, the shape's `ValueStoragePolicy`
 associated type. Components that can synthesize missing values define that once
 on the shape.
+
+### Resolved Metadata
+
+`ResolvedGpuiFormShape` and `ResolvedField` are the preferred boundary for
+tooling. They parse `RustType`, `RustPath`, and `RustExpr` inventory strings
+once, retain validated identifiers and `syn` values, and expose semantic facts
+such as value presence, validations, component capabilities, and component
+shape metadata without requiring consumers to re-query raw registry payloads.
+
+`ResolvedComponentMetadata` groups a parsed component shape path with its
+component capabilities. Invalid component shape paths are reported as
+field-scoped resolution errors, so downstream generators can surface one
+precise malformed-metadata failure before token generation begins.
 
 ## Data Flow
 

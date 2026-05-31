@@ -1,14 +1,15 @@
 use gpui_form_codegen::components::RequiredValue;
-use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
-use std::collections::HashMap;
 use syn::DeriveInput;
 
 use crate::derives::gpui_form::components::generate_component_field;
-use crate::derives::gpui_form::structs::{
-    ComponentFieldIntent, ComponentFieldPlan, ComponentStruct, FieldPlan, HolderFieldIr,
-    HolderStoragePlan, KorumaOptions, RenderedValueIntent, ValidationMetadata, ValidationRule,
+use crate::derives::gpui_form::intent::{ComponentFieldIntent, ComponentStruct};
+use crate::derives::gpui_form::ir::{
+    ComponentFieldPlan, FieldPlan, HolderFieldIr, HolderStoragePlan, RenderedValueIntent,
 };
 use crate::derives::gpui_form::utils::extract_option_inner_type;
+use crate::derives::gpui_form::validation::{
+    KorumaOptions, parse_koruma_fields, validation_metadata_from_koruma,
+};
 
 pub struct FormPlan {
     pub fields: Vec<FieldPlan>,
@@ -95,23 +96,9 @@ pub fn plan_form(
         let validation = koruma_info
             .map(|info| info.validation.clone())
             .unwrap_or_default();
-        let mut validation_metadata = ValidationMetadata::default();
-        if let Some(info) = koruma_info {
-            for validator in &info.validation.field_validators {
-                if validator.name() == "RequiredValidation" {
-                    validation_metadata.push(ValidationRule::Required);
-                } else {
-                    validation_metadata
-                        .push(ValidationRule::Validator(validator.name().to_string()));
-                }
-            }
-            if info.is_newtype() {
-                validation_metadata.push(ValidationRule::Newtype);
-            }
-            if info.is_nested() {
-                validation_metadata.push(ValidationRule::Nested);
-            }
-        }
+        let validation_metadata = koruma_info
+            .map(validation_metadata_from_koruma)
+            .unwrap_or_default();
 
         let shared = HolderFieldIr {
             field_name,
@@ -152,39 +139,4 @@ pub fn plan_form(
         enable_koruma_fluent,
         effective_enable_koruma,
     })
-}
-
-fn parse_koruma_fields(
-    derive_input: &DeriveInput,
-) -> syn::Result<HashMap<String, KorumaFieldInfo>> {
-    let syn::Data::Struct(data_struct) = &derive_input.data else {
-        return Ok(HashMap::new());
-    };
-
-    let mut fields = HashMap::new();
-    let mut errors: Option<syn::Error> = None;
-    for field in &data_struct.fields {
-        let Some(ident) = field.ident.as_ref() else {
-            continue;
-        };
-        match koruma_derive_core::parse_field(field, 0) {
-            ParseFieldResult::Valid(info) => {
-                fields.insert(ident.to_string(), *info);
-            },
-            ParseFieldResult::Skip => {},
-            ParseFieldResult::Error(error) => {
-                if let Some(errors) = &mut errors {
-                    errors.combine(error);
-                } else {
-                    errors = Some(error);
-                }
-            },
-        }
-    }
-
-    if let Some(errors) = errors {
-        Err(errors)
-    } else {
-        Ok(fields)
-    }
 }

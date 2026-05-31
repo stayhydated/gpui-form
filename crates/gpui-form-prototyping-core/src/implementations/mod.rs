@@ -1,9 +1,6 @@
 pub mod shape;
 
-use gpui_form_schema::{
-    registry::{FieldVariant, GpuiFormShape},
-    resolved::ResolvedField,
-};
+use gpui_form_schema::{registry::GpuiFormShape, resolved::ResolvedField};
 use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -19,18 +16,160 @@ pub fn field_generator() -> &'static dyn FieldCodeGenerator {
 
 #[derive(Default)]
 pub struct GeneratedSubscription {
-    pub calls: Vec<TokenStream>,
-    pub handlers: Vec<TokenStream>,
+    pub bindings: Vec<SubscriptionBinding>,
+    pub handlers: Vec<EventHandler>,
 }
 
 impl GeneratedSubscription {
     pub fn is_empty(&self) -> bool {
-        self.calls.is_empty() && self.handlers.is_empty()
+        self.bindings.is_empty() && self.handlers.is_empty()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ComponentCreation {
+    component_ident: syn::Ident,
+    components_struct_ident: syn::Ident,
+}
+
+impl ComponentCreation {
+    pub fn new(component_ident: syn::Ident, components_struct_ident: syn::Ident) -> Self {
+        Self {
+            component_ident,
+            components_struct_ident,
+        }
+    }
+
+    pub fn component_ident(&self) -> &syn::Ident {
+        &self.component_ident
+    }
+
+    pub fn components_struct_ident(&self) -> &syn::Ident {
+        &self.components_struct_ident
+    }
+}
+
+impl quote::ToTokens for ComponentCreation {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let component_ident = &self.component_ident;
+        let components_struct_ident = &self.components_struct_ident;
+        tokens.extend(quote! {
+            let #component_ident =
+                cx.new(|cx| #components_struct_ident::#component_ident(window, cx));
+        });
+    }
+}
+
+impl std::fmt::Display for ComponentCreation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", quote::ToTokens::to_token_stream(self))
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FieldInitializer {
+    field_ident: syn::Ident,
+}
+
+impl FieldInitializer {
+    pub fn new(field_ident: syn::Ident) -> Self {
+        Self { field_ident }
+    }
+
+    pub fn field_ident(&self) -> &syn::Ident {
+        &self.field_ident
+    }
+}
+
+impl quote::ToTokens for FieldInitializer {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let field_ident = &self.field_ident;
+        tokens.extend(quote! { #field_ident, });
+    }
+}
+
+impl std::fmt::Display for FieldInitializer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", quote::ToTokens::to_token_stream(self))
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SubscriptionBinding {
+    component_ident: syn::Ident,
+    handler_ident: syn::Ident,
+}
+
+impl SubscriptionBinding {
+    pub fn new(component_ident: syn::Ident, handler_ident: syn::Ident) -> Self {
+        Self {
+            component_ident,
+            handler_ident,
+        }
+    }
+
+    pub fn component_ident(&self) -> &syn::Ident {
+        &self.component_ident
+    }
+
+    pub fn handler_ident(&self) -> &syn::Ident {
+        &self.handler_ident
+    }
+}
+
+impl quote::ToTokens for SubscriptionBinding {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let component_ident = &self.component_ident;
+        let handler_ident = &self.handler_ident;
+        tokens.extend(quote! {
+            cx.subscribe_in(&#component_ident, window, Self::#handler_ident)
+        });
+    }
+}
+
+impl std::fmt::Display for SubscriptionBinding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", quote::ToTokens::to_token_stream(self))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct EventHandler {
+    handler_ident: syn::Ident,
+    tokens: TokenStream,
+}
+
+impl EventHandler {
+    pub fn new(handler_ident: syn::Ident, tokens: TokenStream) -> Self {
+        Self {
+            handler_ident,
+            tokens,
+        }
+    }
+
+    pub fn handler_ident(&self) -> &syn::Ident {
+        &self.handler_ident
+    }
+
+    pub fn to_token_stream(&self) -> TokenStream {
+        self.tokens.clone()
+    }
+}
+
+impl quote::ToTokens for EventHandler {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.tokens.clone());
+    }
+}
+
+impl std::fmt::Display for EventHandler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.tokens)
     }
 }
 
 pub trait FieldCodeGenerator {
-    fn generate_imports(&self, _field: &FieldVariant) -> Vec<ImportItem> {
+    fn generate_imports(&self, _field: &ResolvedField<'_>) -> Vec<ImportItem> {
         vec![]
     }
 
@@ -38,13 +177,13 @@ pub trait FieldCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> PrototypingResult<TokenStream>;
+    ) -> PrototypingResult<ComponentCreation>;
 
     fn generate_field_initializers(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> PrototypingResult<TokenStream>;
+    ) -> PrototypingResult<FieldInitializer>;
 
     fn generate_render_child(
         &self,
@@ -120,20 +259,16 @@ impl ShapeIdentities for GpuiFormShape {
 pub fn generate_entity_creation(
     field: &ResolvedField<'_>,
     component: &GpuiFormShape,
-) -> TokenStream {
+) -> ComponentCreation {
     let form_components_struct_ident = component.struct_form_components_ident();
-    let var_name_ident = field.field_ident_with_component_suffix().clone();
-    let fn_name_ident = var_name_ident.clone();
+    let component_ident = field.field_ident_with_component_suffix().clone();
 
-    quote! {
-        let #var_name_ident =
-            cx.new(|cx| #form_components_struct_ident::#fn_name_ident(window, cx));
-    }
+    ComponentCreation::new(component_ident, form_components_struct_ident)
 }
 
-pub fn generate_entity_field_initializer(field: &ResolvedField<'_>) -> TokenStream {
+pub fn generate_entity_field_initializer(field: &ResolvedField<'_>) -> FieldInitializer {
     let field_var_name_ident = field.field_ident_with_component_suffix();
-    quote! { #field_var_name_ident, }
+    FieldInitializer::new(field_var_name_ident.clone())
 }
 
 pub fn render_standard_field(

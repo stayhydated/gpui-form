@@ -1,6 +1,4 @@
-use gpui_form_schema::registry::{
-    ComponentCapabilities, FieldVariant, GpuiFormShape, StorageCapability,
-};
+use gpui_form_schema::registry::{ComponentCapabilities, GpuiFormShape, StorageCapability};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Expr;
@@ -9,7 +7,8 @@ use crate::error::PrototypingResult;
 use crate::imports::ImportItem;
 
 use super::{
-    FieldCodeGenerator, GeneratedSubscription, ResolvedField, generate_entity_creation,
+    ComponentCreation, EventHandler, FieldCodeGenerator, FieldInitializer, GeneratedSubscription,
+    ResolvedField, SubscriptionBinding, generate_entity_creation,
     generate_entity_field_initializer, missing_component_capability, render_standard_field,
 };
 
@@ -90,7 +89,7 @@ fn ensure_default_storage_support(
 }
 
 impl FieldCodeGenerator for ShapeCodeGenerator {
-    fn generate_imports(&self, field: &FieldVariant) -> Vec<ImportItem> {
+    fn generate_imports(&self, field: &ResolvedField<'_>) -> Vec<ImportItem> {
         if field.value_binding() {
             vec![
                 ImportItem::path("gpui_form::runtime::shape::ComponentEventOf"),
@@ -108,7 +107,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
-    ) -> PrototypingResult<TokenStream> {
+    ) -> PrototypingResult<ComponentCreation> {
         Ok(generate_entity_creation(field, component))
     }
 
@@ -116,7 +115,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
-    ) -> PrototypingResult<TokenStream> {
+    ) -> PrototypingResult<FieldInitializer> {
         Ok(generate_entity_field_initializer(field))
     }
 
@@ -170,9 +169,10 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let state_type = quote! { ComponentStateOf<#shape> };
         let event_type = quote! { ComponentEventOf<#shape, #field_type> };
 
-        let calls = vec![
-            quote! { cx.subscribe_in(&#field_var_name_ident, window, Self::#event_handler_fn_name_ident) },
-        ];
+        let bindings = vec![SubscriptionBinding::new(
+            field_var_name_ident.clone(),
+            event_handler_fn_name_ident.clone(),
+        )];
 
         let set_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = Some(value); }
@@ -194,7 +194,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             }
         };
 
-        let handler = quote! {
+        let handler_tokens = quote! {
             fn #event_handler_fn_name_ident(
                 &mut self,
                 state: &Entity<#state_type>,
@@ -223,8 +223,11 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         };
 
         Ok(GeneratedSubscription {
-            calls,
-            handlers: vec![handler],
+            bindings,
+            handlers: vec![EventHandler::new(
+                event_handler_fn_name_ident,
+                handler_tokens,
+            )],
         })
     }
 
@@ -313,7 +316,8 @@ mod tests {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
-    fn pretty_tokens(tokens: proc_macro2::TokenStream) -> String {
+    fn pretty_tokens(tokens: impl quote::ToTokens) -> String {
+        let tokens = tokens.to_token_stream();
         if let Ok(file) = syn::parse2::<syn::File>(tokens.clone()) {
             return prettyplease::unparse(&file);
         }
@@ -440,12 +444,12 @@ mod tests {
             .expect("value-bound shape-backed fields should generate subscriptions");
 
         assert!(
-            generated.calls.len() == 1 && generated.handlers.len() == 1,
+            generated.bindings.len() == 1 && generated.handlers.len() == 1,
             "value-bound shape-backed fields should generate a subscription call and handler"
         );
         insta::assert_snapshot!(
             "shape_generator_wires_shape_value_binding_call",
-            pretty_tokens(generated.calls[0].clone())
+            pretty_tokens(generated.bindings[0].clone())
         );
         insta::assert_snapshot!(
             "shape_generator_wires_shape_value_binding_handler",

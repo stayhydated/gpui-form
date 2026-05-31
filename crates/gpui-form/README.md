@@ -150,7 +150,9 @@ Common field-level helpers:
   component-backed generated value holder field.
 - `#[gpui_form(skip)]` excludes a field from generated form widgets while still
   allowing prefill from the original model. It cannot be combined with
-  component or hidden intent on the same field.
+  component or hidden intent on the same field. Holders with skipped source
+  fields expose typed `present_fields()` snapshots for debug/preview UI, and
+  require `into_original(skipped_value, ...)` for reconstruction.
 - `value(type = <form_type>, from_source = <expr>, into_source = <expr>)`
   lets the generated form edit a type that differs from the original field type.
   Put it inside the field intent:

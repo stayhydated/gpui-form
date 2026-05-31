@@ -136,7 +136,9 @@ Behavior notes:
   types without deriving `Koruma` on the original model
 - when skipped fields are present, the generated value holder keeps builder
   support and exposes `into_original(...)` instead of an unconditional reverse
-  conversion
+  conversion. It also exposes a typed `PresentField` enum and
+  `present_fields()` snapshot method so examples and tooling can format current
+  editable state outside the derive output.
 - `skip` cannot be combined with component or hidden intent on the same field
 
 ## `#[derive(ComponentShape)]`

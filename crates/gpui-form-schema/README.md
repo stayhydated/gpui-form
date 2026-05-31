@@ -13,7 +13,7 @@ prototyping flows around generated form metadata.
 - `registry::{ComponentCapabilities, FieldComponentVariant, FieldValuePresence}`
 - `registry::{RustType, RustPath, RustExpr, ComponentSuffix}`
 - `registry::inventory`
-- `resolved::{ResolvedGpuiFormShape, ResolvedField}`
+- `resolved::{ResolvedComponentMetadata, ResolvedGpuiFormShape, ResolvedField}`
 
 `GpuiFormShape::fields` is the inventory list of non-skipped form fields:
 component-backed fields and explicit hidden value-holder-only fields.
@@ -41,8 +41,11 @@ fragment with `syn`; macro-generated inventory uses explicit
 stringifies syntax it already parsed.
 Use the wrapper `.parse()` methods when tooling needs the `syn` representation.
 Generators that consume complete form metadata should prefer
-`ResolvedGpuiFormShape`, which validates generated names and parses Rust
-syntax once at the inventory boundary.
+`ResolvedGpuiFormShape`, which validates generated names, parses Rust syntax
+once at the inventory boundary, and exposes typed `ResolvedField` /
+`ResolvedComponentMetadata` facts for component paths, capabilities, value
+presence, conversions, and validations. Treat direct `FieldVariant` string
+accessors as the inventory serialization surface, not the normal generator API.
 `ComponentSuffix` is re-exported from `gpui-form-core`, so schema inventory and
 runtime prototyping metadata share the same suffix contract.
 

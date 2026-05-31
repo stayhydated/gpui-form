@@ -6,7 +6,10 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::error::{PrototypingError, PrototypingResult};
-use crate::implementations::{GeneratedSubscription, field_generator};
+use crate::implementations::{
+    ComponentCreation, EventHandler, FieldInitializer, GeneratedSubscription, SubscriptionBinding,
+    field_generator,
+};
 use crate::imports::{Alias, ImportItem, ImportSet};
 
 macro_rules! semantic_fragment {
@@ -45,11 +48,7 @@ macro_rules! semantic_fragment {
 }
 
 semantic_fragment!(ImportPlan);
-semantic_fragment!(ComponentEntityInit);
-semantic_fragment!(FieldInitializerPlan);
 semantic_fragment!(RenderFieldPlan);
-semantic_fragment!(EventHandlerPlan);
-semantic_fragment!(SubscriptionPlan);
 semantic_fragment!(PostSubscriptionInitPlan);
 semantic_fragment!(ValidationPlan);
 semantic_fragment!(ConditionalFragment);
@@ -79,8 +78,8 @@ const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui::Subscripti
 
 struct GeneratedField<'a> {
     imports: Vec<ImportItem>,
-    cx_new_call: ComponentEntityInit,
-    field_initializer: FieldInitializerPlan,
+    cx_new_call: ComponentCreation,
+    field_initializer: FieldInitializer,
     render_child: RenderFieldPlan,
     subscription: GeneratedSubscription,
     post_subscription_initialization: PostSubscriptionInitPlan,
@@ -94,6 +93,17 @@ fn map_resolve_error(error: ResolveError) -> PrototypingError {
         },
         ResolveError::InvalidPath { kind, value, error } => {
             PrototypingError::InvalidPath { kind, value, error }
+        },
+        ResolveError::InvalidFieldPath {
+            field_name,
+            kind,
+            value,
+            error,
+        } => PrototypingError::InvalidFieldPath {
+            field_name,
+            kind,
+            value,
+            error,
         },
         ResolveError::InvalidType {
             field_name,
@@ -132,22 +142,18 @@ impl<'a> FormShapeAdapter<'a> {
         resolved_shape
             .fields()
             .iter()
-            .filter(|field| field.raw().is_component())
+            .filter(|field| field.is_component())
             .map(|resolved| {
                 let resolved = resolved.clone();
-                let field = resolved.raw();
                 let generator = field_generator();
-                let imports = generator.generate_imports(field);
+                let imports = generator.generate_imports(&resolved);
                 let subscription = generator.generate_subscription(&resolved, self.shape_data)?;
 
                 Ok(GeneratedField {
                     imports,
-                    cx_new_call: generator
-                        .generate_cx_new_call(&resolved, self.shape_data)?
-                        .into(),
+                    cx_new_call: generator.generate_cx_new_call(&resolved, self.shape_data)?,
                     field_initializer: generator
-                        .generate_field_initializers(&resolved, self.shape_data)?
-                        .into(),
+                        .generate_field_initializers(&resolved, self.shape_data)?,
                     render_child: generator
                         .generate_render_child(&resolved, self.shape_data)?
                         .into(),
@@ -195,7 +201,9 @@ impl<'a> FormShapeAdapter<'a> {
             .filter(|field| field.is_component())
         {
             let generator = field_generator();
-            set.extend(generator.generate_imports(field));
+            if let Ok(resolved) = ResolvedField::new(field) {
+                set.extend(generator.generate_imports(&resolved));
+            }
         }
         set
     }
@@ -226,38 +234,49 @@ impl<'a> FormShapeAdapter<'a> {
         let is_empty = data.fields.is_empty();
         let has_koruma = data.has_koruma();
 
-        let component_creations: TokenStream = generated_fields
+        let component_creations = ComponentCreationPlan::new(
+            generated_fields
+                .iter()
+                .map(|field| field.cx_new_call.clone())
+                .collect(),
+        );
+        let field_initializers = FieldInitializerPlan::new(
+            generated_fields
+                .iter()
+                .map(|field| field.field_initializer.clone())
+                .collect(),
+        );
+        let field_initializer_tokens: TokenStream = field_initializers
+            .items()
             .iter()
-            .map(|field| field.cx_new_call.to_token_stream())
-            .collect();
-        let field_initializers: TokenStream = generated_fields
-            .iter()
-            .map(|field| field.field_initializer.to_token_stream())
+            .map(quote::ToTokens::to_token_stream)
             .collect();
         let render_children: TokenStream = generated_fields
             .iter()
             .map(|field| field.render_child.to_token_stream())
             .collect();
-        let subscription_call_items: Vec<TokenStream> = generated_fields
+        let subscription_calls = SubscriptionPlan::new(
+            generated_fields
+                .iter()
+                .flat_map(|field| field.subscription.bindings.iter().cloned())
+                .collect(),
+        );
+        let event_handlers = EventHandlerPlan::new(
+            generated_fields
+                .iter()
+                .flat_map(|field| field.subscription.handlers.iter().cloned())
+                .collect(),
+        );
+        let subscription_call_items: Vec<TokenStream> = subscription_calls
+            .items()
             .iter()
-            .flat_map(|field| field.subscription.calls.iter().cloned())
+            .map(quote::ToTokens::to_token_stream)
             .collect();
-        let event_handler_items: Vec<TokenStream> = generated_fields
-            .iter()
-            .flat_map(|field| field.subscription.handlers.iter().cloned())
-            .collect();
-        let subscription_calls = if subscription_call_items.is_empty() {
-            TokenStream::new()
+        let subscription_call_tokens = if subscription_call_items.is_empty() {
+            quote! {}
         } else {
             quote! {
                 let mut _subscriptions = vec![#(#subscription_call_items),*];
-            }
-        };
-        let event_handlers = if event_handler_items.is_empty() {
-            TokenStream::new()
-        } else {
-            quote! {
-                #(#event_handler_items)*
             }
         };
         let post_subscription_init: TokenStream = generated_fields
@@ -271,7 +290,7 @@ impl<'a> FormShapeAdapter<'a> {
             quote! {}
         };
 
-        let (subscriptions_field, subscriptions_init) = if subscription_calls.is_empty() {
+        let (subscriptions_field, subscriptions_init) = if subscription_call_tokens.is_empty() {
             (quote! {}, quote! {})
         } else {
             (
@@ -293,8 +312,8 @@ impl<'a> FormShapeAdapter<'a> {
                 let into_original_debug_child = if has_skipped_fields {
                     quote! {
                         .child(format!(
-                            "into_original: incomplete; present_fields_json: {}",
-                            self.current_data.present_fields_json()
+                            "into_original: incomplete; present_fields: {:?}",
+                            self.current_data.present_fields()
                         ))
                     }
                 } else if matches!(
@@ -322,7 +341,7 @@ impl<'a> FormShapeAdapter<'a> {
                     quote! { current_data, },
                     quote! {
                         fields: #form_fields_ident {
-                            #field_initializers
+                            #field_initializer_tokens
                         },
                     },
                     quote! {
@@ -381,11 +400,11 @@ impl<'a> FormShapeAdapter<'a> {
             has_skipped_fields,
             holder_conversion_shape,
             imports: imports.into(),
-            component_creations: component_creations.into(),
-            field_initializers: field_initializers.into(),
+            component_creations,
+            field_initializers,
             render_children: render_children.into(),
-            event_handlers: event_handlers.into(),
-            subscription_calls: subscription_calls.into(),
+            event_handlers,
+            subscription_calls,
             post_subscription_init: post_subscription_init.into(),
             validation_binding: validation_binding.into(),
             subscriptions_field: subscriptions_field.into(),
@@ -461,7 +480,7 @@ pub struct FormParts {
     /// Grouped `use` statements (source module glob + framework base + per-component items).
     pub imports: ImportPlan,
     /// `cx.new(|cx| FormComponents::field(window, cx))` calls.
-    pub component_creations: ComponentEntityInit,
+    pub component_creations: ComponentCreationPlan,
     /// Field name tokens for the `FormFields { ... }` struct literal.
     pub field_initializers: FieldInitializerPlan,
     /// `.child(field().label(...).child(...))` chains for the form body.
@@ -602,6 +621,38 @@ mod tests {
     }
 
     #[test]
+    fn parts_return_error_for_invalid_component_shape_path_with_field_context() {
+        const FIELDS: [FieldVariant; 1] = [component_field(
+            "country",
+            "CountryCode",
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::"))
+                .with_render_component(true)
+                .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
+            false,
+        );
+
+        let error = match FormShapeAdapter::new(&SHAPE).parts() {
+            Ok(_) => panic!("invalid component shape paths should return an error"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error,
+            PrototypingError::InvalidFieldPath {
+                field_name: "country".to_string(),
+                kind: "component shape path",
+                value: "crate::".to_string(),
+                error: "unexpected end of input, expected identifier".to_string(),
+            }
+        );
+    }
+
+    #[test]
     fn parts_return_error_for_missing_component_render_metadata() {
         const FIELDS: [FieldVariant; 1] = [component_field(
             "country",
@@ -691,6 +742,60 @@ mod tests {
     }
 
     #[test]
+    fn parts_expose_component_creation_and_initializer_semantics() {
+        const FIELDS: [FieldVariant; 1] = [component_field(
+            "country",
+            "CountryCode",
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::CountryShape",
+            ))
+            .with_render_component(true)
+            .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("some_lib::demo"),
+            false,
+        );
+
+        let parts = FormShapeAdapter::new(&SHAPE)
+            .parts()
+            .expect("valid component metadata should generate parts");
+
+        let [creation] = parts.component_creations.items() else {
+            panic!("expected one component creation");
+        };
+        assert_eq!(creation.component_ident().to_string(), "country_shape");
+        assert_eq!(
+            creation.components_struct_ident().to_string(),
+            "DemoFormComponents"
+        );
+
+        let [initializer] = parts.field_initializers.items() else {
+            panic!("expected one field initializer");
+        };
+        assert_eq!(initializer.field_ident().to_string(), "country_shape");
+
+        let [binding] = parts.subscription_calls.items() else {
+            panic!("expected one subscription binding");
+        };
+        assert_eq!(binding.component_ident().to_string(), "country_shape");
+        assert_eq!(
+            binding.handler_ident().to_string(),
+            "on_country_shape_event"
+        );
+
+        let [handler] = parts.event_handlers.items() else {
+            panic!("expected one event handler");
+        };
+        assert_eq!(
+            handler.handler_ident().to_string(),
+            "on_country_shape_event"
+        );
+    }
+
+    #[test]
     fn parts_use_inventory_conversion_fallibility_metadata() {
         const REQUIRED_FIELDS: [FieldVariant; 1] = [hidden_field(
             "name",
@@ -732,5 +837,109 @@ mod tests {
             parts.holder_conversion_shape,
             HolderConversionShape::FallibleRequired
         );
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct ComponentCreationPlan(Vec<ComponentCreation>);
+
+impl ComponentCreationPlan {
+    pub fn new(items: Vec<ComponentCreation>) -> Self {
+        Self(items)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn items(&self) -> &[ComponentCreation] {
+        &self.0
+    }
+}
+
+impl quote::ToTokens for ComponentCreationPlan {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for item in &self.0 {
+            quote::ToTokens::to_tokens(item, tokens);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct FieldInitializerPlan(Vec<FieldInitializer>);
+
+impl FieldInitializerPlan {
+    pub fn new(items: Vec<FieldInitializer>) -> Self {
+        Self(items)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn items(&self) -> &[FieldInitializer] {
+        &self.0
+    }
+}
+
+impl quote::ToTokens for FieldInitializerPlan {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for item in &self.0 {
+            quote::ToTokens::to_tokens(item, tokens);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SubscriptionPlan(Vec<SubscriptionBinding>);
+
+impl SubscriptionPlan {
+    pub fn new(items: Vec<SubscriptionBinding>) -> Self {
+        Self(items)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn items(&self) -> &[SubscriptionBinding] {
+        &self.0
+    }
+}
+
+impl quote::ToTokens for SubscriptionPlan {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.0.is_empty() {
+            return;
+        }
+        let bindings = &self.0;
+
+        tokens.extend(quote! {
+            let mut _subscriptions = vec![#(#bindings),*];
+        });
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct EventHandlerPlan(Vec<EventHandler>);
+
+impl EventHandlerPlan {
+    pub fn new(items: Vec<EventHandler>) -> Self {
+        Self(items)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn items(&self) -> &[EventHandler] {
+        &self.0
+    }
+}
+
+impl quote::ToTokens for EventHandlerPlan {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for item in &self.0 {
+            quote::ToTokens::to_tokens(item, tokens);
+        }
     }
 }

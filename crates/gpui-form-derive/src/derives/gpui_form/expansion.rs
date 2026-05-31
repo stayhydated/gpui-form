@@ -10,11 +10,13 @@ use syn::DeriveInput;
 use syn::GenericParam;
 
 use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
-use crate::derives::gpui_form::planner::plan_form;
-use crate::derives::gpui_form::structs::{
-    ComponentFieldPlan, ComponentStruct, DeriveContext, FieldPlan, GpuiFormOptions, ValidationRule,
+use crate::derives::gpui_form::intent::ComponentStruct;
+use crate::derives::gpui_form::ir::{
+    ComponentFieldPlan, DeriveContext, FieldPlan, ValidationRule, holder_conversion_plan,
 };
-use crate::derives::gpui_form::value_holder::{generate_value_holder, holder_conversion_plan};
+use crate::derives::gpui_form::planner::plan_form;
+use crate::derives::gpui_form::structs::GpuiFormOptions;
+use crate::derives::gpui_form::value_holder::generate_value_holder;
 
 fn field_value_presence_tokens(
     context: &DeriveContext,

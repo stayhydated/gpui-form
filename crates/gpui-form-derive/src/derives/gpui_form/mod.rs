@@ -1,11 +1,15 @@
+pub mod attrs;
 pub mod cfg_attr;
 pub mod components;
 pub mod expansion;
+pub mod intent;
+pub mod ir;
 pub mod koruma;
 pub mod planner;
 pub mod structs;
 pub mod tests;
 pub mod utils;
+pub mod validation;
 pub mod value_holder;
 
 use crate::derives::gpui_form::expansion::expand_gpui_form;

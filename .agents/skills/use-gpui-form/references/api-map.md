@@ -136,6 +136,9 @@ Common struct attributes:
   `.value_storage(...)`. Required shape-backed values are reported by
   generated `validate()` and by fallible holder-to-model conversion, while
   default-synthesizing policies expose `holder.into_original()`.
+- Holders for forms with skipped source fields expose
+  `holder.present_fields()` as a typed snapshot for debug/preview formatting;
+  JSON or text formatting belongs in the app or generator layer.
 
 ## Generated Names
 

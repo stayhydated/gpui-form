@@ -635,12 +635,24 @@ impl FieldVariant {
         self.field_name
     }
 
+    /// Returns the serialized form-side value type.
+    ///
+    /// Tooling that needs a parsed Rust type should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::value_type`.
     pub const fn value_type(&self) -> RustType {
         self.value_type
     }
 
+    /// Returns the serialized source-model value type.
+    ///
+    /// Tooling that needs a parsed Rust type should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::source_value_type`.
     pub const fn source_value_type(&self) -> RustType {
         self.source_value_type
+    }
+
+    pub const fn value_presence(&self) -> FieldValuePresence {
+        self.value_presence
     }
 
     pub const fn optional(&self) -> bool {
@@ -651,18 +663,34 @@ impl FieldVariant {
         self.value_presence.requires_value()
     }
 
+    /// Returns the serialized default expression, if present.
+    ///
+    /// Tooling that needs parsed expression metadata should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::default_expr`.
     pub const fn default_expr(&self) -> Option<RustExpr> {
         self.default_expr
     }
 
+    /// Returns the serialized source-to-form conversion expression, if present.
+    ///
+    /// Tooling that needs parsed expression metadata should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::from_expr`.
     pub const fn from_expr(&self) -> Option<RustExpr> {
         self.from_expr
     }
 
+    /// Returns the serialized form-to-source conversion expression, if present.
+    ///
+    /// Tooling that needs parsed expression metadata should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::into_expr`.
     pub const fn into_expr(&self) -> Option<RustExpr> {
         self.into_expr
     }
 
+    /// Returns the raw component inventory payload, if this field is component-backed.
+    ///
+    /// Tooling that needs parsed component metadata should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::component`.
     pub const fn component_variant(&self) -> Option<&FieldComponentVariant> {
         self.component.as_ref()
     }
@@ -671,6 +699,10 @@ impl FieldVariant {
         self.component.is_some()
     }
 
+    /// Returns the serialized component shape path, if this field is component-backed.
+    ///
+    /// Tooling that needs a parsed Rust path should prefer
+    /// `gpui_form_schema::resolved::ResolvedField::shape_path`.
     pub const fn shape_path(&self) -> Option<RustPath> {
         match self.component {
             Some(component) => Some(component.shape_path),

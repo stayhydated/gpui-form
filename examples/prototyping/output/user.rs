@@ -1193,8 +1193,8 @@ impl Render for UserForm {
             .child(Separator::horizontal())
             .child(format!("value_holder: {:?}", self.current_data))
             .child(format!(
-                "into_original: incomplete; present_fields_json: {}",
-                self.current_data.present_fields_json()
+                "into_original: incomplete; present_fields: {:?}",
+                self.current_data.present_fields()
             ))
     }
 }

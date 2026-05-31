@@ -51,8 +51,8 @@ form titles follow the active Storybook locale.
 
 Generated infinite-select and file-picker fields use the same runtime helpers
 that hand-written forms use. Generated text inputs use the form-side
-`FieldVariant::value_type().as_str()` and parse non-`String` values with
-`FromStr` instead of assuming every text field stores `String`.
+`ResolvedField::value_type()` and parse non-`String` values with `FromStr`
+instead of assuming every text field stores `String`.
 
 Shape-backed fields must publish render and value-binding metadata before the
 adapter can scaffold them. Missing component capabilities return a
@@ -60,19 +60,24 @@ adapter can scaffold them. Missing component capabilities return a
 capability instead of generating placeholder UI. For value-bound fields, the
 adapter emits generic seed and subscription hooks through
 `gpui_form::runtime::shape::ComponentValueBinding<T>`. Generated scaffolds use
-the resolved suffix stored in `FieldVariant` for field and handler suffixes,
-such as `email_input` and `on_email_input_event`, then fall back to the generic
-`shape` suffix.
+the resolved component field name for field and handler suffixes, such as
+`email_input` and `on_email_input_event`, then fall back to the generic `shape`
+suffix.
 Value-bound scaffolds use `seed_value_binding_state`, `form_value_change`,
 `FormValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.
+`FormParts` exposes component creation, field initializer, subscription, and
+event-handler fragments as typed records that still implement `ToTokens`, so
+custom layouts can inspect or reorder those pieces before rendering.
 On `FormValueChange::Clear`, optional fields reset to `None`; non-optional
 fields reset to the intent-scoped source default converted into the form-side
 value when one exists, otherwise to the shape's default storage policy.
 The adapter also consumes `GpuiFormShape::holder_conversion_shape()` from
 inventory metadata, so generated debug rows use the same `into_original`,
 `try_into_original`, or skipped-field reconstruction shape as the
-derive-generated value holder.
+derive-generated value holder. When skipped fields prevent automatic
+reconstruction, the generated debug row formats the holder's typed
+`present_fields()` snapshot instead of relying on derive-generated JSON.
 
 ## Feature Flags
 

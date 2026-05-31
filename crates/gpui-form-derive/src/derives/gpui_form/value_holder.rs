@@ -3,10 +3,11 @@ use quote::{format_ident, quote, quote_spanned};
 use std::collections::HashMap;
 use syn::{DeriveInput, Type};
 
-use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
-use crate::derives::gpui_form::structs::{
-    DeriveContext, FieldPlan, HolderFieldIr, HolderStoragePlan,
+use crate::derives::gpui_form::ir::{
+    DeriveContext, FieldPlan, HolderConversionMode, HolderConversionPlan, HolderFieldIr,
+    HolderStoragePlan,
 };
+use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
 
 type ValueHolderResult<T> = syn::Result<T>;
 
@@ -58,10 +59,12 @@ trait HolderStorageStrategy {
         field: &HolderFieldIr,
         access: TokenStream,
     ) -> ValueHolderResult<TokenStream>;
-    fn present_json_entry_tokens(
+    fn present_field_entry_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
+        present_field_ident: &syn::Ident,
+        _present_lifetime: &syn::Lifetime,
     ) -> ValueHolderResult<TokenStream>;
     fn required_validation_builder_tokens(
         &self,
@@ -414,36 +417,29 @@ impl HolderStorageStrategy for HolderStoragePlan {
         }
     }
 
-    fn present_json_entry_tokens(
+    fn present_field_entry_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
+        present_field_ident: &syn::Ident,
+        _present_lifetime: &syn::Lifetime,
     ) -> ValueHolderResult<TokenStream> {
         let field_name = field.field_name();
-        let field_name_str = field_name.to_string();
+        let variant_ident = present_field_variant_ident(field_name);
 
         match self {
             HolderStoragePlan::OriginallyOptional => {
                 if needs_into_conversion(field) {
                     let converted = apply_into_conversion(field, quote! { value });
                     Ok(quote! {
-                        let converted = self.#field_name.clone().map(|value| #converted);
-                        if converted.is_some() {
-                            entries.push(format!(
-                                "\"{}\":\"{}\"",
-                                #field_name_str,
-                                Self::escape_json_string(&format!("{:?}", converted))
-                            ));
+                        if let Some(value) = self.#field_name.clone() {
+                            entries.push(#present_field_ident::#variant_ident(#converted));
                         }
                     })
                 } else {
                     Ok(quote! {
-                        if self.#field_name.is_some() {
-                            entries.push(format!(
-                                "\"{}\":\"{}\"",
-                                #field_name_str,
-                                Self::escape_json_string(&format!("{:?}", &self.#field_name))
-                            ));
+                        if let Some(value) = self.#field_name.as_ref() {
+                            entries.push(#present_field_ident::#variant_ident(value));
                         }
                     })
                 }
@@ -453,22 +449,13 @@ impl HolderStorageStrategy for HolderStoragePlan {
                     let converted = apply_into_conversion(field, quote! { value });
                     Ok(quote! {
                         if let Some(value) = self.#field_name.clone() {
-                            let converted = #converted;
-                            entries.push(format!(
-                                "\"{}\":\"{}\"",
-                                #field_name_str,
-                                Self::escape_json_string(&format!("{:?}", converted))
-                            ));
+                            entries.push(#present_field_ident::#variant_ident(#converted));
                         }
                     })
                 } else {
                     Ok(quote! {
                         if let Some(value) = self.#field_name.as_ref() {
-                            entries.push(format!(
-                                "\"{}\":\"{}\"",
-                                #field_name_str,
-                                Self::escape_json_string(&format!("{:?}", value))
-                            ));
+                            entries.push(#present_field_ident::#variant_ident(value));
                         }
                     })
                 }
@@ -478,20 +465,11 @@ impl HolderStorageStrategy for HolderStoragePlan {
                     let converted = apply_into_conversion(field, quote! { value });
                     Ok(quote! {
                         let value = self.#field_name.clone();
-                        let converted = #converted;
-                        entries.push(format!(
-                            "\"{}\":\"{}\"",
-                            #field_name_str,
-                            Self::escape_json_string(&format!("{:?}", converted))
-                        ));
+                        entries.push(#present_field_ident::#variant_ident(#converted));
                     })
                 } else {
                     Ok(quote! {
-                        entries.push(format!(
-                            "\"{}\":\"{}\"",
-                            #field_name_str,
-                            Self::escape_json_string(&format!("{:?}", &self.#field_name))
-                        ));
+                        entries.push(#present_field_ident::#variant_ident(&self.#field_name));
                     })
                 }
             },
@@ -508,11 +486,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
                                 |value| #converted
                             )
                     {
-                        entries.push(format!(
-                            "\"{}\":\"{}\"",
-                            #field_name_str,
-                            Self::escape_json_string(&format!("{:?}", value))
-                        ));
+                        entries.push(#present_field_ident::#variant_ident(value));
                     }
                 })
             },
@@ -590,136 +564,6 @@ fn needs_from_conversion(field: &HolderFieldIr) -> bool {
 
 fn needs_into_conversion(field: &HolderFieldIr) -> bool {
     field.form_to_source_expr().is_some()
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum HolderConversionMode {
-    Infallible,
-    FallibleRequired,
-    SkippedFields,
-}
-
-#[derive(Clone, Debug)]
-enum ShapePolicyPredicate {
-    RequiresValue { shape: syn::Path },
-}
-
-impl ShapePolicyPredicate {
-    fn to_tokens(&self, context: &DeriveContext) -> TokenStream {
-        let runtime_crate = context.paths.gpui_form_facade_runtime();
-        match self {
-            Self::RequiresValue { shape } => {
-                quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
-                        as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
-                }
-            },
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-enum ConversionFallibility {
-    Never,
-    Always,
-    DependsOnShape(Vec<ShapePolicyPredicate>),
-}
-
-impl ConversionFallibility {
-    fn to_tokens(&self, context: &DeriveContext) -> TokenStream {
-        match self {
-            Self::Never => quote! { false },
-            Self::Always => quote! { true },
-            Self::DependsOnShape(predicates) => {
-                let predicates = predicates
-                    .iter()
-                    .map(|predicate| predicate.to_tokens(context))
-                    .collect::<Vec<_>>();
-                quote! { false #(|| #predicates)* }
-            },
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct HolderConversionPlan {
-    mode: HolderConversionMode,
-    fallibility: ConversionFallibility,
-}
-
-impl HolderConversionPlan {
-    pub fn mode(&self) -> HolderConversionMode {
-        self.mode
-    }
-
-    pub fn can_fail_tokens(&self, context: &DeriveContext) -> TokenStream {
-        self.fallibility.to_tokens(context)
-    }
-
-    pub fn metadata_tokens(&self, context: &DeriveContext) -> TokenStream {
-        let facade_crate = &context.paths.gpui_form;
-        let shape = match self.mode {
-            HolderConversionMode::Infallible => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::Infallible }
-            },
-            HolderConversionMode::FallibleRequired => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::FallibleRequired }
-            },
-            HolderConversionMode::SkippedFields => {
-                quote! { #facade_crate::schema::registry::HolderConversionShape::NeedsSkippedFields }
-            },
-        };
-        let runtime_can_fail = self.can_fail_tokens(context);
-
-        quote! {
-            #facade_crate::schema::registry::HolderConversionMetadata::new(
-                #shape,
-                #runtime_can_fail
-            )
-        }
-    }
-}
-
-pub(super) fn holder_conversion_plan(
-    fields: &[FieldPlan],
-) -> ValueHolderResult<HolderConversionPlan> {
-    let mut predicates = Vec::new();
-    let mut has_maybe_fallible_field = false;
-    let mut has_hard_fallible_field = false;
-    let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
-
-    for field in fields.iter().filter_map(FieldPlan::shared) {
-        if field.default_expr().is_some() {
-            continue;
-        }
-
-        if matches!(field.storage(), HolderStoragePlan::RequiredValue) {
-            has_maybe_fallible_field = true;
-            has_hard_fallible_field = true;
-        } else if let Some(shape) = field.storage().shape_policy() {
-            has_maybe_fallible_field = true;
-            predicates.push(ShapePolicyPredicate::RequiresValue {
-                shape: shape.clone(),
-            });
-        }
-    }
-
-    let fallibility = if has_skipped_fields || has_hard_fallible_field {
-        ConversionFallibility::Always
-    } else if predicates.is_empty() {
-        ConversionFallibility::Never
-    } else {
-        ConversionFallibility::DependsOnShape(predicates)
-    };
-    let mode = if has_skipped_fields {
-        HolderConversionMode::SkippedFields
-    } else if has_maybe_fallible_field {
-        HolderConversionMode::FallibleRequired
-    } else {
-        HolderConversionMode::Infallible
-    };
-
-    Ok(HolderConversionPlan { mode, fallibility })
 }
 
 fn conversion_signature_assertions(
@@ -997,11 +841,72 @@ fn generate_from_wrapped_field(
     })
 }
 
-fn generate_present_fields_json_entry(
+fn present_field_variant_ident(field_name: &syn::Ident) -> syn::Ident {
+    let source = field_name.to_string();
+    let source = source.strip_prefix("r#").unwrap_or(&source);
+    let mut ident = String::new();
+    let mut uppercase_next = true;
+
+    for ch in source.chars() {
+        if ch.is_ascii_alphanumeric() {
+            if uppercase_next {
+                ident.push(ch.to_ascii_uppercase());
+                uppercase_next = false;
+            } else {
+                ident.push(ch);
+            }
+        } else {
+            uppercase_next = true;
+        }
+    }
+
+    if ident.is_empty() {
+        ident.push_str("Field");
+    }
+    if ident.chars().next().is_some_and(|ch| ch.is_ascii_digit()) {
+        ident.insert_str(0, "Field");
+    }
+
+    format_ident!("{ident}")
+}
+
+fn present_field_variant_type_tokens<'a>(
+    field: &'a HolderFieldIr,
+    present_lifetime: &'a syn::Lifetime,
+) -> TokenStream {
+    let source_type = &field.source_value_type;
+
+    if field.storage().is_shape_policy() || needs_into_conversion(field) {
+        quote! { #source_type }
+    } else {
+        quote! { &#present_lifetime #source_type }
+    }
+}
+
+fn generate_present_field_variant(
+    field: &HolderFieldIr,
+    present_lifetime: &syn::Lifetime,
+) -> TokenStream {
+    let variant_ident = present_field_variant_ident(field.field_name());
+    let variant_type = present_field_variant_type_tokens(field, present_lifetime);
+
+    quote! {
+        #variant_ident(#variant_type)
+    }
+}
+
+fn generate_present_field_entry(
     context: &DeriveContext,
     field: &HolderFieldIr,
+    present_field_ident: &syn::Ident,
+    present_lifetime: &syn::Lifetime,
 ) -> ValueHolderResult<TokenStream> {
-    field.storage().present_json_entry_tokens(context, field)
+    field.storage().present_field_entry_tokens(
+        context,
+        field,
+        present_field_ident,
+        present_lifetime,
+    )
 }
 
 fn value_storage_policy_validator_tokens(
@@ -1388,9 +1293,27 @@ pub(super) fn generate_value_holder(
         .map(|f| try_from_field_tokens(context, f, quote! { from }, &conversion_error_ident))
         .collect::<ValueHolderResult<Vec<_>>>()?;
 
-    let present_fields_json_entries: Vec<TokenStream> = rendered_fields
+    let present_lifetime: syn::Lifetime = syn::parse_quote!('__gpui_form_present);
+    let present_field_ident = format_ident!("{}PresentField", wrapped_ident);
+    let mut present_field_generics = original_input.generics.clone();
+    present_field_generics.params.insert(
+        0,
+        syn::GenericParam::Lifetime(syn::parse_quote!('__gpui_form_present)),
+    );
+    let (_, present_field_ty_generics, _) = present_field_generics.split_for_impl();
+    let present_field_variants: Vec<TokenStream> = rendered_fields
         .iter()
-        .map(|f| generate_present_fields_json_entry(context, f))
+        .map(|f| generate_present_field_variant(f, &present_lifetime))
+        .collect();
+    let present_field_enum = quote! {
+        #[derive(Debug)]
+        pub enum #present_field_ident #present_field_generics #where_clause {
+            #(#present_field_variants),*
+        }
+    };
+    let present_field_entries: Vec<TokenStream> = rendered_fields
+        .iter()
+        .map(|f| generate_present_field_entry(context, f, &present_field_ident, &present_lifetime))
         .collect::<ValueHolderResult<Vec<_>>>()?;
 
     let from_where_clause = holder_where_clause.clone();
@@ -1420,32 +1343,15 @@ pub(super) fn generate_value_holder(
     let skipped_fields_impl = match conversion_plan.mode() {
         HolderConversionMode::SkippedFields => {
             quote! {
-                impl #holder_impl_generics #storage_ident #holder_ty_generics #holder_where_clause {
-                    pub fn present_fields_json(&self) -> String {
-                        let mut entries: Vec<String> = Vec::new();
-                        #(#present_fields_json_entries)*
-                        format!("{{{}}}", entries.join(","))
-                    }
+                #present_field_enum
 
-                    fn escape_json_string(input: &str) -> String {
-                        let mut escaped = String::new();
-                        for ch in input.chars() {
-                            match ch {
-                                '"' => escaped.push_str("\\\""),
-                                '\\' => escaped.push_str("\\\\"),
-                                '\n' => escaped.push_str("\\n"),
-                                '\r' => escaped.push_str("\\r"),
-                                '\t' => escaped.push_str("\\t"),
-                                '\u{08}' => escaped.push_str("\\b"),
-                                '\u{0C}' => escaped.push_str("\\f"),
-                                c if c.is_control() => {
-                                    use ::core::fmt::Write as _;
-                                    let _ = write!(&mut escaped, "\\u{:04x}", c as u32);
-                                },
-                                c => escaped.push(c),
-                            }
-                        }
-                        escaped
+                impl #holder_impl_generics #storage_ident #holder_ty_generics #holder_where_clause {
+                    pub fn present_fields<'__gpui_form_present>(
+                        &'__gpui_form_present self
+                    ) -> Vec<#present_field_ident #present_field_ty_generics> {
+                        let mut entries = Vec::new();
+                        #(#present_field_entries)*
+                        entries
                     }
 
                     pub fn into_original(

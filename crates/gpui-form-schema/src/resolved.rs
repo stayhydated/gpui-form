@@ -2,7 +2,8 @@ use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 use syn::{Expr, Ident, Path, Type};
 
 use crate::registry::{
-    ComponentCapabilities, FieldVariant, GpuiFormShape, RustSyntaxKind, ValidationRuleId,
+    ComponentCapabilities, FieldValuePresence, FieldVariant, GpuiFormShape, RustSyntaxKind,
+    ValidationRuleId,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -12,6 +13,12 @@ pub enum ResolveError {
         value: String,
     },
     InvalidPath {
+        kind: &'static str,
+        value: String,
+        error: String,
+    },
+    InvalidFieldPath {
+        field_name: String,
         kind: &'static str,
         value: String,
         error: String,
@@ -40,6 +47,17 @@ impl std::fmt::Display for ResolveError {
                     "invalid {kind} `{value}` in gpui-form shape metadata: {error}"
                 )
             },
+            Self::InvalidFieldPath {
+                field_name,
+                kind,
+                value,
+                error,
+            } => {
+                write!(
+                    f,
+                    "invalid {kind} `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
+                )
+            },
             Self::InvalidType {
                 field_name,
                 value,
@@ -65,6 +83,40 @@ impl std::fmt::Display for ResolveError {
 }
 
 impl std::error::Error for ResolveError {}
+
+#[derive(Clone)]
+pub struct ResolvedComponentMetadata {
+    shape_path: Path,
+    capabilities: ComponentCapabilities,
+}
+
+impl ResolvedComponentMetadata {
+    fn new(field: &FieldVariant) -> Result<Option<Self>, ResolveError> {
+        let Some(component) = field.component_variant() else {
+            return Ok(None);
+        };
+        Ok(Some(Self {
+            shape_path: parse_field_path(
+                field.field_name(),
+                "component shape path",
+                component.shape_path(),
+            )?,
+            capabilities: component.capabilities(),
+        }))
+    }
+
+    pub fn shape_path(&self) -> &Path {
+        &self.shape_path
+    }
+
+    pub fn runtime_shape_path(&self) -> Path {
+        self.shape_path.clone()
+    }
+
+    pub fn capabilities(&self) -> ComponentCapabilities {
+        self.capabilities
+    }
+}
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct ShapeName {
@@ -248,11 +300,12 @@ pub struct ResolvedField<'a> {
     name: FieldName,
     value_type: Type,
     source_value_type: Type,
-    shape_path: Option<Path>,
+    value_presence: FieldValuePresence,
     default_expr: Option<Expr>,
     from_expr: Option<Expr>,
     into_expr: Option<Expr>,
-    component_capabilities: Option<ComponentCapabilities>,
+    validations: &'static [ValidationRuleId],
+    component: Option<ResolvedComponentMetadata>,
 }
 
 impl<'a> ResolvedField<'a> {
@@ -260,10 +313,6 @@ impl<'a> ResolvedField<'a> {
         let name = FieldName::new(field)?;
         let value_type = parse_type(field.field_name(), field.value_type())?;
         let source_value_type = parse_type(field.field_name(), field.source_value_type())?;
-        let shape_path = match field.shape_path() {
-            Some(path) => Some(parse_path("component shape path", path)?),
-            None => None,
-        };
         let default_expr = match field.default_expr() {
             Some(expr) => Some(parse_expr(field.field_name(), expr)?),
             None => None,
@@ -276,20 +325,19 @@ impl<'a> ResolvedField<'a> {
             Some(expr) => Some(parse_expr(field.field_name(), expr)?),
             None => None,
         };
-        let component_capabilities = field
-            .component_variant()
-            .map(|component| component.capabilities());
+        let component = ResolvedComponentMetadata::new(field)?;
 
         Ok(Self {
             raw: field,
             name,
             value_type,
             source_value_type,
-            shape_path,
+            value_presence: field.value_presence(),
             default_expr,
             from_expr,
             into_expr,
-            component_capabilities,
+            validations: field.validation_rules(),
+            component,
         })
     }
 
@@ -325,12 +373,21 @@ impl<'a> ResolvedField<'a> {
         &self.source_value_type
     }
 
+    pub fn component(&self) -> Option<&ResolvedComponentMetadata> {
+        self.component.as_ref()
+    }
+
+    pub fn is_component(&self) -> bool {
+        self.component.is_some()
+    }
+
     pub fn shape_path(&self) -> Option<&Path> {
-        self.shape_path.as_ref()
+        self.component().map(ResolvedComponentMetadata::shape_path)
     }
 
     pub fn runtime_shape_path(&self) -> Option<Path> {
-        self.shape_path.clone()
+        self.component()
+            .map(ResolvedComponentMetadata::runtime_shape_path)
     }
 
     pub fn default_expr(&self) -> Option<&Expr> {
@@ -346,7 +403,8 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn component_capabilities(&self) -> Option<ComponentCapabilities> {
-        self.component_capabilities
+        self.component()
+            .map(ResolvedComponentMetadata::capabilities)
     }
 
     pub fn kebab_id(&self) -> String {
@@ -374,25 +432,25 @@ impl<'a> ResolvedField<'a> {
     }
 
     pub fn optional(&self) -> bool {
-        self.raw.optional()
+        self.value_presence.optional()
     }
 
     pub fn value_holder_uses_option(&self) -> bool {
-        self.raw.value_holder_uses_option()
+        self.value_presence.value_holder_uses_option()
     }
 
     pub fn value_binding(&self) -> bool {
-        self.component_capabilities
+        self.component_capabilities()
             .is_some_and(ComponentCapabilities::value_binding_enabled)
     }
 
     pub fn render_component(&self) -> bool {
-        self.component_capabilities
+        self.component_capabilities()
             .is_some_and(ComponentCapabilities::render_component)
     }
 
     pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
-        self.raw.validation_rules()
+        self.validations
     }
 
     pub fn has_validation_rule(&self, rule: ValidationRuleId) -> bool {
@@ -464,6 +522,21 @@ fn parse_path(kind: &'static str, value: crate::registry::RustPath) -> Result<Pa
     })
 }
 
+fn parse_field_path(
+    field_name: &str,
+    kind: &'static str,
+    value: crate::registry::RustPath,
+) -> Result<Path, ResolveError> {
+    value
+        .parse()
+        .map_err(|error| ResolveError::InvalidFieldPath {
+            field_name: field_name.to_string(),
+            kind,
+            value: error.value().to_string(),
+            error: error.source_error().to_string(),
+        })
+}
+
 fn parse_type(field_name: &str, value: crate::registry::RustType) -> Result<Type, ResolveError> {
     value.parse().map_err(|error| {
         debug_assert_eq!(error.kind(), RustSyntaxKind::Type);
@@ -484,4 +557,74 @@ fn parse_expr(field_name: &str, value: crate::registry::RustExpr) -> Result<Expr
             error: error.source_error().to_string(),
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::registry::{
+        FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant, RustPath, RustType,
+    };
+
+    const fn value_spec(
+        value_type: &'static str,
+        value_presence: FieldValuePresence,
+    ) -> FieldValueSpec {
+        let value_type = RustType::from_macro_tokens_unchecked(value_type);
+        FieldValueSpec::new(value_type, value_type, value_presence)
+    }
+
+    #[test]
+    fn component_shape_path_errors_include_field_context() {
+        const FIELD: FieldVariant = FieldVariant::component(
+            "country",
+            value_spec("String", FieldValuePresence::DirectStorage),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::")),
+        );
+
+        let error = match ResolvedField::new(&FIELD) {
+            Ok(_) => panic!("invalid shape path should fail"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error,
+            ResolveError::InvalidFieldPath {
+                field_name: "country".to_string(),
+                kind: "component shape path",
+                value: "crate::".to_string(),
+                error: "unexpected end of input, expected identifier".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn resolved_field_exposes_component_and_storage_facts_without_raw_helpers() {
+        const FIELD: FieldVariant = FieldVariant::component(
+            "country",
+            value_spec("String", FieldValuePresence::Optional),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::CountryShape",
+            ))
+            .with_value_binding(true),
+        );
+
+        let field = ResolvedField::new(&FIELD).expect("metadata should resolve");
+
+        assert!(field.is_component());
+        assert!(field.value_holder_uses_option());
+        assert!(field.value_binding());
+        assert_eq!(
+            field.field_ident_with_component_suffix().to_string(),
+            "country_shape"
+        );
+        let shape_path = field
+            .component()
+            .expect("component metadata should exist")
+            .shape_path();
+        assert_eq!(
+            shape_path.segments.last().unwrap().ident.to_string(),
+            "CountryShape"
+        );
+    }
 }

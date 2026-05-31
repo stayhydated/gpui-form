@@ -39,8 +39,8 @@ This crate exists to:
    `InfiniteSelectEvent<T>` payload directly.
    File-picker fields use one `FilePickerState` entity, render the runtime
    `FilePicker`, and store the selected path list in the form value holder.
-   Text input fields parse the form-side value type from `FieldVariant`
-   metadata instead of assuming `String`.
+   Text input fields use the resolved form-side value type instead of assuming
+   `String`.
 1. The adapter returns:
    - `FormParts` for caller-controlled assembly, or
    - a complete `syn::File` through `generate_file(&impl FormLayout)`
@@ -55,8 +55,11 @@ It contains:
 
 - stable identifiers
 - deduplicated imports
-- component creation tokens
-- event/subscription/init tokens
+- component creation fragments as typed `ComponentCreation` records
+- field initializer fragments as typed `FieldInitializer` records
+- subscription bindings as typed `SubscriptionBinding` records
+- event handlers as typed `EventHandler` records
+- post-subscription/init tokens
 - render fragments
 - debug helpers
 - flags such as `is_empty`, `has_koruma`, `has_skipped_fields`, and
@@ -67,9 +70,14 @@ metadata as `HolderConversionShape::{Infallible, FallibleRequired,
 NeedsSkippedFields}`. The derive layer owns the conversion API decision, and
 prototyping layouts consume that source of truth instead of reconstructing it
 from individual fields.
+For skipped-field forms, layouts format the holder's typed `present_fields()`
+snapshot for debug output instead of depending on generated JSON helpers.
 
 This allows callers to define different layout styles without reimplementing
 field analysis.
+Layouts can inspect component creation, field initializer, subscription, and
+event-handler data before rendering tokens, which keeps simple alternate
+layouts from relying on token string inspection for those fragments.
 
 ## Import Strategy
 
@@ -85,9 +93,9 @@ need.
 ## Field Resolution
 
 The generator consumes `ResolvedGpuiFormShape` / `ResolvedField` from
-`gpui-form-schema`, not raw string metadata. `FieldVariant::value_type` is
-treated as a full Rust type, not just a bare identifier. That is important
-because inventory metadata may carry:
+`gpui-form-schema`, not raw string metadata. `ResolvedField::value_type` is a
+parsed full Rust type, not just a bare identifier. That is important because
+inventory metadata may carry:
 
 - crate-qualified enum paths
 - nested module paths
@@ -95,16 +103,19 @@ because inventory metadata may carry:
 - source/form conversion metadata and required-value holder behavior
 
 Each field is resolved once into the schema-owned typed representation before
-shape generation runs.
+shape generation runs. Field generators receive `ResolvedField`, including
+parsed component shape paths, value presence, conversions, validations, and
+component capabilities, so malformed field metadata is reported at resolution
+with field context instead of being rediscovered during token rendering.
 
 ## Component Shape Behavior
 
 All component fields are shape-backed:
 
 - the generator still initializes component state into generated `FormFields`
-- generated local variable, field, and handler names use
-  `FieldVariant::field_name_with_component_suffix`, which uses precomputed
-  component-shape prototyping suffix metadata
+- generated local variable, field, and handler names use the resolved component
+  field identifier, which is derived from precomputed component-shape
+  prototyping suffix metadata
 - if the field's render capability is enabled, the generator emits
   `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
   runtime `ComponentRender` contract
