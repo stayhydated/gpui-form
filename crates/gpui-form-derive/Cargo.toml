@@ -36,7 +36,6 @@ inventory = [  ]
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { default-features = false, features = [ "derive" ], path = "../gpui-form" }
-gpui-form-collection = { workspace = true }
 gpui-form-runtime = { workspace = true }
 insta = { workspace = true }
 koruma = { workspace = true }

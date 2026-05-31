@@ -876,7 +876,7 @@ mod tests {
         let field = shape_field(
             "location",
             "Country",
-            "gpui_form_component::infinite_select::InfiniteSelect<Country>",
+            "crate::shapes::InfiniteSelect<Country>",
         );
 
         assert_eq!(field.field_name_with_component_suffix(), "location_shape");

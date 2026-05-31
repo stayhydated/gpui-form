@@ -463,7 +463,7 @@ mod tests {
             .with_value_presence(FieldValuePresence::DirectStorage)
             .component(
                 FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "gpui_form_collection::otp_input::OtpInput<String>",
+                    "crate::shapes::OtpInput<String>",
                 ))
                 .with_value_binding(true),
             )];
@@ -490,7 +490,7 @@ mod tests {
             .with_value_presence(FieldValuePresence::DirectStorage)
             .component(
                 FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "gpui_form_collection::otp_input::OtpInput<String>",
+                    "crate::shapes::OtpInput<String>",
                 ))
                 .with_value_binding(true),
             )
@@ -520,7 +520,7 @@ mod tests {
             .with_value_presence(FieldValuePresence::DirectStorage)
             .component(
                 FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "gpui_form_collection::otp_input::OtpInput<String>",
+                    "crate::shapes::OtpInput<String>",
                 ))
                 .with_value_binding(true),
             )
@@ -548,7 +548,7 @@ mod tests {
             .with_value_presence(FieldValuePresence::DirectStorage)
             .component(
                 FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
-                    "gpui_form_collection::date_picker::DatePicker",
+                    "crate::shapes::DatePicker",
                 ))
                 .with_value_binding(true),
             )

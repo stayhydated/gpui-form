@@ -1,21 +1,17 @@
 ---
 source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
-assertion_line: 370
 expression: "pretty_tokens(generated.handlers[0].clone())"
 ---
 fn on_code_shape_event(
     &mut self,
-    state: &Entity<ComponentStateOf<gpui_form_collection::otp_input::OtpInput<String>>>,
-    event: &ComponentEventOf<gpui_form_collection::otp_input::OtpInput<String>, String>,
+    state: &Entity<ComponentStateOf<crate::shapes::OtpInput<String>>>,
+    event: &ComponentEventOf<crate::shapes::OtpInput<String>, String>,
     _window: &mut Window,
     _cx: &mut Context<Self>,
 ) {
     let form_change = {
         let state = state.read(_cx);
-        form_value_change::<
-            gpui_form_collection::otp_input::OtpInput<String>,
-            String,
-        >(state, event)
+        form_value_change::<crate::shapes::OtpInput<String>, String>(state, event)
     };
     match form_change {
         FormValueChange::Set(value) => {

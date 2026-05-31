@@ -854,10 +854,10 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::input::Input::<_>, default = "test@example.com"))]
+                #[gpui_form(component(crate::shapes::Input::<_>, default = "test@example.com"))]
                 email: String,
 
-                #[gpui_form(component(gpui_form_collection::switch::Switch))]
+                #[gpui_form(component(crate::shapes::Switch))]
                 enabled: bool,
             }
         };
@@ -886,7 +886,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "if<<gpui_form_collection::switch::Switchas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
+                "if<<crate::shapes::Switchas::gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE{::gpui_form::schema::registry::FieldValuePresence::RequiresValue}else{::gpui_form::schema::registry::FieldValuePresence::DirectStorage}"
             ),
             "explicit component syntax should inherit required-value metadata from the shape"
         );
@@ -902,7 +902,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::switch::Switch))]
+                #[gpui_form(component(crate::shapes::Switch))]
                 enabled: bool,
             }
         };
@@ -929,7 +929,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(gpui_form_collection::input::Input::<_>),
+                    component(crate::shapes::Input::<_>),
                     component(crate::Input)
                 )]
                 email: String,
@@ -1074,7 +1074,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::switch::Switch), value_storage = direct)]
+                #[gpui_form(component(crate::shapes::Switch), value_storage = direct)]
                 enabled: bool,
             }
         };
@@ -1100,7 +1100,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
+                #[gpui_form(component(crate::shapes::Input::<_>))]
                 account_no: crate::types::AccountCode,
             }
         };
@@ -1117,7 +1117,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "<gpui_form_collection::input::Input<crate::types::AccountCode>as::gpui_form::runtime::shape::ComponentShape>::State"
+                "<crate::shapes::Input<crate::types::AccountCode>as::gpui_form::runtime::shape::ComponentShape>::State"
             ),
             "component shape `_` should be resolved to the field type in FormFields: {compact}"
         );
@@ -1132,7 +1132,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains(
-                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::from_macro_tokens_unchecked(\"gpui_form_collection::input::Input<crate::types::AccountCode>\"))"
+                "FieldComponentVariant::new(::gpui_form::schema::registry::RustPath::from_macro_tokens_unchecked(\"crate::shapes::Input<crate::types::AccountCode>\"))"
             ),
             "component shape metadata should store the resolved shape path: {compact}"
         );
@@ -1143,7 +1143,7 @@ mod gpui_form_tests {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
-                #[gpui_form(component(gpui_form_collection::date_picker::DatePicker))]
+                #[gpui_form(component(crate::shapes::DatePicker))]
                 birth_date: chrono::NaiveDate,
             }
         };
@@ -1175,7 +1175,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(gpui_form_collection::select::Select::<_>),
+                    component(crate::shapes::Select::<_>),
                     searchable = true
                 )]
                 country: crate::types::Country,
@@ -1204,7 +1204,7 @@ mod gpui_form_tests {
             #[derive(GpuiForm)]
             struct TestForm {
                 #[gpui_form(
-                    component(gpui_form_component::infinite_select::InfiniteSelect::<_>),
+                    component(crate::shapes::InfiniteSelect::<_>),
                     searchable_with_max_depth = 3
                 )]
                 location: crate::types::Country,

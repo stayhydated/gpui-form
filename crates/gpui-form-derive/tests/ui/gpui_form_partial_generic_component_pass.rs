@@ -1,3 +1,24 @@
+use std::marker::PhantomData;
+
+struct InputState<T>(PhantomData<T>);
+
+impl<T> InputState<T> {
+    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+        Self(PhantomData)
+    }
+}
+
+gpui_form_derive::component_shape! {
+    struct Input<T>
+    where
+        T: 'static,
+    {
+        type State = InputState<T>;
+        value = T;
+        value_storage = direct;
+    }
+}
+
 #[derive(gpui_form::GpuiForm)]
 #[gpui_form(no_inventory)]
 struct PartialGenericComponent<T = String, U = usize>
@@ -10,7 +31,7 @@ where
         T,
     >>::Storage: std::fmt::Debug + Clone + Default,
 {
-    #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
+    #[gpui_form(component(Input::<_>))]
     component: T,
     #[gpui_form(hidden)]
     plain: U,

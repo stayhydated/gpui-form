@@ -3074,7 +3074,6 @@ dependencies = [
  "gpui-component",
  "gpui-form",
  "gpui-form-codegen",
- "gpui-form-collection",
  "gpui-form-runtime",
  "insta",
  "itertools 0.14.0",
