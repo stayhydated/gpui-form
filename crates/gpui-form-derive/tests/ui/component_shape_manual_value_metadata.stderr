@@ -1,5 +1,0 @@
-error: `component_shape!` no longer accepts manual `ComponentShapeFor` impls inside the macro block; use `value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata
-  --> tests/ui/component_shape_manual_value_metadata.rs:10:14
-   |
-10 |         impl gpui_form_runtime::shape::ComponentShapeFor<String> for ManualValueShape {}
-   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

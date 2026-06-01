@@ -21,14 +21,14 @@ use gpui_component::{
 
 use crate::i18n::FilePickerText;
 #[cfg(feature = "component-shape")]
-use gpui_form_runtime::shape::FormValueChange;
+use gpui_form_runtime::shape::ValueChange;
 
 #[cfg(feature = "component-shape")]
-fn file_picker_form_value_change(event: &FilePickerEvent) -> FormValueChange<Vec<PathBuf>> {
+fn file_picker_form_value_change(event: &FilePickerEvent) -> ValueChange<Vec<PathBuf>> {
     match event {
-        FilePickerEvent::Change(paths) if paths.is_empty() => FormValueChange::Clear,
-        FilePickerEvent::Change(paths) => FormValueChange::Set(paths.clone()),
-        _ => FormValueChange::Unchanged,
+        FilePickerEvent::Change(paths) if paths.is_empty() => ValueChange::Clear,
+        FilePickerEvent::Change(paths) => ValueChange::Set(paths.clone()),
+        _ => ValueChange::Unchanged,
     }
 }
 
@@ -101,7 +101,7 @@ pub struct FilePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>> for FilePickerState {
+impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<Vec<PathBuf>> for FilePickerState {
     type Event = FilePickerEvent;
 
     fn seed_value_binding_state(
@@ -116,7 +116,7 @@ impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>> for File
         }
     }
 
-    fn form_value_change(_state: &Self, event: &Self::Event) -> FormValueChange<Vec<PathBuf>> {
+    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<Vec<PathBuf>> {
         file_picker_form_value_change(event)
     }
 }
@@ -239,13 +239,15 @@ impl Render for FilePickerState {
 }
 
 /// A native file picker element using `gpui-component` visual primitives.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
     feature = "component-shape",
-    gpui_form_shape(
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
         state = FilePickerState,
         value = Vec<std::path::PathBuf>,
-        value_storage = direct,
         field_suffix = "file_picker",
         value_binding
     )
@@ -264,6 +266,11 @@ pub struct FilePicker {
     appearance: bool,
     disabled: bool,
     size: Size,
+}
+
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for FilePicker {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 impl Sizable for FilePicker {
@@ -550,12 +557,12 @@ fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
 #[cfg(all(test, feature = "component-shape"))]
 mod tests {
     use super::{FilePickerEvent, file_picker_form_value_change};
-    use gpui_form_runtime::shape::FormValueChange;
+    use gpui_form_runtime::shape::ValueChange;
 
     #[test]
     fn empty_file_picker_change_clears_form_value() {
         let change = file_picker_form_value_change(&FilePickerEvent::Change(Vec::new()));
 
-        assert!(matches!(change, FormValueChange::Clear));
+        assert!(matches!(change, ValueChange::Clear));
     }
 }

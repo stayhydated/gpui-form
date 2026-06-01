@@ -3,14 +3,15 @@
 Procedural macros behind the `gpui-form` ecosystem.
 
 Most users should depend on [`gpui-form`](../gpui-form/README.md) and derive
-from the facade crate. Use this crate directly when you want the proc-macro
-layer, including component-shape derives and helper macros.
+from the facade crate. Use this crate directly when you want only the
+`GpuiForm` proc macro.
 
 ## What This Crate Provides
 
 - `#[derive(GpuiForm)]`
-- `#[derive(ComponentShape)]`
-- `component_shape! { ... }`
+
+GPUI component shape derives and helper macros live in
+[`component-shape-gpui`](../../../component-shape/crates/component-shape-gpui).
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by
@@ -62,11 +63,13 @@ The `gpui_form_component` shape examples require that crate's
 feature or by depending on `gpui-form-component-derive` directly.
 
 The `component(...)` value is parsed as a Rust type path; generated runtime
-construction delegates to `ComponentShape::new`. The shape type must be
-declared with `component_shape!` or `#[derive(ComponentShape)]`; hand-written
-`ComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put render
-component metadata and prototyping suffix metadata on the shape declaration,
-not on the `#[gpui_form(...)]` field attribute.
+construction delegates to `GpuiComponentShape::new`. The shape type must be
+declared with `component_shape_gpui::component_shape!` or
+`#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
+`GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put render
+component metadata and prototyping suffix metadata on the GPUI shape
+declaration, and put form storage metadata on a
+`gpui_form_runtime::shape::GpuiFormComponentShapePolicy` impl.
 
 Supporting field attributes:
 
@@ -108,12 +111,12 @@ Behavior notes:
   the derive can prove infallibility directly, such as optional fields, direct
   fields, or shape-backed fields with a declared field default. Shape-backed
   fields without a field default keep the checked `try_into_original()` path.
-- set `value_storage = direct` on the reusable shape definition when the
-  component can synthesize default values
-- shape-level `ValueBindingPolicy` records that the component shape implements
-  `gpui_form_runtime::shape::ComponentValueBinding<T>` for generated
-  prototyping subscriptions; the adapter seeds component state with
-  `seed_value_binding_state` and maps component events to `FormValueChange<T>`
+- set `GpuiFormComponentShapePolicy::ValueStoragePolicy` to
+  `DirectValueStorage` on reusable shapes that can synthesize default values
+- `ComponentShapeMetadata::CAPABILITIES` records whether the component shape
+  implements `gpui_form_runtime::shape::GpuiComponentValueBinding<T>` for
+  generated prototyping subscriptions; the adapter seeds component state with
+  `seed_value_binding_state` and maps component events to `ValueChange<T>`
 - generated `GpuiForm` component field code references
   `gpui_form::runtime::shape`; normal application crates do not need
   `gpui-form-runtime` directly just because a field uses a component shape
@@ -143,126 +146,14 @@ Behavior notes:
   editable state outside the derive output.
 - `skip` cannot be combined with component or hidden intent on the same field
 
-## `#[derive(ComponentShape)]`
+## Component Shape Macros
 
-Implements `gpui_form_runtime::shape::ComponentShape` and
-`DeclaredComponentShape` for a rendered component with separate backing state.
-Crates that use this derive need an explicit `gpui-form-runtime` dependency;
-generated paths resolve renamed runtime dependencies. Add `value = T` or
-`values(T, U)` when the derive should emit `ComponentShapeFor<T>`
-compatibility impls for supported form-side value types; omit value metadata
-when you will implement `ComponentShapeFor<Value>` manually. Each value type
-may be listed once.
-
-```rs
-use crate::state::{TagsState, build};
-use gpui_form_derive::ComponentShape;
-
-#[derive(IntoElement, ComponentShape)]
-#[gpui_form_shape(
-    state = TagsState,
-    new = build,
-    value = Vec<String>,
-    field_suffix = "input"
-)]
-pub struct TagsInput {
-    state: gpui::Entity<TagsState>,
-}
-```
-
-`state = ...` supplies `ComponentShape::State`. If `component = ...` is omitted,
-the generated `ComponentShape::RenderComponent` contract renders the derived
-type.
-The rendered component type, whether inferred or supplied with `component = ...`,
-must provide `new(&gpui::Entity<State>) -> impl gpui::IntoElement`.
-By default, the generated implementation calls `<State>::new(window, cx)`.
-`state` and `new` use normal Rust path resolution, so short in-scope names are
-fine. `new = ...` accepts a constructor expression. Function paths and closures
-are called with `(window, cx)`; full constructor expressions such as
-`TagsState::with_label(window, cx, "tags")` are emitted as written.
-The `component = ...` option publishes a `RenderComponent` adapter for
-generated/prototyping render code, so prefer a type that remains valid from the
-consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
-The value must be a path-like type. `field_suffix = "..."` must be a
-non-empty identifier suffix.
-`value = ...` accepts one form-side value type. `values(...)` accepts multiple
-form-side value types and emits one `ComponentShapeFor<T>` impl per type.
-Component-derived shapes publish value-binding metadata only when
-`#[gpui_form_shape(..., value_binding)]` is present. In that mode, they delegate
-`ComponentValueBinding<T>` through the backing state's
-`ComponentStateValueBinding<T>` implementation. The generated
-`ValueBindingPolicy` associated type drives compile-time inherited binding
-checks and schema/prototyping metadata.
-`field_suffix = "..."` populates `ComponentShape::PROTOTYPING`, giving
-prototyping generators a reusable helper suffix for DOM IDs, event handlers,
-and helper names without relying on shape name heuristics.
-
-Use `value_binding` on the shape metadata and implement
-`ComponentStateValueBinding<T>` on the backing state when the component-derived
-shape should delegate value binding to that state:
-
-```rs
-impl gpui_form_runtime::shape::ComponentStateValueBinding<Vec<PathBuf>> for FilePickerState {
-    type Event = FilePickerEvent;
-    /* seed_value_binding_state and form_value_change */
-}
-```
-
-## `component_shape!`
-
-Declares a local shape type for external component/state pairs.
-
-```rs
-gpui_form_derive::component_shape! {
-    /// Ready-made text input shape.
-    pub struct Input<T = String>
-    where
-        T: std::str::FromStr + ToString + 'static,
-    {
-        type State = gpui_component::input::InputState;
-        new = |window, cx| gpui_component::input::InputState::new(window, cx)
-            .validate(|value, _| value.parse::<T>().is_ok());
-        component = gpui_component::input::Input;
-        value = T;
-        value_storage = direct;
-        field_suffix = "input";
-        value_binding;
-
-        impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
-        where
-            T: std::str::FromStr + ToString + 'static,
-        {
-            type Event = gpui_component::input::InputEvent;
-            /* seed_value_binding_state and form_value_change */
-        }
-    }
-}
-```
-
-Use this when the component and state live in another crate. The macro creates
-the local wrapper type that owns the `ComponentShape` and
-`DeclaredComponentShape` implementations plus the wrapper's reusable
-`ComponentValueBinding<T>` impls.
-It accepts `new`, `component`, `value = ...`, `values(...)`,
-`compatibility<Value> where ...`, `value_storage = require_value|direct`,
-`value_binding`, and `field_suffix`
-metadata, with `type State = ...` supplying the wrapped state type. If `new` is
-omitted, the generated implementation calls `<State>::new(window, cx)`.
-`value_storage = direct` publishes that non-optional fields using this shape can
-store `T` directly because the component can synthesize a default value.
-`component = ...` must be path-like, and `field_suffix = "..."` must be a
-non-empty ASCII identifier suffix.
-Separate metadata entries with semicolons.
-Nested `ComponentValueBinding<T>` impls are emitted after the generated shape
-contract. Add `value_binding;` to set the generated `ValueBindingPolicy` to
-`InheritedComponentValueBinding`; otherwise the macro uses
-`NoComponentValueBinding`. The macro emits `ComponentShapeFor<T>` impls only
-for `value = ...`, `values(...)`, or constrained
-`compatibility<Value> where ...;` metadata. `value = ...` and `values(...)`
-cover fixed form-side value types. Use `compatibility<Value> where
-Value: SomeTrait<...>;` when the shape needs custom bounds or diagnostics.
-Manual `ComponentShapeFor` impls are rejected inside `component_shape!` so
-compatibility behavior stays explicit.
+Use `component_shape_gpui::component_shape!` or
+`#[derive(component_shape_gpui::GpuiComponentShape)]` for GPUI shape
+declarations. Pair those declarations with
+`gpui_form_runtime::shape::GpuiFormComponentShapePolicy` when the shape is used
+as a `GpuiForm` field so the form derive can choose required or direct value
+storage.
 
 ## Feature Flags
 

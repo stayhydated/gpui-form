@@ -12,10 +12,13 @@ this crate owns reusable component types for common `gpui-component` widgets.
 ## Boundaries
 
 - `gpui-form` owns the main form derive API and schema metadata.
-- `gpui-form-runtime` owns the component shape contract.
+- `component-shape-gpui` owns the reusable GPUI component shape contract.
+- `gpui-form-runtime` owns the `gpui-form` storage policy bridge for declared
+  shapes.
 - `gpui-form-collection` owns opt-in components declared through
-  `gpui_form_derive::component_shape!` and any value adapters those components need.
-- Collection components publish `ComponentShape::PROTOTYPING.field_suffix`
+  `component_shape_gpui::component_shape!`, the local storage policy impls, and
+  any value adapters those components need.
+- Collection components publish `GpuiComponentShape::PROTOTYPING.field_suffix`
   values so prototyping output can use stable widget-role names without
   rediscovering the same suffixes from type names.
 - Collection components that can synthesize missing values publish
@@ -33,7 +36,7 @@ this crate owns reusable component types for common `gpui-component` widgets.
   `gpui_component::select::SelectState<D>`, with `IntoEnumIterator`,
   `Default`, `PartialEq`, `SelectItem<Value = T>`, and delegate bounds.
   Applications that need search or other select-specific options should expose
-  those choices through a dedicated `ComponentShape` wrapper.
+  those choices through a dedicated `GpuiComponentShape` wrapper.
 - `combobox::Combobox<T, D = Vec<T>>`: enum-backed combobox over
   `gpui_component::combobox::ComboboxState<D>`, with `IntoEnumIterator`,
   `PartialEq`, `SelectItem<Value = T>`, and delegate bounds. Selection is

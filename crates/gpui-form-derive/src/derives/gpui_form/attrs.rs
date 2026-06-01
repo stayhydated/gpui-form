@@ -98,8 +98,8 @@ impl Parse for GpuiFormFieldOption {
                 format!(
                     "unknown gpui_form field option `{key}`; component-backed fields must use \
                      `component(MyShape)` where `MyShape` is declared with \
-                     `gpui_form_derive::component_shape!` or \
-                     `#[derive(gpui_form_derive::ComponentShape)]`"
+                     `component_shape_gpui::component_shape!` or \
+                     `#[derive(component_shape_gpui::GpuiComponentShape)]`"
                 ),
             ));
         }

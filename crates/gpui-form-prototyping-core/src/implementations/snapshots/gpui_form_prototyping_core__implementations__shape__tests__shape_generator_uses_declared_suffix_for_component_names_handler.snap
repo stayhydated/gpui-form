@@ -4,22 +4,22 @@ expression: "pretty_tokens(generated.handlers[0].clone())"
 ---
 fn on_country_select_event(
     &mut self,
-    state: &Entity<ComponentStateOf<crate::shapes::CountrySelectShape>>,
-    event: &ComponentEventOf<crate::shapes::CountrySelectShape, CountryCode>,
+    state: &Entity<GpuiComponentStateOf<crate::shapes::CountrySelectShape>>,
+    event: &GpuiComponentEventOf<crate::shapes::CountrySelectShape, CountryCode>,
     _window: &mut Window,
     _cx: &mut Context<Self>,
 ) {
     let form_change = {
         let state = state.read(_cx);
-        form_value_change::<crate::shapes::CountrySelectShape, CountryCode>(state, event)
+        value_change::<crate::shapes::CountrySelectShape, CountryCode>(state, event)
     };
     match form_change {
-        FormValueChange::Set(value) => {
+        ValueChange::Set(value) => {
             self.current_data.country = Some(value);
         }
-        FormValueChange::Clear => {
+        ValueChange::Clear => {
             self.current_data.country = None;
         }
-        FormValueChange::Unchanged => {}
+        ValueChange::Unchanged => {}
     }
 }

@@ -67,10 +67,10 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
     fn generate_imports(&self, field: &ResolvedField<'_>) -> Vec<ImportItem> {
         if field.value_binding() {
             vec![
-                ImportItem::path("gpui_form::runtime::shape::ComponentEventOf"),
-                ImportItem::path("gpui_form::runtime::shape::ComponentStateOf"),
-                ImportItem::path("gpui_form::runtime::shape::FormValueChange"),
-                ImportItem::path("gpui_form::runtime::shape::form_value_change"),
+                ImportItem::path("gpui_form::runtime::shape::GpuiComponentEventOf"),
+                ImportItem::path("gpui_form::runtime::shape::GpuiComponentStateOf"),
+                ImportItem::path("gpui_form::runtime::shape::ValueChange"),
+                ImportItem::path("gpui_form::runtime::shape::value_change"),
                 ImportItem::path("gpui_form::runtime::shape::seed_value_binding_state"),
             ]
         } else {
@@ -112,9 +112,9 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 
         let shape_path = runtime_shape_path(field, component)?;
         let child_tokens = quote! {
-            <<#shape_path as gpui_form::runtime::shape::ComponentShape>::RenderComponent
-                as gpui_form::runtime::shape::ComponentRender<
-                    <#shape_path as gpui_form::runtime::shape::ComponentShape>::State
+            <<#shape_path as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent
+                as gpui_form::runtime::shape::GpuiComponentRender<
+                    <#shape_path as gpui_form::runtime::shape::GpuiComponentShape>::State
                 >>::new(&self.fields.#field_in_struct_name_ident)
         };
 
@@ -141,8 +141,8 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let field_var_name_ident = field.field_ident();
         let field_name_ident = field.field_ident();
         let event_handler_fn_name_ident = field.component_event_handler_ident();
-        let state_type = quote! { ComponentStateOf<#shape> };
-        let event_type = quote! { ComponentEventOf<#shape, #field_type> };
+        let state_type = quote! { GpuiComponentStateOf<#shape> };
+        let event_type = quote! { GpuiComponentEventOf<#shape, #field_type> };
 
         let bindings = vec![SubscriptionBinding::new(
             field_var_name_ident.clone(),
@@ -162,7 +162,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         } else {
             quote! {
                 self.current_data.#field_name_ident =
-                    <<#shape as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy
+                    <<#shape as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
                         as gpui_form::runtime::shape::DefaultValueStorage<
                             #field_type
                         >>::default_storage();
@@ -179,20 +179,20 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             ) {
                 let form_change = {
                     let state = state.read(_cx);
-                    form_value_change::<#shape, #field_type>(
+                    value_change::<#shape, #field_type>(
                         state,
                         event,
                     )
                 };
 
                 match form_change {
-                    FormValueChange::Set(value) => {
+                    ValueChange::Set(value) => {
                         #set_tokens
                     }
-                    FormValueChange::Clear => {
+                    ValueChange::Clear => {
                         #clear_tokens
                     }
-                    FormValueChange::Unchanged => {}
+                    ValueChange::Unchanged => {}
                 }
             }
         };

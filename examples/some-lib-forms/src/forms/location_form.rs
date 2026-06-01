@@ -6,8 +6,7 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form::runtime::shape::{
-    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
-    seed_value_binding_state,
+    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::location::*;
@@ -37,35 +36,35 @@ impl gpui_storybook::Story for LocationFormForm {
 impl LocationFormForm {
     fn on_name_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
+            value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.name = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.name = <<gpui_form_collection::input::Input<
                     String,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     String,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_location_infinite_select_event(
         &mut self,
         state: &Entity<
-            ComponentStateOf<gpui_form_component::infinite_select::InfiniteSelect<Country>>,
+            GpuiComponentStateOf<gpui_form_component::infinite_select::InfiniteSelect<Country>>,
         >,
-        event: &ComponentEventOf<
+        event: &GpuiComponentEventOf<
             gpui_form_component::infinite_select::InfiniteSelect<Country>,
             Country,
         >,
@@ -74,23 +73,22 @@ impl LocationFormForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
-                gpui_form_component::infinite_select::InfiniteSelect<Country>,
-                Country,
-            >(state, event)
+            value_change::<gpui_form_component::infinite_select::InfiniteSelect<Country>, Country>(
+                state, event,
+            )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.location = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.location = <<gpui_form_component::infinite_select::InfiniteSelect<
                     Country,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     Country,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -203,10 +201,10 @@ impl Render for LocationFormForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         String,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.name),
                             ),
                     )
@@ -232,10 +230,10 @@ impl Render for LocationFormForm {
                             .child(
                                 <<gpui_form_component::infinite_select::InfiniteSelect<
                                     Country,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_component::infinite_select::InfiniteSelect<
                                         Country,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.location),
                             ),
                     )

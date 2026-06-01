@@ -94,7 +94,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         };
         let runtime_crate = context.paths.gpui_form_facade_runtime();
         Ok(quote! {
-            <#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+            <#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
         })
     }
 
@@ -1117,7 +1117,7 @@ pub(super) fn generate_value_holder(
             let mut assertion_where_clause = where_clause.cloned();
             let wc = assertion_where_clause.get_or_insert_with(|| syn::parse_quote!(where));
             wc.predicates.push(syn::parse_quote! {
-                <#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy:
+                <#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy:
                     #runtime_crate::shape::DefaultValueStorage<#base_type>
             });
             default_storage_assertions.push(quote! {

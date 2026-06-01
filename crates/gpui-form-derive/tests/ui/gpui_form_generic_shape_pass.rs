@@ -8,15 +8,21 @@ impl<T> InputState<T> {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     struct Input<T>
     where
         T: 'static,
     {
         type State = InputState<T>;
         value = T;
-        value_storage = direct;
     }
+}
+
+impl<T> gpui_form_runtime::shape::GpuiFormComponentShapePolicy for Input<T>
+where
+    T: 'static,
+{
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 #[derive(gpui_form::GpuiForm)]

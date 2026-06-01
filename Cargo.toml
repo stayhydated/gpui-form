@@ -25,13 +25,16 @@ license = "MIT OR Apache-2.0"
 publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
-rust-version = "1.95"
+rust-version = "1.96"
 version = "0.5.1"
 
 [workspace.dependencies]
 anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
+component-shape = { path = "../component-shape/crates/component-shape" }
+component-shape-codegen = { path = "../component-shape/crates/component-shape-codegen" }
+component-shape-gpui = { path = "../component-shape/crates/component-shape-gpui" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"

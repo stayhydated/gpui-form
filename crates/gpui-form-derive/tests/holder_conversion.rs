@@ -15,7 +15,7 @@ impl State {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     struct RequiredShape {
         type State = State;
         compatibility<Value>
@@ -24,14 +24,21 @@ gpui_form_derive::component_shape! {
     }
 }
 
-gpui_form_derive::component_shape! {
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for RequiredShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
+}
+
+component_shape_gpui::component_shape! {
     struct AllowShape {
         type State = State;
         compatibility<Value>
         where
             Value: 'static;
-        value_storage = direct;
     }
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for AllowShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]

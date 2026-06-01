@@ -1,17 +1,17 @@
-error[E0277]: gpui-form component shape `ManualShape` must be declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`
-  --> tests/ui/gpui_form_missing_declared_component_shape.rs:32:27
+error[E0277]: GPUI component shape `ManualShape` must be declared with `component_shape_gpui::component_shape!` or `#[derive(component_shape_gpui::GpuiComponentShape)]`
+  --> tests/ui/gpui_form_missing_declared_component_shape.rs:36:27
    |
-32 |     #[gpui_form(component(ManualShape))]
+36 |     #[gpui_form(component(ManualShape))]
    |                           ^^^^^^^^^^^ unsatisfied trait bound
    |
-help: the trait `DeclaredComponentShape` is not implemented for `ManualShape`
+help: the trait `DeclaredGpuiComponentShape` is not implemented for `ManualShape`
   --> tests/ui/gpui_form_missing_declared_component_shape.rs:15:1
    |
 15 | struct ManualShape;
    | ^^^^^^^^^^^^^^^^^^
-   = note: hand-written `ComponentShape` implementations are not accepted by `#[derive(GpuiForm)]`
+   = note: hand-written `GpuiComponentShape` implementations are not accepted by consumers that require declared shapes
 note: required by a bound in `__gpui_form_assert_value_declared_component_shape`
-  --> tests/ui/gpui_form_missing_declared_component_shape.rs:32:17
+  --> tests/ui/gpui_form_missing_declared_component_shape.rs:36:17
    |
-32 |     #[gpui_form(component(ManualShape))]
+36 |     #[gpui_form(component(ManualShape))]
    |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_value_declared_component_shape`

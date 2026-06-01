@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{
     App, AppContext as _, Context, Entity, EventEmitter, IntoElement, RenderOnce, Subscription,
     Window,
@@ -8,7 +10,6 @@ use gpui_component::input::{
     InputEvent, InputState, NumberInput as GpuiNumberInput,
     NumberInputEvent as GpuiNumberInputEvent, StepAction,
 };
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(Clone, Debug)]
 pub enum NumberInputEvent {
@@ -95,7 +96,7 @@ impl RenderOnce for NumberInputField {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::input::NumberInput` backed by `InputState`.
     pub struct NumberInput<T = String>
     where
@@ -105,11 +106,10 @@ gpui_form_derive::component_shape! {
         new = |window, cx| NumberInputState::new::<T>(window, cx);
         component = gpui_form_collection::number_input::NumberInputField;
         value = T;
-        value_storage = direct;
         field_suffix = "number_input";
         value_binding;
 
-        impl<T> ComponentValueBinding<T> for NumberInput<T>
+        impl<T> GpuiComponentValueBinding<T> for NumberInput<T>
         where
             T: FromStr + ToString + 'static,
         {
@@ -128,15 +128,15 @@ gpui_form_derive::component_shape! {
                 });
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<T> {
                 match event {
                     NumberInputEvent::Change(value) => {
                         if value.is_empty() {
-                            FormValueChange::Clear
+                            ValueChange::Clear
                         } else {
                             value
                                 .parse()
-                                .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                                .map_or(ValueChange::Unchanged, ValueChange::Set)
                         }
                     },
                 }
@@ -144,3 +144,11 @@ gpui_form_derive::component_shape! {
         }
     }
 }
+
+impl_form_component_shape!(
+    impl<T> NumberInput<T>
+    where [
+        T: FromStr + ToString + 'static
+    ];
+    gpui_form_runtime::shape::DirectValueStorage
+);

@@ -1,5 +1,0 @@
-error: duplicate `value` compatibility metadata; remove the duplicate `value = ...` or `values(...)` entry
- --> tests/ui/component_shape_duplicate_value_metadata.rs:9:21
-  |
-9 |         values(u32, String);
-  |                     ^^^^^^

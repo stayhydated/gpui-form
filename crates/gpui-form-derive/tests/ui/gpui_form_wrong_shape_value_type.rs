@@ -8,11 +8,15 @@ impl State {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     struct StringShape {
         type State = State;
         value = String;
     }
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for StringShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
 }
 
 #[derive(GpuiForm)]

@@ -20,7 +20,7 @@ use jiff::civil::Date as JiffDate;
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
 #[cfg(feature = "component-shape")]
-use gpui_form_runtime::shape::FormValueChange;
+use gpui_form_runtime::shape::ValueChange;
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -55,7 +55,9 @@ pub struct DatePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-impl gpui_form_runtime::shape::ComponentStateValueBinding<chrono::NaiveDate> for DatePickerState {
+impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<chrono::NaiveDate>
+    for DatePickerState
+{
     type Event = DatePickerEvent;
 
     fn seed_value_binding_state(
@@ -68,11 +70,11 @@ impl gpui_form_runtime::shape::ComponentStateValueBinding<chrono::NaiveDate> for
         state.set_date(date, window, cx);
     }
 
-    fn form_value_change(_state: &Self, event: &Self::Event) -> FormValueChange<chrono::NaiveDate> {
+    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<chrono::NaiveDate> {
         match event {
             DatePickerEvent::Change(Some(date)) => parse_form_date::<chrono::NaiveDate>(*date)
-                .map_or(FormValueChange::Unchanged, FormValueChange::Set),
-            DatePickerEvent::Change(None) => FormValueChange::Clear,
+                .map_or(ValueChange::Unchanged, ValueChange::Set),
+            DatePickerEvent::Change(None) => ValueChange::Clear,
         }
     }
 }
@@ -98,7 +100,8 @@ pub struct DateRangePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-impl gpui_form_runtime::shape::ComponentStateValueBinding<(chrono::NaiveDate, chrono::NaiveDate)>
+impl
+    gpui_form_runtime::shape::GpuiComponentStateValueBinding<(chrono::NaiveDate, chrono::NaiveDate)>
     for DateRangePickerState
 {
     type Event = DateRangePickerEvent;
@@ -117,16 +120,16 @@ impl gpui_form_runtime::shape::ComponentStateValueBinding<(chrono::NaiveDate, ch
         );
     }
 
-    fn form_value_change(
+    fn value_change(
         _state: &Self,
         event: &Self::Event,
-    ) -> FormValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
+    ) -> ValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
         match event {
             DateRangePickerEvent::Change(Some(start), Some(end)) => {
                 jiff_date_range_from_chrono(*start, *end)
-                    .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                    .map_or(ValueChange::Unchanged, ValueChange::Set)
             },
-            DateRangePickerEvent::Change(_, _) => FormValueChange::Clear,
+            DateRangePickerEvent::Change(_, _) => ValueChange::Clear,
         }
     }
 }
@@ -385,10 +388,13 @@ impl Render for DateRangePickerState {
 }
 
 /// A localized date picker element.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
     feature = "component-shape",
-    gpui_form_shape(
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
         state = DatePickerState,
         value = chrono::NaiveDate,
         field_suffix = "date_picker",
@@ -408,11 +414,19 @@ pub struct DatePicker {
     disabled: bool,
 }
 
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for DatePicker {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
+}
+
 /// A localized date range picker element.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
     feature = "component-shape",
-    gpui_form_shape(
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
         state = DateRangePickerState,
         value = (chrono::NaiveDate, chrono::NaiveDate),
         field_suffix = "date_range_picker",
@@ -430,6 +444,11 @@ pub struct DateRangePicker {
     number_of_months: usize,
     appearance: bool,
     disabled: bool,
+}
+
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for DateRangePicker {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
 }
 
 impl Sizable for DatePicker {

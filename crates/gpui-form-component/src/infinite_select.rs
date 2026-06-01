@@ -1219,14 +1219,16 @@ where
 }
 
 /// Render wrapper used by generated form code for infinite-select fields.
-#[cfg_attr(feature = "component-shape", derive(gpui_form_derive::ComponentShape))]
 #[cfg_attr(
     feature = "component-shape",
-    gpui_form_shape(
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
         state = InfiniteSelectState<T, D>,
         new = InfiniteSelectState::<T, D>::new_default,
         value = T,
-        value_storage = direct,
         field_suffix = "infinite_select",
         value_binding
     )
@@ -1238,6 +1240,15 @@ where
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
     state: Entity<InfiniteSelectState<T, D>>,
+}
+
+#[cfg(feature = "component-shape")]
+impl<T, D> gpui_form_runtime::shape::GpuiFormComponentShapePolicy for InfiniteSelect<T, D>
+where
+    T: InfiniteSelectValue,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 impl<T, D> InfiniteSelect<T, D>
@@ -1263,7 +1274,7 @@ where
 }
 
 #[cfg(feature = "component-shape")]
-impl<T, D> gpui_form_runtime::shape::ComponentStateValueBinding<T> for InfiniteSelectState<T, D>
+impl<T, D> gpui_form_runtime::shape::GpuiComponentStateValueBinding<T> for InfiniteSelectState<T, D>
 where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
@@ -1281,11 +1292,11 @@ where
         }
     }
 
-    fn form_value_change(
+    fn value_change(
         _state: &Self,
         event: &Self::Event,
-    ) -> gpui_form_runtime::shape::FormValueChange<T> {
-        gpui_form_runtime::shape::FormValueChange::Set(event.value().clone())
+    ) -> gpui_form_runtime::shape::ValueChange<T> {
+        gpui_form_runtime::shape::ValueChange::Set(event.value().clone())
     }
 }
 

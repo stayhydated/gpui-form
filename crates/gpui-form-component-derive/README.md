@@ -60,6 +60,7 @@ Behavior notes:
 - [`gpui-form-component`](../gpui-form-component/README.md) for the runtime
   state helpers targeted by the derive and its `derive` feature re-export
 - [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`
-  and component-shape derives
+- [`component-shape-gpui`](../../../component-shape/crates/component-shape-gpui)
+  for GPUI component-shape declarations
 - [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
   `SelectItem`

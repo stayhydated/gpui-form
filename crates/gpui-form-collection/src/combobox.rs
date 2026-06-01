@@ -1,3 +1,5 @@
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Window};
 use gpui_component::{
     IndexPath,
@@ -5,7 +7,6 @@ use gpui_component::{
     searchable_list::SearchableListDelegate,
     select::SelectItem,
 };
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
 #[diagnostic::on_unimplemented(
@@ -16,7 +17,7 @@ pub trait ComboboxFormValue<Item> {}
 
 impl<Item> ComboboxFormValue<Item> for Vec<Item> {}
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::combobox::Combobox` backed by `ComboboxState`.
     ///
     /// The enum type `T` must implement `gpui_component::select::SelectItem`,
@@ -32,11 +33,10 @@ gpui_form_derive::component_shape! {
         compatibility<Value>
         where
             Value: ComboboxFormValue<T>;
-        value_storage = direct;
         field_suffix = "combobox";
         value_binding;
 
-        impl<T, D> ComponentValueBinding<Vec<T>> for Combobox<T, D>
+        impl<T, D> GpuiComponentValueBinding<Vec<T>> for Combobox<T, D>
         where
             T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
             D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -64,13 +64,13 @@ gpui_form_derive::component_shape! {
                 state.set_selected_indices(selected_indices, window, cx);
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<Vec<T>> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<Vec<T>> {
                 match event {
                     ComboboxEvent::Change(values) | ComboboxEvent::Confirm(values) => {
                         if values.is_empty() {
-                            FormValueChange::Clear
+                            ValueChange::Clear
                         } else {
-                            FormValueChange::Set(values.clone())
+                            ValueChange::Set(values.clone())
                         }
                     },
                 }
@@ -79,6 +79,15 @@ gpui_form_derive::component_shape! {
 
     }
 }
+
+impl_form_component_shape!(
+    impl<T, D> Combobox<T, D>
+    where [
+        T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+        D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static
+    ];
+    gpui_form_runtime::shape::DirectValueStorage
+);
 
 impl<T, D> Combobox<T, D>
 where

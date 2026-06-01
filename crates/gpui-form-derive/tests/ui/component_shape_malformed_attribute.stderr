@@ -1,5 +1,0 @@
-error: expected `=`
- --> tests/ui/component_shape_malformed_attribute.rs:6:24
-  |
-6 | #[gpui_form_shape(state)]
-  |                        ^

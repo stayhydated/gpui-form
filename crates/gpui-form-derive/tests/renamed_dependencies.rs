@@ -8,9 +8,17 @@ fn workspace_root() -> PathBuf {
         .to_path_buf()
 }
 
+fn component_shape_root(workspace: &std::path::Path) -> PathBuf {
+    workspace
+        .parent()
+        .expect("gpui-form has a parent directory")
+        .join("component-shape/crates")
+}
+
 #[test]
 fn gpui_form_derive_uses_facade_runtime_reexport() {
     let workspace = workspace_root();
+    let component_shape_root = component_shape_root(&workspace);
     let crate_dir = workspace.join("target/renamed-dependency-check");
     let src_dir = crate_dir.join("src");
     fs::create_dir_all(&src_dir).expect("create renamed dependency test crate");
@@ -27,12 +35,14 @@ edition = "2024"
 
 [dependencies]
 gpui = {{ git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }}
+component-shape = {{ path = "{component_shape}" }}
+component-shape-gpui = {{ path = "{component_shape_gpui}" }}
 gpui-form = {{ path = "{gpui_form}", default-features = false, features = ["derive"] }}
-gpui-form-derive = {{ path = "{derive}" }}
 gpui-form-runtime = {{ path = "{runtime}" }}
 "#,
+            component_shape = component_shape_root.join("component-shape").display(),
+            component_shape_gpui = component_shape_root.join("component-shape-gpui").display(),
             gpui_form = workspace.join("crates/gpui-form").display(),
-            derive = workspace.join("crates/gpui-form-derive").display(),
             runtime = workspace.join("crates/gpui-form-runtime").display(),
         ),
     )
@@ -49,13 +59,15 @@ impl State {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     struct RenamedRuntimeShape {
         type State = State;
-        compatibility<Value>
-        where
-            Value: 'static;
+        value = String;
     }
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for RenamedRuntimeShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
 }
 
 #[derive(gpui_form::GpuiForm)]
@@ -89,8 +101,9 @@ pub fn holder() -> DemoFormValueHolder {
 }
 
 #[test]
-fn component_shape_macros_support_renamed_gpui_and_runtime_dependencies() {
+fn component_shape_contracts_support_renamed_dependencies() {
     let workspace = workspace_root();
+    let component_shape_root = component_shape_root(&workspace);
     let crate_dir = workspace.join("target/renamed-component-macro-check");
     let src_dir = crate_dir.join("src");
     fs::create_dir_all(&src_dir).expect("create renamed component macro test crate");
@@ -107,10 +120,12 @@ edition = "2024"
 
 [dependencies]
 renamed-gpui = {{ package = "gpui", git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }}
-gpui-form-derive = {{ path = "{derive}" }}
+renamed-component-shape = {{ package = "component-shape", path = "{component_shape}" }}
+renamed-component-shape-gpui = {{ package = "component-shape-gpui", path = "{component_shape_gpui}" }}
 renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}" }}
 "#,
-            derive = workspace.join("crates/gpui-form-derive").display(),
+            component_shape = component_shape_root.join("component-shape").display(),
+            component_shape_gpui = component_shape_root.join("component-shape-gpui").display(),
             runtime = workspace.join("crates/gpui-form-runtime").display(),
         ),
     )
@@ -119,9 +134,11 @@ renamed-gpui-form-runtime = {{ package = "gpui-form-runtime", path = "{runtime}"
     fs::write(
         src_dir.join("lib.rs"),
         r#"
+use renamed_component_shape_gpui::component_shape;
 use renamed_gpui_form_runtime::shape::{
-    ComponentShape, ComponentStateValueBinding, ComponentValueBinding, DeclaredComponentShape,
-    FormValueChange,
+    DeclaredGpuiComponentShape, DirectValueStorage, GpuiComponentShape,
+    GpuiComponentStateValueBinding, GpuiComponentValueBinding, GpuiFormComponentShapePolicy,
+    RequiredValueStorage, ValueChange,
 };
 
 pub struct DerivedState;
@@ -145,22 +162,26 @@ impl DerivedComponent {
 
 impl renamed_gpui::EventEmitter<DerivedEvent> for DerivedState {}
 
-impl ComponentStateValueBinding<String> for DerivedState {
+impl GpuiComponentStateValueBinding<String> for DerivedState {
     type Event = DerivedEvent;
 
-    fn form_value_change(_state: &Self, _event: &Self::Event) -> FormValueChange<String> {
-        FormValueChange::Unchanged
+    fn value_change(_state: &Self, _event: &Self::Event) -> ValueChange<String> {
+        ValueChange::Unchanged
     }
 }
 
-#[derive(gpui_form_derive::ComponentShape)]
-#[gpui_form_shape(
+#[derive(renamed_component_shape_gpui::GpuiComponentShape)]
+#[gpui_component_shape(
     state = DerivedState,
     value = String,
     value_binding,
     field_suffix = "derived"
 )]
 pub struct DerivedComponent;
+
+impl GpuiFormComponentShapePolicy for DerivedComponent {
+    type ValueStoragePolicy = RequiredValueStorage;
+}
 
 pub struct MacroState;
 
@@ -184,34 +205,37 @@ impl MacroComponent {
 
 impl renamed_gpui::EventEmitter<MacroEvent> for MacroState {}
 
-gpui_form_derive::component_shape! {
+component_shape! {
     pub struct MacroShape {
         type State = MacroState;
         component = MacroComponent;
         value = String;
-        value_storage = direct;
         field_suffix = "macro";
         value_binding;
 
-        impl ComponentValueBinding<String> for MacroShape {
+        impl GpuiComponentValueBinding<String> for MacroShape {
             type Event = MacroEvent;
 
-            fn form_value_change(
+            fn value_change(
                 _state: &Self::State,
                 _event: &Self::Event,
-            ) -> FormValueChange<String> {
-                FormValueChange::Unchanged
+            ) -> ValueChange<String> {
+                ValueChange::Unchanged
             }
         }
     }
 }
 
+impl GpuiFormComponentShapePolicy for MacroShape {
+    type ValueStoragePolicy = DirectValueStorage;
+}
+
 pub fn assert_shapes() {
-    fn assert_shape<Shape: ComponentShape + DeclaredComponentShape>() {}
+    fn assert_shape<Shape: GpuiComponentShape + DeclaredGpuiComponentShape>() {}
     fn assert_binding<Shape, Event>()
     where
-        Shape: ComponentValueBinding<String, Event = Event>,
-        <Shape as ComponentShape>::State: renamed_gpui::EventEmitter<Event>,
+        Shape: GpuiComponentValueBinding<String, Event = Event>,
+        <Shape as GpuiComponentShape>::State: renamed_gpui::EventEmitter<Event>,
         Event: 'static,
     {
     }

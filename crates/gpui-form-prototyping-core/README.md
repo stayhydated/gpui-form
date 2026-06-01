@@ -59,17 +59,17 @@ adapter can scaffold them. Missing component capabilities return a
 `PrototypingError` with the source form name, field name, and missing
 capability instead of generating placeholder UI. For value-bound fields, the
 adapter emits generic seed and subscription hooks through
-`gpui_form::runtime::shape::ComponentValueBinding<T>`. Generated scaffolds use
+`gpui_form::runtime::shape::GpuiComponentValueBinding<T>`. Generated scaffolds use
 the source field name for component entity fields and constructors, such as
 `email`, while suffix-bearing helper names such as `on_email_input_event` use
 resolved component suffix metadata and fall back to the generic `shape` suffix.
-Value-bound scaffolds use `seed_value_binding_state`, `form_value_change`,
-`FormValueChange<T>`, and runtime aliases for state and actual component event
+Value-bound scaffolds use `seed_value_binding_state`, `value_change`,
+`ValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.
 `FormParts` exposes component creation, field initializer, subscription, and
 event-handler fragments as typed records that still implement `ToTokens`, so
 custom layouts can inspect or reorder those pieces before rendering.
-On `FormValueChange::Clear`, optional fields reset to `None`; non-optional
+On `ValueChange::Clear`, optional fields reset to `None`; non-optional
 fields reset to the intent-scoped source default converted into the form-side
 value when one exists, otherwise to the shape's default storage policy.
 The adapter also consumes `GpuiFormShape::holder_conversion_shape()` from

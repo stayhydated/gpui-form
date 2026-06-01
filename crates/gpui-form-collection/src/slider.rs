@@ -1,19 +1,19 @@
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Window};
 use gpui_component::slider::{SliderEvent, SliderState, SliderValue};
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::slider::Slider` backed by `SliderState`.
     pub struct Slider {
         type State = SliderState;
         new = |_window, _cx| SliderState::new();
         component = gpui_component::slider::Slider;
         values(SliderValue, f32);
-        value_storage = direct;
         field_suffix = "slider";
         value_binding;
 
-        impl ComponentValueBinding<SliderValue> for Slider {
+        impl GpuiComponentValueBinding<SliderValue> for Slider {
             type Event = SliderEvent;
 
             fn seed_value_binding_state(
@@ -28,19 +28,19 @@ gpui_form_derive::component_shape! {
                 }
             }
 
-            fn form_value_change(
+            fn value_change(
                 _state: &Self::State,
                 event: &Self::Event,
-            ) -> FormValueChange<SliderValue> {
+            ) -> ValueChange<SliderValue> {
                 match event {
                     SliderEvent::Change(value) | SliderEvent::Release(value) => {
-                        FormValueChange::Set(*value)
+                        ValueChange::Set(*value)
                     },
                 }
             }
         }
 
-        impl ComponentValueBinding<f32> for Slider {
+        impl GpuiComponentValueBinding<f32> for Slider {
             type Event = SliderEvent;
 
             fn seed_value_binding_state(
@@ -53,14 +53,16 @@ gpui_form_derive::component_shape! {
                 state.set_value(SliderValue::from(value), window, cx);
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<f32> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<f32> {
                 match event {
                     SliderEvent::Change(value) | SliderEvent::Release(value) => match value {
-                        SliderValue::Single(value) => FormValueChange::Set(*value),
-                        SliderValue::Range(start, _) => FormValueChange::Set(*start),
+                        SliderValue::Single(value) => ValueChange::Set(*value),
+                        SliderValue::Range(start, _) => ValueChange::Set(*start),
                     },
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(Slider, gpui_form_runtime::shape::DirectValueStorage);

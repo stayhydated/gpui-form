@@ -1,5 +1,0 @@
-error: `component_shape!` no longer accepts manual `ComponentShapeFor` impls inside the macro block; use `value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata
-  --> tests/ui/component_shape_ambiguous_component_shape_for.rs:11:14
-   |
-11 |         impl ComponentShapeFor<String> for AmbiguousShape {}
-   |              ^^^^^^^^^^^^^^^^^^^^^^^^^

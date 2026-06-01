@@ -1,6 +1,7 @@
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 use gpui_component::checkbox::Checkbox as GpuiCheckbox;
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CheckboxEvent {
@@ -62,17 +63,16 @@ impl RenderOnce for CheckboxField {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a value-bound `gpui_component::checkbox::Checkbox`.
     pub struct Checkbox {
         type State = CheckboxState;
         component = gpui_form_collection::checkbox::CheckboxField;
         value = bool;
-        value_storage = direct;
         field_suffix = "checkbox";
         value_binding;
 
-        impl ComponentValueBinding<bool> for Checkbox {
+        impl GpuiComponentValueBinding<bool> for Checkbox {
             type Event = CheckboxEvent;
 
             fn seed_value_binding_state(
@@ -84,11 +84,13 @@ gpui_form_derive::component_shape! {
                 state.set_checked(value.copied().unwrap_or(false), cx);
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<bool> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<bool> {
                 match event {
-                    CheckboxEvent::Change(checked) => FormValueChange::Set(*checked),
+                    CheckboxEvent::Change(checked) => ValueChange::Set(*checked),
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(Checkbox, gpui_form_runtime::shape::DirectValueStorage);

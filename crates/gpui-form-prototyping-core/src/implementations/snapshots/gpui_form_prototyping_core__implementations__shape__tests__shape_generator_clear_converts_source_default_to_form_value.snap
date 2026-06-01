@@ -4,24 +4,24 @@ expression: "pretty_tokens(generated.handlers[0].clone())"
 ---
 fn on_birth_date_shape_event(
     &mut self,
-    state: &Entity<ComponentStateOf<crate::shapes::DatePicker>>,
-    event: &ComponentEventOf<crate::shapes::DatePicker, chrono::NaiveDate>,
+    state: &Entity<GpuiComponentStateOf<crate::shapes::DatePicker>>,
+    event: &GpuiComponentEventOf<crate::shapes::DatePicker, chrono::NaiveDate>,
     _window: &mut Window,
     _cx: &mut Context<Self>,
 ) {
     let form_change = {
         let state = state.read(_cx);
-        form_value_change::<crate::shapes::DatePicker, chrono::NaiveDate>(state, event)
+        value_change::<crate::shapes::DatePicker, chrono::NaiveDate>(state, event)
     };
     match form_change {
-        FormValueChange::Set(value) => {
+        ValueChange::Set(value) => {
             self.current_data.birth_date = value;
         }
-        FormValueChange::Clear => {
+        ValueChange::Clear => {
             self.current_data.birth_date = (to_form_datetime)(
                 Timestamp::from_micros_since_unix_epoch(0),
             );
         }
-        FormValueChange::Unchanged => {}
+        ValueChange::Unchanged => {}
     }
 }

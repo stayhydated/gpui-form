@@ -151,7 +151,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-runtime`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-runtime/docs/ARCHITECTURE.md)
-  Role: GPUI-facing runtime contracts referenced by generated form code, including `ComponentShape` and value-binding helpers. Users add this explicitly when they use component-backed fields or custom component shapes.
+  Role: GPUI-facing runtime contracts referenced by generated form code, including `GpuiComponentShape` and value-binding helpers. Users add this explicitly when they use component-backed fields or custom component shapes.
 
 - `crates/gpui-form-component`
   Audience: **Public integration**
@@ -171,7 +171,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form-derive`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-derive/docs/ARCHITECTURE.md)
-  Role: proc macros for `#[derive(GpuiForm)]`, `#[derive(ComponentShape)]`, `component_shape!`, and `component_value_binding`. Most users should depend on `gpui-form` rather than this crate directly.
+  Role: proc macro for `#[derive(GpuiForm)]`. GPUI component shape declarations live in `component-shape-gpui`. Most users should depend on `gpui-form` rather than this crate directly.
 
 - `crates/gpui-form-prototyping-core`
   Audience: **Public integration**

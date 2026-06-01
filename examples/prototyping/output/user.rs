@@ -8,8 +8,7 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form::runtime::shape::{
-    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
-    seed_value_binding_state,
+    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
@@ -39,75 +38,77 @@ impl gpui_storybook::Story for UserForm {
 impl UserForm {
     fn on_username_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
+            value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.username = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.username = <<gpui_form_collection::input::Input<
                     String,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     String,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_email_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<String>>>,
-        event: &ComponentEventOf<gpui_form_collection::input::Input<String>, String>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<String>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::input::Input<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
+            value_change::<gpui_form_collection::input::Input<String>, String>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.email = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.email = ::core::convert::Into::into("test@example.com");
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_age_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<u32>>>,
-        event: &ComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<u32>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::input::Input<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<u32>, u32>(state, event)
+            value_change::<gpui_form_collection::input::Input<u32>, u32>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.age = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.age = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_balance_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>>,
-        event: &ComponentEventOf<
+        state: &Entity<
+            GpuiComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
+        >,
+        event: &GpuiComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
@@ -116,25 +117,27 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
+            value_change::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.balance = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.balance = ::core::convert::Into::into(67);
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_debt_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>>,
-        event: &ComponentEventOf<
+        state: &Entity<
+            GpuiComponentStateOf<gpui_form_collection::input::Input<rust_decimal::Decimal>>,
+        >,
+        event: &GpuiComponentEventOf<
             gpui_form_collection::input::Input<rust_decimal::Decimal>,
             rust_decimal::Decimal,
         >,
@@ -143,125 +146,121 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
+            value_change::<
                 gpui_form_collection::input::Input<rust_decimal::Decimal>,
                 rust_decimal::Decimal,
             >(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.debt = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.debt = <<gpui_form_collection::input::Input<
                     rust_decimal::Decimal,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     rust_decimal::Decimal,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_rating_number_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::number_input::NumberInput<u32>>>,
-        event: &ComponentEventOf<gpui_form_collection::number_input::NumberInput<u32>, u32>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::number_input::NumberInput<u32>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::number_input::NumberInput<u32>, u32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::number_input::NumberInput<u32>, u32>(
-                state, event,
-            )
+            value_change::<gpui_form_collection::number_input::NumberInput<u32>, u32>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.rating = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.rating = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_attention_level_slider_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::slider::Slider>>,
-        event: &ComponentEventOf<gpui_form_collection::slider::Slider, f32>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::slider::Slider>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::slider::Slider, f32>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::slider::Slider, f32>(state, event)
+            value_change::<gpui_form_collection::slider::Slider, f32>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.attention_level = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.attention_level = <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+            ValueChange::Clear => {
+                self.current_data.attention_level = <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     f32,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_brand_color_color_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::color_picker::ColorPicker>>,
-        event: &ComponentEventOf<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::color_picker::ColorPicker>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
+            value_change::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
                 state, event,
             )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.brand_color = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.brand_color = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_otp_code_otp_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::otp_input::OtpInput<String>>>,
-        event: &ComponentEventOf<gpui_form_collection::otp_input::OtpInput<String>, String>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::otp_input::OtpInput<String>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::otp_input::OtpInput<String>, String>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::otp_input::OtpInput<String>, String>(
-                state, event,
-            )
+            value_change::<gpui_form_collection::otp_input::OtpInput<String>, String>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.otp_code = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.otp_code = <<gpui_form_collection::otp_input::OtpInput<
                     String,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     String,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_uploaded_files_file_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_component::file_picker::FilePicker>>,
-        event: &ComponentEventOf<
+        state: &Entity<GpuiComponentStateOf<gpui_form_component::file_picker::FilePicker>>,
+        event: &GpuiComponentEventOf<
             gpui_form_component::file_picker::FilePicker,
             Vec<std::path::PathBuf>,
         >,
@@ -270,26 +269,26 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
+            value_change::<gpui_form_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
                 state, event,
             )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.uploaded_files = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.uploaded_files = <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+            ValueChange::Clear => {
+                self.current_data.uploaded_files = <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     Vec<std::path::PathBuf>,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_holiday_range_date_range_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::date_picker::DateRangePicker>>,
-        event: &ComponentEventOf<
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::date_picker::DateRangePicker>>,
+        event: &GpuiComponentEventOf<
             gpui_form_collection::date_picker::DateRangePicker,
             (chrono::NaiveDate, chrono::NaiveDate),
         >,
@@ -298,71 +297,73 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
+            value_change::<
                 gpui_form_collection::date_picker::DateRangePicker,
                 (chrono::NaiveDate, chrono::NaiveDate),
             >(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.holiday_range = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.holiday_range = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_subscribe_newsletter_switch_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::switch::Switch>>,
-        event: &ComponentEventOf<gpui_form_collection::switch::Switch, bool>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::switch::Switch>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::switch::Switch, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::switch::Switch, bool>(state, event)
+            value_change::<gpui_form_collection::switch::Switch, bool>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.subscribe_newsletter = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.subscribe_newsletter = <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+            ValueChange::Clear => {
+                self.current_data.subscribe_newsletter = <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     bool,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_enable_notifications_checkbox_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
-        event: &ComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::checkbox::Checkbox>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::checkbox::Checkbox, bool>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::checkbox::Checkbox, bool>(state, event)
+            value_change::<gpui_form_collection::checkbox::Checkbox, bool>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.enable_notifications = value;
             },
-            FormValueChange::Clear => {
-                self.current_data.enable_notifications = <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+            ValueChange::Clear => {
+                self.current_data.enable_notifications = <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     bool,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_preferred_select_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>>,
-        event: &ComponentEventOf<
+        state: &Entity<
+            GpuiComponentStateOf<gpui_form_collection::select::Select<PreferredLanguage>>,
+        >,
+        event: &GpuiComponentEventOf<
             gpui_form_collection::select::Select<PreferredLanguage>,
             PreferredLanguage,
         >,
@@ -371,69 +372,74 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<
-                gpui_form_collection::select::Select<PreferredLanguage>,
-                PreferredLanguage,
-            >(state, event)
+            value_change::<gpui_form_collection::select::Select<PreferredLanguage>, PreferredLanguage>(
+                state, event,
+            )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.preferred = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.preferred = <<gpui_form_collection::select::Select<
                     PreferredLanguage,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     PreferredLanguage,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_country_select_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::select::Select<EnumCountry>>>,
-        event: &ComponentEventOf<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::select::Select<EnumCountry>>>,
+        event: &GpuiComponentEventOf<
+            gpui_form_collection::select::Select<EnumCountry>,
+            EnumCountry,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>(
+            value_change::<gpui_form_collection::select::Select<EnumCountry>, EnumCountry>(
                 state, event,
             )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.country = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.country = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn on_birth_date_date_picker_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::date_picker::DatePicker>>,
-        event: &ComponentEventOf<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::date_picker::DatePicker>>,
+        event: &GpuiComponentEventOf<
+            gpui_form_collection::date_picker::DatePicker,
+            chrono::NaiveDate,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>(
+            value_change::<gpui_form_collection::date_picker::DatePicker, chrono::NaiveDate>(
                 state, event,
             )
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.birth_date = Some(value);
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.birth_date = None;
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -752,10 +758,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         String,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.username),
                             ),
                     )
@@ -810,10 +816,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         String,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.email),
                             ),
                     )
@@ -868,10 +874,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     u32,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         u32,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.age),
                             ),
                     )
@@ -926,10 +932,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     rust_decimal::Decimal,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         rust_decimal::Decimal,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.balance),
                             ),
                     )
@@ -984,10 +990,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     rust_decimal::Decimal,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         rust_decimal::Decimal,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.debt),
                             ),
                     )
@@ -1013,10 +1019,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::number_input::NumberInput<
                                     u32,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::number_input::NumberInput<
                                         u32,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.rating),
                             ),
                     )
@@ -1040,8 +1046,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::slider::Slider as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::slider::Slider as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.attention_level),
                             ),
                     )
@@ -1065,8 +1071,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.brand_color),
                             ),
                     )
@@ -1092,10 +1098,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::otp_input::OtpInput<
                                     String,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::otp_input::OtpInput<
                                         String,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.otp_code),
                             ),
                     )
@@ -1119,8 +1125,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.uploaded_files),
                             ),
                     )
@@ -1144,8 +1150,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.holiday_range),
                             ),
                     )
@@ -1169,8 +1175,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::switch::Switch as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::switch::Switch as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.subscribe_newsletter),
                             ),
                     )
@@ -1194,8 +1200,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.enable_notifications),
                             ),
                     )
@@ -1221,10 +1227,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::select::Select<
                                     PreferredLanguage,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::select::Select<
                                         PreferredLanguage,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.preferred),
                             ),
                     )
@@ -1250,10 +1256,10 @@ impl Render for UserForm {
                             .child(
                                 <<gpui_form_collection::select::Select<
                                     EnumCountry,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::select::Select<
                                         EnumCountry,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.country),
                             ),
                     )
@@ -1306,8 +1312,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                                    <gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::ComponentShape>::State,
+                                <<gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.birth_date),
                             ),
                     )

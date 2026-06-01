@@ -19,7 +19,7 @@ directly. Component-shape contracts live in
 ## Feature Flags
 
 - `derive`: re-exports `#[derive(InfiniteSelect)]`
-- `component-shape`: enables built-in `ComponentShape` impls and value-binding
+- `component-shape`: enables built-in `GpuiComponentShape` impls and value-binding
   metadata for `InfiniteSelect`, `DatePicker`, `DateRangePicker`, and
   `FilePicker`
 
@@ -229,10 +229,10 @@ cargo run -p gpui-form-component-story
 
 ## Component Shapes
 
-`ComponentShape` is the runtime contract used by `#[gpui_form(component(Shape))]`.
-Generated `GpuiForm` field code also requires `DeclaredComponentShape`, emitted
-by `gpui_form_derive::component_shape!` and
-`#[derive(gpui_form_derive::ComponentShape)]`. Field shapes should be declared
+`GpuiComponentShape` is the runtime contract used by `#[gpui_form(component(Shape))]`.
+Generated `GpuiForm` field code also requires `DeclaredGpuiComponentShape`, emitted
+by `component_shape_gpui::component_shape!` and
+`#[derive(component_shape_gpui::GpuiComponentShape)]`. Field shapes should be declared
 with one of those macros. Generated field code reaches runtime contracts
 through `gpui_form::runtime::shape`; crates that define shapes directly may use
 `gpui_form_runtime::shape`. This crate's `component-shape` feature derives that
@@ -249,7 +249,7 @@ supports generics, where clauses, outer attributes, and order-independent
 metadata.
 
 ```rs
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
@@ -264,16 +264,19 @@ Or derive the same contract directly on an owned rendered component:
 ```rs
 use crate::state::{TagsState, build};
 
-#[derive(gpui_form_derive::ComponentShape)]
-#[gpui_form_shape(
+#[derive(component_shape_gpui::GpuiComponentShape)]
+#[gpui_component_shape(
     state = TagsState,
     new = build,
     value = Vec<String>,
-    value_storage = direct,
     field_suffix = "input"
 )]
 pub struct TagsInput {
     state: gpui::Entity<TagsState>,
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 ```
 
@@ -282,8 +285,8 @@ fine. `new` accepts a constructor expression in shape declarations. Function
 paths and closures are called with
 `(window, cx)`; full constructor expressions such as
 `TagsState::with_label(window, cx, "tags")` are emitted as written. For
-`gpui_form_derive::component_shape!`, omitting `new` calls
-`<State>::new(window, cx)`. For `#[derive(ComponentShape)]`, `state = ...` is
+`component_shape_gpui::component_shape!`, omitting `new` calls
+`<State>::new(window, cx)`. For `#[derive(GpuiComponentShape)]`, `state = ...` is
 required and omitting `new` also calls `<State>::new(window, cx)`.
 The `component = ...` option publishes a `RenderComponent` adapter for
 generated/prototyping render code, so prefer a type that remains valid from the
@@ -292,34 +295,34 @@ The value must be a path-like type. `field_suffix = "..."` must be a
 non-empty identifier suffix.
 Use `value = ...` or `values(...)` to publish the form-side value types a
 shape supports; omit those metadata entries only when you provide manual
-`ComponentShapeFor<Value>` impls. Do not mix value metadata with manual
+`GpuiComponentShapeFor<Value>` impls. Do not mix value metadata with manual
 compatibility impls in the same `component_shape!` block.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping
-subscriptions, add `value_binding` to `#[gpui_form_shape(...)]` and implement
-`ComponentStateValueBinding<T>` on the backing state. Component-derived shapes
-delegate their shape-level `ComponentValueBinding<T>` impl through that
+subscriptions, add `value_binding` to `#[gpui_component_shape(...)]` and implement
+`GpuiComponentStateValueBinding<T>` on the backing state. Component-derived shapes
+delegate their shape-level `GpuiComponentValueBinding<T>` impl through that
 state-level contract.
-For wrapper shapes declared with `gpui_form_derive::component_shape!`, put the
-`ComponentValueBinding<T>` impl inside the macro block to emit the impl with
+For wrapper shapes declared with `component_shape_gpui::component_shape!`, put the
+`GpuiComponentValueBinding<T>` impl inside the macro block to emit the impl with
 the shape, and add `value_binding;` to publish shape-level value-binding
 metadata for generated prototyping subscriptions.
 
 Reusable shapes can also publish `ComponentPrototyping` metadata through the
 shape contract.
-Set `field_suffix = "..."` through `gpui_form_derive::component_shape!`, or
-`#[gpui_form_shape(...)]` so inventory and prototyping generators can emit
+Set `field_suffix = "..."` through `component_shape_gpui::component_shape!`, or
+`#[gpui_component_shape(...)]` so inventory and prototyping generators can emit
 helper names such as `on_email_input_event` without deriving that suffix from
 the shape type. Generated form entity fields and constructors use the source
 field name, such as `email`.
-Generated value-binding scaffolds can use `ComponentStateOf`, `ComponentEventOf`,
-`seed_value_binding_state`, and `form_value_change` to avoid repeating
+Generated value-binding scaffolds can use `GpuiComponentStateOf`, `GpuiComponentEventOf`,
+`seed_value_binding_state`, and `value_change` to avoid repeating
 associated-type projections at every call site.
 Direct `ComponentPrototyping::field_suffix(...)` calls validate the same
 non-empty ASCII identifier suffix contract in const evaluation.
 
-Set `value_storage = direct` on a reusable shape when the component can
+Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` for a reusable shape when the component can
 synthesize a missing value. Generated forms then inherit direct `T` holder
 storage from the shape; consuming field attributes do not accept a
 required-value override.

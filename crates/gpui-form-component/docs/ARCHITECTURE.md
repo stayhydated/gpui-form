@@ -45,7 +45,7 @@ Responsibilities:
 - serialize stable key paths to and from strings for persistence
 - report invalid stored paths with `InfiniteSelectPathError`
 - own the cascading root/child `SelectState`s through `Select`
-- expose `InfiniteSelect` as a `ComponentShape` with backing
+- expose `InfiniteSelect` as a `GpuiComponentShape` with backing
   `InfiniteSelectState` value-binding metadata when the `component-shape`
   feature is enabled
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
@@ -65,7 +65,7 @@ Responsibilities:
 
 - hold selected date state in `DatePickerState`
 - hold selected manual date-range state in `DateRangePickerState`
-- expose `DatePicker` and `DateRangePicker` as `ComponentShape`s with backing
+- expose `DatePicker` and `DateRangePicker` as `GpuiComponentShape`s with backing
   state value-binding metadata when this crate's `component-shape` feature is
   enabled
 - emit `DatePickerEvent::Change(Option<jiff::civil::Date>)`
@@ -84,7 +84,7 @@ This subsystem wraps GPUI's native platform path prompt in a form-oriented API.
 Responsibilities:
 
 - hold selected path state in `FilePickerState`
-- expose `FilePicker` as a `ComponentShape` with backing `FilePickerState`
+- expose `FilePicker` as a `GpuiComponentShape` with backing `FilePickerState`
   value-binding metadata when this crate's `component-shape` feature is enabled
 - emit `FilePickerEvent::Change`, `Cancel`, and `Error`
 - render the control with `gpui-component` buttons, icons, theme tokens, and
@@ -117,8 +117,8 @@ Responsibilities:
 
 ### Component shapes
 
-1. Users either declare a wrapper shape with `gpui_form_derive::component_shape!`
-   or derive `ComponentShape` directly on the rendered component with
+1. Users either declare a wrapper shape with `component_shape_gpui::component_shape!`
+   or derive `GpuiComponentShape` directly on the rendered component with
    `state = ...`.
 1. `GpuiForm` uses that shape to emit `FormFields` entity state and
    `FormComponents` constructors.
@@ -127,17 +127,17 @@ Responsibilities:
 1. Shape-level prototyping metadata can carry a preferred helper suffix for
    scaffold DOM IDs, event handlers, and helper names.
 1. When the field opts into `value_binding`, prototyping code calls the
-   shape-owned `ComponentValueBinding<T>` hooks instead of inferring any
+   shape-owned `GpuiComponentValueBinding<T>` hooks instead of inferring any
    domain-specific event semantics; generated code can route those calls
-   through `ComponentStateOf`, `ComponentEventOf`,
-   `seed_value_binding_state`, `form_value_change`, and `FormValueChange<T>`.
-   `ComponentEventOf` resolves to the binding's associated `Event`, so
+   through `GpuiComponentStateOf`, `GpuiComponentEventOf`,
+   `seed_value_binding_state`, `value_change`, and `ValueChange<T>`.
+   `GpuiComponentEventOf` resolves to the binding's associated `Event`, so
    backing states can expose their own event enum and external wrappers can keep
    their upstream event type.
 
 ### Date picker
 
-1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
+1. With the `component-shape` feature enabled, `#[derive(GpuiComponentShape)]` makes
    `DatePicker` and `DateRangePicker` usable directly in `#[gpui_form(component(...))]`
    while generated fields store their backing state entities.
 1. Runtime date selection emits `DatePickerEvent::Change`.
@@ -156,7 +156,7 @@ Responsibilities:
    state asynchronously when the platform dialog returns.
 1. Subscribers receive changed path lists, cancellation, or platform-dialog
    errors through `FilePickerEvent`.
-1. With the `component-shape` feature enabled, `#[derive(ComponentShape)]` makes
+1. With the `component-shape` feature enabled, `#[derive(GpuiComponentShape)]` makes
    `FilePicker` usable directly in `#[gpui_form(component(...))]` while generated fields
    store `Entity<FilePickerState>`; state-level value binding maps `Change`
    events to `Vec<std::path::PathBuf>`.
@@ -197,9 +197,9 @@ Those belong in `gpui-form-codegen`, `gpui-form-derive`, and
 When adding a new reusable component shape that needs runtime state:
 
 1. add the runtime helper in this crate
-1. expose it through `ComponentShape` or a helper macro/derive
+1. expose it through `GpuiComponentShape` or a helper macro/derive
 1. publish shape metadata such as `RenderComponent`, `ValueStoragePolicy`,
-   `ValueBindingPolicy`, and `PROTOTYPING.field_suffix` when generated
+   `ComponentShapeMetadata::CAPABILITIES`, and `PROTOTYPING.field_suffix` when generated
    scaffolds or value-holder storage need it
 1. update user-facing docs so normal generated forms use
    `gpui_form::runtime::shape`, while lower-level shape-definition crates add

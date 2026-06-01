@@ -123,14 +123,14 @@ All component fields are shape-backed:
 - event handler names and DOM IDs use the suffix-bearing helper identifier,
   which is derived from precomputed component-shape prototyping suffix metadata
 - if the field's render capability is enabled, the generator emits
-  `<Shape as ComponentShape>::RenderComponent::new(&entity)` through the
-  runtime `ComponentRender` contract
+  `<Shape as GpuiComponentShape>::RenderComponent::new(&entity)` through the
+  runtime `GpuiComponentRender` contract
 - if render metadata, value-binding metadata, shape path metadata, or required
   default storage support is missing, `FormShapeAdapter::parts()` returns a
   field-specific `PrototypingError` instead of emitting placeholder UI
 - component subscriptions require the field's value-binding capability; the
-  field's shape must provide the generic `ComponentValueBinding<T>` hook that
-  maps component events to `FormValueChange<T>`
+  field's shape must provide the generic `GpuiComponentValueBinding<T>` hook that
+  maps component events to `ValueChange<T>`
 - value-bound component subscriptions use runtime projection aliases and helper
   functions from `gpui_form::runtime::shape` inline for value-binding state
   seeding and event conversion; owned components expose their own event enum,
@@ -147,7 +147,7 @@ All component fields are shape-backed:
 
 When adding or changing a component:
 
-1. update the shape metadata emitted by the component's `ComponentShape`
+1. update the shape metadata emitted by the component's `GpuiComponentShape`
    implementation
 1. update imports for newly referenced runtime types
 1. verify the example generator under `examples/prototyping`

@@ -8,7 +8,7 @@ layer used by `gpui-form-derive`.
 This crate exists to:
 
 1. parse component shape paths into a typed internal model
-1. plan semantic component field facts from a `ComponentShape`
+1. plan semantic component field facts from a declared GPUI component shape
 1. emit schema metadata aligned with the same component-shape contract
 
 It should stay proc-macro-adjacent rather than becoming a second proc-macro
@@ -39,19 +39,22 @@ Important parse-time responsibilities:
   using the field's form-side type, including any intent-scoped
   `value(type = ...)` override
 - generated type checks use field-named assertions for declared-shape,
-  value-compatibility, and value-binding checks so diagnostics point at the
-  field component shape while preserving component-specific trait messages
+  value-compatibility, and value-binding checks through
+  `gpui_form::runtime::shape` compatibility re-exports so diagnostics point at
+  the field component shape while preserving component-specific trait messages
 - non-optional shape-backed fields inherit the shape's value-storage policy by
   default
-- shape-level `ValueBindingPolicy` records whether generated prototyping code
-  should use `ComponentValueBinding`
+- shape metadata records whether generated prototyping code
+  should use the value-binding contract bridged from
+  `component-shape-gpui`
 - shape-level `PROTOTYPING.field_suffix` records reusable prototyping suffix
   metadata and must be a non-empty identifier suffix
 
 Component-specific settings and value compatibility rules belong inside the
-shape's `ComponentShape::new` implementation, `ComponentShapeFor<Value>` impls,
-or a dedicated wrapper shape. This crate does not know about selects, inputs,
-date pickers, or any other component family.
+shape's `GpuiComponentShape::new` implementation,
+`GpuiComponentShapeFor<Value>` impls, or a dedicated wrapper shape. Form storage
+policy remains in `gpui-form-runtime`. This crate does not know about selects,
+inputs, date pickers, or any other component family.
 
 ## Component Field IR
 
@@ -83,12 +86,13 @@ falls back to `shape` when the suffix exactly matches the field name. For
 example, `birth_date: DatePicker` keeps a `birth_date` entity field while
 publishing a `date_picker` helper suffix; `tags: TagsState` falls back to the
 `shape` helper suffix. Derive-emitted inventory suffix metadata reads
-`ComponentShape::PROTOTYPING.field_suffix` when the declared shape publishes a
-suffix and otherwise uses the same path fallback.
+`component_shape::ComponentShapeMetadata::PROTOTYPING.field_suffix` when the
+declared shape publishes a suffix and otherwise uses the same path fallback.
 
-No `gpui-component` UI component is hard-coded here. Reusable gpui-component-backed
-representations live in `gpui-form-collection`; application-specific widgets
-can define local shapes.
+No `gpui-component` UI component is hard-coded here. Reusable
+gpui-component-backed representations live in `gpui-form-collection` and are
+declared through `component-shape-gpui`; application-specific widgets can define
+local shapes the same way.
 
 ## Metadata Emission
 

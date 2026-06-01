@@ -1,10 +1,11 @@
 use std::str::FromStr;
 
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Window};
 use gpui_component::input::{InputEvent, InputState};
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::input::Input` backed by `InputState`.
     ///
     /// Use `Input::<_>` in `#[gpui_form(component(...))]` so the derive
@@ -18,11 +19,10 @@ gpui_form_derive::component_shape! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         value = T;
-        value_storage = direct;
         field_suffix = "input";
         value_binding;
 
-        impl<T> ComponentValueBinding<T> for Input<T>
+        impl<T> GpuiComponentValueBinding<T> for Input<T>
         where
             T: FromStr + ToString + 'static,
         {
@@ -41,22 +41,30 @@ gpui_form_derive::component_shape! {
                 );
             }
 
-            fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+            fn value_change(state: &Self::State, event: &Self::Event) -> ValueChange<T> {
                 match event {
                     InputEvent::Change => {
                         let value = state.value();
                         if value.is_empty() {
-                            FormValueChange::Clear
+                            ValueChange::Clear
                         } else {
                             value
                                 .parse::<T>()
-                                .map(FormValueChange::Set)
-                                .unwrap_or(FormValueChange::Unchanged)
+                                .map(ValueChange::Set)
+                                .unwrap_or(ValueChange::Unchanged)
                         }
                     },
-                    _ => FormValueChange::Unchanged,
+                    _ => ValueChange::Unchanged,
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(
+    impl<T> Input<T>
+    where [
+        T: FromStr + ToString + 'static
+    ];
+    gpui_form_runtime::shape::DirectValueStorage
+);

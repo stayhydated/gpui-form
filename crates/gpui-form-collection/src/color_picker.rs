@@ -1,8 +1,9 @@
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Hsla, Window};
 use gpui_component::color_picker::{ColorPickerEvent, ColorPickerState};
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::color_picker::ColorPicker` backed by `ColorPickerState`.
     pub struct ColorPicker {
         type State = ColorPickerState;
@@ -11,7 +12,7 @@ gpui_form_derive::component_shape! {
         field_suffix = "color_picker";
         value_binding;
 
-        impl ComponentValueBinding<Hsla> for ColorPicker {
+        impl GpuiComponentValueBinding<Hsla> for ColorPicker {
             type Event = ColorPickerEvent;
 
             fn seed_value_binding_state(
@@ -25,12 +26,14 @@ gpui_form_derive::component_shape! {
                 }
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<Hsla> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<Hsla> {
                 match event {
-                    ColorPickerEvent::Change(Some(color)) => FormValueChange::Set(*color),
-                    ColorPickerEvent::Change(None) => FormValueChange::Clear,
+                    ColorPickerEvent::Change(Some(color)) => ValueChange::Set(*color),
+                    ColorPickerEvent::Change(None) => ValueChange::Clear,
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(ColorPicker, gpui_form_runtime::shape::RequiredValueStorage);

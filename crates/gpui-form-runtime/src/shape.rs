@@ -1,150 +1,36 @@
-//! Runtime contract for component shapes used by `#[derive(GpuiForm)]`.
+//! Runtime storage policy used by `#[derive(GpuiForm)]`.
 //!
-//! Users declare a "shape" type with `gpui_form_derive::component_shape!` or
-//! `#[derive(gpui_form_derive::ComponentShape)]`. The form derive uses that
-//! shape to generate:
-//! - `FormFields` entity state type
-//! - `FormComponents` constructor function body
-//!
-//! Prefer using `gpui_form_derive::component_shape!` for reusable or generic
-//! wrapper shapes, and `#[derive(gpui_form_derive::ComponentShape)]` on owned
-//! rendered component types with explicit `state = ...` metadata.
+//! Component shape construction, rendering, value compatibility, and value
+//! binding are provided by `component-shape` and `component-shape-gpui`.
 
-pub use gpui_form_core::component_suffix::{
-    ComponentSuffix, is_valid_component_suffix as is_valid_component_field_suffix,
+pub use component_shape::{
+    ComponentCapabilities, ComponentPrototyping, ComponentShapeMetadata, ComponentSuffix,
+    RenderCapability, ValueBindingCapability, ValueChange,
+    is_valid_component_suffix as is_valid_component_field_suffix,
+};
+pub use component_shape_gpui::{
+    DeclaredGpuiComponentShape, GpuiComponentEventOf, GpuiComponentRender, GpuiComponentShape,
+    GpuiComponentShapeFor, GpuiComponentStateOf, GpuiComponentStateValueBinding,
+    GpuiComponentValueBinding, NoGpuiRenderComponent, seed_value_binding_state, value_change,
 };
 
-/// Renders a component UI value from a component state entity.
-pub trait ComponentRender<State: 'static>: 'static {
-    /// Whether this contract renders a real component.
-    const RENDERS: bool;
-
-    /// Build a render component from the generated form field entity.
-    fn new(entity: &gpui::Entity<State>) -> impl gpui::IntoElement;
-}
-
-/// Marker render contract for shapes that do not publish render metadata.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct NoRenderComponent;
-
-impl<State: 'static> ComponentRender<State> for NoRenderComponent {
-    const RENDERS: bool = false;
-
-    fn new(_entity: &gpui::Entity<State>) -> impl gpui::IntoElement {
-        gpui::div()
-    }
-}
-
-/// Shape contract for user-defined components.
+/// Form storage policy for a GPUI component shape.
 ///
-/// Implementations provide the component state type and how to construct it.
-pub trait ComponentShape {
-    /// Backing gpui component state type.
-    type State: 'static;
-
-    /// Shape-owned policy for whether non-optional source fields keep a
-    /// missing-value state in the generated value holder.
+/// Implement this for shapes declared with `component_shape_gpui::component_shape!`
+/// when the shape should be consumable by `#[derive(GpuiForm)]`.
+pub trait GpuiFormComponentShapePolicy {
+    /// Shape-owned value-holder storage policy.
     type ValueStoragePolicy: ComponentValueStoragePolicy;
-
-    /// Shape-owned policy for whether generated prototyping code should
-    /// inherit value binding by default.
-    type ValueBindingPolicy: ComponentValueBindingPolicy;
-
-    /// Shape-owned render component contract for prototyping output.
-    type RenderComponent: ComponentRender<Self::State>;
-
-    /// Build the component state.
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State;
-
-    /// Metadata used by prototyping generators.
-    ///
-    /// This is intentionally separate from runtime construction so reusable
-    /// component crates can describe generated-code preferences once, and
-    /// downstream fields can inherit those preferences.
-    const PROTOTYPING: ComponentPrototyping = ComponentPrototyping::new();
 }
-
-/// Marker for component shapes declared through gpui-form shape macros.
-///
-/// `#[derive(GpuiForm)]` requires this marker in addition to [`ComponentShape`]
-/// and [`ComponentShapeFor`]. The `gpui_form_derive::component_shape!` macro
-/// and `#[derive(gpui_form_derive::ComponentShape)]` derive emit it
-/// automatically.
-#[diagnostic::on_unimplemented(
-    message = "gpui-form component shape `{Self}` must be declared with `gpui_form_derive::component_shape!` or `#[derive(gpui_form_derive::ComponentShape)]`",
-    note = "hand-written `ComponentShape` implementations are not accepted by `#[derive(GpuiForm)]`"
-)]
-pub trait DeclaredComponentShape: ComponentShape {}
-
-/// Marker that a component shape supports a form value type.
-///
-/// Generated `GpuiForm` code asserts this alongside [`ComponentShape`] so
-/// reusable shapes can own value-type compatibility diagnostics. Shape macros
-/// emit implementations from explicit `value = ...`, `values(...)`, or
-/// `compatibility<Value> where ...;` metadata. Component-derived shapes may
-/// implement this trait manually when custom bounds or diagnostics are needed.
-#[diagnostic::on_unimplemented(
-    message = "gpui-form component shape `{Self}` is not compatible with form value `{Value}`",
-    note = "implement `ComponentShapeFor<{Value}>` for `{Self}`, or choose a component shape whose value type matches the field"
-)]
-pub trait ComponentShapeFor<Value>: ComponentShape {}
 
 mod sealed {
     pub trait ValueStoragePolicy {}
-    pub trait ValueBindingPolicy {}
 }
 
 /// Marker trait for a component shape's generated value-holder storage policy.
 pub trait ComponentValueStoragePolicy: sealed::ValueStoragePolicy {
     /// Whether a missing generated value-holder value is invalid by default.
     const REQUIRES_VALUE: bool;
-}
-
-/// Marker trait for a component shape's inherited value-binding policy.
-pub trait ComponentValueBindingPolicy: sealed::ValueBindingPolicy {
-    /// Whether generated prototyping metadata should use value binding.
-    const VALUE_BINDING: bool;
-}
-
-/// Do not inherit value binding from the shape.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct NoComponentValueBinding;
-
-impl sealed::ValueBindingPolicy for NoComponentValueBinding {}
-
-impl ComponentValueBindingPolicy for NoComponentValueBinding {
-    const VALUE_BINDING: bool = false;
-}
-
-/// Inherit value binding from the shape.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct InheritedComponentValueBinding;
-
-impl sealed::ValueBindingPolicy for InheritedComponentValueBinding {}
-
-impl ComponentValueBindingPolicy for InheritedComponentValueBinding {
-    const VALUE_BINDING: bool = true;
-}
-
-/// Assert the trait requirements implied by a shape's value-binding policy.
-pub trait AssertComponentValueBindingPolicy<Shape, Value>: ComponentValueBindingPolicy {
-    fn assert_component_value_binding_policy();
-}
-
-impl<Shape, Value> AssertComponentValueBindingPolicy<Shape, Value> for NoComponentValueBinding
-where
-    Shape: ComponentShape,
-{
-    fn assert_component_value_binding_policy() {}
-}
-
-impl<Shape, Value> AssertComponentValueBindingPolicy<Shape, Value>
-    for InheritedComponentValueBinding
-where
-    Shape: ComponentValueBinding<Value>,
-    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
-{
-    fn assert_component_value_binding_policy() {}
 }
 
 /// Store non-optional source fields as `Option<T>` and treat `None` as missing.
@@ -226,7 +112,7 @@ pub trait ValueStorage<T>: ComponentValueStoragePolicy {
 /// Storage policies that can synthesize missing/default value-holder storage.
 #[diagnostic::on_unimplemented(
     message = "gpui-form cannot synthesize direct storage for `{T}` with this component shape policy",
-    note = "add an intent-scoped `default = ...`, make `{T}` implement `Default`, or make the shape use `value_storage = require_value`"
+    note = "add an intent-scoped `default = ...`, make `{T}` implement `Default`, or use `RequiredValueStorage` for the shape's form storage policy"
 )]
 pub trait DefaultValueStorage<T>: ValueStorage<T> {
     /// Construct a missing/default value-holder field.
@@ -370,158 +256,6 @@ impl<T> InfallibleValueStorage<T> for DirectValueStorage {
     {
         present(storage)
     }
-}
-
-/// Shape-owned metadata for prototyping generators.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct ComponentPrototyping {
-    /// Preferred generated prototyping helper suffix, such as `"input"` or `"select"`.
-    pub field_suffix: Option<ComponentSuffix>,
-}
-
-impl ComponentPrototyping {
-    pub const fn new() -> Self {
-        Self { field_suffix: None }
-    }
-
-    pub const fn field_suffix(mut self, suffix: &'static str) -> Self {
-        self.field_suffix = Some(ComponentSuffix::new(suffix));
-        self
-    }
-}
-
-impl Default for ComponentPrototyping {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Normalized form-value change derived from a component event.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum FormValueChange<T> {
-    /// The component event did not change the form value.
-    Unchanged,
-    /// Replace the form value with the supplied value.
-    Set(T),
-    /// Clear an optional form value.
-    Clear,
-}
-
-impl<T> FormValueChange<T> {
-    pub const fn set(value: T) -> Self {
-        Self::Set(value)
-    }
-
-    pub const fn clear() -> Self {
-        Self::Clear
-    }
-
-    pub const fn unchanged() -> Self {
-        Self::Unchanged
-    }
-}
-
-/// Optional value-binding contract for component shapes.
-///
-/// Implement this alongside [`ComponentShape`] when generated prototyping code
-/// should seed the component from the form value holder and subscribe to
-/// component events. The form derive opts into this path by inheriting
-/// [`ComponentShape::ValueBindingPolicy`] from the shape.
-#[diagnostic::on_unimplemented(
-    message = "gpui-form component shape `{Self}` does not implement value binding for `{T}`",
-    note = "add `value_binding` shape metadata with a `ComponentValueBinding<T>` impl, or use `NoComponentValueBinding` if the shape should not inherit value binding"
-)]
-pub trait ComponentValueBinding<T>: ComponentShape
-where
-    Self::State: gpui::EventEmitter<Self::Event>,
-{
-    /// Event emitted by the component state.
-    type Event: 'static;
-
-    /// Seed component state from the current form value.
-    fn seed_value_binding_state(
-        _state: &mut Self::State,
-        _value: Option<&T>,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<'_, Self::State>,
-    ) {
-    }
-
-    /// Convert an emitted component event into a form value change.
-    fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T>;
-}
-
-/// Assert that a shape supports value binding for a form value type.
-///
-/// Generated form code uses this helper to keep missing binding diagnostics
-/// anchored to the field attribute while reporting the public
-/// [`ComponentValueBinding`] contract.
-pub fn assert_component_value_binding<Shape, Value>()
-where
-    Shape: ComponentValueBinding<Value>,
-    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
-{
-}
-
-/// Value-binding contract implemented by backing component state.
-///
-/// Component-owned shapes can implement [`ComponentValueBinding`] by delegating
-/// to this state-level contract, keeping render element types separate from
-/// their GPUI entity state.
-#[diagnostic::on_unimplemented(
-    message = "gpui-form component state `{Self}` does not implement value binding for `{T}`",
-    note = "implement `ComponentStateValueBinding<T>` for the backing state"
-)]
-pub trait ComponentStateValueBinding<T>: gpui::EventEmitter<Self::Event> {
-    /// Event emitted by the backing component state.
-    type Event: 'static;
-
-    /// Seed component state from the current form value.
-    fn seed_value_binding_state(
-        _state: &mut Self,
-        _value: Option<&T>,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<'_, Self>,
-    ) where
-        Self: Sized,
-    {
-    }
-
-    /// Convert an emitted component event into a form value change.
-    fn form_value_change(state: &Self, event: &Self::Event) -> FormValueChange<T>;
-}
-
-/// State type for a component shape.
-pub type ComponentStateOf<Shape> = <Shape as ComponentShape>::State;
-
-/// Event type for a value-bound component shape and value.
-pub type ComponentEventOf<Shape, Value> = <Shape as ComponentValueBinding<Value>>::Event;
-
-/// Seed component state from the current form value without spelling out the
-/// associated-type projection at every generated call site.
-pub fn seed_value_binding_state<Shape, Value>(
-    state: &mut ComponentStateOf<Shape>,
-    value: Option<&Value>,
-    window: &mut gpui::Window,
-    cx: &mut gpui::Context<'_, ComponentStateOf<Shape>>,
-) where
-    Shape: ComponentValueBinding<Value>,
-    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
-{
-    Shape::seed_value_binding_state(state, value, window, cx);
-}
-
-/// Convert a component event into a form value change without repeating UFCS
-/// projections in generated code.
-pub fn form_value_change<Shape, Value>(
-    state: &ComponentStateOf<Shape>,
-    event: &ComponentEventOf<Shape, Value>,
-) -> FormValueChange<Value>
-where
-    Shape: ComponentValueBinding<Value>,
-    ComponentStateOf<Shape>: gpui::EventEmitter<ComponentEventOf<Shape, Value>>,
-{
-    Shape::form_value_change(state, event)
 }
 
 #[cfg(test)]

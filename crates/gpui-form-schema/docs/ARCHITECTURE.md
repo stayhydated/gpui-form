@@ -139,8 +139,8 @@ This crate should not own:
 
 When adding or changing a reusable component shape:
 
-1. implement or derive `ComponentShape` for the shape
-1. publish shape-level metadata such as `RenderComponent`, `ValueBindingPolicy`,
+1. implement or derive `GpuiComponentShape` for the shape
+1. publish shape-level metadata such as `RenderComponent`, `ComponentShapeMetadata::CAPABILITIES`,
    and `PROTOTYPING.field_suffix` when non-derive inventory producers need it
 1. update `gpui-form-runtime`, `gpui-form-component`, or the owning runtime
    crate if runtime support is required

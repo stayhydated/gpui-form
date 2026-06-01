@@ -1,12 +1,13 @@
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Window};
 use gpui_component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 use strum::IntoEnumIterator;
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::select::Select` backed by enum variants.
     ///
     /// The enum type `T` must implement `gpui_component::select::SelectItem`,
@@ -20,11 +21,10 @@ gpui_form_derive::component_shape! {
         new = Self::new_default;
         component = gpui_component::select::Select<_>;
         value = T;
-        value_storage = direct;
         field_suffix = "select";
         value_binding;
 
-        impl<T, D> ComponentValueBinding<T> for Select<T, D>
+        impl<T, D> GpuiComponentValueBinding<T> for Select<T, D>
         where
             T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
             D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -43,15 +43,24 @@ gpui_form_derive::component_shape! {
                 }
             }
 
-            fn form_value_change(_state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<T> {
                 match event {
-                    SelectEvent::Confirm(Some(value)) => FormValueChange::Set(value.clone()),
-                    SelectEvent::Confirm(None) => FormValueChange::Clear,
+                    SelectEvent::Confirm(Some(value)) => ValueChange::Set(value.clone()),
+                    SelectEvent::Confirm(None) => ValueChange::Clear,
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(
+    impl<T, D> Select<T, D>
+    where [
+        T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
+        D: SelectDelegate<Item = T> + From<Vec<T>> + 'static
+    ];
+    gpui_form_runtime::shape::DirectValueStorage
+);
 
 impl<T, D> Select<T, D>
 where

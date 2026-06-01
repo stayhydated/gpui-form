@@ -12,6 +12,7 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
+component-shape-codegen = { workspace = true }
 darling = { workspace = true }
 derive_more = { features = [ "full" ], workspace = true }
 gpui-form-schema = { workspace = true }

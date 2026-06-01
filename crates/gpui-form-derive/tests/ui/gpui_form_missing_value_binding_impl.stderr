@@ -1,5 +1,0 @@
-error: `value_binding` requires a nested `ComponentValueBinding<T>` impl in the `component_shape!` block
-  --> tests/ui/gpui_form_missing_value_binding_impl.rs:14:12
-   |
-14 |     struct InheritedBindingShape {
-   |            ^^^^^^^^^^^^^^^^^^^^^

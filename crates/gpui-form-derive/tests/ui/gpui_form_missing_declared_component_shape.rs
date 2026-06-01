@@ -1,7 +1,7 @@
 use gpui_form_derive::GpuiForm;
 use gpui_form_runtime::shape::{
-    ComponentShape, ComponentShapeFor, NoComponentValueBinding, NoRenderComponent,
-    RequiredValueStorage,
+    ComponentShapeMetadata, GpuiComponentShape, GpuiComponentShapeFor,
+    GpuiFormComponentShapePolicy, NoGpuiRenderComponent, RequiredValueStorage,
 };
 
 struct State;
@@ -14,18 +14,22 @@ impl State {
 
 struct ManualShape;
 
-impl ComponentShape for ManualShape {
+impl ComponentShapeMetadata for ManualShape {}
+
+impl GpuiComponentShape for ManualShape {
     type State = State;
-    type ValueStoragePolicy = RequiredValueStorage;
-    type ValueBindingPolicy = NoComponentValueBinding;
-    type RenderComponent = NoRenderComponent;
+    type RenderComponent = NoGpuiRenderComponent;
 
     fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
         State::new(window, cx)
     }
 }
 
-impl<T> ComponentShapeFor<T> for ManualShape {}
+impl GpuiFormComponentShapePolicy for ManualShape {
+    type ValueStoragePolicy = RequiredValueStorage;
+}
+
+impl<T> GpuiComponentShapeFor<T> for ManualShape {}
 
 #[derive(GpuiForm)]
 struct Demo {

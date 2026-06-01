@@ -4,22 +4,22 @@ expression: "pretty_tokens(generated.handlers[0].clone())"
 ---
 fn on_code_shape_event(
     &mut self,
-    state: &Entity<ComponentStateOf<crate::shapes::OtpInput<String>>>,
-    event: &ComponentEventOf<crate::shapes::OtpInput<String>, String>,
+    state: &Entity<GpuiComponentStateOf<crate::shapes::OtpInput<String>>>,
+    event: &GpuiComponentEventOf<crate::shapes::OtpInput<String>, String>,
     _window: &mut Window,
     _cx: &mut Context<Self>,
 ) {
     let form_change = {
         let state = state.read(_cx);
-        form_value_change::<crate::shapes::OtpInput<String>, String>(state, event)
+        value_change::<crate::shapes::OtpInput<String>, String>(state, event)
     };
     match form_change {
-        FormValueChange::Set(value) => {
+        ValueChange::Set(value) => {
             self.current_data.code = value;
         }
-        FormValueChange::Clear => {
+        ValueChange::Clear => {
             self.current_data.code = String::from("123456");
         }
-        FormValueChange::Unchanged => {}
+        ValueChange::Unchanged => {}
     }
 }

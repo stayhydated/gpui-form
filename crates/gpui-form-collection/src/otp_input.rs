@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
+use component_shape::ValueChange;
+use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{App, Context, Entity, IntoElement, RenderOnce, Window};
 use gpui_component::input::{InputEvent, OtpInput as GpuiOtpInput, OtpState};
-use gpui_form_runtime::shape::{ComponentValueBinding, FormValueChange};
 
 #[derive(IntoElement)]
 pub struct OtpInputField {
@@ -23,7 +24,7 @@ impl RenderOnce for OtpInputField {
     }
 }
 
-gpui_form_derive::component_shape! {
+component_shape! {
     /// Form component for a `gpui_component::input::OtpInput` backed by `OtpState`.
     pub struct OtpInput<T = String>
     where
@@ -33,11 +34,10 @@ gpui_form_derive::component_shape! {
         new = |window, cx| OtpState::new(6, window, cx);
         component = gpui_form_collection::otp_input::OtpInputField;
         value = T;
-        value_storage = direct;
         field_suffix = "otp_input";
         value_binding;
 
-        impl<T> ComponentValueBinding<T> for OtpInput<T>
+        impl<T> GpuiComponentValueBinding<T> for OtpInput<T>
         where
             T: FromStr + ToString + 'static,
         {
@@ -53,22 +53,30 @@ gpui_form_derive::component_shape! {
                 state.set_value(value, window, cx);
             }
 
-            fn form_value_change(state: &Self::State, event: &Self::Event) -> FormValueChange<T> {
+            fn value_change(state: &Self::State, event: &Self::Event) -> ValueChange<T> {
                 match event {
                     InputEvent::Change => {
                         let value = state.value();
                         if value.is_empty() {
-                            FormValueChange::Clear
+                            ValueChange::Clear
                         } else {
                             value
                                 .as_ref()
                                 .parse::<T>()
-                                .map_or(FormValueChange::Unchanged, FormValueChange::Set)
+                                .map_or(ValueChange::Unchanged, ValueChange::Set)
                         }
                     },
-                    _ => FormValueChange::Unchanged,
+                    _ => ValueChange::Unchanged,
                 }
             }
         }
     }
 }
+
+impl_form_component_shape!(
+    impl<T> OtpInput<T>
+    where [
+        T: FromStr + ToString + 'static
+    ];
+    gpui_form_runtime::shape::DirectValueStorage
+);

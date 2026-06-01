@@ -8,8 +8,7 @@ use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
 use gpui_form::runtime::shape::{
-    ComponentEventOf, ComponentStateOf, FormValueChange, form_value_change,
-    seed_value_binding_state,
+    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
@@ -39,27 +38,27 @@ impl gpui_storybook::Story for ItemForm {
 impl ItemForm {
     fn on_index_input_event(
         &mut self,
-        state: &Entity<ComponentStateOf<gpui_form_collection::input::Input<Age>>>,
-        event: &ComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<Age>>>,
+        event: &GpuiComponentEventOf<gpui_form_collection::input::Input<Age>, Age>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            form_value_change::<gpui_form_collection::input::Input<Age>, Age>(state, event)
+            value_change::<gpui_form_collection::input::Input<Age>, Age>(state, event)
         };
         match form_change {
-            FormValueChange::Set(value) => {
+            ValueChange::Set(value) => {
                 self.current_data.index = value;
             },
-            FormValueChange::Clear => {
+            ValueChange::Clear => {
                 self.current_data.index = <<gpui_form_collection::input::Input<
                     Age,
-                > as gpui_form::runtime::shape::ComponentShape>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     Age,
                 >>::default_storage();
             },
-            FormValueChange::Unchanged => {},
+            ValueChange::Unchanged => {},
         }
     }
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -195,10 +194,10 @@ impl Render for ItemForm {
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     Age,
-                                > as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
+                                > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::input::Input<
                                         Age,
-                                    > as gpui_form::runtime::shape::ComponentShape>::State,
+                                    > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.index),
                             ),
                     )

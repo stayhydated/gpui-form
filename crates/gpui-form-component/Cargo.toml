@@ -12,18 +12,19 @@ repository.workspace = true
 readme = "README.md"
 
 [features]
-component-shape = [ "dep:gpui-form-derive", "dep:gpui-form-runtime" ]
+component-shape = [ "dep:component-shape", "dep:component-shape-gpui", "dep:gpui-form-runtime" ]
 default = [  ]
 derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]
 chrono = { workspace = true }
+component-shape = { optional = true, workspace = true }
+component-shape-gpui = { optional = true, workspace = true }
 es-fluent = { features = [ "derive" ], workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form-component-derive = { optional = true, workspace = true }
-gpui-form-derive = { optional = true, workspace = true }
 gpui-form-runtime = { optional = true, workspace = true }
 icu_calendar = { workspace = true }
 icu_datetime = { workspace = true }

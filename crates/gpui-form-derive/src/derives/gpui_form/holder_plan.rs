@@ -127,7 +127,7 @@ impl ShapePolicyPredicate {
         match self {
             Self::RequiresValue { shape } => {
                 quote! {
-                    <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                    <<#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
                         as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
                 }
             },

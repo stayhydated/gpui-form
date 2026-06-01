@@ -11,8 +11,10 @@ power the rest of the ecosystem.
 `src/lib.rs` defines:
 
 - `#[derive(GpuiForm)]`
-- `#[derive(ComponentShape)]`
-- `component_shape!`
+
+The reusable GPUI component-shape runtime and primary shape declaration macros
+live in `component-shape-gpui`; this crate no longer exports compatibility
+shape declaration macros.
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by `gpui-form-component` when
@@ -44,12 +46,6 @@ that crate's `derive` feature is enabled.
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
 - `src/derives/gpui_form/cfg_attr.rs`: `cfg_attr` flattening before parse-time
   inspection
-- `src/derives/component_shape_metadata.rs`: shared `ComponentShape` metadata
-  parsing state and emitted associated-const helpers for shape declaration
-  macros
-- `src/derives/component_shape_state.rs`: `ComponentShape` derive expansion
-- `src/derives/component_shape.rs`: function-like component shape expansion for
-  local wrappers around external component/state types
 
 ## `GpuiForm` Expansion Pipeline
 
@@ -194,9 +190,9 @@ When the `inventory` feature is enabled:
 
 ## Other Derives
 
-### `ComponentShape`
+### Compatibility `GpuiComponentShape`
 
-- emits a `ComponentShape` impl for a rendered component when `state = ...`
+- emits a `GpuiComponentShape` impl for a rendered component when `state = ...`
   supplies separate backing state
 - defaults constructor wiring to `<State>::new(window, cx)`
 - accepts a constructor expression for `new = ...`; paths and closures receive
@@ -204,41 +200,44 @@ When the `inventory` feature is enabled:
 - parses shape metadata through the shared `ShapeOption` option model used by
   `component_shape!`
 - optionally stores a component type for prototyping output
-- sets shape-level `ValueBindingPolicy` only when `value_binding` is present,
-  for `ComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `form_value_change`
-- emits component-derived `ComponentValueBinding<T>` delegation through the
-  backing state's `ComponentStateValueBinding<T>` implementation only when
+- sets shape-level `ComponentShapeMetadata::CAPABILITIES` only when `value_binding` is present,
+  for `GpuiComponentValueBinding<T>` prototyping hooks, including
+  `seed_value_binding_state` and `value_change`
+- emits component-derived `GpuiComponentValueBinding<T>` delegation through the
+  backing state's `GpuiComponentStateValueBinding<T>` implementation only when
   `value_binding` is present
-- defaults to implementing `gpui_form_runtime::shape::ComponentShape`
-  for downstream application or integration crates that define shapes directly
+- defaults to implementing `gpui_form_runtime::shape::GpuiComponentShape`
+  for downstream application or integration crates that still use the
+  `gpui-form` compatibility macros directly
 - resolves generated `gpui`, `gpui-form`, and `gpui-form-runtime` paths through
   the shared codegen crate-path resolver
 
-### `component_shape!`
+### Compatibility `component_shape!`
 
-- emits a local zero-sized shape type plus `ComponentShape` impl
+- emits a local zero-sized shape type plus `GpuiComponentShape` impl
 - accepts caller generics, where clauses, and outer attributes
 - accepts `new`, `component`, `value = ...`, `values(...)`,
-  `compatibility<Value> where ...`, `value_storage = require_value|direct`,
+  `compatibility<Value> where ...`,
   `value_binding`, and `field_suffix` metadata keys
 - parses shape metadata through the shared `ShapeOption` option model used by
-  `#[derive(ComponentShape)]`
+  `#[derive(GpuiComponentShape)]`
 - uses semicolon separators between metadata entries
 - accepts nested `impl` items and emits them after the generated
-  `ComponentShape` impl
-- sets shape-level `ValueBindingPolicy` only when `value_binding;` is present
+  `GpuiComponentShape` impl
+- sets shape-level `ComponentShapeMetadata::CAPABILITIES` only when `value_binding;` is present
 - defaults omitted `new` metadata to `<State>::new(window, cx)`
-- emits `ComponentShapeFor<T>` impls from `value = ...`, `values(...)`, or
+- emits `GpuiComponentShapeFor<T>` impls from `value = ...`, `values(...)`, or
   constrained `compatibility<Value> where ...;` metadata
-- rejects duplicate value metadata and rejects manual `ComponentShapeFor` impls
+- rejects duplicate value metadata and rejects manual `GpuiComponentShapeFor` impls
   in the macro block
 - rejects `value_binding;` unless the macro block contains a nested
-  `ComponentValueBinding<T>` impl
+  `GpuiComponentValueBinding<T>` impl
 - targets external component/state pairs that cannot directly implement
-  `ComponentShape` because both the trait and state type are foreign
-- emits the implementation against `gpui_form_runtime::shape` by default
-- leaves optional external `ComponentValueBinding<T>` implementations to the
+  `GpuiComponentShape` because both the trait and state type are foreign
+- emits the implementation against `gpui_form_runtime::shape` by default;
+  new reusable GPUI-only shapes should use
+  `component_shape_gpui::component_shape!`
+- leaves optional external `GpuiComponentValueBinding<T>` implementations to the
   caller or collection crate when they are not nested in the macro block
 
 These shape-definition macros are lower-level than `#[derive(GpuiForm)]` and

@@ -24,8 +24,8 @@ fn __snapshot() {
                     }
                 })
                 .child(
-                    <<crate::shapes::TagsInputShape as gpui_form::runtime::shape::ComponentShape>::RenderComponent as gpui_form::runtime::shape::ComponentRender<
-                        <crate::shapes::TagsInputShape as gpui_form::runtime::shape::ComponentShape>::State,
+                    <<crate::shapes::TagsInputShape as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                        <crate::shapes::TagsInputShape as gpui_form::runtime::shape::GpuiComponentShape>::State,
                     >>::new(&self.fields.tags),
                 ),
         );

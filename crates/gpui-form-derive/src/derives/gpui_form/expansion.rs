@@ -37,7 +37,7 @@ fn field_value_presence_tokens(
         HolderStoragePlan::ShapePolicy { shape } => {
             let runtime_crate = context.paths.gpui_form_facade_runtime();
             quote! {
-                if <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                if <<#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
                     as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
                 {
                     #facade_crate::schema::registry::FieldValuePresence::RequiresValue
@@ -93,7 +93,7 @@ fn component_state_type_tokens(context: &DeriveContext, field: &ComponentFieldPl
     let shape = field.component.shape.shape();
     let runtime_crate = context.paths.gpui_form_facade_runtime();
     quote! {
-        <#shape as #runtime_crate::shape::ComponentShape>::State
+        <#shape as #runtime_crate::shape::GpuiComponentShape>::State
     }
 }
 
@@ -124,7 +124,7 @@ fn component_base_declaration_tokens(
             window: &mut #gpui_crate::Window,
             cx: &mut #gpui_crate::Context<'_, #state_type>,
         ) -> #state_type {
-            <#shape as #runtime_crate::shape::ComponentShape>::new(window, cx)
+            <#shape as #runtime_crate::shape::GpuiComponentShape>::new(window, cx)
         }
     }
 }
@@ -331,7 +331,7 @@ pub fn expand_gpui_form(
                 quote! {
                     {
                         const __GPUI_FORM_FIELD_VALIDATIONS: &[#facade_crate::schema::registry::ValidationRuleId] =
-                            if <<#shape as #runtime_crate::shape::ComponentShape>::ValueStoragePolicy
+                            if <<#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
                                 as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
                             {
                                 &[

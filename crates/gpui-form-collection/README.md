@@ -48,14 +48,15 @@ uses the default `Vec<T>` delegate. If an application needs search or other
 select-specific configuration, declare a small `component_shape!` wrapper whose
 `new` function configures the underlying `SelectState`.
 
-Collection components are declared component shapes and add value adapters
-where the component can synchronize form state generically. `GpuiForm`
+Collection components are declared with `component-shape-gpui` and add value
+adapters where the component can synchronize form state generically. `GpuiForm`
 generated code uses these contracts through the facade path
-`gpui_form::runtime::shape`.
+`gpui_form::runtime::shape`, while this crate attaches the `gpui-form` storage
+policy locally.
 Components that synthesize a default value, such as input, select, combobox,
 checkbox, switch, number input, slider, and OTP input, publish direct `T`
 value-holder storage as their default value-storage policy. For combobox,
-empty selection is explicit: value binding emits `FormValueChange::Clear`, so
+empty selection is explicit: value binding emits `ValueChange::Clear`, so
 optional fields clear to `None` and non-optional `Vec<T>` fields reset to
 `Vec::default()`. They also publish prototyping field suffix metadata, so
 generated scaffolds use names such as `code_input`, `country_select`,
