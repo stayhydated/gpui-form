@@ -42,6 +42,10 @@ Generated field value-type checks dispatch through
 `GpuiComponentShapeFor<Value>`. Shape macros emit implementations only for explicit
 `value = ...` or `values(...)` metadata.
 
+Configured field-level construction dispatches through
+`GpuiComponentShapeBuilder<Shape>` and keeps the same base shape for value
+compatibility, storage policy, render metadata, and prototyping metadata.
+
 Generated validation asks `ValueStorage::is_present` whether a
 policy-owned holder field currently contains a value. `RequiredValueStorage` reports
 `None` as missing; `DirectValueStorage` always reports present because its

@@ -9,7 +9,7 @@ Source structs and enums that demonstrate the supported derive surface:
 
 - basic input, number input, checkbox, switch, select, combobox, slider,
   color-picker, date-picker, file-picker, and otp input fields
-- select, date-picker conversion, and skipped-field workflows
+- select, searchable select, date-picker conversion, and skipped-field workflows
 - nested `InfiniteSelect` enums, including index-path and key-path round trips
   plus typed path-error reporting, custom persisted keys, and key-path string
   serialization

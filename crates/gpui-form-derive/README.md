@@ -43,6 +43,8 @@ Supported component forms:
 - `#[gpui_form(component(my::Shape))]`
 - `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
 - `#[gpui_form(component(gpui_form_collection::select::Select::<_>))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(SelectArgs::builder().searchable(true).build())))]`
 - `#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Country>))]`
 - `#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]`
 - `#[gpui_form(component(gpui_form_collection::switch::Switch))]`
@@ -62,9 +64,12 @@ The `gpui_form_component` shape examples require that crate's
 `InfiniteSelect` derive, available through `gpui-form-component`'s `derive`
 feature or by depending on `gpui-form-component-derive` directly.
 
-The `component(...)` value is parsed as a Rust type path; generated runtime
-construction delegates to `GpuiComponentShape::new`. The shape type must be
-declared with `component_shape_gpui::component_shape!` or
+The `component(...)` value starts with a Rust shape path. Plain paths delegate
+runtime construction to `GpuiComponentShape::new`; configured expressions such
+as `Select::<_>::searchable(true)` or
+`Select::<_>::from(SelectArgs::builder().searchable(true).build())` use the
+expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
+type must be declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
 `GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put render
 component metadata and prototyping suffix metadata on the GPUI shape
@@ -129,8 +134,11 @@ Behavior notes:
   `gpui_form_collection::otp_input::OtpInput::<_>` prototyping code parse
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
-- generic component expressions use `::<_>` in the attribute; the derive normalizes
-  the path and resolves `_` to the field's form-side type
+- generic component expressions use `::<_>` in the attribute, such as
+  `Input::<_>`, `Select::<_>::searchable(true)`, or
+  `Select::<_>::from(SelectArgs::builder().searchable(true).build())`; the
+  derive normalizes the base shape path and resolves `_` to the field's
+  form-side type
 - generated `FormFields` members and `FormComponents` constructors use the
   source field identifier. Derive-generated inventory records
   shape-level `field_suffix = "..."` metadata when available, or a resolved

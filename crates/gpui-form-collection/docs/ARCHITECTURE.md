@@ -35,8 +35,9 @@ this crate owns reusable component types for common `gpui-component` widgets.
 - `select::Select<T, D = Vec<T>>`: enum-backed select over
   `gpui_component::select::SelectState<D>`, with `IntoEnumIterator`,
   `Default`, `PartialEq`, `SelectItem<Value = T>`, and delegate bounds.
-  Applications that need search or other select-specific options should expose
-  those choices through a dedicated `GpuiComponentShape` wrapper.
+  The shape exposes `Select::<_>::searchable(true)` for search and
+  `Select::<_>::from(SelectArgs::builder().searchable(true).build())` for
+  completed Bon-built configuration values.
 - `combobox::Combobox<T, D = Vec<T>>`: enum-backed combobox over
   `gpui_component::combobox::ComboboxState<D>`, with `IntoEnumIterator`,
   `PartialEq`, `SelectItem<Value = T>`, and delegate bounds. Selection is

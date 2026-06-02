@@ -88,7 +88,7 @@ pub struct User {
     #[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]
     pub enable_notifications: bool,
 
-    #[gpui_form(component(gpui_form_collection::select::Select::<_>))]
+    #[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(component(

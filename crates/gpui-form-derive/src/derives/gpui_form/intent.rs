@@ -266,7 +266,9 @@ fn parse_gpui_form_item(
             options,
         } => {
             let context = FieldAttrContext::new(attr_span, span);
-            let component = ShapeOptions::from_shape_with_span(shape, context.option_span);
+            let component =
+                ShapeOptions::from_constructor_expr_with_span(shape, context.option_span)
+                    .map_err(DarlingError::from)?;
             set_attr(
                 field,
                 FieldAttr::Component(ComponentFieldOptions {

@@ -49,6 +49,10 @@ impls.
 ```rust
 #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
 #[gpui_form(component(gpui_form_collection::select::Select::<_>))]
+#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]
+#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(
+    SelectArgs::builder().searchable(true).build()
+)))]
 #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Item>))]
 #[gpui_form(component(gpui_form_collection::number_input::NumberInput::<_>))]
 #[gpui_form(component(gpui_form_collection::slider::Slider))]
@@ -84,6 +88,11 @@ Common field attributes:
 #[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
 #[gpui_form(skip)]
 ```
+
+Configured shape expressions, such as `Select::<_>::searchable(true)` or
+`Select::<_>::from(SelectArgs::builder().searchable(true).build())`, may be
+used anywhere `<shape>` appears when the expression returns a
+`GpuiComponentShapeBuilder` for the same base shape.
 
 Every field must choose exactly one intent: component, `hidden`, or `skip`.
 Use `hidden` for value-holder-only fields. `skip` cannot be combined with

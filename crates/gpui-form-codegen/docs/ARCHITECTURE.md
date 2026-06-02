@@ -7,7 +7,7 @@ layer used by `gpui-form-derive`.
 
 This crate exists to:
 
-1. parse component shape paths into a typed internal model
+1. parse component shape paths and configured builder expressions into a typed internal model
 1. plan semantic component field facts from a declared GPUI component shape
 1. emit schema metadata aligned with the same component-shape contract
 
@@ -29,12 +29,16 @@ crate.
 `components.rs` models component shape metadata accepted by the derive:
 
 - `#[gpui_form(component(my::Shape))]`
+- `#[gpui_form(component(my::Shape::configured(...)))]`
 
 Important parse-time responsibilities:
 
-- field shape syntax reaches this crate as a parsed shape path
-- generic expression paths may use `_` with turbofish syntax, such as
-  `gpui_form_collection::input::Input::<_>`
+- field shape syntax reaches this crate as a plain shape path or as a
+  configured expression rooted at a shape path
+- generic expressions may use `_` with turbofish syntax, such as
+  `gpui_form_collection::input::Input::<_>` or
+  `gpui_form_collection::select::Select::<_>::searchable(true)`. Completed
+  config values can be passed through a shape-owned `from(...)` constructor.
 - `_` is resolved once during derive planning to a `ResolvedComponentShape`
   using the field's form-side type, including any intent-scoped
   `value(type = ...)` override
@@ -52,9 +56,10 @@ Important parse-time responsibilities:
 
 Component-specific settings and supported value-type rules belong inside the
 shape's `GpuiComponentShape::new` implementation,
-`GpuiComponentShapeFor<Value>` impls, or a dedicated wrapper shape. Form storage
-policy remains in `gpui-form-runtime`. This crate does not know about selects,
-inputs, date pickers, or any other component family.
+`GpuiComponentShapeBuilder<Shape>` impls, `GpuiComponentShapeFor<Value>` impls,
+or a dedicated wrapper shape. Form storage policy remains in
+`gpui-form-runtime`. This crate does not know about selects, inputs, date
+pickers, or any other component family.
 
 ## Component Field IR
 
@@ -63,6 +68,8 @@ inputs, date pickers, or any other component family.
 
 - the generated component field identifier
 - the resolved component shape path and field value type
+- optional configured constructor expression with `_` resolved to the same
+  field value type
 - the component shape storage policy, represented as a shape-owned
   value-storage policy projection
 

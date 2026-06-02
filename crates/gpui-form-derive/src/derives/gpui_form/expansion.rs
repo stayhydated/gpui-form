@@ -114,17 +114,16 @@ fn component_base_declaration_tokens(
     field: &ComponentFieldPlan,
 ) -> TokenStream {
     let field_ident = &field.component.field_ident;
-    let shape = field.component.shape.shape();
-    let runtime_crate = context.paths.gpui_form_facade_runtime();
     let gpui_crate = &context.paths.gpui;
     let state_type = component_state_type_tokens(context, field);
+    let constructor_tokens = field.component.shape.constructor_tokens();
 
     quote! {
         pub fn #field_ident(
             window: &mut #gpui_crate::Window,
             cx: &mut #gpui_crate::Context<'_, #state_type>,
         ) -> #state_type {
-            <#shape as #runtime_crate::shape::GpuiComponentShape>::new(window, cx)
+            #constructor_tokens
         }
     }
 }

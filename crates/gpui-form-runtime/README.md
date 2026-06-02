@@ -19,7 +19,8 @@ gpui-form-derive = "*"
 
 `component-shape-gpui` owns the reusable GPUI shape runtime and macros:
 `GpuiComponentShape`, `GpuiComponentRender`, `GpuiComponentShapeFor<T>`,
-`GpuiComponentValueBinding<T>`, `component_shape!`, and
+`GpuiComponentShapeBuilder<Shape>`, `GpuiComponentValueBinding<T>`,
+`component_shape!`, and
 `#[derive(GpuiComponentShape)]`. This crate re-exports those contracts and adds
 the `gpui-form` storage policy contract used by generated forms.
 
@@ -31,8 +32,10 @@ form storage metadata. Hand-written form-only `GpuiComponentShape` impls are not
 accepted as form field shapes.
 
 The derive macro stores `Entity<<Shape as GpuiComponentShape>::State>` in generated
-form fields and calls `GpuiComponentShape::new(window, cx)` from the generated
-component constructor. `gpui-form`, not `component-shape-gpui`, owns
+form fields. Plain component attributes call `GpuiComponentShape::new(window, cx)`;
+configured component attributes call `build_component_shape` with a
+`GpuiComponentShapeBuilder<Shape>` expression for the same base shape.
+`gpui-form`, not `component-shape-gpui`, owns
 `ValueStoragePolicy`, which lets generated value holders inherit whether a
 non-optional field should use direct `T` storage or missing-aware `Option<T>`
 storage. Missing-aware storage is

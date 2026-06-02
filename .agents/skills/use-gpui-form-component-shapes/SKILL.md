@@ -178,6 +178,55 @@ is omitted, it calls `<State>::new(window, cx)`. Use
 `GpuiFormComponentShapePolicy` on reusable wrappers to select
 `DirectValueStorage` or `RequiredValueStorage`; consuming field attributes do
 not accept storage-policy metadata.
+
+## Field-Level Builder Configuration
+
+Use `gpui_form_runtime::shape::GpuiComponentShapeBuilder<Shape>` when a reusable
+shape should expose field-local construction options without creating a new
+shape type for every variant. Expose only direct shape helpers backed by Bon
+builder setters, plus a `from(config)` helper for completed config values. The
+field still uses the same base shape for value compatibility, storage policy,
+render metadata, and prototyping metadata; only construction changes.
+
+```rust
+#[derive(gpui_form::bon::Builder)]
+#[builder(crate = ::gpui_form::bon)]
+pub struct SelectArgs {
+    #[builder(default)]
+    searchable: bool,
+}
+
+impl MySelect {
+    pub fn searchable(searchable: bool) -> SelectArgs {
+        SelectArgs::builder().searchable(searchable).build()
+    }
+
+    pub fn from(args: SelectArgs) -> SelectArgs {
+        args
+    }
+}
+
+impl gpui_form_runtime::shape::GpuiComponentShapeBuilder<MySelect> for SelectArgs {
+    fn build(
+        self,
+        window: &mut gpui::Window,
+        cx: &mut gpui::Context<'_, <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State>,
+    ) -> <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State {
+        let mut state = MySelect::new(window, cx);
+        if self.searchable {
+            state = state.searchable(true);
+        }
+        state
+    }
+}
+```
+
+Consumers can then write
+`#[gpui_form(component(MySelect::searchable(true)))]` or
+`#[gpui_form(component(MySelect::from(SelectArgs::builder().searchable(true).build())))]`.
+Generic shapes can use the same pattern as `MySelect::<_>::searchable(true)`;
+the derive resolves `_` against the field's form-side value type and keeps
+`MySelect<T>` as the base shape.
 Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
 for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.

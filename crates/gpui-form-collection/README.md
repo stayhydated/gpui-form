@@ -20,7 +20,7 @@ pub struct Account {
 
 The `_` in `Input::<_>` is resolved by `GpuiForm` to the field's
 form-side type. Generic component expressions use Rust turbofish syntax inside
-the attribute and are normalized back into type paths by the derive.
+the attribute and are normalized back into base shape type paths by the derive.
 `Combobox<T>` is different: `T` is the item type for a `Vec<T>` field, so write
 `Combobox::<Country>` rather than `Combobox::<_>`.
 
@@ -44,9 +44,11 @@ Currently provided components:
 `Select<T, D>` requires enum values that implement
 `gpui_component::select::SelectItem`; derive that trait with
 `#[derive(SelectItem)]` from `gpui-form-collection-derive`. The provided shape
-uses the default `Vec<T>` delegate. If an application needs search or other
-select-specific configuration, declare a small `component_shape!` wrapper whose
-`new` function configures the underlying `SelectState`.
+uses the default `Vec<T>` delegate. Use
+`#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
+when a field should construct the select with search enabled. For a completed
+configuration value, use
+`Select::<_>::from(SelectArgs::builder().searchable(true).build())`.
 
 Collection components are declared with `component-shape-gpui` and add value
 adapters where the component can synchronize form state generically. `GpuiForm`

@@ -9,9 +9,10 @@ pub use component_shape::{
     is_valid_component_suffix as is_valid_component_field_suffix,
 };
 pub use component_shape_gpui::{
-    DeclaredGpuiComponentShape, GpuiComponentEventOf, GpuiComponentRender, GpuiComponentShape,
-    GpuiComponentShapeFor, GpuiComponentStateOf, GpuiComponentStateValueBinding,
-    GpuiComponentValueBinding, NoGpuiRenderComponent, seed_value_binding_state, value_change,
+    DeclaredGpuiComponentShape, DefaultGpuiComponentShapeBuilder, GpuiComponentEventOf,
+    GpuiComponentRender, GpuiComponentShape, GpuiComponentShapeBuilder, GpuiComponentShapeFor,
+    GpuiComponentStateOf, GpuiComponentStateValueBinding, GpuiComponentValueBinding,
+    NoGpuiRenderComponent, build_component_shape, seed_value_binding_state, value_change,
 };
 
 /// Form storage policy for a GPUI component shape.

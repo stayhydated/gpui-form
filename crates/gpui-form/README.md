@@ -98,6 +98,8 @@ the component shape with the direct shape argument:
 - `#[gpui_form(component(my::Shape))]`
 - `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
 - `#[gpui_form(component(gpui_form_collection::select::Select::<_>))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(SelectArgs::builder().searchable(true).build())))]`
 - `#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Country>))]`
 - `#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]`
 - `#[gpui_form(component(gpui_form_collection::switch::Switch))]`
@@ -117,13 +119,16 @@ The `gpui_form_component` shape entries above require that crate's
 `InfiniteSelect` derive, available through the same crate's `derive` feature or
 by depending on `gpui-form-component-derive` directly.
 
-The `component(...)` value is parsed as a Rust type path; generated runtime
-construction delegates to `GpuiComponentShape::new`. The shape type must be
-declared with `component_shape_gpui::component_shape!` or
-`#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written `GpuiComponentShape`
-impls are not accepted by `#[derive(GpuiForm)]`. Put render component metadata
-and prototyping suffix metadata on the shape declaration, not on the
-`#[gpui_form(...)]` field attribute.
+The `component(...)` value starts with a Rust shape path. Plain paths delegate
+runtime construction to `GpuiComponentShape::new`; configured expressions such
+as `Select::<_>::searchable(true)` or
+`Select::<_>::from(SelectArgs::builder().searchable(true).build())` use the
+expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
+type must be declared with `component_shape_gpui::component_shape!` or
+`#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
+`GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put
+render component metadata and prototyping suffix metadata on the shape
+declaration, not on the `#[gpui_form(...)]` field attribute.
 
 Component shapes own the default value-storage policy for non-optional fields.
 Shapes that can safely synthesize a default value, such as the built-in inputs,
@@ -169,8 +174,10 @@ Common field-level helpers:
   source model keeps its storage type. `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr`
   for non-`String` form-side value types.
 - Generic component expressions use Rust expression turbofish syntax, such as
-  `Input::<_>`. The derive normalizes that path and resolves `_` to
-  the field's form-side type.
+  `Input::<_>`, `Select::<_>::searchable(true)`, or
+  `Select::<_>::from(SelectArgs::builder().searchable(true).build())`. The
+  derive normalizes the base shape path and resolves `_` to the field's
+  form-side type.
 - generated `FormFields` members and `FormComponents` constructors use the
   source field identifier, such as `birth_date`. Derive-generated inventory
   records shape-level `field_suffix = "..."` metadata when available, or

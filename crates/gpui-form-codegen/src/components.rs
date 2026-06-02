@@ -50,6 +50,25 @@ impl ShapeOptions {
         }
     }
 
+    pub fn from_constructor_expr(expr: syn::Expr) -> syn::Result<Self> {
+        Ok(Self {
+            inner: SharedShapeOptions::from_constructor_expr(
+                expr,
+                "expected a component shape path or configured component shape expression",
+            )?,
+        })
+    }
+
+    pub fn from_constructor_expr_with_span(expr: syn::Expr, span: Span) -> syn::Result<Self> {
+        Ok(Self {
+            inner: SharedShapeOptions::from_constructor_expr_with_span(
+                expr,
+                span,
+                "expected a component shape path or configured component shape expression",
+            )?,
+        })
+    }
+
     pub fn resolve(&self, field_name: String, field_type: syn::Type) -> ResolvedComponentShape {
         ResolvedComponentShape {
             inner: self.inner.resolve(field_name, field_type),
@@ -76,8 +95,18 @@ impl ResolvedComponentShape {
         let crate_paths = CratePaths::resolve();
         let runtime_crate = crate_paths.gpui_form_facade_runtime();
 
-        quote! {
+        if let Some(constructor) = self.inner.constructor_expr() {
+            quote! {
+                #runtime_crate::shape::build_component_shape::<#shape, _>(
+                    #constructor,
+                    window,
+                    cx,
+                )
+            }
+        } else {
+            quote! {
             <#shape as #runtime_crate::shape::GpuiComponentShape>::new(window, cx)
+            }
         }
     }
 
@@ -246,6 +275,28 @@ mod tests {
         assert_eq!(
             compact_path(ir.storage_policy.shape()),
             "crate::Input<String>"
+        );
+    }
+
+    #[test]
+    fn configured_component_shape_uses_builder_constructor_tokens() {
+        let options = ShapeOptions::from_constructor_expr(syn::parse_quote! {
+            crate::select::Select::<_>::searchable(true)
+        })
+        .expect("configured component shape should parse");
+        let field_type: syn::Type = syn::parse_quote!(String);
+
+        let shape = options.resolve("country".to_string(), field_type);
+
+        assert_eq!(compact_path(shape.shape()), "crate::select::Select<String>");
+        assert_eq!(
+            shape
+                .constructor_tokens()
+                .to_string()
+                .chars()
+                .filter(|ch| !ch.is_whitespace())
+                .collect::<String>(),
+            "::gpui_form::runtime::shape::build_component_shape::<crate::select::Select<String>,_>(crate::select::Select::<String>::searchable(true),window,cx,)"
         );
     }
 }
