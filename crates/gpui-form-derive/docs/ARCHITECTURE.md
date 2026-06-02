@@ -165,7 +165,8 @@ The derive layer:
 
 - reads normalized validator metadata from `koruma-derive-core`
 - mirrors validators into the holder type
-- preserves validator path and builder-chain forms
+- preserves direct validator chains, labels, target selectors, and `each(...)`
+  element-validation groups
 - injects required-value behavior where holder optionality would otherwise lose
   source-model required semantics
 

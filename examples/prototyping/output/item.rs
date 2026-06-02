@@ -158,17 +158,15 @@ impl Render for ItemForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.index().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .index()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };

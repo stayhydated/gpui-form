@@ -36,9 +36,9 @@ pub enum EnumCountry {
 pub struct User {
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     #[koruma(
-        NonEmptyValidation::<_>::builder(),
-        PrefixValidation::<_>::builder().prefix("Xx"),
-        SuffixValidation::<_>::builder().suffix("xX")
+        NonEmptyValidation::<_>,
+        PrefixValidation::<_>::prefix("Xx"),
+        SuffixValidation::<_>::suffix("xX")
     )]
     pub username: String,
 
@@ -46,22 +46,22 @@ pub struct User {
         gpui_form_collection::input::Input::<_>,
         default = "test@example.com"
     ))]
-    #[koruma(EmailValidation::<_>::builder())]
+    #[koruma(EmailValidation::<_>)]
     pub email: String,
 
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(RangeValidation::<_>::builder().min(18).max(167))]
+    #[koruma(RangeValidation::<_>::min(18).max(167))]
     pub age: Option<u32>,
 
     #[gpui_form(component(
         gpui_form_collection::input::Input::<_>,
         default = 67
     ))]
-    #[koruma(PositiveValidation::<_>::builder())]
+    #[koruma(PositiveValidation::<_>)]
     pub balance: rust_decimal::Decimal,
 
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(NegativeValidation::<_>::builder())]
+    #[koruma(NegativeValidation::<_>)]
     pub debt: rust_decimal::Decimal,
 
     #[gpui_form(component(gpui_form_collection::number_input::NumberInput::<_>))]

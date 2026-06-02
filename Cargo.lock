@@ -4623,10 +4623,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "koruma"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b0fb572c1373155ab0c055ccd54ba6c7e9f6d87c4f7aef5c21d4b1723490be1"
 dependencies = [
- "bon",
  "koruma-core",
  "koruma-derive",
 ]
@@ -4634,8 +4631,6 @@ dependencies = [
 [[package]]
 name = "koruma-collection"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a99ca603b2f4d4e8b8bd4487d7bfcfd1b5684ae37c18224508fde52850ff1eca"
 dependencies = [
  "email_address",
  "es-fluent",
@@ -4649,8 +4644,6 @@ dependencies = [
 [[package]]
 name = "koruma-core"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c4eaac2dc915f8934b98f713f197b2bd87d86157202bdd7b13d3ae7b9c2e2d9"
 dependencies = [
  "es-fluent",
 ]
@@ -4658,11 +4651,10 @@ dependencies = [
 [[package]]
 name = "koruma-derive"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6d104184007e484bea8ad7ebfb5da4838e54a72a14e4b9415523442a18b1624"
 dependencies = [
  "heck 0.5.0",
  "koruma-derive-core",
+ "proc-macro-crate 3.5.0",
  "proc-macro-error2",
  "proc-macro2",
  "quote",
@@ -4673,10 +4665,9 @@ dependencies = [
 [[package]]
 name = "koruma-derive-core"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d36f0618cc89d554de526d00a2a520b8a7faaae4092fd86dc7bc42027a89f376"
 dependencies = [
  "heck 0.5.0",
+ "proc-macro2",
  "quote",
  "syn 2.0.117",
  "syn-cfg-attr",

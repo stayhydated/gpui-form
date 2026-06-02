@@ -136,9 +136,10 @@ Behavior notes:
   shape-level `field_suffix = "..."` metadata when available, or a resolved
   shape-name fallback, for prototyping-specific DOM IDs, event handlers, and
   helper names. Shape-level suffixes must be non-empty identifier suffixes
-- field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
-  onto the generated value holder, which allows validating form-side override
-  types without deriving `Koruma` on the original model
+- field-level `#[koruma(...)]` attributes using Koruma's direct validator
+  syntax are accepted by `GpuiForm` and copied onto the generated value holder,
+  which allows validating form-side override types without deriving `Koruma` on
+  the original model
 - when skipped fields are present, the generated value holder keeps builder
   support and exposes `into_original(...)` instead of an unconditional reverse
   conversion. It also exposes a typed `PresentField` enum and

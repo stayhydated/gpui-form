@@ -38,7 +38,7 @@ fn gpui_form_rejects_required_shape_infallible_conversion() {
 }
 
 #[test]
-fn gpui_form_compiles_koruma_builder_attrs_end_to_end() {
+fn gpui_form_compiles_koruma_direct_attrs_end_to_end() {
     let tests = trybuild::TestCases::new();
-    tests.pass("tests/ui/koruma_builder_attrs_pass.rs");
+    tests.pass("tests/ui/koruma_direct_attrs_pass.rs");
 }

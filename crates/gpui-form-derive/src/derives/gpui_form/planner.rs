@@ -3,7 +3,8 @@ use syn::DeriveInput;
 use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::intent::{ComponentFieldIntent, ComponentStruct};
 use crate::derives::gpui_form::ir::{
-    ComponentFieldPlan, FieldPlan, HolderFieldIr, HolderStoragePlan, RenderedValueIntent,
+    ComponentFieldPlan, FieldPlan, HolderFieldIr, HolderStoragePlan, KorumaValidationInfo,
+    RenderedValueIntent,
 };
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 use crate::derives::gpui_form::validation::{
@@ -97,7 +98,7 @@ pub fn plan_form(
 
         let koruma_info = parsed_koruma_fields.get(&field_name_str);
         let validation = koruma_info
-            .map(|info| info.validation.clone())
+            .map(KorumaValidationInfo::from)
             .unwrap_or_default();
         let validation_metadata = koruma_info
             .map(validation_metadata_from_koruma)

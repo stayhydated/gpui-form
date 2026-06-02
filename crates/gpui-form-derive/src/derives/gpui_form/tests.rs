@@ -2,7 +2,7 @@
 mod gpui_form_tests {
     use super::super::*;
     use crate::derives::gpui_form::koruma;
-    use koruma_derive_core::{ParseFieldResult, ValidatorAttr};
+    use koruma_derive_core::{ParsedDataField, ValidatorAttr};
     use quote::quote;
     use syn::DeriveInput;
 
@@ -14,7 +14,7 @@ mod gpui_form_tests {
     fn test_koruma_field_parsing_with_cfg_attr() {
         let tokens = quote! {
             struct Test {
-                #[cfg_attr(feature = "validation", koruma(SomeValidator::<_>::builder()))]
+                #[cfg_attr(feature = "validation", koruma(SomeValidator::<_>))]
                 field: u32,
             }
         };
@@ -25,23 +25,23 @@ mod gpui_form_tests {
             let result = koruma_derive_core::parse_field(field, 0);
 
             match result {
-                ParseFieldResult::Valid(info) => {
+                Ok(ParsedDataField::Participating(info)) => {
                     assert!(
-                        !info.validation.field_validators.is_empty(),
+                        !info.field_validators().is_empty(),
                         "Should find validators in cfg_attr"
                     );
                     assert_eq!(
-                        info.validation.field_validators[0].name().to_string(),
+                        info.field_validators()[0].validator().name().to_string(),
                         "SomeValidator",
                         "Should extract correct validator name"
                     );
                 },
-                ParseFieldResult::Skip => {
+                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
                     panic!(
                         "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly"
                     );
                 },
-                ParseFieldResult::Error(e) => {
+                Err(e) => {
                     panic!("parse_field returned Error: {}", e);
                 },
             }
@@ -65,15 +65,15 @@ mod gpui_form_tests {
             let result = koruma_derive_core::parse_field(field, 0);
 
             match result {
-                ParseFieldResult::Valid(info) => {
+                Ok(ParsedDataField::Participating(info)) => {
                     assert!(info.is_newtype(), "Should detect newtype in cfg_attr");
                 },
-                ParseFieldResult::Skip => {
+                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
                     panic!(
                         "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly for newtype"
                     );
                 },
-                ParseFieldResult::Error(e) => {
+                Err(e) => {
                     panic!("parse_field returned Error: {}", e);
                 },
             }
@@ -97,15 +97,15 @@ mod gpui_form_tests {
             let result = koruma_derive_core::parse_field(field, 0);
 
             match result {
-                ParseFieldResult::Valid(info) => {
+                Ok(ParsedDataField::Participating(info)) => {
                     assert!(info.is_nested(), "Should detect nested in cfg_attr");
                 },
-                ParseFieldResult::Skip => {
+                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
                     panic!(
                         "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly for nested"
                     );
                 },
-                ParseFieldResult::Error(e) => {
+                Err(e) => {
                     panic!("parse_field returned Error: {}", e);
                 },
             }
@@ -121,11 +121,11 @@ mod gpui_form_tests {
             #[gpui_form(koruma(fluent))]
             struct TestForm {
                 #[gpui_form(component(crate::Input))]
-                #[cfg_attr(feature = "validation", koruma(koruma_collection::general::RequiredValidation::<Option<_>>::builder()))]
+                #[cfg_attr(feature = "validation", koruma(koruma_collection::collection::NonEmptyValidation::<_>))]
                 name: String,
 
                 #[gpui_form(component(crate::NumericShape))]
-                #[cfg_attr(feature = "validation", koruma(koruma_collection::numeric::PositiveValidation::<_>::builder()))]
+                #[cfg_attr(feature = "validation", koruma(koruma_collection::numeric::PositiveValidation::<_>))]
                 age: u32,
             }
         };
@@ -136,17 +136,16 @@ mod gpui_form_tests {
             for (idx, field) in data_struct.fields.iter().enumerate() {
                 let result = koruma_derive_core::parse_field(field, idx);
                 match result {
-                    ParseFieldResult::Valid(info) => {
+                    Ok(ParsedDataField::Participating(info)) => {
                         assert!(
-                            !info.validation.field_validators.is_empty(),
+                            !info.field_validators().is_empty(),
                             "Field {} should have validators detected from cfg_attr",
                             idx
                         );
                         let validator_names: Vec<String> = info
-                            .validation
-                            .field_validators
+                            .field_validators()
                             .iter()
-                            .map(|v| v.name().to_string())
+                            .map(|v| v.validator().name().to_string())
                             .collect();
                         assert!(
                             !validator_names.is_empty(),
@@ -154,10 +153,10 @@ mod gpui_form_tests {
                             idx
                         );
                     },
-                    ParseFieldResult::Skip => {
+                    Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
                         panic!("Field {} should have validators, got Skip", idx);
                     },
-                    ParseFieldResult::Error(e) => {
+                    Err(e) => {
                         panic!("Field {} parsing failed: {}", idx, e);
                     },
                 }
@@ -179,9 +178,9 @@ mod gpui_form_tests {
         );
 
         assert!(
-            expanded_str.contains("RequiredValidation")
+            expanded_str.contains("NonEmptyValidation")
                 && expanded_str.contains("PositiveValidation"),
-            "Generated code should preserve parsed validation builders: {}",
+            "Generated code should preserve parsed validation chains: {}",
             &expanded_str[..expanded_str.len().min(500)]
         );
 
@@ -210,18 +209,18 @@ mod gpui_form_tests {
             let result = koruma_derive_core::parse_field(field, 0);
 
             match result {
-                ParseFieldResult::Valid(info) => {
+                Ok(ParsedDataField::Participating(info)) => {
                     assert!(
                         info.is_newtype(),
                         "Should detect newtype validation in nested cfg_attr"
                     );
                 },
-                ParseFieldResult::Skip => {
+                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
                     panic!(
                         "koruma_derive_core returned Skip for field with koruma(newtype) - cfg_attr not being handled!"
                     );
                 },
-                ParseFieldResult::Error(e) => {
+                Err(e) => {
                     panic!("koruma_derive_core returned Error: {}", e);
                 },
             }
@@ -276,32 +275,27 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_validator_attr_to_tokens_normalizes_builder_chain() {
-        let validator: ValidatorAttr = syn::parse_quote!(
-            koruma_collection::numeric::RangeValidation::<_>::builder()
-                .min(18)
-                .max(167)
-        );
+    fn test_validator_attr_to_tokens_normalizes_direct_chain() {
+        let validator: ValidatorAttr =
+            syn::parse_quote!(koruma_collection::numeric::RangeValidation::<_>::min(18).max(167));
 
         let tokens = koruma::validator_attr_to_tokens(&validator);
         let compact = compact_tokens(&tokens.to_string());
 
         assert_eq!(
             compact,
-            compact_tokens(
-                "koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167)"
-            )
+            compact_tokens("koruma_collection::numeric::RangeValidation::<_>::min(18).max(167)")
         );
     }
 
     #[test]
-    fn test_gpui_form_preserves_builder_chain_koruma_validators() {
+    fn test_gpui_form_preserves_direct_chain_koruma_validators() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
                 #[gpui_form(component(crate::NumericShape))]
-                #[koruma(koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167))]
+                #[koruma(koruma_collection::numeric::RangeValidation::<_>::min(18).max(167))]
                 age: u32,
             }
         };
@@ -318,20 +312,20 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(&compact_tokens(
-                "koruma_collection::numeric::RangeValidation::<_>::builder().min(18).max(167)"
+                "koruma_collection::numeric::RangeValidation::<_>::min(18).max(167)"
             )),
-            "Generated value holder should preserve builder-chain koruma validators: {compact}"
+            "Generated value holder should preserve direct-chain koruma validators: {compact}"
         );
     }
 
     #[test]
-    fn test_gpui_form_preserves_zero_setter_koruma_builder_chains() {
+    fn test_gpui_form_preserves_zero_setter_koruma_direct_chains() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             #[gpui_form(koruma)]
             struct TestForm {
                 #[gpui_form(component(crate::NumericShape))]
-                #[koruma(koruma_collection::numeric::PositiveValidation::<_>::builder())]
+                #[koruma(koruma_collection::numeric::PositiveValidation::<_>)]
                 age: u32,
             }
         };
@@ -348,9 +342,9 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(&compact_tokens(
-                "koruma_collection::numeric::PositiveValidation::<_>::builder()"
+                "koruma_collection::numeric::PositiveValidation::<_>"
             )),
-            "Generated value holder should preserve zero-setter koruma builder chains: {compact}"
+            "Generated value holder should preserve zero-setter koruma direct chains: {compact}"
         );
     }
 

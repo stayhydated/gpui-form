@@ -340,7 +340,7 @@ pub fn generate_description_fn_tokens(
     let error_tokens = if field_has_validations {
         #[cfg(feature = "fluent")]
         let conversion_tokens = quote! {
-            gpui_es_fluent::localize_message(cx, v)
+            gpui_es_fluent::localize_message(cx, &v)
         };
         #[cfg(not(feature = "fluent"))]
         let conversion_tokens = quote! { v.as_str().to_string() };
@@ -350,28 +350,30 @@ pub fn generate_description_fn_tokens(
                 validation_errors
                     .as_ref()
                     .and_then(|e| e.#field_name_ident())
-                    .map(|inner_error| inner_error.all())
-                    .filter(|errs| !errs.is_empty())
-                    .map(|errs| {
-                        errs.iter()
+                    .and_then(|inner_error| {
+                        let errors = inner_error
+                            .all()
                             .map(|v| #conversion_tokens)
-                            .collect::<Vec<_>>()
-                            .join("\n")
+                            .collect::<Vec<_>>();
+                        if errors.is_empty() {
+                            None
+                        } else {
+                            Some(errors.join("\n"))
+                        }
                     })
             }
         } else {
             quote! {{
                 validation_errors.as_ref().and_then(|e| {
-                    let errs = e.#field_name_ident().all();
-                    if errs.is_empty() {
+                    let errors = e
+                        .#field_name_ident()
+                        .all()
+                        .map(|v| #conversion_tokens)
+                        .collect::<Vec<_>>();
+                    if errors.is_empty() {
                         None
                     } else {
-                        Some(
-                            errs.iter()
-                                .map(|v| #conversion_tokens)
-                                .collect::<Vec<_>>()
-                            .join("\n"),
-                        )
+                        Some(errors.join("\n"))
                     }
                 })
             }}
@@ -465,7 +467,9 @@ mod tests {
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
 
         assert!(
-            compact.contains("leterrs=e.index().all();"),
+            compact.contains(
+                "leterrors=e.index().all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
+            ),
             "non-optional newtype errors should keep direct .all() access: {compact}"
         );
         assert!(
@@ -495,7 +499,7 @@ mod tests {
 
         assert!(
             compact.contains(
-                "validation_errors.as_ref().and_then(|e|e.age()).map(|inner_error|inner_error.all()).filter(|errs|!errs.is_empty()).map(|errs|{"
+                "validation_errors.as_ref().and_then(|e|e.age()).and_then(|inner_error|{leterrors=inner_error.all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
             ),
             "optional newtype errors should map/filter the inner errors before rendering: {compact}"
         );
@@ -522,7 +526,7 @@ mod tests {
 
         assert!(
             compact.contains(
-                "validation_errors.as_ref().and_then(|e|e.address()).map(|inner_error|inner_error.all()).filter(|errs|!errs.is_empty()).map(|errs|{"
+                "validation_errors.as_ref().and_then(|e|e.address()).and_then(|inner_error|{leterrors=inner_error.all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
             ),
             "optional nested errors should map/filter the inner errors before rendering: {compact}"
         );

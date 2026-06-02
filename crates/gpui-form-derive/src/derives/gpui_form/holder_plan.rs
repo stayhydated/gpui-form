@@ -370,9 +370,9 @@ impl PresentFieldPlan {
 mod tests {
     use super::*;
     use crate::derives::gpui_form::ir::{
-        FieldAttrContext, HolderStoragePlan, RenderedValueIntent, ValidationMetadata,
+        FieldAttrContext, HolderStoragePlan, KorumaValidationInfo, RenderedValueIntent,
+        ValidationMetadata,
     };
-    use koruma_derive_core::ValidationInfo;
     use proc_macro2::Span;
 
     fn holder_field(storage: HolderStoragePlan, was_optional: bool) -> HolderFieldIr {
@@ -383,7 +383,7 @@ mod tests {
             form_type: syn::parse_quote!(String),
             was_optional,
             storage,
-            validation: ValidationInfo::default(),
+            validation: KorumaValidationInfo::default(),
             validation_metadata: ValidationMetadata::default(),
             default_expr: None,
             default_span: None,

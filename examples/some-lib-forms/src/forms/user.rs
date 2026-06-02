@@ -722,17 +722,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.username().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .username()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };
@@ -780,17 +778,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.email().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .email()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };
@@ -838,17 +834,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.age().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .age()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };
@@ -896,17 +890,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.balance().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .balance()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };
@@ -954,17 +946,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.debt().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .debt()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };
@@ -1278,17 +1268,15 @@ impl Render for UserForm {
                                     validation_errors
                                         .as_ref()
                                         .and_then(|e| {
-                                            let errs = e.birth_date().all();
-                                            if errs.is_empty() {
+                                            let errors = e
+                                                .birth_date()
+                                                .all()
+                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                .collect::<Vec<_>>();
+                                            if errors.is_empty() {
                                                 None
                                             } else {
-                                                Some(
-                                                    errs
-                                                        .iter()
-                                                        .map(|v| gpui_es_fluent::localize_message(cx, v))
-                                                        .collect::<Vec<_>>()
-                                                        .join("\n"),
-                                                )
+                                                Some(errors.join("\n"))
                                             }
                                         })
                                 };

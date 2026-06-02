@@ -276,11 +276,11 @@ use koruma_collection::{
 #[gpui_form(koruma(fluent))]
 pub struct Signup {
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(NonEmptyValidation::<_>::builder())]
+    #[koruma(NonEmptyValidation::<_>)]
     pub username: String,
 
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(RangeValidation::<_>::builder().min(18).max(120))]
+    #[koruma(RangeValidation::<_>::min(18).max(120))]
     pub age: Option<u32>,
 }
 ```
@@ -289,7 +289,7 @@ When validation is enabled:
 
 - required-value semantics are preserved when the generated holder represents
   required fields as `Option<T>`
-- builder-chain Koruma attrs are mirrored
+- direct Koruma validator chains are mirrored
 - generated value-holder validation uses the same validator set as the source
   struct
 

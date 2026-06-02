@@ -1,5 +1,5 @@
 use darling::{Error as DarlingError, FromMeta};
-use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
+use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParsedDataField};
 use std::collections::HashMap;
 use syn::DeriveInput;
 
@@ -50,11 +50,11 @@ pub fn parse_koruma_fields(
             continue;
         };
         match koruma_derive_core::parse_field(field, 0) {
-            ParseFieldResult::Valid(info) => {
-                fields.insert(ident.to_string(), *info);
+            Ok(ParsedDataField::Participating(info)) => {
+                fields.insert(ident.to_string(), info);
             },
-            ParseFieldResult::Skip => {},
-            ParseFieldResult::Error(error) => {
+            Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {},
+            Err(error) => {
                 if let Some(errors) = &mut errors {
                     errors.combine(error);
                 } else {
@@ -73,7 +73,8 @@ pub fn parse_koruma_fields(
 
 pub fn validation_metadata_from_koruma(info: &KorumaFieldInfo) -> ValidationMetadata {
     let mut metadata = ValidationMetadata::default();
-    for validator in &info.validation.field_validators {
+    for validator in info.field_validators() {
+        let validator = validator.validator();
         if validator.name() == "RequiredValidation" {
             metadata.push(ValidationRule::Required);
         } else {

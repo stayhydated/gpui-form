@@ -12,7 +12,7 @@ use crate::derives::gpui_form::holder_plan::{
     ValueHolderPlan,
 };
 use crate::derives::gpui_form::ir::{DeriveContext, HolderFieldIr, HolderStoragePlan};
-use crate::derives::gpui_form::koruma::validator_attr_to_tokens;
+use crate::derives::gpui_form::koruma::validator_use_to_tokens;
 
 type ValueHolderResult<T> = syn::Result<T>;
 
@@ -394,12 +394,14 @@ impl HolderStorageStrategy for HolderStoragePlan {
                 let base_type = form_base_type(field);
                 let policy = shape_policy_type_tokens(context, field)?;
                 Ok(Some(quote! {
-                    #validator_ident::<
-                        #target_ident<
-                            #policy,
-                            #base_type
+                    full(
+                        #validator_ident::<
+                            #target_ident<
+                                #policy,
+                                #base_type
+                            >
                         >
-                    >::builder()
+                    )
                 }))
             },
             HolderStoragePlan::OriginallyOptional | HolderStoragePlan::Direct => Ok(None),
@@ -847,6 +849,12 @@ fn value_storage_policy_validator_tokens(
         }
 
         impl<Target> #validator_ident<Target> {
+            pub fn __koruma_builder() -> #builder_ident<Target> {
+                #builder_ident {
+                    _marker: ::core::marker::PhantomData,
+                }
+            }
+
             pub fn builder() -> #builder_ident<Target> {
                 #builder_ident {
                     _marker: ::core::marker::PhantomData,
@@ -890,18 +898,30 @@ fn value_storage_policy_validator_tokens(
             }
         }
 
-        impl<Target> ::koruma::BuilderWithValueRef<<Target as #target_trait_ident>::Storage>
+        impl<Target> ::koruma::__private::CaptureValueRef<
+            <Target as #target_trait_ident>::Storage
+        >
             for #builder_ident<Target>
         where
             Target: #target_trait_ident,
         {
             type Output = Self;
 
-            fn with_value_ref(
+            fn capture_value_ref(
                 self,
                 _value: &<Target as #target_trait_ident>::Storage,
             ) -> Self::Output {
                 self
+            }
+        }
+
+        impl<Target> ::koruma::__private::BuildValidator
+            for #builder_ident<Target>
+        {
+            type Validator = #validator_ident<Target>;
+
+            fn build_validator(self) -> Self::Validator {
+                self.build()
             }
         }
 
@@ -985,41 +1005,46 @@ pub(super) fn generate_value_holder(
             let validation_plan = &planned_field.validation;
             let has_existing_validations = validation_plan.has_existing_validations;
             let has_newtype = validation_plan.is_newtype;
+            let has_nested = validation_plan.is_nested;
 
-            if required_validation.is_some() || has_existing_validations || has_newtype {
+            if required_validation.is_some()
+                || has_existing_validations
+                || has_newtype
+                || has_nested
+            {
                 let mut koruma_items: Vec<TokenStream> = Vec::new();
 
                 if let Some(required_validation) = required_validation {
                     koruma_items.push(required_validation);
                 }
 
-                let existing_validations: Vec<TokenStream> = validation
+                let existing_field_validations: Vec<TokenStream> = validation
                     .field_validators
                     .iter()
-                    .chain(validation.element_validators.iter())
-                    .map(validator_attr_to_tokens)
+                    .map(validator_use_to_tokens)
                     .collect();
-                koruma_items.extend(existing_validations);
+                koruma_items.extend(existing_field_validations);
 
-                // Build koruma attributes - newtype/nested must be separate attributes
-                // when combined with other validators to avoid type resolution issues
-                let mut attrs: Vec<TokenStream> = Vec::new();
-
-                // Add validators first (if any)
-                if !koruma_items.is_empty() {
-                    attrs.push(quote! { #[koruma(#(#koruma_items),*)] });
+                let existing_element_validations: Vec<TokenStream> = validation
+                    .element_validators
+                    .iter()
+                    .map(validator_use_to_tokens)
+                    .collect();
+                if !existing_element_validations.is_empty() {
+                    koruma_items.push(quote! {
+                        each(#(#existing_element_validations),*)
+                    });
                 }
 
-                // Add newtype/nested as separate attributes
                 if validation_plan.is_newtype {
-                    attrs.insert(0, quote! { #[koruma(newtype)] });
+                    koruma_items.insert(0, quote! { newtype });
                 }
                 if validation_plan.is_nested {
-                    attrs.insert(0, quote! { #[koruma(nested)] });
+                    koruma_items.insert(0, quote! { nested });
                 }
 
-                if !attrs.is_empty() {
-                    field_attrs.insert(field_name, attrs);
+                if !koruma_items.is_empty() {
+                    field_attrs.insert(field_name, vec![quote! { #[koruma(#(#koruma_items),*)] }]);
                 }
             }
         }

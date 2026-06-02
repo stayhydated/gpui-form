@@ -1,7 +1,7 @@
 use gpui_form_codegen::components::{
     ComponentFieldIr, ComponentShapeStoragePolicy, ResolvedComponentShape,
 };
-use koruma_derive_core::ValidationInfo;
+use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParsedValidatorUse};
 use proc_macro2::Span;
 use syn::{Expr, Ident, Path, Type};
 
@@ -192,6 +192,25 @@ impl ValidationMetadata {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct KorumaValidationInfo {
+    pub field_validators: Vec<ParsedValidatorUse>,
+    pub element_validators: Vec<ParsedValidatorUse>,
+    pub is_newtype: bool,
+    pub is_nested: bool,
+}
+
+impl From<&KorumaFieldInfo> for KorumaValidationInfo {
+    fn from(info: &KorumaFieldInfo) -> Self {
+        Self {
+            field_validators: info.field_validators().to_vec(),
+            element_validators: info.element_validators().to_vec(),
+            is_newtype: info.is_newtype(),
+            is_nested: info.is_nested(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct HolderFieldIr {
     pub field_name: Ident,
@@ -202,7 +221,7 @@ pub struct HolderFieldIr {
     pub form_type: Type,
     pub was_optional: bool,
     pub storage: HolderStoragePlan,
-    pub validation: ValidationInfo,
+    pub validation: KorumaValidationInfo,
     pub validation_metadata: ValidationMetadata,
     pub default_expr: Option<Expr>,
     pub default_span: Option<Span>,
@@ -227,7 +246,7 @@ impl HolderFieldIr {
         &self.storage
     }
 
-    pub fn validation(&self) -> &ValidationInfo {
+    pub fn validation(&self) -> &KorumaValidationInfo {
         &self.validation
     }
 
