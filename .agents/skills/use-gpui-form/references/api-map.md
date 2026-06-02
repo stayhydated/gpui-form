@@ -242,7 +242,9 @@ wrappers.
 
 ## Component Shape Patterns
 
-Derive on the rendered component and declare the backing state:
+Derive on the rendered component. The derive infers a same-module backing state
+named after the component, such as `TagsInputState`; declare `state = ...` only
+when the backing state uses a different name or path:
 
 ```rust
 use gpui_form::GpuiForm;
@@ -250,7 +252,6 @@ use component_shape_gpui::GpuiComponentShape;
 
 #[derive(GpuiComponentShape)]
 #[gpui_component_shape(
-    state = TagsInputState,
     value = Vec<String>,
     field_suffix = "input"
 )]
@@ -282,7 +283,7 @@ Or declare a reusable shape:
 ```rust
 component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
-        type State = gpui_component::input::InputState;
+        state = gpui_component::input::InputState;
         component = gpui_component::input::Input;
         value = String;
     }
@@ -294,16 +295,17 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape 
 ```
 
 `component_shape_gpui::component_shape!` uses semicolons between options.
-Use `value = ...` or `values(...)` to publish supported form-side value types.
+Use `value = ...` or `values(...)` to publish supported form-side value types
+when the shape is not value-bound.
 Manual
 `GpuiComponentShapeFor<Value>` impls are rejected inside `component_shape!`.
 Implement `GpuiFormComponentShapePolicy` when the reusable shape should be used
 by `#[derive(GpuiForm)]`. Put `GpuiComponentValueBinding<T>` impls inside the
-macro block when the wrapper shape owns reusable synchronization; add
-`value_binding;` when the wrapper should publish shape-level value-binding
-metadata. `component = ...` must be a path-like type, and
-`field_suffix = "..."` must be a non-empty ASCII identifier suffix. Omit
-`value_binding;` to leave that metadata disabled.
+macro block when the wrapper shape owns reusable synchronization; when no
+explicit `value = ...` or `values(...)` metadata is present, the nested binding
+impl publishes both compatible value metadata and shape-level value-binding
+metadata. `component = ...` must be a path-like type, and `field_suffix = "..."`
+must be a non-empty ASCII identifier suffix.
 
 Do not hand-write `GpuiComponentShape` for `#[gpui_form(component(...))]`
 fields. `#[derive(GpuiForm)]` requires the `DeclaredGpuiComponentShape` marker

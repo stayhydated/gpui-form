@@ -44,16 +44,19 @@ visible to generated `validate()` and fallible holder-to-model conversion.
 contains a value.
 Generated forms also assert `GpuiComponentShapeFor<T>` for the form-side value
 type. Derive and `component_shape!` shapes emit those impls from explicit
-`value = ...` or `values(...)` metadata.
-Component-derived shapes may provide manual `GpuiComponentShapeFor<Value>`
+`value = ...` or `values(...)` metadata, or infer them from value-binding
+contracts when the declaration opts into value binding.
+Component-derived shapes may still provide manual `GpuiComponentShapeFor<Value>`
 impls outside the derive when custom bounds or diagnostics are needed.
 Shapes also publish a `ComponentShapeMetadata::CAPABILITIES`: use `no value-binding capability` by
 default, or `inherited value-binding capability` when fields should inherit
 shape-level `GpuiComponentValueBinding<T>` synchronization.
 
-For owned components, derive on the rendered component and supply `state = ...`;
-generated forms store the backing state entity. The rendered component must
-provide `new(&gpui::Entity<State>) -> impl gpui::IntoElement` so the shape's
+For owned components, derive on the rendered component. The derive infers
+`EmailInputState` from `EmailInput` when `state = ...` is omitted; supply
+`state = ...` when the backing state does not follow that convention. Generated
+forms store the backing state entity. The rendered component must provide
+`new(&gpui::Entity<State>) -> impl gpui::IntoElement` so the shape's
 `RenderComponent` associated type can render prototyping output:
 
 ```rust
@@ -61,7 +64,6 @@ use component_shape_gpui::GpuiComponentShape;
 
 #[derive(GpuiComponentShape)]
 #[gpui_component_shape(
-    state = EmailInputState,
     value = String,
     field_suffix = "input"
 )]
@@ -81,7 +83,7 @@ shape with `gpui-form`:
 ```rust
 component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
-        type State = gpui_component::input::InputState;
+        state = gpui_component::input::InputState;
         new = gpui_component::input::InputState::new;
         component = gpui_component::input::Input;
         value = String;
@@ -105,6 +107,6 @@ form value and map component events back into the form value holder. The derived
 shape delegates its `shape::GpuiComponentValueBinding<T>` impl through that
 state-level contract when `value_binding` metadata is present.
 Wrapper shapes declared with `component_shape_gpui::component_shape!` can place
-the `GpuiComponentValueBinding<T>` impl inside the macro block; add
-`value_binding;` to the macro metadata when the wrapper should publish
-shape-level value-binding metadata.
+the `GpuiComponentValueBinding<T>` impl inside the macro block. When no explicit
+`value = ...` or `values(...)` metadata is present, that nested impl also
+publishes the compatible value type and shape-level value-binding metadata.
