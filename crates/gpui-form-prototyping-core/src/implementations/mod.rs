@@ -433,6 +433,16 @@ mod tests {
         input.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    #[cfg(feature = "fluent")]
+    fn validation_message_conversion() -> &'static str {
+        "gpui_es_fluent::localize_message(cx,&v)"
+    }
+
+    #[cfg(not(feature = "fluent"))]
+    fn validation_message_conversion() -> &'static str {
+        "v.as_str().to_string()"
+    }
+
     const fn hidden_field_with_validations(
         field_name: &'static str,
         value_type: &'static str,
@@ -467,9 +477,10 @@ mod tests {
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
 
         assert!(
-            compact.contains(
-                "leterrors=e.index().all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
-            ),
+            compact.contains(&format!(
+                "leterrors=e.index().all().map(|v|{}).collect::<Vec<_>>();",
+                validation_message_conversion(),
+            )),
             "non-optional newtype errors should keep direct .all() access: {compact}"
         );
         assert!(
@@ -498,9 +509,10 @@ mod tests {
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
 
         assert!(
-            compact.contains(
-                "validation_errors.as_ref().and_then(|e|e.age()).and_then(|inner_error|{leterrors=inner_error.all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
-            ),
+            compact.contains(&format!(
+                "validation_errors.as_ref().and_then(|e|e.age()).and_then(|inner_error|{{leterrors=inner_error.all().map(|v|{}).collect::<Vec<_>>();",
+                validation_message_conversion(),
+            )),
             "optional newtype errors should map/filter the inner errors before rendering: {compact}"
         );
     }
@@ -525,9 +537,10 @@ mod tests {
         let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
 
         assert!(
-            compact.contains(
-                "validation_errors.as_ref().and_then(|e|e.address()).and_then(|inner_error|{leterrors=inner_error.all().map(|v|v.as_str().to_string()).collect::<Vec<_>>();"
-            ),
+            compact.contains(&format!(
+                "validation_errors.as_ref().and_then(|e|e.address()).and_then(|inner_error|{{leterrors=inner_error.all().map(|v|{}).collect::<Vec<_>>();",
+                validation_message_conversion(),
+            )),
             "optional nested errors should map/filter the inner errors before rendering: {compact}"
         );
     }
