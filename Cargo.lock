@@ -3053,6 +3053,7 @@ dependencies = [
 name = "gpui-form-component"
 version = "0.5.1"
 dependencies = [
+ "bon",
  "chrono",
  "component-shape",
  "component-shape-gpui",

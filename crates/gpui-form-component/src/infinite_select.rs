@@ -713,7 +713,9 @@ pub fn build_from_key_path<T: InfiniteSelectValue>(
 
 /// Options for the runtime `Select`.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "component-shape", derive(bon::Builder))]
 pub struct InfiniteSelectOptions {
+    #[cfg_attr(feature = "component-shape", builder(default))]
     searchable: bool,
     max_depth: Option<usize>,
 }
@@ -1256,10 +1258,38 @@ where
     T: InfiniteSelectValue,
     D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
 {
+    #[cfg(feature = "component-shape")]
+    pub fn searchable(searchable: bool) -> InfiniteSelectOptions {
+        InfiniteSelectOptions::builder()
+            .searchable(searchable)
+            .build()
+    }
+
+    #[cfg(feature = "component-shape")]
+    pub fn from(options: InfiniteSelectOptions) -> InfiniteSelectOptions {
+        options
+    }
+
     pub fn new(state: &Entity<InfiniteSelectState<T, D>>) -> Self {
         Self {
             state: state.clone(),
         }
+    }
+}
+
+#[cfg(feature = "component-shape")]
+impl<T, D> component_shape_gpui::GpuiComponentShapeBuilder<InfiniteSelect<T, D>>
+    for InfiniteSelectOptions
+where
+    T: InfiniteSelectValue,
+    D: SelectDelegate<Item = InfiniteSelectItem<T>> + From<Vec<InfiniteSelectItem<T>>> + 'static,
+{
+    fn build(
+        self,
+        window: &mut Window,
+        cx: &mut Context<'_, InfiniteSelectState<T, D>>,
+    ) -> InfiniteSelectState<T, D> {
+        InfiniteSelectState::<T, D>::new_with_options(T::default(), self, window, cx)
     }
 }
 

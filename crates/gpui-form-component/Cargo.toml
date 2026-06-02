@@ -12,11 +12,17 @@ repository.workspace = true
 readme = "README.md"
 
 [features]
-component-shape = [ "dep:component-shape", "dep:component-shape-gpui", "dep:gpui-form-runtime" ]
+component-shape = [
+  "dep:bon",
+  "dep:component-shape",
+  "dep:component-shape-gpui",
+  "dep:gpui-form-runtime",
+]
 default = [  ]
 derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]
+bon = { optional = true, workspace = true }
 chrono = { workspace = true }
 component-shape = { optional = true, workspace = true }
 component-shape-gpui = { optional = true, workspace = true }

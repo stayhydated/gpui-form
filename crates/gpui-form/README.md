@@ -113,6 +113,7 @@ the component shape with the direct shape argument:
 - `#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]`
 - `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)))]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -121,10 +122,11 @@ by depending on `gpui-form-component-derive` directly.
 
 The `component(...)` value starts with a Rust shape path. Plain paths delegate
 runtime construction to `GpuiComponentShape::new`; configured expressions such
-as `Select::<_>::searchable(true)` or
-`Select::<_>::from(SelectArgs::builder().searchable(true).build())` use the
-expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
-type must be declared with `component_shape_gpui::component_shape!` or
+as `Select::<_>::searchable(true)`,
+`Select::<_>::from(SelectArgs::builder().searchable(true).build())`, or
+`InfiniteSelect::<_>::searchable(true)` use the expression as a
+`GpuiComponentShapeBuilder` for the same base shape. The shape type must be
+declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
 `GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put
 render component metadata and prototyping suffix metadata on the shape
@@ -201,6 +203,8 @@ Use `gpui-form-component` with its `derive` feature or import
 `gpui-form-component-derive` explicitly.
 Enable `gpui-form-component`'s `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
+Use `InfiniteSelect::<_>::searchable(true)` when the cascading selects should
+enable search.
 
 Common struct-level helpers:
 

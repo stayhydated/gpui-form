@@ -48,6 +48,9 @@ Responsibilities:
 - expose `InfiniteSelect` as a `GpuiComponentShape` with backing
   `InfiniteSelectState` value-binding metadata when the `component-shape`
   feature is enabled
+- expose `InfiniteSelectOptions` as a field-level
+  `GpuiComponentShapeBuilder` so generated forms can use configured
+  expressions such as `InfiniteSelect::<_>::searchable(true)`
 - expose render-ready `InfiniteSelectLevel` / `InfiniteSelectSnapshot` views and
   `form_fields()` helpers for form code
 - reconstruct nested enum values from stored paths

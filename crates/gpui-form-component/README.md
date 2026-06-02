@@ -105,6 +105,13 @@ For `#[derive(GpuiForm)]`, use the infinite-select component directly:
 pub location: Country,
 ```
 
+Enable search on each cascading select with the field-level builder expression:
+
+```rs
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)))]
+pub location: Country,
+```
+
 Enable this crate's `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
 

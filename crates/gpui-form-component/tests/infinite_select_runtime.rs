@@ -1,3 +1,9 @@
+#[cfg(feature = "component-shape")]
+use gpui_component::select::SelectDelegate;
+#[cfg(feature = "component-shape")]
+use gpui_form_component::infinite_select::{
+    InfiniteSelect as InfiniteSelectComponent, InfiniteSelectItem, InfiniteSelectOptions,
+};
 use gpui_form_component::infinite_select::{
     InfiniteSelectKeyPath, InfiniteSelectPath, InfiniteSelectPathErrorReason,
     InfiniteSelectPathSegment, InfiniteSelectValue as _, build_from_key_path, build_from_path,
@@ -301,4 +307,42 @@ fn child_depth_matches_next_nested_level() {
         1
     );
     assert_eq!(CaliforniaCity::LosAngeles.child_depth(), 0);
+}
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn infinite_select_options_default_to_non_searchable() {
+    assert_eq!(
+        InfiniteSelectOptions::builder().build(),
+        InfiniteSelectOptions::default()
+    );
+}
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn infinite_select_options_record_searchable_configuration() {
+    assert_eq!(
+        InfiniteSelectOptions::builder().searchable(true).build(),
+        InfiniteSelectOptions::new(true, None)
+    );
+    assert_eq!(
+        InfiniteSelectComponent::<Country>::searchable(true),
+        InfiniteSelectOptions::new(true, None)
+    );
+}
+
+#[cfg(feature = "component-shape")]
+#[allow(dead_code)]
+fn assert_infinite_select_options_build_shape<D>()
+where
+    D: SelectDelegate<Item = InfiniteSelectItem<Country>>
+        + From<Vec<InfiniteSelectItem<Country>>>
+        + 'static,
+    InfiniteSelectOptions:
+        component_shape_gpui::GpuiComponentShapeBuilder<InfiniteSelectComponent<Country, D>>,
+{
+    let _ = InfiniteSelectComponent::<Country, D>::from(
+        InfiniteSelectOptions::builder().searchable(true).build(),
+    );
+    let _ = InfiniteSelectComponent::<Country, D>::searchable(true);
 }
