@@ -2,7 +2,7 @@ use component_shape::{
     ComponentCapabilities as ShapeComponentCapabilities,
     ComponentPrototyping as ShapeComponentPrototyping, ComponentShapeUse,
 };
-use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
+use heck::{ToKebabCase as _, ToPascalCase as _};
 
 pub use component_shape::{
     RenderCapability, RustExpr, RustPath, RustSyntaxError, RustSyntaxKind, RustType,
@@ -593,7 +593,9 @@ impl FieldVariant {
 
     pub fn component_suffix(&self) -> String {
         self.prototyping_field_suffix()
-            .and_then(|suffix| component_suffix_from_suffix(self.field_name, suffix.as_str()))
+            .and_then(|suffix| {
+                component_shape::component_suffix_from_suffix(self.field_name, suffix.as_str())
+            })
             .filter(|suffix| !suffix.is_empty())
             .unwrap_or_else(|| "shape".to_string())
     }
@@ -614,22 +616,6 @@ impl FieldVariant {
     pub fn validation_rules(&self) -> &'static [ValidationRuleId] {
         self.validations
     }
-}
-
-pub fn component_suffix_from_suffix(field_name: &str, suffix: &str) -> Option<String> {
-    let mut suffix = suffix.to_snake_case();
-    let field_name = field_name.to_snake_case();
-
-    if suffix == field_name {
-        return None;
-    }
-
-    let field_prefix = format!("{field_name}_");
-    if let Some(rest) = suffix.strip_prefix(&field_prefix) {
-        suffix = rest.to_string();
-    }
-
-    (!suffix.is_empty()).then_some(suffix)
 }
 
 #[cfg(test)]

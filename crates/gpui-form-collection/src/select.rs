@@ -100,7 +100,7 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, bon::Builder)]
+#[derive(bon::Builder, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SelectArgs<T, D = Vec<T>> {
     #[builder(default)]
     searchable: bool,

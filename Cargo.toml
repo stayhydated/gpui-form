@@ -1,5 +1,5 @@
 [workspace]
-default-members = ["examples/some-lib-forms"]
+default-members = [ "examples/some-lib-forms" ]
 members = [
   "crates/gpui-form",
   "crates/gpui-form-core",
