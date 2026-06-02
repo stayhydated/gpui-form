@@ -1,7 +1,8 @@
+use component_shape_codegen::shape_path_from_type_path;
 use darling::FromMeta;
 use proc_macro2::Span;
 use syn::{
-    Expr, Ident, Path, Token, Type,
+    Expr, Ident, Path, Token, Type, TypePath,
     parse::{Parse, ParseStream},
 };
 
@@ -60,7 +61,7 @@ impl Parse for GpuiFormFieldOption {
             let key = input.parse::<kw::component>()?;
             let content;
             syn::parenthesized!(content in input);
-            let shape = content.parse::<Path>()?;
+            let shape = shape_path_from_type_path(content.parse::<TypePath>()?)?;
             let options = parse_structured_field_options(&content, true)?;
             return Ok(Self::Component {
                 span: key.span,

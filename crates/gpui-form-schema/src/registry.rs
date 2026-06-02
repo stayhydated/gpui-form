@@ -1,187 +1,16 @@
+use component_shape::ComponentCapabilities as ShapeComponentCapabilities;
 use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 
+pub use component_shape::{
+    RenderCapability, RustExpr, RustPath, RustSyntaxError, RustSyntaxKind, RustType,
+    ValueBindingCapability,
+};
 pub use gpui_form_core::component_suffix::{
     ComponentSuffix, ComponentSuffixError, is_valid_component_suffix, validate_component_suffix,
 };
 
 inventory::collect!(GpuiFormShape);
-
-/// Rust type syntax stored in inventory metadata.
-///
-/// This is a transport wrapper for `'static` inventory strings. Generators and
-/// other tooling that consume complete form metadata should prefer
-/// `gpui_form_schema::resolved::ResolvedField::value_type` or
-/// `ResolvedField::source_value_type`, which parse and validate the syntax once
-/// at the inventory boundary.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RustType(&'static str);
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RustSyntaxKind {
-    Type,
-    Path,
-    Expr,
-}
-
-impl RustSyntaxKind {
-    const fn label(self) -> &'static str {
-        match self {
-            Self::Type => "type",
-            Self::Path => "path",
-            Self::Expr => "expression",
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RustSyntaxError {
-    kind: RustSyntaxKind,
-    value: String,
-    error: String,
-}
-
-impl RustSyntaxError {
-    pub const fn kind(&self) -> RustSyntaxKind {
-        self.kind
-    }
-
-    pub fn value(&self) -> &str {
-        &self.value
-    }
-
-    pub fn source_error(&self) -> &str {
-        &self.error
-    }
-}
-
-impl std::fmt::Display for RustSyntaxError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "invalid Rust {} metadata `{}`: {}",
-            self.kind.label(),
-            self.value,
-            self.error
-        )
-    }
-}
-
-impl std::error::Error for RustSyntaxError {}
-
-fn rust_syntax_error(kind: RustSyntaxKind, value: &str, error: syn::Error) -> RustSyntaxError {
-    RustSyntaxError {
-        kind,
-        value: value.to_string(),
-        error: error.to_string(),
-    }
-}
-
-impl RustType {
-    pub fn parse(self) -> Result<syn::Type, RustSyntaxError> {
-        syn::parse_str::<syn::Type>(self.0)
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Type, self.0, error))
-    }
-
-    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        Self(value).parse().map(|_| Self(value))
-    }
-
-    pub fn new_opt(value: Option<&'static str>) -> Result<Option<Self>, RustSyntaxError> {
-        match value {
-            Some(value) => Self::new(value).map(Some),
-            None => Ok(None),
-        }
-    }
-
-    /// Construct metadata without validation.
-    ///
-    /// This is intended for macro-generated inventory, where the derive layer
-    /// just stringified syntax that was already parsed by `syn`.
-    #[doc(hidden)]
-    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
-        Self(value)
-    }
-
-    #[doc(hidden)]
-    pub const fn from_macro_tokens_opt_unchecked(value: Option<&'static str>) -> Option<Self> {
-        match value {
-            Some(value) => Some(Self::from_macro_tokens_unchecked(value)),
-            None => None,
-        }
-    }
-
-    pub const fn as_str(self) -> &'static str {
-        self.0
-    }
-}
-
-/// Rust path syntax stored in inventory metadata.
-///
-/// This is a transport wrapper for `'static` inventory strings. Generators and
-/// other tooling that consume complete form metadata should prefer
-/// `gpui_form_schema::resolved::ResolvedGpuiFormShape::source_module_path` or
-/// `ResolvedField::shape_path`, which parse and validate paths once at the
-/// inventory boundary.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RustPath(&'static str);
-
-impl RustPath {
-    pub fn parse(self) -> Result<syn::Path, RustSyntaxError> {
-        syn::parse_str::<syn::Path>(self.0)
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Path, self.0, error))
-    }
-
-    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        Self(value).parse().map(|_| Self(value))
-    }
-
-    /// Construct metadata without validation.
-    ///
-    /// This is intended for macro-generated inventory, where the derive layer
-    /// just stringified syntax that was already parsed by `syn`.
-    #[doc(hidden)]
-    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
-        Self(value)
-    }
-
-    pub const fn as_str(self) -> &'static str {
-        self.0
-    }
-}
-
-/// Rust expression syntax stored in inventory metadata.
-///
-/// This is a transport wrapper for `'static` inventory strings. Generators and
-/// other tooling that consume complete form metadata should prefer
-/// `gpui_form_schema::resolved::ResolvedField::{default_expr, from_expr,
-/// into_expr}`, which parse and validate expressions once at the inventory
-/// boundary.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RustExpr(&'static str);
-
-impl RustExpr {
-    pub fn parse(self) -> Result<syn::Expr, RustSyntaxError> {
-        syn::parse_str::<syn::Expr>(self.0)
-            .map_err(|error| rust_syntax_error(RustSyntaxKind::Expr, self.0, error))
-    }
-
-    pub fn new(value: &'static str) -> Result<Self, RustSyntaxError> {
-        Self(value).parse().map(|_| Self(value))
-    }
-
-    /// Construct metadata without validation.
-    ///
-    /// This is intended for macro-generated inventory, where the derive layer
-    /// just stringified syntax that was already parsed by `syn`.
-    #[doc(hidden)]
-    pub const fn from_macro_tokens_unchecked(value: &'static str) -> Self {
-        Self(value)
-    }
-
-    pub const fn as_str(self) -> &'static str {
-        self.0
-    }
-}
+pub use inventory;
 
 #[derive(Debug)]
 pub struct GpuiFormShape {
@@ -355,30 +184,6 @@ impl ValidationRuleId {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RenderCapability {
-    None,
-    Component,
-}
-
-impl RenderCapability {
-    pub const fn enabled(self) -> bool {
-        matches!(self, Self::Component)
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ValueBindingCapability {
-    None,
-    Inherited,
-}
-
-impl ValueBindingCapability {
-    pub const fn enabled(self) -> bool {
-        matches!(self, Self::Inherited)
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StorageCapability {
     OptionalValue,
     RequiredValue,
@@ -388,27 +193,25 @@ pub enum StorageCapability {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ComponentCapabilities {
-    render: RenderCapability,
-    value_binding: ValueBindingCapability,
+    shape: ShapeComponentCapabilities,
     storage: StorageCapability,
 }
 
 impl ComponentCapabilities {
     pub const fn new() -> Self {
         Self {
-            render: RenderCapability::None,
-            value_binding: ValueBindingCapability::None,
+            shape: ShapeComponentCapabilities::new(),
             storage: StorageCapability::ShapePolicy,
         }
     }
 
     pub const fn with_render(mut self, render: RenderCapability) -> Self {
-        self.render = render;
+        self.shape = self.shape.with_render(render);
         self
     }
 
     pub const fn with_value_binding(mut self, value_binding: ValueBindingCapability) -> Self {
-        self.value_binding = value_binding;
+        self.shape = self.shape.with_value_binding(value_binding);
         self
     }
 
@@ -418,11 +221,11 @@ impl ComponentCapabilities {
     }
 
     pub const fn render(self) -> RenderCapability {
-        self.render
+        self.shape.render()
     }
 
     pub const fn value_binding(self) -> ValueBindingCapability {
-        self.value_binding
+        self.shape.value_binding()
     }
 
     pub const fn storage(self) -> StorageCapability {
@@ -430,11 +233,11 @@ impl ComponentCapabilities {
     }
 
     pub const fn render_component(self) -> bool {
-        self.render.enabled()
+        self.shape.render_component()
     }
 
     pub const fn value_binding_enabled(self) -> bool {
-        self.value_binding.enabled()
+        self.shape.value_binding_enabled()
     }
 }
 
@@ -1009,5 +812,3 @@ mod tests {
         }
     }
 }
-
-pub use inventory;

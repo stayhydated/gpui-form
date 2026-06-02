@@ -15,6 +15,7 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
+component-shape-codegen = { workspace = true }
 darling = { workspace = true }
 gpui-form-codegen = { workspace = true }
 itertools = { workspace = true }

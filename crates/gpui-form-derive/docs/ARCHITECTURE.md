@@ -54,8 +54,9 @@ that crate's `derive` feature is enabled.
    `#[gpui_form(...)]` data.
 1. Parse raw field options through `attrs.rs`, then assemble parsed field and
    struct intents in `intent.rs` with `darling`. Field-level component shapes
-   are parsed into a typed shape path from `#[gpui_form(component(my::Shape))]`;
-   arbitrary Rust expressions are only parsed for intent-scoped `default`,
+   are parsed with `component-shape-codegen` path helpers into a typed shape
+   path from `#[gpui_form(component(my::Shape))]`; arbitrary Rust expressions
+   are only parsed for intent-scoped `default`,
    `value(from_source = ...)`, and `value(into_source = ...)`. The parser
    rejects duplicate component expressions before codegen and rejects
    field-level component metadata such as

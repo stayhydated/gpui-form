@@ -18,7 +18,8 @@ This crate exists to:
 
 - `src/lib.rs`: public exports
 - `src/code_gen.rs`: `FormShapeAdapter`, `FormParts`, and `FormLayout`
-- `src/imports.rs`: import tracking and grouped rendering
+- `src/imports.rs`: compatibility re-export of
+  `component_shape_codegen::imports`
 - `src/error.rs`: structured prototyping errors
 - `src/implementations/`: per-component field generators
 
@@ -85,7 +86,8 @@ Imports are tracked close to where they are needed:
 
 - fragment-level imports live in the core generation layer
 - component-specific imports live in each field generator
-- `ImportSet` deduplicates and groups them into compact `use` statements
+- `component_shape_codegen::imports::ImportSet` deduplicates and groups them
+  into compact `use` statements
 
 `FormShapeAdapter::required_imports()` resolves the full shape through
 `ResolvedGpuiFormShape` before collecting imports, matching the main generation

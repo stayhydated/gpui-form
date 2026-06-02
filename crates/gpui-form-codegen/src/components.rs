@@ -1,6 +1,7 @@
 use component_shape_codegen::{
     ResolvedComponentShape as SharedResolvedComponentShape, ShapeOptions as SharedShapeOptions,
-    field_assertion_ident_fragment, rust_path_metadata_tokens, tokens_with_span,
+    field_assertion_ident_fragment, rust_path_metadata_tokens,
+    shape_type_assertion_block_tokens_with_suffixes, tokens_with_span,
 };
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, quote_spanned};
@@ -89,36 +90,33 @@ impl ResolvedComponentShape {
         let field_type = self.inner.field_type();
         let span = self.inner.span();
         let crate_paths = CratePaths::resolve();
-        let runtime_crate = tokens_with_span(&crate_paths.gpui_form_facade_runtime(), span);
+        let runtime_crate = crate_paths.gpui_form_facade_runtime();
+        let shape_assertions = shape_type_assertion_block_tokens_with_suffixes(
+            "gpui_form",
+            self.inner.field_name(),
+            shape,
+            field_type,
+            span,
+            [
+                quote! { #runtime_crate::shape::DeclaredGpuiComponentShape },
+                quote! { #runtime_crate::shape::GpuiComponentShape },
+                quote! { #runtime_crate::shape::GpuiFormComponentShapePolicy },
+            ],
+            quote! { #runtime_crate::shape::GpuiComponentShapeFor },
+            "declared_component_shape",
+            "component_value_compatibility",
+        );
+        let runtime_crate = tokens_with_span(&runtime_crate, span);
         let field_fragment = field_assertion_ident_fragment(self.inner.field_name());
-        let declared_shape_assertion = format_ident!(
-            "__gpui_form_assert_{field_fragment}_declared_component_shape",
-            span = span
-        );
-        let value_compat_assertion = format_ident!(
-            "__gpui_form_assert_{field_fragment}_component_value_compatibility",
-            span = span
-        );
         let value_binding_assertion = format_ident!(
             "__gpui_form_assert_{field_fragment}_component_value_binding",
             span = span
         );
 
         quote_spanned! {span=>
+            #shape_assertions
+
             {
-                fn #declared_shape_assertion<
-                    Shape: #runtime_crate::shape::DeclaredGpuiComponentShape
-                        + #runtime_crate::shape::GpuiComponentShape
-                        + #runtime_crate::shape::GpuiFormComponentShapePolicy,
-                >() {}
-                #declared_shape_assertion::<#shape>();
-
-                fn #value_compat_assertion<
-                    Shape: #runtime_crate::shape::GpuiComponentShapeFor<Value>,
-                    Value,
-                >() {}
-                #value_compat_assertion::<#shape, #field_type>();
-
                 fn #value_binding_assertion<
                     Shape: #runtime_crate::shape::GpuiComponentShape
                         + #runtime_crate::shape::ComponentShapeMetadata,

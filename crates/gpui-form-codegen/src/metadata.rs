@@ -1,43 +1,28 @@
+use component_shape_codegen::{
+    optional_rust_expr_metadata_tokens, rust_expr_metadata_tokens, rust_path_metadata_tokens,
+    rust_type_metadata_tokens,
+};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::Expr;
 
-fn rust_metadata_string<T: quote::ToTokens>(tokens: &T) -> String {
-    tokens.to_token_stream().to_string()
-}
-
 pub fn rust_type_tokens(schema_crate: &syn::Path, ty: &syn::Type) -> TokenStream {
-    let ty = rust_metadata_string(ty);
-    quote! {
-        #schema_crate::schema::registry::RustType::from_macro_tokens_unchecked(#ty)
-    }
+    rust_type_metadata_tokens(quote! { #schema_crate::schema::registry::RustType }, ty)
 }
 
 pub fn rust_path_tokens(schema_crate: &syn::Path, path: &syn::Path) -> TokenStream {
-    let path = rust_metadata_string(path);
-    quote! {
-        #schema_crate::schema::registry::RustPath::from_macro_tokens_unchecked(#path)
-    }
+    rust_path_metadata_tokens(quote! { #schema_crate::schema::registry::RustPath }, path)
 }
 
 pub fn rust_expr_tokens(schema_crate: &syn::Path, expr: &syn::Expr) -> TokenStream {
-    let expr = rust_metadata_string(expr);
-    quote! {
-        #schema_crate::schema::registry::RustExpr::from_macro_tokens_unchecked(#expr)
-    }
+    rust_expr_metadata_tokens(quote! { #schema_crate::schema::registry::RustExpr }, expr)
 }
 
 pub fn optional_rust_expr_tokens(
     schema_crate: &syn::Path,
     expr: Option<&syn::Expr>,
 ) -> TokenStream {
-    match expr {
-        Some(expr) => {
-            let expr = rust_expr_tokens(schema_crate, expr);
-            quote! { Some(#expr) }
-        },
-        None => quote! { None },
-    }
+    optional_rust_expr_metadata_tokens(quote! { #schema_crate::schema::registry::RustExpr }, expr)
 }
 
 fn unwrap_default_expr(expr: &Expr) -> &Expr {

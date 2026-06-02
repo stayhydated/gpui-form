@@ -12,6 +12,7 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
+component-shape-codegen = { workspace = true }
 gpui-form-codegen = { workspace = true }
 gpui-form-schema = { workspace = true }
 heck = { workspace = true }
