@@ -1,5 +1,5 @@
 error: expected attribute arguments in parentheses: #[koruma(...)]
-  --> tests/ui/gpui_form_malformed_koruma_attr.rs:28:7
+  --> tests/ui/gpui_form_malformed_koruma_attr.rs:26:7
    |
-28 |     #[koruma]
+26 |     #[koruma]
    |       ^^^^^^

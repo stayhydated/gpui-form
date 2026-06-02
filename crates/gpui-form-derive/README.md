@@ -132,7 +132,7 @@ Behavior notes:
 - generic component expressions use `::<_>` in the attribute; the derive normalizes
   the path and resolves `_` to the field's form-side type
 - generated `FormFields` members and `FormComponents` constructors use the
-  source field identifier. Derive-generated inventory still records
+  source field identifier. Derive-generated inventory records
   shape-level `field_suffix = "..."` metadata when available, or a resolved
   shape-name fallback, for prototyping-specific DOM IDs, event handlers, and
   helper names. Shape-level suffixes must be non-empty identifier suffixes

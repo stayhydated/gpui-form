@@ -407,7 +407,7 @@ mod gpui_form_tests {
         );
         assert!(
             !compact.contains("pubfntry_from("),
-            "Generated holders should not expose the legacy inherent try_from helper"
+            "Generated holders should expose TryFrom through the standard trait only"
         );
     }
 
@@ -471,7 +471,7 @@ mod gpui_form_tests {
         );
         assert!(
             !compact.contains("pubfntry_from("),
-            "Generated holders should not expose the legacy inherent try_from helper"
+            "Generated holders should expose TryFrom through the standard trait only"
         );
     }
 
@@ -523,7 +523,7 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_skipped_fields_still_generate_from_original() {
+    fn test_skipped_fields_generate_from_original() {
         let tokens = quote! {
             #[derive(GpuiForm)]
             struct TestForm {
@@ -562,7 +562,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains("birth_date:from.birth_date.map(") && compact.contains("to_form"),
-            "From<Original> for FormValueHolder should still apply `from_source` conversion"
+            "From<Original> for FormValueHolder should apply `from_source` conversion"
         );
         assert!(
             !compact.contains("::core::convert::From<TestFormFormValueHolder>forTestForm",),
@@ -725,7 +725,7 @@ mod gpui_form_tests {
         );
         assert!(
             compact.contains("with_holder_conversion(::gpui_form::schema::registry::HolderConversionMetadata::new(::gpui_form::schema::registry::HolderConversionShape::NeedsSkippedFields,true))"),
-            "skipped fields should still be represented by holder conversion metadata: {compact}"
+            "skipped fields should be represented by holder conversion metadata: {compact}"
         );
     }
 
@@ -780,7 +780,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains("::core::convert::From<TestForm>forTestFormFormValueHolder",),
-            "Skipped-field forms should still generate From<Original> for value holder"
+            "Skipped-field forms should generate From<Original> for value holder"
         );
         assert!(
             compact.contains(
@@ -829,7 +829,7 @@ mod gpui_form_tests {
             compact.contains(
                 "FieldVariant::component(\"bio\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy"
             ),
-            "FieldVariant metadata should be shape-only and omit legacy behavior metadata"
+            "FieldVariant metadata should come from the declared component shape"
         );
 
         assert!(
@@ -902,7 +902,7 @@ mod gpui_form_tests {
         assert!(
             compact.contains("component(MyShape)")
                 || compact.contains("expectedgpui_formfieldoption"),
-            "old positional metadata syntax should be rejected: {compact}"
+            "associated-function metadata syntax should be rejected: {compact}"
         );
     }
 
@@ -1067,7 +1067,7 @@ mod gpui_form_tests {
                     "__gpui_form_assert_name_component_value_binding::<crate::Input,String"
                 )
                 && !compact.contains(&removed_binding_policy_helper),
-            "shape value-binding metadata should emit a derive-time metadata assertion without legacy policy helpers: {compact}"
+            "shape value-binding metadata should emit a derive-time metadata assertion using shape metadata: {compact}"
         );
         assert!(
             compact.contains("__gpui_form_assert_name_declared_component_shape")

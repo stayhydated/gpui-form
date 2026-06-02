@@ -39,9 +39,9 @@ Important parse-time responsibilities:
   using the field's form-side type, including any intent-scoped
   `value(type = ...)` override
 - generated type checks use field-named assertions for declared-shape,
-  value-compatibility, and value-binding checks through
-  `gpui_form::runtime::shape` compatibility re-exports so diagnostics point at
-  the field component shape while preserving component-specific trait messages
+  supported-value-type, and value-binding checks through
+  `gpui_form::runtime::shape` contracts so diagnostics point at the field
+  component shape while preserving component-specific trait messages
 - non-optional shape-backed fields inherit the shape's value-storage policy by
   default
 - shape metadata records whether generated prototyping code
@@ -50,7 +50,7 @@ Important parse-time responsibilities:
 - shape-level `PROTOTYPING.field_suffix` records reusable prototyping suffix
   metadata and must be a non-empty identifier suffix
 
-Component-specific settings and value compatibility rules belong inside the
+Component-specific settings and supported value-type rules belong inside the
 shape's `GpuiComponentShape::new` implementation,
 `GpuiComponentShapeFor<Value>` impls, or a dedicated wrapper shape. Form storage
 policy remains in `gpui-form-runtime`. This crate does not know about selects,
@@ -80,7 +80,7 @@ the concrete shape type; they do not need a direct `gpui-form-runtime`
 dependency for generated field code.
 
 Generated component entity identifiers use the source field name. Prototyping
-helper suffixes still derive from the planned `ResolvedComponentShape`. The
+helper suffixes derive from the planned `ResolvedComponentShape`. The
 path fallback strips `Shape` or `State`, removes a duplicate field prefix, and
 falls back to `shape` when the suffix exactly matches the field name. For
 example, `birth_date: DatePicker` keeps a `birth_date` entity field while

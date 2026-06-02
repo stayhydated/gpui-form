@@ -21,13 +21,14 @@ gpui-form-derive = "*"
 `GpuiComponentShape`, `GpuiComponentRender`, `GpuiComponentShapeFor<T>`,
 `GpuiComponentValueBinding<T>`, `component_shape!`, and
 `#[derive(GpuiComponentShape)]`. This crate re-exports those contracts and adds
-the `gpui-form` compatibility layer used by generated forms.
+the `gpui-form` storage policy contract used by generated forms.
 
-`shape::GpuiComponentShape` is the form compatibility trait for declared component
+`shape::GpuiComponentShape` is the GPUI construction trait for declared component
 shapes. `#[derive(GpuiForm)]` also requires `DeclaredGpuiComponentShape`; GPUI
-shapes declared through `component-shape-gpui` satisfy that marker through the
-runtime bridge when they also provide local form storage metadata. Hand-written
-form-only `GpuiComponentShape` impls are not accepted as form field shapes.
+shapes declared through `component-shape-gpui` satisfy that marker and become
+form field shapes when they implement `GpuiFormComponentShapePolicy` for local
+form storage metadata. Hand-written form-only `GpuiComponentShape` impls are not
+accepted as form field shapes.
 
 The derive macro stores `Entity<<Shape as GpuiComponentShape>::State>` in generated
 form fields and calls `GpuiComponentShape::new(window, cx)` from the generated
@@ -36,12 +37,12 @@ component constructor. `gpui-form`, not `component-shape-gpui`, owns
 non-optional field should use direct `T` storage or missing-aware `Option<T>`
 storage. Missing-aware storage is
 visible to generated `validate()` and fallible holder-to-model conversion.
-`InfallibleValueStorage<T>` marks policies, currently `DirectValueStorage`,
-whose storage representation always contains a value.
+`InfallibleValueStorage<T>` marks storage policies whose representation always
+contains a value.
 Generated forms also assert `GpuiComponentShapeFor<T>` for the form-side value
 type. Derive and `component_shape!` shapes emit those impls from explicit
-`value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata.
-Component-derived shapes may still provide manual `GpuiComponentShapeFor<Value>`
+`value = ...` or `values(...)` metadata.
+Component-derived shapes may provide manual `GpuiComponentShapeFor<Value>`
 impls outside the derive when custom bounds or diagnostics are needed.
 Shapes also publish a `ComponentShapeMetadata::CAPABILITIES`: use `no value-binding capability` by
 default, or `inherited value-binding capability` when fields should inherit

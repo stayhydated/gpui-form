@@ -14,7 +14,7 @@ infinite-select enums, and applying existing built-in, collection, or
 component-owned shapes.
 
 For custom app-owned components, external state wrappers, reusable
-`ComponentShape` implementations, or shape-level value bindings, use
+`GpuiComponentShape` implementations, or shape-level value bindings, use
 `use-gpui-form-component-shapes`.
 
 Do not use this skill as a contributor guide for `gpui-form` repository
@@ -62,7 +62,7 @@ helpers and component-specific derives explicitly:
    `gpui-form-runtime` just because a field uses a component shape.
    Use `gpui_form_component::file_picker::FilePicker` as a ready-made form
    shape when `gpui-form-component` has its `component-shape` feature enabled;
-   generated fields still store `FilePickerState` as the backing entity state.
+   generated fields store `FilePickerState` as the backing entity state.
    `gpui_form_component::date_picker::DatePicker` and
    `gpui_form_component::date_picker::DateRangePicker` are also ready-made
    localized date form shapes under the same feature.
@@ -124,7 +124,7 @@ Common patterns:
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - Convert generated holders with `holder.try_into_original()` when conversion can fail or when a required shape-backed field has no declared default, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. For skipped-field debug UI, format `holder.present_fields()` outside the generated holder instead of expecting a JSON helper.
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
-- For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `ComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
+- For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`. Generated `FormFields` members and
   `FormComponents` constructors use the source field name. Derive-emitted inventory uses

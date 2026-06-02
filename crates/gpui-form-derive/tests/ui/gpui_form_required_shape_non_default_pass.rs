@@ -14,9 +14,7 @@ impl State {
 component_shape_gpui::component_shape! {
     struct RequiredShape {
         type State = State;
-        compatibility<Value>
-        where
-            Value: 'static;
+        value = NonDefault;
     }
 }
 

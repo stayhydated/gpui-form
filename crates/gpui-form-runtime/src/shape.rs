@@ -1,6 +1,6 @@
 //! Runtime storage policy used by `#[derive(GpuiForm)]`.
 //!
-//! Component shape construction, rendering, value compatibility, and value
+//! Component shape construction, rendering, supported value types, and value
 //! binding are provided by `component-shape` and `component-shape-gpui`.
 
 pub use component_shape::{
@@ -56,7 +56,7 @@ impl ComponentValueStoragePolicy for DirectValueStorage {
 /// Storage behavior used by generated form value holders.
 ///
 /// This lets `#[derive(GpuiForm)]` defer the `T` vs `Option<T>` choice to the
-/// component shape that owns the policy while still emitting concrete holder
+/// component shape that owns the policy while emitting concrete holder
 /// conversion code.
 pub trait ValueStorage<T>: ComponentValueStoragePolicy {
     /// Concrete generated value-holder field storage.

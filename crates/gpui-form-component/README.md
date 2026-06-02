@@ -243,8 +243,9 @@ For common external widgets, prefer the reusable shapes in
 shape when the application owns the component or when a collection shape is not
 specific enough.
 
-You can declare a reusable wrapper shape with the `gpui-form-derive`
-function-like macro. Prefer this form for reusable or generic shapes; it
+You can declare a reusable wrapper shape with
+`component_shape_gpui::component_shape!`. Prefer this form for reusable or
+generic shapes; it
 supports generics, where clauses, outer attributes, and order-independent
 metadata.
 
@@ -296,7 +297,7 @@ non-empty identifier suffix.
 Use `value = ...` or `values(...)` to publish the form-side value types a
 shape supports; omit those metadata entries only when you provide manual
 `GpuiComponentShapeFor<Value>` impls. Do not mix value metadata with manual
-compatibility impls in the same `component_shape!` block.
+`GpuiComponentShapeFor<Value>` impls in the same `component_shape!` block.
 The function-like macro uses semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping

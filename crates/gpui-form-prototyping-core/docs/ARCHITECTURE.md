@@ -18,8 +18,7 @@ This crate exists to:
 
 - `src/lib.rs`: public exports
 - `src/code_gen.rs`: `FormShapeAdapter`, `FormParts`, and `FormLayout`
-- `src/imports.rs`: compatibility re-export of
-  `component_shape_codegen::imports`
+- `src/imports.rs`: public import helpers from `component_shape_codegen::imports`
 - `src/error.rs`: structured prototyping errors
 - `src/implementations/`: per-component field generators
 
@@ -119,7 +118,7 @@ with field context instead of being rediscovered during token rendering.
 
 All component fields are shape-backed:
 
-- the generator still initializes component state into generated `FormFields`
+- the generator initializes component state into generated `FormFields`
 - generated component entity locals, `FormFields` members, and
   `FormComponents` constructors use the plain source field identifier
 - event handler names and DOM IDs use the suffix-bearing helper identifier,

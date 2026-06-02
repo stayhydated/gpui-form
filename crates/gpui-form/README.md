@@ -148,8 +148,8 @@ Common field-level helpers:
   field.
 - `#[gpui_form(component(<shape>, default = <expr>))]` seeds a
   component-backed generated value holder field.
-- `#[gpui_form(skip)]` excludes a field from generated form widgets while still
-  allowing prefill from the original model. It cannot be combined with
+- `#[gpui_form(skip)]` excludes a field from generated form widgets and allows
+  prefill from the original model. It cannot be combined with
   component or hidden intent on the same field. Holders with skipped source
   fields expose typed `present_fields()` snapshots for debug/preview UI, and
   require `into_original(skipped_value, ...)` for reconstruction.
@@ -173,7 +173,7 @@ Common field-level helpers:
   the field's form-side type.
 - generated `FormFields` members and `FormComponents` constructors use the
   source field identifier, such as `birth_date`. Derive-generated inventory
-  still records shape-level `field_suffix = "..."` metadata when available, or
+  records shape-level `field_suffix = "..."` metadata when available, or
   a resolved shape-name fallback, for prototyping-specific DOM IDs, event
   handlers, and helper names such as `on_birth_date_date_picker_event`.
   Shape-level suffixes must be non-empty ASCII identifier suffixes; direct
@@ -330,6 +330,10 @@ pub struct TagsInput {
     state: gpui::Entity<TagsInputState>,
 }
 
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
+}
+
 pub struct TagsInputState;
 
 #[derive(Clone, Debug, Default, GpuiForm)]
@@ -357,6 +361,10 @@ component_shape_gpui::component_shape! {
     }
 }
 
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
+}
+
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct ContactForm {
     #[gpui_form(component(EmailInputShape))]
@@ -368,16 +376,14 @@ pub struct ContactForm {
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 It uses `new`, `component`, `value = ...`, `values(...)`,
-`compatibility<Value> where ...`,
 `value_binding`, and `field_suffix` metadata, plus `type State = ...` for the wrapped external
 state type. If `new` is omitted, the macro calls `<State>::new(window, cx)`.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
 a non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. `value = ...` and `values(...)` emit
-`GpuiComponentShapeFor<T>` compatibility impls for simple supported form-side value
-types. Use `compatibility<Value> where Value: SomeTrait<...>;` when the shape
-needs a constrained compatibility impl with custom bounds or diagnostics.
+`GpuiComponentShapeFor<T>` impls for simple supported form-side value
+types.
 Manual `GpuiComponentShapeFor<T>` impls are rejected inside `component_shape!`.
 A nested `GpuiComponentValueBinding<T>` impl is emitted with the shape. Add `value_binding;` when that wrapper should
 publish shape-level value-binding metadata for prototyping subscriptions.
@@ -392,11 +398,10 @@ renamed runtime dependencies.
 If you omit `value = ...`/`values(...)` from `#[derive(GpuiComponentShape)]`,
 provide manual `GpuiComponentShapeFor<Value>` impls outside the derive for each
 supported form-side value type. `component_shape!` instead requires explicit
-value compatibility inside the macro block through `value = ...`, `values(...)`,
-or `compatibility<Value> where ...;`. The shape declaration owns both policy associated types:
-`ValueStoragePolicy` controls value-holder storage, and `ComponentShapeMetadata::CAPABILITIES` is
-usually `no value-binding capability` unless the shape should inherit
-`GpuiComponentValueBinding<T>` synchronization by default.
+form-side value-type support inside the macro block through `value = ...`,
+or `values(...)`. The GPUI shape declaration owns state, render, value-type,
+and value-binding metadata. The companion `GpuiFormComponentShapePolicy` impl
+owns form value-holder storage.
 
 Component-derived shapes can opt into generated value synchronization by adding
 `value_binding` to `#[gpui_component_shape(...)]` and implementing
@@ -532,8 +537,8 @@ output matches the holder's `into_original`, `try_into_original`, or
 skipped-field reconstruction API.
 Generic forms are not registered in inventory because inventory metadata must
 name one concrete source type and module path. When the `inventory` feature is
-enabled, add `#[gpui_form(no_inventory)]` to generic forms that should still
-derive holders/components without registering prototyping metadata.
+enabled, add `#[gpui_form(no_inventory)]` to generic forms that derive
+holders/components without registering prototyping metadata.
 
 ## Examples
 

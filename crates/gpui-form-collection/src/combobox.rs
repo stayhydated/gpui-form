@@ -9,14 +9,6 @@ use gpui_component::{
 };
 use strum::IntoEnumIterator;
 
-#[diagnostic::on_unimplemented(
-    message = "`Combobox<{Item}>` expects form value `Vec<{Item}>`, not `{Self}`",
-    note = "use `Combobox::<Item>` for `Vec<Item>` fields"
-)]
-pub trait ComboboxFormValue<Item> {}
-
-impl<Item> ComboboxFormValue<Item> for Vec<Item> {}
-
 component_shape! {
     /// Form component for a `gpui_component::combobox::Combobox` backed by `ComboboxState`.
     ///
@@ -30,9 +22,7 @@ component_shape! {
         type State = ComboboxState<D>;
         new = Self::new_default;
         component = gpui_component::combobox::Combobox<_>;
-        compatibility<Value>
-        where
-            Value: ComboboxFormValue<T>;
+        value = Vec<T>;
         field_suffix = "combobox";
         value_binding;
 

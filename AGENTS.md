@@ -41,7 +41,7 @@ Before editing, classify the change:
    README, example, architecture note, and `.agents/skills/*` guidance in the
    same change when applicable.
 4. **Validate narrowly.** Run the smallest command that proves the edited
-   behavior or documentation surface is still sound.
+   behavior or documentation surface is sound.
 
 ## Audience Labels
 
@@ -240,7 +240,7 @@ inventory or codegen workflows change.
 - Keep shared package metadata and dependency versions in the workspace root `Cargo.toml`.
 - Prefer `workspace = true` for shared dependencies in workspace crates.
 - Use local `path` dependencies only where the workspace already relies on them, mainly in the workspace root and example crates.
-- Treat `crates/gpui-form` as the public compatibility boundary unless you are intentionally changing lower-level crate APIs too.
+- Treat `crates/gpui-form` as the public facade boundary unless you are intentionally changing lower-level crate APIs too.
 
 ### When Editing Components or Generated Form Metadata
 

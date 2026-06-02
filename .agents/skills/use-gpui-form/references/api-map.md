@@ -15,7 +15,8 @@ gpui-form = "*"
 gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
-gpui-form-derive = "*"
+component-shape-gpui = "*"
+gpui-form-runtime = "*"
 ```
 
 ## Imports
@@ -26,7 +27,7 @@ Use the facade for `GpuiForm` and import component derives explicitly:
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
 use gpui_form_component::InfiniteSelect;
-use gpui_form_derive::ComponentShape;
+use component_shape_gpui::GpuiComponentShape;
 ```
 
 Useful runtime/helper paths:
@@ -36,11 +37,11 @@ Useful runtime/helper paths:
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
-- `gpui_form_derive::component_shape!`
+- `component_shape_gpui::component_shape!`
 
 Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
 the facade. Add `gpui-form-runtime` directly only when defining lower-level
-shapes with `gpui_form_derive` shape macros or direct runtime value-binding
+shapes with `component_shape_gpui` shape macros or direct runtime value-binding
 impls.
 
 ## Supported Component Syntax
@@ -65,10 +66,12 @@ impls.
 ```
 
 Custom `my::Shape` types must be declared with
-`gpui_form_derive::component_shape!` or
-`#[derive(gpui_form_derive::ComponentShape)]`. Put `component = ...` and
-`field_suffix = "..."` metadata on the shape declaration, not on
-`#[gpui_form(...)]`.
+`component_shape_gpui::component_shape!` or
+`#[derive(component_shape_gpui::GpuiComponentShape)]`. Put render component
+metadata and `field_suffix = "..."` metadata on the shape declaration, not on
+`#[gpui_form(...)]`, and implement
+`gpui_form_runtime::shape::GpuiFormComponentShapePolicy` for form holder
+storage.
 
 Common field attributes:
 
@@ -103,8 +106,8 @@ Common struct attributes:
 - Use `gpui_form_collection::checkbox::Checkbox` or
   `gpui_form_collection::switch::Switch` for `bool` fields.
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
-  choice; derive `SelectItem`. Use a custom `ComponentShape` wrapper when the
-  select should expose search or other component-specific behavior.
+  choice; derive `SelectItem`. Use a custom `GpuiComponentShape` wrapper when
+  the select should expose search or other component-specific behavior.
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
   `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
@@ -125,18 +128,19 @@ Common struct attributes:
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
-  `ComponentShape` wrapper when search or depth limits are needed.
+  `GpuiComponentShape` wrapper when search or depth limits are needed.
 - Define a custom component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.
 - Use `#[gpui_form(component(my::Shape))]` when the app owns the state/widget contract.
 - Treat `component(...)` as the only component field intent in
-  `#[gpui_form(...)]`; runtime construction still uses `ComponentShape::new`.
+  `#[gpui_form(...)]`; runtime construction uses
+  `GpuiComponentShape::new`.
 - Component shapes own the default value-storage policy for non-optional
-  fields. Put `value_storage = direct` on the reusable shape definition when it
-  can synthesize default values; field attributes do not accept
-  `.value_storage(...)`. Required shape-backed values are reported by
-  generated `validate()` and by fallible holder-to-model conversion, while
+  fields. Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage`
+  when the reusable shape can synthesize default values; field attributes do
+  not accept storage-policy metadata. Required shape-backed values are reported
+  by generated `validate()` and by fallible holder-to-model conversion, while
   default-synthesizing policies expose `holder.into_original()`.
 - Holders for forms with skipped source fields expose
   `holder.present_fields()` as a typed snapshot for debug/preview formatting;
@@ -233,17 +237,20 @@ Derive on the rendered component and declare the backing state:
 
 ```rust
 use gpui_form::GpuiForm;
-use gpui_form_derive::ComponentShape;
+use component_shape_gpui::GpuiComponentShape;
 
-#[derive(ComponentShape)]
-#[gpui_form_shape(
+#[derive(GpuiComponentShape)]
+#[gpui_component_shape(
     state = TagsInputState,
     value = Vec<String>,
-    value_storage = direct,
     field_suffix = "input"
 )]
 pub struct TagsInput {
     state: gpui::Entity<TagsInputState>,
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 pub struct TagsInputState;
@@ -257,35 +264,38 @@ pub struct PostEditor {
 
 `new` accepts a constructor path or closure and is called with `(window, cx)`;
 if omitted, the derive calls `<State>::new(window, cx)`.
-Crates that use `#[derive(ComponentShape)]`, `component_shape!`, or direct
+Crates that use `#[derive(GpuiComponentShape)]`, `component_shape!`, or direct
 runtime value-binding impls should depend on `gpui-form-runtime` directly
 because those lower-level surfaces emit direct runtime paths.
 
 Or declare a reusable shape:
 
 ```rust
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
         value = String;
-        value_storage = direct;
     }
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 ```
 
-`gpui_form_derive::component_shape!` uses semicolons between options.
-Use `value = ...` or `values(...)` to publish supported form-side value types,
-or use `compatibility<Value> where Value: SomeTrait<...>;` for constrained
-compatibility with custom bounds or diagnostics. Manual
-`ComponentShapeFor<Value>` impls are rejected inside `component_shape!`.
-Use `value_storage = direct` when the reusable shape can synthesize a
-missing value. Put `ComponentValueBinding<T>` impls inside the macro block when
-the wrapper shape owns reusable synchronization; add `value_binding;` when the
-wrapper should publish shape-level value-binding metadata. `component = ...`
-must be a path-like type, and `field_suffix = "..."` must be a non-empty ASCII
-identifier suffix. Omit `value_binding;` to leave that metadata disabled.
+`component_shape_gpui::component_shape!` uses semicolons between options.
+Use `value = ...` or `values(...)` to publish supported form-side value types.
+Manual
+`GpuiComponentShapeFor<Value>` impls are rejected inside `component_shape!`.
+Implement `GpuiFormComponentShapePolicy` when the reusable shape should be used
+by `#[derive(GpuiForm)]`. Put `GpuiComponentValueBinding<T>` impls inside the
+macro block when the wrapper shape owns reusable synchronization; add
+`value_binding;` when the wrapper should publish shape-level value-binding
+metadata. `component = ...` must be a path-like type, and
+`field_suffix = "..."` must be a non-empty ASCII identifier suffix. Omit
+`value_binding;` to leave that metadata disabled.
 
-Do not hand-write `ComponentShape` for `#[gpui_form(component(...))]` fields.
-`#[derive(GpuiForm)]` requires the `DeclaredComponentShape` marker emitted by
-`#[derive(ComponentShape)]` or `component_shape!`.
+Do not hand-write `GpuiComponentShape` for `#[gpui_form(component(...))]`
+fields. `#[derive(GpuiForm)]` requires the `DeclaredGpuiComponentShape` marker
+emitted by `#[derive(GpuiComponentShape)]` or `component_shape!`.

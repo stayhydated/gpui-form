@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form-component-shapes
-description: "Use when Codex needs to add, review, or refactor gpui-form component shape wiring, especially deciding whether an owned rendered component should derive gpui_form_derive::ComponentShape or external component/state pairs should use the function-like gpui_form_derive::component_shape! macro."
+description: "Use when Codex needs to add, review, or refactor gpui-form component shape wiring, especially deciding whether an owned rendered component should derive component_shape_gpui::GpuiComponentShape or external component/state pairs should use component_shape_gpui::component_shape!."
 ---
 
 # Use GPUI Form Component Shapes
@@ -8,12 +8,13 @@ description: "Use when Codex needs to add, review, or refactor gpui-form compone
 ## Scope Boundary
 
 Use this skill for user-facing app or integration code that wires custom
-components into `#[derive(GpuiForm)]` through `ComponentShape`.
+components into `#[derive(GpuiForm)]` through `GpuiComponentShape`.
 Normal generated `GpuiForm` component fields reach runtime contracts through
 `gpui_form::runtime::shape`, but crates that define custom shapes with
-`#[derive(ComponentShape)]`, `component_shape!`, or direct runtime value-binding
-impls should depend on `gpui-form-runtime` directly because those lower-level
-surfaces emit direct runtime paths.
+`#[derive(component_shape_gpui::GpuiComponentShape)]`,
+`component_shape_gpui::component_shape!`, or direct runtime value-binding impls
+should depend on `gpui-form-runtime` directly because those lower-level surfaces
+emit direct runtime paths.
 
 Use `use-gpui-form` for ordinary forms built from existing built-in,
 collection, or component-owned shapes. Use this skill when the work crosses
@@ -30,31 +31,35 @@ repository instructions.
 First classify the component ownership:
 
 - Owned rendered component: when the app or integration crate owns the rendered
-  component and backing state, derive `gpui_form_derive::ComponentShape` on the
-  rendered component with `state = ...`.
+  component and backing state, derive `component_shape_gpui::GpuiComponentShape`
+  on the rendered component with `state = ...`.
 - External component/state pair: when the state type or UI component lives in
   another crate, declare a local wrapper shape with the function-like
-  `gpui_form_derive::component_shape!` proc macro. This avoids orphan-rule
-  problems and gives the local crate a type that owns the `ComponentShape`
-  and `DeclaredComponentShape` implementations.
+  `component_shape_gpui::component_shape!` proc macro. This avoids orphan-rule
+  problems and gives the local crate a type that owns the `GpuiComponentShape`
+  and `DeclaredGpuiComponentShape` implementations.
 - Existing collection shape: when a suitable `gpui_form_collection::*` shape
   already exists, use it directly instead of wrapping it again.
 
 If a prompt says "functional macro" or "functional! macro", interpret that as
-the function-like `gpui_form_derive::component_shape!` proc macro unless the
+the function-like `component_shape_gpui::component_shape!` proc macro unless the
 codebase has a different local macro with that exact name.
 
 ## Owned Component Pattern
 
-Use `#[derive(ComponentShape)]` when the rendered component type is local:
+Use `#[derive(GpuiComponentShape)]` when the rendered component type is local:
 
 ```rust
-use gpui_form_derive::ComponentShape;
+use component_shape_gpui::GpuiComponentShape;
 
-#[derive(ComponentShape)]
-#[gpui_form_shape(state = TagsInputState, value = Vec<String>, field_suffix = "input")]
+#[derive(GpuiComponentShape)]
+#[gpui_component_shape(state = TagsInputState, value = Vec<String>, field_suffix = "input")]
 pub struct TagsInput {
     state: gpui::Entity<TagsInputState>,
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 
 pub struct TagsInputState;
@@ -87,11 +92,15 @@ Metadata rules:
   render component type different from the derived type.
 - Add `value = ...` or `values(...)` once for each form-side value type the
   component-derived shape supports, unless you will implement
-  `ComponentShapeFor<Value>` manually outside the derive.
-- Add `value_storage = direct` when the component can synthesize a default value
-  and non-optional fields should use direct `T` value-holder storage by default.
+  `GpuiComponentShapeFor<Value>` manually outside the derive.
+- Implement `GpuiFormComponentShapePolicy` for the shape. Use
+  `DirectValueStorage` when the component can synthesize a default value and
+  non-optional fields should use direct `T` value-holder storage by default;
+  use `RequiredValueStorage` when the holder should represent missing required
+  values as `Option<T>`.
 - Add `value_binding` when the derived shape should delegate value binding
-  through the backing state's `ComponentStateValueBinding<T>` implementation.
+  through the backing state's `GpuiComponentStateValueBinding<T>`
+  implementation.
 - Add `field_suffix = "..."` when prototyping output should use a stable
   generated prototyping suffix for DOM IDs, event handlers, and helper names.
   Generated `FormFields` members and `FormComponents` constructors use the
@@ -101,15 +110,20 @@ Metadata rules:
 
 ## External State Pattern
 
-Use `gpui_form_derive::component_shape!` when wrapping state from another crate:
+Use `component_shape_gpui::component_shape!` when wrapping state from another crate:
 
 ```rust
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
         type State = gpui_component::input::InputState;
         component = gpui_component::input::Input;
+        value = String;
         field_suffix = "input";
     }
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
 }
 ```
 
@@ -127,7 +141,7 @@ For generic external wrappers, put the generic parameters and bounds on the
 local shape:
 
 ```rust
-gpui_form_derive::component_shape! {
+component_shape_gpui::component_shape! {
     pub struct Input<T = String>
     where
         T: std::str::FromStr + ToString + 'static,
@@ -137,11 +151,10 @@ gpui_form_derive::component_shape! {
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;
         value = T;
-        value_storage = direct;
         field_suffix = "input";
         value_binding;
 
-        impl<T> gpui_form_runtime::shape::ComponentValueBinding<T> for Input<T>
+        impl<T> gpui_form_runtime::shape::GpuiComponentValueBinding<T> for Input<T>
         where
             T: std::str::FromStr + ToString + 'static,
         {
@@ -150,45 +163,52 @@ gpui_form_derive::component_shape! {
         }
     }
 }
+
+impl<T> gpui_form_runtime::shape::GpuiFormComponentShapePolicy for Input<T>
+where
+    T: std::str::FromStr + ToString + 'static,
+{
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
+}
 ```
 
 The macro accepts `new`, `component`, `value = ...`, `values(...)`,
-`compatibility<Value> where ...`, `value_storage = require_value|direct`,
-`value_binding`, and `field_suffix` metadata, plus `type State = ...`.
-If `new` is omitted, it calls `<State>::new(window, cx)`. Use
-`value_storage = direct` on reusable wrappers that can seed or synthesize a
-missing value; consuming field attributes do not accept `value_storage = ...`.
+`value_binding`, and `field_suffix` metadata, plus `type State = ...`. If `new`
+is omitted, it calls `<State>::new(window, cx)`. Use
+`GpuiFormComponentShapePolicy` on reusable wrappers to select
+`DirectValueStorage` or `RequiredValueStorage`; consuming field attributes do
+not accept storage-policy metadata.
 Use a path-like `component = ...` value and a non-empty ASCII identifier suffix
 for `field_suffix = "..."`. Separate metadata entries with semicolons. The
 block may also contain `impl` items.
-Use `value = ...` / `values(...)` for simple compatibility impls. Use
-`compatibility<Value> where Value: SomeTrait<...>;` when the wrapper shape
-needs custom bounds or diagnostics. Do not put manual `ComponentShapeFor<Value>`
-impls inside `component_shape!`; the macro rejects them so compatibility stays
-explicit in metadata. Add at least one value compatibility declaration.
+Use `value = ...` / `values(...)` for form-side value-type impls. Do not put
+manual `GpuiComponentShapeFor<Value>` impls inside `component_shape!`; the macro
+rejects them so form-side value support stays explicit in metadata. Add at
+least one value-type declaration.
 
-Do not hand-write `gpui_form_runtime::shape::ComponentShape` for a
+Do not hand-write `gpui_form_runtime::shape::GpuiComponentShape` for a
 `#[gpui_form(component(...))]` field shape. `#[derive(GpuiForm)]` requires the
-`DeclaredComponentShape` marker emitted by `#[derive(ComponentShape)]` or
-`component_shape!`.
+`DeclaredGpuiComponentShape` marker emitted by
+`#[derive(component_shape_gpui::GpuiComponentShape)]` or
+`component_shape_gpui::component_shape!`.
 
 ## Value Binding
 
 If generated forms should keep the form value and component state synchronized,
-implement `gpui_form_runtime::shape::ComponentStateValueBinding<T>` directly on
-the backing state for component-derived shapes that opt in with
-`#[gpui_form_shape(..., value_binding)]`. For wrapper shapes created by
-`component_shape!`, prefer putting the `ComponentValueBinding<T>` impl inside
-the macro block and add `value_binding;` to the macro metadata when the wrapper
-should publish shape-level value-binding metadata.
+implement `gpui_form_runtime::shape::GpuiComponentStateValueBinding<T>`
+directly on the backing state for component-derived shapes that opt in with
+`#[gpui_component_shape(..., value_binding)]`. For wrapper shapes created by
+`component_shape!`, prefer putting the `GpuiComponentValueBinding<T>` impl
+inside the macro block and add `value_binding;` to the macro metadata when the
+wrapper should publish shape-level value-binding metadata.
 
 Value binding is shape-owned. Use a component-derived shape with explicit
 `value_binding` or a wrapper shape with both `value_binding;` and a
-`ComponentValueBinding<T>` impl when generated forms should inherit
+`GpuiComponentValueBinding<T>` impl when generated forms should inherit
 synchronization.
 
 ## Checks
 
 After code edits, run the narrowest command that proves the affected crate or
-example still compiles. For changes to derive syntax, macro examples, or shape
+example compiles. For changes to derive syntax, macro examples, or shape
 metadata, prefer targeted tests or checks for the crate where the shape is used.

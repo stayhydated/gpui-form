@@ -13,8 +13,7 @@ power the rest of the ecosystem.
 - `#[derive(GpuiForm)]`
 
 The reusable GPUI component-shape runtime and primary shape declaration macros
-live in `component-shape-gpui`; this crate no longer exports compatibility
-shape declaration macros.
+live in `component-shape-gpui`.
 
 `#[derive(InfiniteSelect)]` is not part of this crate. It lives in
 `gpui-form-component-derive` and is re-exported by `gpui-form-component` when
@@ -87,8 +86,8 @@ Important behaviors:
 
 - originally optional fields stay optional in the holder
 - input-style fields usually wrap in `Option<T>` to represent empty UI state
-- skipped fields are still prefilled when converting from the original model
-  into the holder
+- skipped fields are prefilled when converting from the original model into the
+  holder
 - reverse conversion becomes explicit `into_original(...)` when skipped fields
   prevent a fully automatic round trip
 - every field is normalized as component, hidden, or skipped intent during
@@ -121,8 +120,8 @@ Important behaviors:
   generated holder code can consume semantic storage/default/conversion/
   validation/present-field facts instead of re-deriving broad field facts from
   `FieldPlan`. It also preserves skipped-field and original-field ordering for
-  holder API emission, so `value_holder.rs` no longer branches over raw
-  `FieldPlan` variants when rendering `present_fields()` or `into_original`.
+  holder API emission, so `value_holder.rs` renders `present_fields()` and
+  `into_original` from structured holder subplans.
 - component fields cross the `gpui-form-codegen` boundary with a typed
   `ComponentShapeStoragePolicy` that can only represent shape-owned component
   storage. Derive planning combines that policy with source optionality once,
@@ -148,8 +147,7 @@ Important behaviors:
   makes that field statically infallible and lets the normal infallible holder
   path apply.
 - generated `FooFormValueHolder` is the public holder struct. Shape policy
-  storage appears through associated type projections and where clauses rather
-  than a hidden storage struct plus public alias.
+  storage appears through associated type projections and where clauses.
 - non-optional shape-backed fields whose `ValueStoragePolicy` can represent
   missing values also get generated Koruma validators so `validate()` reports
   missing shape-required values before holder-to-model conversion
@@ -178,7 +176,7 @@ When the `inventory` feature is enabled:
 1. `GpuiForm` emits one `GpuiFormShape` per non-generic derived struct, and
    generic source structs must opt out with `#[gpui_form(no_inventory)]` when
    the `inventory` feature is enabled. Inventory items must name one concrete
-   source type and module path; the generated form code still carries the source
+   source type and module path; the generated form code carries the source
    generics.
 1. Each non-skipped field becomes a `FieldVariant`. Component fields use
    `FieldVariant::component(...)` with component contract metadata from
@@ -188,62 +186,6 @@ When the `inventory` feature is enabled:
    paths, component shape UI paths for component fields, and holder conversion
    metadata that records skipped-field reconstruction requirements for
    downstream generators.
-
-## Other Derives
-
-### Compatibility `GpuiComponentShape`
-
-- emits a `GpuiComponentShape` impl for a rendered component when `state = ...`
-  supplies separate backing state
-- defaults constructor wiring to `<State>::new(window, cx)`
-- accepts a constructor expression for `new = ...`; paths and closures receive
-  `(window, cx)`, while direct constructor expressions are emitted as written
-- parses shape metadata through the shared `ShapeOption` option model used by
-  `component_shape!`
-- optionally stores a component type for prototyping output
-- sets shape-level `ComponentShapeMetadata::CAPABILITIES` only when `value_binding` is present,
-  for `GpuiComponentValueBinding<T>` prototyping hooks, including
-  `seed_value_binding_state` and `value_change`
-- emits component-derived `GpuiComponentValueBinding<T>` delegation through the
-  backing state's `GpuiComponentStateValueBinding<T>` implementation only when
-  `value_binding` is present
-- defaults to implementing `gpui_form_runtime::shape::GpuiComponentShape`
-  for downstream application or integration crates that still use the
-  `gpui-form` compatibility macros directly
-- resolves generated `gpui`, `gpui-form`, and `gpui-form-runtime` paths through
-  the shared codegen crate-path resolver
-
-### Compatibility `component_shape!`
-
-- emits a local zero-sized shape type plus `GpuiComponentShape` impl
-- accepts caller generics, where clauses, and outer attributes
-- accepts `new`, `component`, `value = ...`, `values(...)`,
-  `compatibility<Value> where ...`,
-  `value_binding`, and `field_suffix` metadata keys
-- parses shape metadata through the shared `ShapeOption` option model used by
-  `#[derive(GpuiComponentShape)]`
-- uses semicolon separators between metadata entries
-- accepts nested `impl` items and emits them after the generated
-  `GpuiComponentShape` impl
-- sets shape-level `ComponentShapeMetadata::CAPABILITIES` only when `value_binding;` is present
-- defaults omitted `new` metadata to `<State>::new(window, cx)`
-- emits `GpuiComponentShapeFor<T>` impls from `value = ...`, `values(...)`, or
-  constrained `compatibility<Value> where ...;` metadata
-- rejects duplicate value metadata and rejects manual `GpuiComponentShapeFor` impls
-  in the macro block
-- rejects `value_binding;` unless the macro block contains a nested
-  `GpuiComponentValueBinding<T>` impl
-- targets external component/state pairs that cannot directly implement
-  `GpuiComponentShape` because both the trait and state type are foreign
-- emits the implementation against `gpui_form_runtime::shape` by default;
-  new reusable GPUI-only shapes should use
-  `component_shape_gpui::component_shape!`
-- leaves optional external `GpuiComponentValueBinding<T>` implementations to the
-  caller or collection crate when they are not nested in the macro block
-
-These shape-definition macros are lower-level than `#[derive(GpuiForm)]` and
-still require a direct `gpui-form-runtime` dependency. Generated `GpuiForm`
-component fields use the facade path `gpui_form::runtime::shape`.
 
 ## Coordination Rules
 

@@ -1,7 +1,7 @@
 # gpui-form-runtime Architecture
 
-`gpui-form-runtime` is the `gpui-form` compatibility and storage-policy layer
-around the reusable GPUI component-shape contract.
+`gpui-form-runtime` is the `gpui-form` component-shape contract and
+storage-policy layer around reusable GPUI component shapes.
 
 ## Purpose
 
@@ -13,10 +13,10 @@ and keeps form-specific storage and holder behavior local to `gpui-form`.
 ## Modules
 
 - `src/lib.rs`: public module surface
-- `src/shape.rs`: compatibility re-exports for `component-shape` and
+- `src/shape.rs`: component-shape contracts from `component-shape` and
   `component-shape-gpui`, `GpuiComponentShape`, required-value and value-binding
   policy markers, value-holder storage helpers, and generated-code helper
-  aliases/functions
+  functions
 
 ## Boundaries
 
@@ -38,12 +38,9 @@ generic shape paths such as `Input<T>` type-checkable. Schema and prototyping
 metadata read component capabilities and the form-local storage policy directly
 so declared shapes cannot make const metadata disagree with their contracts.
 
-Generated field type compatibility checks dispatch through
+Generated field value-type checks dispatch through
 `GpuiComponentShapeFor<Value>`. Shape macros emit implementations only for explicit
-`value = ...`, `values(...)`, or `compatibility<Value> where ...;` metadata.
-Curated `component_shape!` wrappers use the compatibility metadata for narrower
-impls so their own traits and `#[diagnostic::on_unimplemented]` notes describe
-unsupported field value types.
+`value = ...` or `values(...)` metadata.
 
 Generated validation asks `ValueStorage::is_present` whether a
 policy-owned holder field currently contains a value. `RequiredValueStorage` reports

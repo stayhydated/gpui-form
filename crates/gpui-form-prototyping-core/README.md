@@ -5,8 +5,7 @@ Scaffolding utilities built on top of `GpuiFormShape` inventory data.
 Use this crate when you want to generate GPUI form code from the metadata
 emitted by `#[derive(GpuiForm)]` instead of wiring forms by hand.
 
-Most application code should still start with
-[`gpui-form`](../gpui-form/README.md).
+Most application code should start with [`gpui-form`](../gpui-form/README.md).
 
 ## Quick Example
 
@@ -67,7 +66,7 @@ Value-bound scaffolds use `seed_value_binding_state`, `value_change`,
 `ValueChange<T>`, and runtime aliases for state and actual component event
 projections so the output stays readable.
 `FormParts` exposes component creation, field initializer, subscription, and
-event-handler fragments as typed records that still implement `ToTokens`, so
+event-handler fragments as typed records that implement `ToTokens`, so
 custom layouts can inspect or reorder those pieces before rendering.
 On `ValueChange::Clear`, optional fields reset to `None`; non-optional
 fields reset to the intent-scoped source default converted into the form-side
