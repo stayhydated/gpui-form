@@ -1,4 +1,7 @@
-use component_shape::ComponentCapabilities as ShapeComponentCapabilities;
+use component_shape::{
+    ComponentCapabilities as ShapeComponentCapabilities,
+    ComponentPrototyping as ShapeComponentPrototyping, ComponentShapeUse,
+};
 use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 pub use component_shape::{
@@ -232,6 +235,10 @@ impl ComponentCapabilities {
         self.storage
     }
 
+    const fn shape(self) -> ShapeComponentCapabilities {
+        self.shape
+    }
+
     pub const fn render_component(self) -> bool {
         self.shape.render_component()
     }
@@ -249,56 +256,70 @@ impl Default for ComponentCapabilities {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldComponentVariant {
-    shape_path: RustPath,
-    capabilities: ComponentCapabilities,
-    prototyping_field_suffix: Option<ComponentSuffix>,
+    shape_use: ComponentShapeUse,
+    storage: StorageCapability,
 }
 
 impl FieldComponentVariant {
     pub const fn new(shape_path: RustPath) -> Self {
         Self {
-            shape_path,
-            capabilities: ComponentCapabilities::new(),
-            prototyping_field_suffix: None,
+            shape_use: ComponentShapeUse::new("", shape_path),
+            storage: StorageCapability::ShapePolicy,
         }
     }
 
     /// Attach the complete component capabilities metadata for this field.
     pub const fn with_capabilities(mut self, capabilities: ComponentCapabilities) -> Self {
-        self.capabilities = capabilities;
+        self.shape_use = self.shape_use.with_capabilities(capabilities.shape());
+        self.storage = capabilities.storage();
         self
     }
 
     /// Mark that this component shape publishes render metadata for generated
     /// prototyping code.
     pub const fn with_render_component(mut self, enabled: bool) -> Self {
-        self.capabilities = self.capabilities.with_render(if enabled {
+        let capabilities = self.shape_use.capabilities().with_render(if enabled {
             RenderCapability::Component
         } else {
             RenderCapability::None
         });
+        self.shape_use = self.shape_use.with_capabilities(capabilities);
         self
     }
 
     /// Marks this component shape as value-bound for generated prototyping code.
     pub const fn with_value_binding(mut self, enabled: bool) -> Self {
-        self.capabilities = self.capabilities.with_value_binding(if enabled {
-            ValueBindingCapability::Inherited
-        } else {
-            ValueBindingCapability::None
-        });
+        let capabilities = self
+            .shape_use
+            .capabilities()
+            .with_value_binding(if enabled {
+                ValueBindingCapability::Inherited
+            } else {
+                ValueBindingCapability::None
+            });
+        self.shape_use = self.shape_use.with_capabilities(capabilities);
         self
     }
 
     /// Attach the value-holder storage capability inferred for this field.
     pub const fn with_storage_capability(mut self, storage: StorageCapability) -> Self {
-        self.capabilities = self.capabilities.with_storage(storage);
+        self.storage = storage;
         self
     }
 
     /// Attach the component shape's preferred prototyping field suffix.
     pub const fn with_prototyping_field_suffix(mut self, suffix: Option<ComponentSuffix>) -> Self {
-        self.prototyping_field_suffix = suffix;
+        self.shape_use = self.shape_use.with_prototyping(ShapeComponentPrototyping {
+            field_suffix: suffix,
+        });
+        self
+    }
+
+    const fn with_field_metadata(mut self, field_name: &'static str, field_type: RustType) -> Self {
+        self.shape_use = ComponentShapeUse::new(field_name, self.shape_use.shape_path())
+            .with_field_type(field_type)
+            .with_capabilities(self.shape_use.capabilities())
+            .with_prototyping(self.shape_use.prototyping());
         self
     }
 
@@ -307,23 +328,26 @@ impl FieldComponentVariant {
     /// Tooling that needs a parsed Rust path should prefer
     /// `gpui_form_schema::resolved::ResolvedComponentMetadata::shape_path`.
     pub const fn shape_path(&self) -> RustPath {
-        self.shape_path
+        self.shape_use.shape_path()
     }
 
     pub const fn capabilities(&self) -> ComponentCapabilities {
-        self.capabilities
+        ComponentCapabilities::new()
+            .with_render(self.shape_use.capabilities().render())
+            .with_value_binding(self.shape_use.capabilities().value_binding())
+            .with_storage(self.storage)
     }
 
     pub const fn render_component(&self) -> bool {
-        self.capabilities.render_component()
+        self.capabilities().render_component()
     }
 
     pub const fn value_binding(&self) -> bool {
-        self.capabilities.value_binding_enabled()
+        self.capabilities().value_binding_enabled()
     }
 
     pub const fn prototyping_field_suffix(&self) -> Option<ComponentSuffix> {
-        self.prototyping_field_suffix
+        self.shape_use.prototyping().field_suffix
     }
 }
 
@@ -433,8 +457,9 @@ impl FieldVariant {
         value: FieldValueSpec,
         component: FieldComponentVariant,
     ) -> Self {
-        let component =
-            component.with_storage_capability(value.value_presence.component_storage_capability());
+        let component = component
+            .with_field_metadata(field_name, value.source_value_type)
+            .with_storage_capability(value.value_presence.component_storage_capability());
         Self::from_parts(field_name, value, Some(component))
     }
 
@@ -530,7 +555,7 @@ impl FieldVariant {
     /// `gpui_form_schema::resolved::ResolvedField::shape_path`.
     pub const fn shape_path(&self) -> Option<RustPath> {
         match self.component {
-            Some(component) => Some(component.shape_path),
+            Some(component) => Some(component.shape_path()),
             None => None,
         }
     }
@@ -551,7 +576,7 @@ impl FieldVariant {
 
     pub const fn prototyping_field_suffix(&self) -> Option<ComponentSuffix> {
         match self.component {
-            Some(component) => component.prototyping_field_suffix,
+            Some(component) => component.prototyping_field_suffix(),
             None => None,
         }
     }
@@ -768,6 +793,37 @@ mod tests {
         assert!(field.render_component());
         assert!(field.value_binding());
         assert!(!field.value_holder_uses_option());
+    }
+
+    #[test]
+    fn component_variant_stores_neutral_shape_use_metadata() {
+        let field = FieldVariant::component(
+            "email",
+            value_spec("String", FieldValuePresence::DirectStorage),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::fields::EmailInputShape",
+            ))
+            .with_prototyping_field_suffix(Some(ComponentSuffix::new("input"))),
+        );
+
+        let shape_use = field
+            .component_variant()
+            .expect("component metadata should be attached")
+            .shape_use;
+
+        assert_eq!(shape_use.field_name(), "email");
+        assert_eq!(shape_use.field_type().map(RustType::as_str), Some("String"));
+        assert_eq!(
+            shape_use.shape_path().as_str(),
+            "crate::fields::EmailInputShape"
+        );
+        assert_eq!(
+            shape_use
+                .prototyping()
+                .field_suffix
+                .map(ComponentSuffix::as_str),
+            Some("input")
+        );
     }
 
     #[test]

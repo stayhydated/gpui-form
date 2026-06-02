@@ -55,10 +55,11 @@ inventory or `FieldVariant::hidden(field_name, value)` for value-holder-only
 metadata. Value presence is stored as `FieldValuePresence` instead of
 independent `optional` and value-presence booleans, so construction sites must
 choose `Optional`, `RequiresValue`, or `DirectStorage` directly. Component-only
-metadata is built as `FieldComponentVariant` before it is attached to a field,
-so schema construction cannot represent component capabilities or component
-suffix metadata without a shape path. Render, value-binding, and storage
-behavior are grouped as `ComponentCapabilities` rather than separate booleans.
+metadata is built as `FieldComponentVariant` before it is attached to a field.
+It stores the backend-neutral field-to-shape fact as
+`component_shape::ComponentShapeUse` while form-only storage behavior remains
+schema-owned. Render, value-binding, and storage behavior are grouped as
+`ComponentCapabilities` rather than separate booleans.
 
 Rust syntax fragments are stored as typed string wrappers:
 
