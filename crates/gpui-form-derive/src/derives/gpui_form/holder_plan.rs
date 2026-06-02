@@ -27,8 +27,8 @@ impl<'a> ValueHolderPlan<'a> {
         for field in fields {
             match field {
                 FieldPlan::Skipped(plan) => {
-                    skipped_fields.push(SkippedHolderFieldPlan::new(plan));
-                    original_fields.push(HolderOriginalFieldPlan::Skipped(plan));
+                    skipped_fields.push(SkippedHolderFieldPlan::new(plan.as_ref()));
+                    original_fields.push(HolderOriginalFieldPlan::Skipped(plan.as_ref()));
                 },
                 FieldPlan::Hidden(plan) => {
                     rendered_fields.push(HolderFieldPlan::new(&plan.shared));

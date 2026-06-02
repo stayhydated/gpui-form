@@ -18,15 +18,15 @@ pub struct ComponentField {
 #[derive(Debug)]
 struct ComponentFieldOptions {
     component: ShapeOptions,
-    rendered: RenderedFieldIntent,
+    rendered: Box<RenderedFieldIntent>,
     context: FieldAttrContext,
 }
 
 #[derive(Debug)]
 enum FieldAttr {
-    Component(ComponentFieldOptions),
+    Component(Box<ComponentFieldOptions>),
     Hidden {
-        rendered: RenderedFieldIntent,
+        rendered: Box<RenderedFieldIntent>,
         context: FieldAttrContext,
     },
     Skipped,
@@ -162,13 +162,8 @@ impl FromField for ComponentField {
         let ident = field.ident.clone().ok_or_else(|| {
             DarlingError::custom("GpuiForm only supports named struct fields").with_span(field)
         })?;
-        let field_context = FieldContext::new(
-            ident.clone(),
-            field.ty.clone(),
-            syn::spanned::Spanned::span(field),
-        );
         let mut parsed = ParsedComponentField {
-            context: field_context.clone(),
+            context: FieldContext::new(ident, field.ty.clone(), syn::spanned::Spanned::span(field)),
             attr: None,
         };
         let mut errors = DarlingError::accumulator();
@@ -218,7 +213,7 @@ impl FromField for ComponentField {
         }
 
         let attr = if !had_attribute_errors {
-            match validate_field_intent(&parsed).map_err(DarlingError::from) {
+            match validate_field_intent(&parsed) {
                 Ok(()) => parsed.attr,
                 Err(error) => {
                     errors.push(error);
@@ -235,7 +230,7 @@ impl FromField for ComponentField {
                 attr,
             }),
             None => errors.finish_with(ComponentField {
-                context: parsed.context.clone(),
+                context: parsed.context,
                 attr: FieldAttr::Skipped,
             }),
         }
@@ -267,15 +262,15 @@ fn parse_gpui_form_item(
         } => {
             let context = FieldAttrContext::new(attr_span, span);
             let component =
-                ShapeOptions::from_constructor_expr_with_span(shape, context.option_span)
+                ShapeOptions::from_constructor_expr_with_span(*shape, context.option_span)
                     .map_err(DarlingError::from)?;
             set_attr(
                 field,
-                FieldAttr::Component(ComponentFieldOptions {
+                FieldAttr::Component(Box::new(ComponentFieldOptions {
                     component,
                     rendered: options,
                     context,
-                }),
+                })),
                 span,
             )
         },
@@ -288,13 +283,13 @@ fn set_attr(
     span: Span,
 ) -> darling::Result<()> {
     let incoming = incoming_attr.option_key();
-    if let Some(existing) = field.attr.as_ref().map(FieldAttr::option_key) {
-        if let Some(conflict) = field_option_conflict(existing, incoming) {
-            return Err(DarlingError::from(syn::Error::new(
-                span,
-                field_conflict_message(conflict),
-            )));
-        }
+    if let Some(existing) = field.attr.as_ref().map(FieldAttr::option_key)
+        && let Some(conflict) = field_option_conflict(existing, incoming)
+    {
+        return Err(DarlingError::from(syn::Error::new(
+            span,
+            field_conflict_message(conflict),
+        )));
     }
 
     field.attr = Some(incoming_attr);

@@ -83,7 +83,7 @@ pub struct ConvertedValueIntent {
 #[derive(Clone, Debug)]
 pub enum RenderedValueIntent {
     Identity,
-    Converted(ConvertedValueIntent),
+    Converted(Box<ConvertedValueIntent>),
 }
 
 impl RenderedValueIntent {
@@ -313,25 +313,25 @@ pub struct ComponentFieldPlan {
 /// Precomputed field facts shared by expansion, inventory, and value holders.
 #[derive(Clone, Debug)]
 pub enum FieldPlan {
-    Skipped(SkippedFieldPlan),
-    Hidden(HiddenFieldPlan),
-    Component(ComponentFieldPlan),
+    Skipped(Box<SkippedFieldPlan>),
+    Hidden(Box<HiddenFieldPlan>),
+    Component(Box<ComponentFieldPlan>),
 }
 
 impl FieldPlan {
     pub fn skipped(field_name: Ident, original_type: Type) -> Self {
-        Self::Skipped(SkippedFieldPlan {
+        Self::Skipped(Box::new(SkippedFieldPlan {
             field_name,
             original_type,
-        })
+        }))
     }
 
     pub fn hidden(shared: HolderFieldIr) -> Self {
-        Self::Hidden(HiddenFieldPlan { shared })
+        Self::Hidden(Box::new(HiddenFieldPlan { shared }))
     }
 
     pub fn component_field(shared: HolderFieldIr, component: ComponentFieldIr) -> Self {
-        Self::Component(ComponentFieldPlan { shared, component })
+        Self::Component(Box::new(ComponentFieldPlan { shared, component }))
     }
 
     pub fn shared(&self) -> Option<&HolderFieldIr> {
@@ -363,7 +363,7 @@ impl FieldPlan {
 
     pub fn component_plan(&self) -> Option<&ComponentFieldPlan> {
         match self {
-            Self::Component(plan) => Some(plan),
+            Self::Component(plan) => Some(plan.as_ref()),
             Self::Skipped(_) | Self::Hidden(_) => None,
         }
     }

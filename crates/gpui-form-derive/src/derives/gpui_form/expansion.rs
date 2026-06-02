@@ -284,9 +284,9 @@ pub fn expand_gpui_form(
             let field_name_str = field.field_name().to_string();
             let value_presence_tokens = field_value_presence_tokens(&context, &shared.storage);
 
-            let field_type_tokens = rust_type_tokens(&facade_crate, &shared.form_type);
+            let field_type_tokens = rust_type_tokens(facade_crate, &shared.form_type);
             let source_value_type_tokens =
-                rust_type_tokens(&facade_crate, &shared.source_value_type);
+                rust_type_tokens(facade_crate, &shared.source_value_type);
             let needs_inferred_required_rule = field.needs_required_validation()
                 && !shared.validation_metadata.has_required();
 
@@ -302,7 +302,7 @@ pub fn expand_gpui_form(
             let validation_rule_tokens: Vec<_> = validation_rules
                 .iter()
                 .map(|rule| {
-                    let registry = &facade_crate;
+                    let registry = facade_crate;
                     match rule {
                         ValidationRule::Required => {
                             quote! { #registry::schema::registry::ValidationRuleId::Required }
@@ -354,16 +354,16 @@ pub fn expand_gpui_form(
             };
 
             let default_expr_tokens = shared.default_expr.as_ref().map(|expr| {
-                let expr_tokens = rust_expr_tokens(&facade_crate, expr);
+                let expr_tokens = rust_expr_tokens(facade_crate, expr);
                 quote! {
                     .with_default(#expr_tokens)
                 }
             });
 
             let from_expr_tokens =
-                optional_rust_expr_tokens(&facade_crate, shared.source_to_form_expr());
+                optional_rust_expr_tokens(facade_crate, shared.source_to_form_expr());
             let into_expr_tokens =
-                optional_rust_expr_tokens(&facade_crate, shared.form_to_source_expr());
+                optional_rust_expr_tokens(facade_crate, shared.form_to_source_expr());
             let value_spec_tokens = quote! {
                 #facade_crate::schema::registry::FieldValueSpec::new(
                     #field_type_tokens,

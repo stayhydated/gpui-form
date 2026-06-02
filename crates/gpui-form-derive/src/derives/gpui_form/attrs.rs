@@ -45,12 +45,12 @@ pub(super) enum GpuiFormFieldOption {
     },
     Hidden {
         span: Span,
-        options: RenderedFieldIntent,
+        options: Box<RenderedFieldIntent>,
     },
     Component {
         span: Span,
-        shape: Expr,
-        options: RenderedFieldIntent,
+        shape: Box<Expr>,
+        options: Box<RenderedFieldIntent>,
     },
 }
 
@@ -64,8 +64,8 @@ impl Parse for GpuiFormFieldOption {
             let options = parse_structured_field_options(&content, true)?;
             return Ok(Self::Component {
                 span: key.span,
-                shape,
-                options,
+                shape: Box::new(shape),
+                options: Box::new(options),
             });
         }
 
@@ -85,7 +85,7 @@ impl Parse for GpuiFormFieldOption {
             };
             return Ok(Self::Hidden {
                 span: key.span,
-                options,
+                options: Box::new(options),
             });
         }
 
@@ -232,11 +232,13 @@ impl ParsedValueOptions {
             )),
             (Some(form_type), Some(from_source), Some(into_source)) => {
                 reject_option_form_type_override(&form_type.value.0, form_type.span)?;
-                Ok(RenderedValueIntent::Converted(ConvertedValueIntent {
-                    form_type,
-                    from_source,
-                    into_source,
-                }))
+                Ok(RenderedValueIntent::Converted(Box::new(
+                    ConvertedValueIntent {
+                        form_type,
+                        from_source,
+                        into_source,
+                    },
+                )))
             },
             (Some(form_type), None, _) => Err(syn::Error::new(
                 form_type.span,
@@ -323,7 +325,7 @@ mod tests {
             "crate :: Input"
         );
         assert!(options.default.is_some());
-        assert!(matches!(options.value, RenderedValueIntent::Converted(_)));
+        assert!(matches!(&options.value, RenderedValueIntent::Converted(_)));
     }
 
     #[test]

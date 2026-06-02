@@ -52,13 +52,13 @@ trait HolderStorageStrategy {
         access: TokenStream,
         error_type: &syn::Ident,
     ) -> ValueHolderResult<TokenStream>;
-    fn from_source_storage_tokens(
+    fn source_to_storage_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
         access: TokenStream,
     ) -> ValueHolderResult<TokenStream>;
-    fn into_source_infallible_tokens(
+    fn storage_to_source_infallible_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
@@ -210,7 +210,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         }
     }
 
-    fn from_source_storage_tokens(
+    fn source_to_storage_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
@@ -268,7 +268,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         }
     }
 
-    fn into_source_infallible_tokens(
+    fn storage_to_source_infallible_tokens(
         &self,
         context: &DeriveContext,
         field: &HolderFieldIr,
@@ -685,7 +685,7 @@ fn generate_to_wrapped_field(
     let value =
         field
             .storage()
-            .from_source_storage_tokens(context, field, quote! { from.#field_name })?;
+            .source_to_storage_tokens(context, field, quote! { from.#field_name })?;
     Ok(quote! {
         #field_name: #value
     })
@@ -696,7 +696,7 @@ fn generate_from_wrapped_field(
     field: &HolderFieldIr,
 ) -> ValueHolderResult<TokenStream> {
     let field_name = field.field_name();
-    let value = field.storage().into_source_infallible_tokens(
+    let value = field.storage().storage_to_source_infallible_tokens(
         context,
         field,
         quote! { from.#field_name },

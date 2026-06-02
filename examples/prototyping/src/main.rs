@@ -319,8 +319,8 @@ fn rustfmt_generated_files(paths: &[PathBuf]) {
 }
 
 fn generate_forms(output_dir: &Path) {
-    fs::create_dir_all(&output_dir).expect("Failed to create output directory");
-    for entry in fs::read_dir(&output_dir).expect("Failed to read output directory") {
+    fs::create_dir_all(output_dir).expect("Failed to create output directory");
+    for entry in fs::read_dir(output_dir).expect("Failed to read output directory") {
         let entry = entry.expect("Failed to inspect output entry");
         let path = entry.path();
         if path.extension().is_some_and(|ext| ext == "rs")
