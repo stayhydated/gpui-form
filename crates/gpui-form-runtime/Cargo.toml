@@ -14,8 +14,6 @@ readme = "README.md"
 [dependencies]
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
-gpui = { workspace = true }
-gpui-form-core = { workspace = true }
 
 [lints]
 workspace = true

@@ -46,5 +46,8 @@ gpui-form-component-derive = { workspace = true }
 serde_json = { workspace = true }
 unic-langid = { workspace = true }
 
+[package.metadata.cargo-machete]
+ignored = [ "component-shape" ]
+
 [lints]
 workspace = true
