@@ -11,7 +11,7 @@ from the facade crate. Use this crate directly when you want only the
 - `#[derive(GpuiForm)]`
 
 GPUI component shape derives and helper macros live in
-[`component-shape-gpui`](../../../component-shape/crates/component-shape-gpui).
+[`component-shape-gpui`](https://github.com/stayhydated/component-shape/tree/master/crates/component-shape-gpui).
 
 `#[derive(InfiniteSelect)]` does not live in this crate. It is provided by
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) and by

@@ -1092,6 +1092,7 @@ dependencies = [
 [[package]]
 name = "component-shape"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/component-shape#7c40c8afbbbcc8eefae073a92fd0bb5986f64349"
 dependencies = [
  "heck 0.5.0",
  "syn 2.0.117",
@@ -1101,6 +1102,7 @@ dependencies = [
 [[package]]
 name = "component-shape-codegen"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/component-shape#7c40c8afbbbcc8eefae073a92fd0bb5986f64349"
 dependencies = [
  "component-shape",
  "proc-macro2",
@@ -1111,6 +1113,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/component-shape#7c40c8afbbbcc8eefae073a92fd0bb5986f64349"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1120,6 +1123,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui-macros"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/component-shape#7c40c8afbbbcc8eefae073a92fd0bb5986f64349"
 dependencies = [
  "component-shape",
  "proc-macro-crate 3.5.0",
@@ -2919,7 +2923,7 @@ replace = "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=4bee412118d
 [[package]]
 name = "gpui-component"
 version = "0.5.2"
-source = "git+https://github.com/longbridge/gpui-component?rev=277f220a6196572116a8fd84fba6c36187094cab#277f220a6196572116a8fd84fba6c36187094cab"
+source = "git+https://github.com/longbridge/gpui-component#277f220a6196572116a8fd84fba6c36187094cab"
 dependencies = [
  "aho-corasick",
  "anyhow",
@@ -2963,7 +2967,7 @@ dependencies = [
 [[package]]
 name = "gpui-component-assets"
 version = "0.5.1"
-source = "git+https://github.com/longbridge/gpui-component?rev=277f220a6196572116a8fd84fba6c36187094cab#277f220a6196572116a8fd84fba6c36187094cab"
+source = "git+https://github.com/longbridge/gpui-component#277f220a6196572116a8fd84fba6c36187094cab"
 dependencies = [
  "anyhow",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed)",
@@ -2977,7 +2981,7 @@ dependencies = [
 [[package]]
 name = "gpui-component-macros"
 version = "0.5.1"
-source = "git+https://github.com/longbridge/gpui-component?rev=277f220a6196572116a8fd84fba6c36187094cab#277f220a6196572116a8fd84fba6c36187094cab"
+source = "git+https://github.com/longbridge/gpui-component#277f220a6196572116a8fd84fba6c36187094cab"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2987,6 +2991,7 @@ dependencies = [
 [[package]]
 name = "gpui-es-fluent"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/gpui-es-fluent#53716aa4378ec1d2da8d7c1c41f6d765c3627c24"
 dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
@@ -3173,6 +3178,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook#d5288acb0f5dccf87622ef9e5214a5c836d04e30"
 dependencies = [
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=4bee412118dafea3bbd491cd044d354f16b3d665)",
  "gpui-storybook-core",
@@ -3185,6 +3191,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook#d5288acb0f5dccf87622ef9e5214a5c836d04e30"
 dependencies = [
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=4bee412118dafea3bbd491cd044d354f16b3d665)",
  "gpui-component",
@@ -3193,6 +3200,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook#d5288acb0f5dccf87622ef9e5214a5c836d04e30"
 dependencies = [
  "anyhow",
  "es-fluent",
@@ -3214,6 +3222,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook#d5288acb0f5dccf87622ef9e5214a5c836d04e30"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3224,6 +3233,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook#d5288acb0f5dccf87622ef9e5214a5c836d04e30"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",

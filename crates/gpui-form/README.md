@@ -20,13 +20,13 @@ It is designed for three things:
 | `gpui-form` | `gpui-component` | `gpui` |
 | :---------- | :--------------- | :----- |
 | **git** | | |
-| `branch = "master"` | `branch = "main"` | `rev = "832c17e8192e2e1d472f0751e7cef2af84ded622"` |
+| `branch = "master"` | `branch = "main"` | `rev = "4bee412118dafea3bbd491cd044d354f16b3d665"` |
 
 ## Installation
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "832c17e8192e2e1d472f0751e7cef2af84ded622" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
 
 gpui-form = "*"
