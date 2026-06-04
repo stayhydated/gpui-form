@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod gpui_form_tests {
     use super::super::*;
+    use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
     use crate::derives::gpui_form::koruma;
     use koruma_derive_core::{ParsedDataField, ValidatorAttr};
     use quote::quote;
@@ -8,6 +9,19 @@ mod gpui_form_tests {
 
     fn compact_tokens(tokens: &str) -> String {
         tokens.chars().filter(|c| !c.is_whitespace()).collect()
+    }
+
+    fn parse_field_after_cfg_attr_flattening(
+        derive_input: DeriveInput,
+        index: usize,
+    ) -> syn::Result<ParsedDataField> {
+        let derive_input = flatten_cfg_attr_in_derive_input(derive_input);
+        let syn::Data::Struct(data_struct) = &derive_input.data else {
+            panic!("Expected struct data");
+        };
+        let field = data_struct.fields.iter().nth(index).unwrap();
+
+        koruma_derive_core::parse_field(field, index)
     }
 
     #[test]
@@ -19,34 +33,26 @@ mod gpui_form_tests {
             }
         };
         let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let result = parse_field_after_cfg_attr_flattening(derive_input, 0);
 
-        if let syn::Data::Struct(data_struct) = &derive_input.data {
-            let field = data_struct.fields.iter().next().unwrap();
-            let result = koruma_derive_core::parse_field(field, 0);
-
-            match result {
-                Ok(ParsedDataField::Participating(info)) => {
-                    assert!(
-                        !info.field_validators().is_empty(),
-                        "Should find validators in cfg_attr"
-                    );
-                    assert_eq!(
-                        info.field_validators()[0].validator().name().to_string(),
-                        "SomeValidator",
-                        "Should extract correct validator name"
-                    );
-                },
-                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
-                    panic!(
-                        "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly"
-                    );
-                },
-                Err(e) => {
-                    panic!("parse_field returned Error: {}", e);
-                },
-            }
-        } else {
-            panic!("Expected struct data");
+        match result {
+            Ok(ParsedDataField::Participating(info)) => {
+                assert!(
+                    !info.field_validators().is_empty(),
+                    "Should find validators after cfg_attr flattening"
+                );
+                assert_eq!(
+                    info.field_validators()[0].validator().name().to_string(),
+                    "SomeValidator",
+                    "Should extract correct validator name"
+                );
+            },
+            Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
+                panic!("parse_field returned Skip after gpui-form cfg_attr flattening");
+            },
+            Err(e) => {
+                panic!("parse_field returned Error: {}", e);
+            },
         }
     }
 
@@ -59,26 +65,21 @@ mod gpui_form_tests {
             }
         };
         let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let result = parse_field_after_cfg_attr_flattening(derive_input, 0);
 
-        if let syn::Data::Struct(data_struct) = &derive_input.data {
-            let field = data_struct.fields.iter().next().unwrap();
-            let result = koruma_derive_core::parse_field(field, 0);
-
-            match result {
-                Ok(ParsedDataField::Participating(info)) => {
-                    assert!(info.is_newtype(), "Should detect newtype in cfg_attr");
-                },
-                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
-                    panic!(
-                        "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly for newtype"
-                    );
-                },
-                Err(e) => {
-                    panic!("parse_field returned Error: {}", e);
-                },
-            }
-        } else {
-            panic!("Expected struct data");
+        match result {
+            Ok(ParsedDataField::Participating(info)) => {
+                assert!(
+                    info.is_newtype(),
+                    "Should detect newtype after cfg_attr flattening"
+                );
+            },
+            Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
+                panic!("parse_field returned Skip after gpui-form cfg_attr flattening for newtype");
+            },
+            Err(e) => {
+                panic!("parse_field returned Error: {}", e);
+            },
         }
     }
 
@@ -91,26 +92,21 @@ mod gpui_form_tests {
             }
         };
         let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let result = parse_field_after_cfg_attr_flattening(derive_input, 0);
 
-        if let syn::Data::Struct(data_struct) = &derive_input.data {
-            let field = data_struct.fields.iter().next().unwrap();
-            let result = koruma_derive_core::parse_field(field, 0);
-
-            match result {
-                Ok(ParsedDataField::Participating(info)) => {
-                    assert!(info.is_nested(), "Should detect nested in cfg_attr");
-                },
-                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
-                    panic!(
-                        "parse_field returned Skip - koruma_derive_core may not be handling cfg_attr correctly for nested"
-                    );
-                },
-                Err(e) => {
-                    panic!("parse_field returned Error: {}", e);
-                },
-            }
-        } else {
-            panic!("Expected struct data");
+        match result {
+            Ok(ParsedDataField::Participating(info)) => {
+                assert!(
+                    info.is_nested(),
+                    "Should detect nested after cfg_attr flattening"
+                );
+            },
+            Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
+                panic!("parse_field returned Skip after gpui-form cfg_attr flattening for nested");
+            },
+            Err(e) => {
+                panic!("parse_field returned Error: {}", e);
+            },
         }
     }
 
@@ -131,8 +127,9 @@ mod gpui_form_tests {
         };
 
         let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let flattened_derive_input = flatten_cfg_attr_in_derive_input(derive_input.clone());
 
-        if let syn::Data::Struct(data_struct) = &derive_input.data {
+        if let syn::Data::Struct(data_struct) = &flattened_derive_input.data {
             for (idx, field) in data_struct.fields.iter().enumerate() {
                 let result = koruma_derive_core::parse_field(field, idx);
                 match result {
@@ -203,27 +200,23 @@ mod gpui_form_tests {
         };
 
         let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
+        let result = parse_field_after_cfg_attr_flattening(derive_input.clone(), 0);
 
-        if let syn::Data::Struct(data_struct) = &derive_input.data {
-            let field = data_struct.fields.iter().next().unwrap();
-            let result = koruma_derive_core::parse_field(field, 0);
-
-            match result {
-                Ok(ParsedDataField::Participating(info)) => {
-                    assert!(
-                        info.is_newtype(),
-                        "Should detect newtype validation in nested cfg_attr"
-                    );
-                },
-                Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
-                    panic!(
-                        "koruma_derive_core returned Skip for field with koruma(newtype) - cfg_attr not being handled!"
-                    );
-                },
-                Err(e) => {
-                    panic!("koruma_derive_core returned Error: {}", e);
-                },
-            }
+        match result {
+            Ok(ParsedDataField::Participating(info)) => {
+                assert!(
+                    info.is_newtype(),
+                    "Should detect newtype validation after cfg_attr flattening"
+                );
+            },
+            Ok(ParsedDataField::Unannotated(_)) | Ok(ParsedDataField::Skipped { .. }) => {
+                panic!(
+                    "koruma_derive_core returned Skip for field with koruma(newtype) after gpui-form cfg_attr flattening"
+                );
+            },
+            Err(e) => {
+                panic!("koruma_derive_core returned Error: {}", e);
+            },
         }
 
         let expanded = expansion::expand_gpui_form(
