@@ -119,12 +119,12 @@ form_action-Submit = Envoyer
 ## ItemDescriptionVariants
 
 item_description_variants_label = Description de l'élément
-item_description_variants-index = Index
+item_description_variants-index = Indice
 
 ## ItemLabelVariants
 
 item_label_variants_label = Libellé de l'élément
-item_label_variants-index = Index
+item_label_variants-index = Indice
 
 ## LocationFormDescriptionVariants
 
@@ -164,9 +164,9 @@ prefered_language-French = Français
 
 ## PreferredLanguage
 
-preferred_language-Chinese = Chinese
-preferred_language-English = English
-preferred_language-French = French
+preferred_language-Chinese = Chinois
+preferred_language-English = Anglais
+preferred_language-French = Français
 
 ## QuebecCity
 
@@ -211,38 +211,38 @@ usa_state_label_variants-Texas = Texas
 
 user_description_variants_label = Description de l'utilisateur
 user_description_variants-age = Âge
-user_description_variants-attention_level = Attention Level
+user_description_variants-attention_level = Niveau d'attention
 user_description_variants-balance = Solde
 user_description_variants-birth_date = Date de naissance
-user_description_variants-brand_color = Brand Color
+user_description_variants-brand_color = Couleur de marque
 user_description_variants-country = Pays
 user_description_variants-debt = Dette
 user_description_variants-email = Courriel
 user_description_variants-enable_notifications = Activer les notifications
-user_description_variants-holiday_range = Holiday Range
-user_description_variants-otp_code = Otp Code
+user_description_variants-holiday_range = Période de congés
+user_description_variants-otp_code = Code OTP
 user_description_variants-preferred = Préféré
-user_description_variants-rating = Rating
-user_description_variants-subscribe_newsletter = S'abonner à la newsletter
-user_description_variants-uploaded_files = Uploaded Files
+user_description_variants-rating = Note
+user_description_variants-subscribe_newsletter = S'abonner à l'infolettre
+user_description_variants-uploaded_files = Fichiers téléversés
 user_description_variants-username = Nom d'utilisateur
 
 ## UserLabelVariants
 
 user_label_variants_label = Libellé de l'utilisateur
 user_label_variants-age = Âge
-user_label_variants-attention_level = Attention Level
+user_label_variants-attention_level = Niveau d'attention
 user_label_variants-balance = Solde
 user_label_variants-birth_date = Date de naissance
-user_label_variants-brand_color = Brand Color
+user_label_variants-brand_color = Couleur de marque
 user_label_variants-country = Pays
 user_label_variants-debt = Dette
 user_label_variants-email = Courriel
 user_label_variants-enable_notifications = Activer les notifications
-user_label_variants-holiday_range = Holiday Range
-user_label_variants-otp_code = Otp Code
+user_label_variants-holiday_range = Période de congés
+user_label_variants-otp_code = Code OTP
 user_label_variants-preferred = Préféré
-user_label_variants-rating = Rating
-user_label_variants-subscribe_newsletter = S'abonner à la newsletter
-user_label_variants-uploaded_files = Uploaded Files
+user_label_variants-rating = Note
+user_label_variants-subscribe_newsletter = S'abonner à l'infolettre
+user_label_variants-uploaded_files = Fichiers téléversés
 user_label_variants-username = Nom d'utilisateur

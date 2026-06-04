@@ -31,14 +31,14 @@ availability_zone_label_variants-Primary = 主区域
 deployment_target_description_variants_label = 部署目标
 deployment_target_description_variants-Desktop = 桌面
 deployment_target_description_variants-Docs = 文档
-deployment_target_description_variants-Web = Web
+deployment_target_description_variants-Web = 网页
 
 ## DeploymentTargetLabelVariants
 
 deployment_target_label_variants_label = 部署目标
 deployment_target_label_variants-Desktop = 桌面
 deployment_target_label_variants-Docs = 文档
-deployment_target_label_variants-Web = Web
+deployment_target_label_variants-Web = 网页
 
 ## DesktopPlatformDescriptionVariants
 

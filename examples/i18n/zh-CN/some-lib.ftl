@@ -164,9 +164,9 @@ prefered_language-French = 法语
 
 ## PreferredLanguage
 
-preferred_language-Chinese = Chinese
-preferred_language-English = English
-preferred_language-French = French
+preferred_language-Chinese = 中文
+preferred_language-English = 英语
+preferred_language-French = 法语
 
 ## QuebecCity
 
@@ -211,38 +211,38 @@ usa_state_label_variants-Texas = 德克萨斯
 
 user_description_variants_label = 用户描述
 user_description_variants-age = 年龄
-user_description_variants-attention_level = Attention Level
+user_description_variants-attention_level = 注意力等级
 user_description_variants-balance = 余额
 user_description_variants-birth_date = 出生日期
-user_description_variants-brand_color = Brand Color
+user_description_variants-brand_color = 品牌颜色
 user_description_variants-country = 国家
 user_description_variants-debt = 债务
 user_description_variants-email = 电子邮件
 user_description_variants-enable_notifications = 启用通知
-user_description_variants-holiday_range = Holiday Range
-user_description_variants-otp_code = Otp Code
+user_description_variants-holiday_range = 假期范围
+user_description_variants-otp_code = OTP 代码
 user_description_variants-preferred = 首选
-user_description_variants-rating = Rating
+user_description_variants-rating = 评分
 user_description_variants-subscribe_newsletter = 订阅简报
-user_description_variants-uploaded_files = Uploaded Files
+user_description_variants-uploaded_files = 已上传文件
 user_description_variants-username = 用户名
 
 ## UserLabelVariants
 
 user_label_variants_label = 用户标签
 user_label_variants-age = 年龄
-user_label_variants-attention_level = Attention Level
+user_label_variants-attention_level = 注意力等级
 user_label_variants-balance = 余额
 user_label_variants-birth_date = 出生日期
-user_label_variants-brand_color = Brand Color
+user_label_variants-brand_color = 品牌颜色
 user_label_variants-country = 国家
 user_label_variants-debt = 债务
 user_label_variants-email = 电子邮件
 user_label_variants-enable_notifications = 启用通知
-user_label_variants-holiday_range = Holiday Range
-user_label_variants-otp_code = Otp Code
+user_label_variants-holiday_range = 假期范围
+user_label_variants-otp_code = OTP 代码
 user_label_variants-preferred = 首选
-user_label_variants-rating = Rating
+user_label_variants-rating = 评分
 user_label_variants-subscribe_newsletter = 订阅简报
-user_label_variants-uploaded_files = Uploaded Files
+user_label_variants-uploaded_files = 已上传文件
 user_label_variants-username = 用户名
