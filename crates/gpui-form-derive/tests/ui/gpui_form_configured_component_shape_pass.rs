@@ -19,7 +19,7 @@ component_shape_gpui::component_shape! {
     where
         T: 'static,
     {
-        type State = SelectState<T>;
+        state = SelectState<T>;
         value = T;
     }
 }

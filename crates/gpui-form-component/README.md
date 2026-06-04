@@ -278,7 +278,7 @@ metadata.
 ```rs
 component_shape_gpui::component_shape! {
     pub struct EmailInputShape {
-        type State = gpui_component::input::InputState;
+        state = gpui_component::input::InputState;
         component = gpui_component::input::Input;
         value = String;
         field_suffix = "input";
@@ -324,7 +324,8 @@ Use `value = ...` or `values(...)` to publish the form-side value types a
 shape supports; omit those metadata entries only when you provide manual
 `GpuiComponentShapeFor<Value>` impls. Do not mix value metadata with manual
 `GpuiComponentShapeFor<Value>` impls in the same `component_shape!` block.
-The function-like macro uses semicolons between options.
+The function-like macro uses `state = ...` for the wrapped external state type
+and semicolons between options.
 
 For component-derived shapes that should participate in generated prototyping
 subscriptions, add `value_binding` to `#[gpui_component_shape(...)]` and implement
@@ -351,8 +352,7 @@ non-empty ASCII identifier suffix contract in const evaluation.
 
 Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` for a reusable shape when the component can
 synthesize a missing value. Generated forms then inherit direct `T` holder
-storage from the shape; consuming field attributes do not accept a
-required-value override.
+storage from the shape.
 
 ## Most Users Should Use Instead
 

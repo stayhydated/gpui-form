@@ -10,7 +10,7 @@ impl InputState {
 
 component_shape_gpui::component_shape! {
     struct InputShape {
-        type State = InputState;
+        state = InputState;
         value = String;
     }
 }

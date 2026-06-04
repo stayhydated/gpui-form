@@ -1,5 +1,0 @@
-error: unknown gpui_form field option `field_suffix`; component-backed fields must use `component(MyShape)` where `MyShape` is declared with `component_shape_gpui::component_shape!` or `#[derive(component_shape_gpui::GpuiComponentShape)]`
- --> tests/ui/gpui_form_malformed_attribute_field_suffix.rs:5:42
-  |
-5 |     #[gpui_form(component(crate::Input), field_suffix = "bad-suffix")]
-  |                                          ^^^^^^^^^^^^

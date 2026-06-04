@@ -102,7 +102,7 @@ component_shape! {
     where
         T: FromStr + ToString + 'static,
     {
-        type State = NumberInputState;
+        state = NumberInputState;
         new = |window, cx| NumberInputState::new::<T>(window, cx);
         component = gpui_form_collection::number_input::NumberInputField;
         value = T;

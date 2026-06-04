@@ -13,7 +13,7 @@ impl State {
 
 component_shape_gpui::component_shape! {
     struct DirectStorageShape {
-        type State = State;
+        state = State;
         value = NonDefault;
     }
 }

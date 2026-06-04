@@ -18,7 +18,7 @@ component_shape! {
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
         D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
     {
-        type State = SelectState<D>;
+        state = SelectState<D>;
         new = Self::new_default;
         component = gpui_component::select::Select<_>;
         value = T;

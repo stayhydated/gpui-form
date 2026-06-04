@@ -66,7 +66,7 @@ impl RenderOnce for CheckboxField {
 component_shape! {
     /// Form component for a value-bound `gpui_component::checkbox::Checkbox`.
     pub struct Checkbox {
-        type State = CheckboxState;
+        state = CheckboxState;
         component = gpui_form_collection::checkbox::CheckboxField;
         value = bool;
         field_suffix = "checkbox";

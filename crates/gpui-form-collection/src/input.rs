@@ -14,7 +14,7 @@ component_shape! {
     where
         T: FromStr + ToString + 'static,
     {
-        type State = InputState;
+        state = InputState;
         new = |window, cx| InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
         component = gpui_component::input::Input;

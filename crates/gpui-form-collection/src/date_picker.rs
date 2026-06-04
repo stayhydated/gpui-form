@@ -10,7 +10,7 @@ use gpui_component::{
 component_shape! {
     /// Form component for a `gpui_component::date_picker::DatePicker`.
     pub struct DatePicker {
-        type State = DatePickerState;
+        state = DatePickerState;
         component = gpui_component::date_picker::DatePicker;
         value = NaiveDate;
         field_suffix = "date_picker";
@@ -44,7 +44,7 @@ impl_form_component_shape!(DatePicker, gpui_form_runtime::shape::RequiredValueSt
 component_shape! {
     /// Form component for a range-mode `gpui_component::date_picker::DatePicker`.
     pub struct DateRangePicker {
-        type State = DatePickerState;
+        state = DatePickerState;
         new = DatePickerState::range;
         component = gpui_component::date_picker::DatePicker;
         value = (NaiveDate, NaiveDate);

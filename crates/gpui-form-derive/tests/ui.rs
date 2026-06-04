@@ -4,7 +4,12 @@ fn gpui_form_reports_invalid_field_attributes() {
     tests.compile_fail("tests/ui/gpui_form_direct_storage_*.rs");
     tests.compile_fail("tests/ui/gpui_form_duplicate_*.rs");
     tests.compile_fail("tests/ui/gpui_form_malformed_koruma_*.rs");
-    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_*.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_bare_lowercase.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_conversion_closure.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_name_value.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_unknown_name_value.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_value_options.rs");
+    tests.compile_fail("tests/ui/gpui_form_malformed_attribute_word.rs");
     tests.compile_fail("tests/ui/gpui_form_missing_*.rs");
     tests.compile_fail("tests/ui/gpui_form_skip_*.rs");
     tests.compile_fail("tests/ui/gpui_form_value_type_option.rs");

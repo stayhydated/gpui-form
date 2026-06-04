@@ -30,7 +30,7 @@ component_shape! {
     where
         T: FromStr + ToString + 'static,
     {
-        type State = OtpState;
+        state = OtpState;
         new = |window, cx| OtpState::new(6, window, cx);
         component = gpui_form_collection::otp_input::OtpInputField;
         value = T;

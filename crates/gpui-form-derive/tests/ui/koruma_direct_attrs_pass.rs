@@ -17,7 +17,7 @@ impl InputState {
 
 component_shape_gpui::component_shape! {
     struct NumericShape {
-        type State = NumericState;
+        state = NumericState;
         value = u32;
     }
 }
@@ -28,7 +28,7 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for NumericShape {
 
 component_shape_gpui::component_shape! {
     struct InputShape {
-        type State = InputState;
+        state = InputState;
         value = String;
     }
 }

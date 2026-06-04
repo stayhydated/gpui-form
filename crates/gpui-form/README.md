@@ -128,9 +128,9 @@ as `Select::<_>::searchable(true)`,
 `GpuiComponentShapeBuilder` for the same base shape. The shape type must be
 declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
-`GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`. Put
-render component metadata and prototyping suffix metadata on the shape
-declaration, not on the `#[gpui_form(...)]` field attribute.
+`GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`.
+Shape declarations own render component metadata and prototyping suffix
+metadata.
 
 Component shapes own the default value-storage policy for non-optional fields.
 Shapes that can safely synthesize a default value, such as the built-in inputs,
@@ -388,9 +388,9 @@ pub struct ContactForm {
 `component_shape!` creates a local zero-sized shape type, so downstream crates
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
-It uses `state = ...` or `type State = ...` for the wrapped external state type,
-plus `new`, `component`, `value = ...`, `values(...)`, `value_binding`, and
-`field_suffix` metadata. If `new` is omitted, the macro calls
+It uses `state = ...` for the wrapped external state type, plus `new`,
+`component`, `value = ...`, `values(...)`, `value_binding`, and `field_suffix`
+metadata. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
 a non-empty ASCII identifier suffix.

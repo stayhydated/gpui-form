@@ -17,7 +17,7 @@ impl State {
 
 component_shape_gpui::component_shape! {
     struct RequiredShape {
-        type State = State;
+        state = State;
         values(NonDefault, String);
     }
 }
@@ -28,7 +28,7 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for RequiredShape {
 
 component_shape_gpui::component_shape! {
     struct AllowShape {
-        type State = State;
+        state = State;
         value = String;
     }
 }

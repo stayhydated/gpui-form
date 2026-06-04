@@ -4861,7 +4861,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
- "syn-cfg-attr",
 ]
 
 [[package]]
@@ -4872,7 +4871,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
- "syn-cfg-attr",
 ]
 
 [[package]]

@@ -72,8 +72,7 @@ impls.
 Custom `my::Shape` types must be declared with
 `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`. Put render component
-metadata and `field_suffix = "..."` metadata on the shape declaration, not on
-`#[gpui_form(...)]`, and implement
+metadata and `field_suffix = "..."` metadata on the shape declaration, and implement
 `gpui_form_runtime::shape::GpuiFormComponentShapePolicy` for form holder
 storage.
 
@@ -115,8 +114,8 @@ Common struct attributes:
 - Use `gpui_form_collection::checkbox::Checkbox` or
   `gpui_form_collection::switch::Switch` for `bool` fields.
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
-  choice; derive `SelectItem`. Use a custom `GpuiComponentShape` wrapper when
-  the select should expose search or other component-specific behavior.
+  choice; derive `SelectItem`. Use a configured shape expression such as
+  `Select::<_>::searchable(true)` when the field needs custom construction.
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
   `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
@@ -147,8 +146,7 @@ Common struct attributes:
   `GpuiComponentShape::new`.
 - Component shapes own the default value-storage policy for non-optional
   fields. Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage`
-  when the reusable shape can synthesize default values; field attributes do
-  not accept storage-policy metadata. Required shape-backed values are reported
+  when the reusable shape can synthesize default values. Required shape-backed values are reported
   by generated `validate()` and by fallible holder-to-model conversion, while
   default-synthesizing policies expose `holder.into_original()`.
 - Holders for forms with skipped source fields expose

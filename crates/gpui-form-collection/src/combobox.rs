@@ -19,7 +19,7 @@ component_shape! {
         T: Clone + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
         D: SearchableListDelegate<Item = T> + From<Vec<T>> + 'static,
     {
-        type State = ComboboxState<D>;
+        state = ComboboxState<D>;
         new = Self::new_default;
         component = gpui_component::combobox::Combobox<_>;
         value = Vec<T>;

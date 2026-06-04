@@ -10,7 +10,7 @@ impl State {
 
 component_shape_gpui::component_shape! {
     struct StringShape {
-        type State = State;
+        state = State;
         value = String;
     }
 }

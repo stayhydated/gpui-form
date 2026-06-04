@@ -173,16 +173,15 @@ where
 }
 ```
 
-The macro accepts `state = ...` or `type State = ...`, plus `new`, `component`,
-`value = ...`, `values(...)`, `value_binding`, and `field_suffix` metadata.
-When no explicit value metadata is present, a nested
+The macro accepts `state = ...`, plus `new`, `component`, `value = ...`,
+`values(...)`, `value_binding`, and `field_suffix` metadata. When no explicit
+value metadata is present, a nested
 `GpuiComponentValueBinding<T>` impl also publishes `T` and shape-level
 value-binding metadata, so separate `value = T;` and `value_binding;` entries
 are not needed for that value-bound path. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`. Use
 `GpuiFormComponentShapePolicy` on reusable wrappers to select
-`DirectValueStorage` or `RequiredValueStorage`; consuming field attributes do
-not accept storage-policy metadata.
+`DirectValueStorage` or `RequiredValueStorage`.
 
 ## Field-Level Builder Configuration
 

@@ -66,7 +66,7 @@ impl RenderOnce for SwitchField {
 component_shape! {
     /// Form component for a value-bound `gpui_component::switch::Switch`.
     pub struct Switch {
-        type State = SwitchState;
+        state = SwitchState;
         component = gpui_form_collection::switch::SwitchField;
         value = bool;
         field_suffix = "switch";

@@ -6,7 +6,7 @@ use gpui_component::slider::{SliderEvent, SliderState, SliderValue};
 component_shape! {
     /// Form component for a `gpui_component::slider::Slider` backed by `SliderState`.
     pub struct Slider {
-        type State = SliderState;
+        state = SliderState;
         new = |_window, _cx| SliderState::new();
         component = gpui_component::slider::Slider;
         values(SliderValue, f32);

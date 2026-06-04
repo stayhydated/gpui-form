@@ -848,59 +848,6 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_component_shape_rejects_field_level_field_suffix() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component(crate::state::TagsState), field_suffix = "tags")]
-                labels: Vec<String>,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("unknowngpui_formfieldoption`field_suffix`"),
-            "field-level field_suffix should be rejected: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_associated_function_metadata_syntax() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(crate::state::TagsState::field_suffix("tags"))]
-                labels: Vec<String>,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("component(MyShape)")
-                || compact.contains("expectedgpui_formfieldoption"),
-            "associated-function metadata syntax should be rejected: {compact}"
-        );
-    }
-
-    #[test]
     fn test_component_shape_generates_fields() {
         let tokens = quote! {
             #[derive(GpuiForm)]
@@ -945,32 +892,6 @@ mod gpui_form_tests {
             compact.contains("PROTOTYPING.field_suffix")
                 && compact.contains("ComponentSuffix::new(\"input\")"),
             "component inventory metadata should inherit shape prototyping metadata with a generated fallback"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_accepts_shorthand_syntax() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component(crate::shapes::Switch))]
-                enabled: bool,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("pubenabled:"),
-            "shorthand component syntax should generate a value-holder field: {compact}"
         );
     }
 
@@ -1121,32 +1042,6 @@ mod gpui_form_tests {
     }
 
     #[test]
-    fn test_component_shape_rejects_field_storage_policy_override() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component(crate::shapes::Switch), storage_policy = direct)]
-                enabled: bool,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("unknowngpui_formfieldoption`storage_policy`"),
-            "field-level storage policy override should be rejected: {compact}"
-        );
-    }
-
-    #[test]
     fn test_component_shape_infers_field_type_generic() {
         let tokens = quote! {
             #[derive(GpuiForm)]
@@ -1217,90 +1112,6 @@ mod gpui_form_tests {
             compact.contains("PROTOTYPING.field_suffix")
                 && compact.contains("ComponentSuffix::new(\"date_picker\")"),
             "inventory metadata should use the resolved generated suffix: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_component_specific_metadata_methods() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(
-                    component(crate::shapes::Select::<_>),
-                    searchable = true
-                )]
-                country: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("unknowngpui_formfieldoption`searchable`"),
-            "component-specific methods should fail in gpui_form attributes: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_unknown_infinite_select_helper() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(
-                    component(crate::shapes::InfiniteSelect::<_>),
-                    searchable_with_max_depth = 3
-                )]
-                location: crate::types::Country,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("unknowngpui_formfieldoption`searchable_with_max_depth`"),
-            "unsupported infinite-select helper should fail: {compact}"
-        );
-    }
-
-    #[test]
-    fn test_component_shape_rejects_invalid_field_suffix() {
-        let tokens = quote! {
-            #[derive(GpuiForm)]
-            struct TestForm {
-                #[gpui_form(component(crate::Input), field_suffix = "input-field")]
-                name: String,
-            }
-        };
-
-        let derive_input: DeriveInput = syn::parse2(tokens).unwrap();
-        let expanded = expansion::expand_gpui_form(
-            derive_input,
-            structs::GpuiFormOptions {
-                generate_shape: true,
-            },
-        );
-
-        let compact = compact_tokens(&expanded.to_string());
-
-        assert!(
-            compact.contains("unknowngpui_formfieldoption`field_suffix`"),
-            "field-level field_suffix should be rejected before value parsing: {compact}"
         );
     }
 

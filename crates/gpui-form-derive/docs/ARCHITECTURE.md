@@ -59,10 +59,8 @@ that crate's `derive` feature is enabled.
    `#[gpui_form(component(my::Shape::configured(...)))]`; arbitrary Rust
    expressions are otherwise only parsed for intent-scoped `default`,
    `value(from_source = ...)`, and `value(into_source = ...)`. The parser
-   rejects duplicate component expressions before codegen and rejects
-   field-level component metadata such as
-   `component = ...` or `field_suffix = ...`; those belong on the shape
-   declaration.
+   rejects duplicate component expressions before codegen. Shape declarations
+   own component metadata.
 1. Parse Koruma field metadata through `koruma-derive-core`.
 1. For each component field, delegate component-specific modeling to
    `gpui-form-codegen`, which resolves the component shape into a planned

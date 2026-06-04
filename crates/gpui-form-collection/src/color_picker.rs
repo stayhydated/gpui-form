@@ -6,7 +6,7 @@ use gpui_component::color_picker::{ColorPickerEvent, ColorPickerState};
 component_shape! {
     /// Form component for a `gpui_component::color_picker::ColorPicker` backed by `ColorPickerState`.
     pub struct ColorPicker {
-        type State = ColorPickerState;
+        state = ColorPickerState;
         component = gpui_component::color_picker::ColorPicker;
         value = Hsla;
         field_suffix = "color_picker";
