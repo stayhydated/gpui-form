@@ -42,7 +42,7 @@ es-fluent = "0.16"
 es-fluent-build = "0.16"
 es-fluent-lang = "0.16"
 es-fluent-manager-embedded = "0.16"
-gpui = { git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
 gpui-form = { path = "crates/gpui-form", version = "0.5.1" }
@@ -64,7 +64,7 @@ gpui_platform = { features = [
   "x11",
   "wayland",
   "runtime_shaders",
-], git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
+], git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 heck = "0.5.0"
 icu_calendar = "2.2.0"
 icu_datetime = "2.2.0"
@@ -95,7 +95,7 @@ unic-langid = "0.9"
 unicode-segmentation = "1.12"
 
 [replace]
-"https://github.com/zed-industries/zed#gpui@0.2.2" = { git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
+"https://github.com/zed-industries/zed#gpui@0.2.2" = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 
 [profile.dev]
 codegen-units = 16
