@@ -27,6 +27,12 @@ fn gpui_form_accepts_required_shape_non_default_values() {
 }
 
 #[test]
+fn gpui_form_generated_assertions_are_lint_clean() {
+    let tests = trybuild::TestCases::new();
+    tests.pass("tests/ui/gpui_form_lint_clean_pass.rs");
+}
+
+#[test]
 fn gpui_form_accepts_value_override_passes() {
     let tests = trybuild::TestCases::new();
     tests.pass("tests/ui/gpui_form_optional_value_override_pass.rs");

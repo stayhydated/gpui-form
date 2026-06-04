@@ -4,6 +4,7 @@ use gpui_form_schema::{registry::GpuiFormShape, resolved::ResolvedField};
 use heck::ToSnakeCase as _;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use syn::visit_mut::VisitMut as _;
 
 use crate::error::{PrototypingError, PrototypingResult};
 use crate::imports::ImportItem;
@@ -12,6 +13,56 @@ static SHAPE_GENERATOR: shape::ShapeCodeGenerator = shape::ShapeCodeGenerator;
 
 pub fn field_generator() -> &'static dyn FieldCodeGenerator {
     &SHAPE_GENERATOR
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct FieldCodegenOptions<'a> {
+    pub path_remapper: Option<&'a dyn Fn(&syn::Path) -> Option<syn::Path>>,
+    pub validation_message_renderer: Option<&'a dyn Fn(TokenStream) -> TokenStream>,
+}
+
+impl FieldCodegenOptions<'_> {
+    pub fn remap_path(&self, path: &syn::Path) -> syn::Path {
+        self.path_remapper
+            .and_then(|remapper| remapper(path))
+            .unwrap_or_else(|| path.clone())
+    }
+
+    pub fn render_validation_message(&self, value_tokens: TokenStream) -> TokenStream {
+        self.validation_message_renderer
+            .map(|renderer| renderer(value_tokens.clone()))
+            .unwrap_or_else(|| default_validation_message_tokens(value_tokens))
+    }
+
+    pub fn remap_type(&self, ty: &syn::Type) -> syn::Type {
+        let mut ty = ty.clone();
+        PathRemapVisitor { options: self }.visit_type_mut(&mut ty);
+        ty
+    }
+
+    pub fn remap_expr(&self, expr: &syn::Expr) -> syn::Expr {
+        let mut expr = expr.clone();
+        PathRemapVisitor { options: self }.visit_expr_mut(&mut expr);
+        expr
+    }
+}
+
+struct PathRemapVisitor<'a, 'b> {
+    options: &'a FieldCodegenOptions<'b>,
+}
+
+impl syn::visit_mut::VisitMut for PathRemapVisitor<'_, '_> {
+    fn visit_path_mut(&mut self, path: &mut syn::Path) {
+        if let Some(remapped) = self
+            .options
+            .path_remapper
+            .and_then(|remapper| remapper(path))
+        {
+            *path = remapped;
+        } else {
+            syn::visit_mut::visit_path_mut(self, path);
+        }
+    }
 }
 
 #[derive(Default)]
@@ -189,18 +240,21 @@ pub trait FieldCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
+        options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<TokenStream>;
 
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
+        options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<GeneratedSubscription>;
 
     fn generate_post_subscription_initialization(
         &self,
         _field: &ResolvedField<'_>,
         _component: &GpuiFormShape,
+        _options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<TokenStream> {
         Ok(TokenStream::new())
     }
@@ -275,8 +329,9 @@ pub fn render_standard_field(
     field: &ResolvedField<'_>,
     component: &GpuiFormShape,
     child_tokens: TokenStream,
+    options: &FieldCodegenOptions<'_>,
 ) -> TokenStream {
-    let description_fn_tokens = generate_description_fn_tokens(field, component);
+    let description_fn_tokens = generate_description_fn_tokens(field, component, options);
     let label_tokens = generate_label_tokens(field, component);
 
     quote! {
@@ -286,6 +341,21 @@ pub fn render_standard_field(
                 #description_fn_tokens
                 .child(#child_tokens)
         )
+    }
+}
+
+fn default_validation_message_tokens(value_tokens: TokenStream) -> TokenStream {
+    #[cfg(feature = "fluent")]
+    {
+        quote! {
+            gpui_es_fluent::localize_message(cx, &#value_tokens)
+        }
+    }
+    #[cfg(not(feature = "fluent"))]
+    {
+        quote! {
+            ::std::string::ToString::to_string(&#value_tokens)
+        }
     }
 }
 
@@ -316,6 +386,7 @@ pub fn generate_label_tokens(
 pub fn generate_description_fn_tokens(
     field: &ResolvedField<'_>,
     component: &GpuiFormShape,
+    options: &FieldCodegenOptions<'_>,
 ) -> proc_macro2::TokenStream {
     let field_name_ident = field.field_ident();
 
@@ -338,12 +409,7 @@ pub fn generate_description_fn_tokens(
     let field_has_validations = !field.validation_rules().is_empty() && component.has_koruma();
     let uses_optional_inner_validation_errors = field.uses_optional_inner_validation_errors();
     let error_tokens = if field_has_validations {
-        #[cfg(feature = "fluent")]
-        let conversion_tokens = quote! {
-            gpui_es_fluent::localize_message(cx, &v)
-        };
-        #[cfg(not(feature = "fluent"))]
-        let conversion_tokens = quote! { v.as_str().to_string() };
+        let conversion_tokens = options.render_validation_message(quote! { v });
 
         if uses_optional_inner_validation_errors {
             quote! {
@@ -423,7 +489,7 @@ pub fn generate_description_fn_tokens(
 
 #[cfg(test)]
 mod tests {
-    use super::{ResolvedField, generate_description_fn_tokens};
+    use super::{FieldCodegenOptions, ResolvedField, generate_description_fn_tokens};
     use gpui_form_schema::registry::{
         FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape, RustPath, RustType,
         ValidationRuleId,
@@ -440,7 +506,7 @@ mod tests {
 
     #[cfg(not(feature = "fluent"))]
     fn validation_message_conversion() -> &'static str {
-        "v.as_str().to_string()"
+        "::std::string::ToString::to_string(&v)"
     }
 
     const fn hidden_field_with_validations(
@@ -474,7 +540,9 @@ mod tests {
         );
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
-        let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
+        let options = FieldCodegenOptions::default();
+        let compact =
+            compact(&generate_description_fn_tokens(&field, &SHAPE, &options).to_string());
 
         assert!(
             compact.contains(&format!(
@@ -506,7 +574,9 @@ mod tests {
         );
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
-        let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
+        let options = FieldCodegenOptions::default();
+        let compact =
+            compact(&generate_description_fn_tokens(&field, &SHAPE, &options).to_string());
 
         assert!(
             compact.contains(&format!(
@@ -534,7 +604,9 @@ mod tests {
         );
 
         let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
-        let compact = compact(&generate_description_fn_tokens(&field, &SHAPE).to_string());
+        let options = FieldCodegenOptions::default();
+        let compact =
+            compact(&generate_description_fn_tokens(&field, &SHAPE, &options).to_string());
 
         assert!(
             compact.contains(&format!(
@@ -542,6 +614,40 @@ mod tests {
                 validation_message_conversion(),
             )),
             "optional nested errors should map/filter the inner errors before rendering: {compact}"
+        );
+    }
+
+    #[test]
+    fn description_uses_custom_validation_message_renderer() {
+        const VALIDATIONS: &[ValidationRuleId] = &[ValidationRuleId::Newtype];
+        const FIELDS: [FieldVariant; 1] = [hidden_field_with_validations(
+            "index",
+            "Age",
+            FieldValuePresence::RequiresValue,
+            VALIDATIONS,
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("demo"),
+            true,
+        );
+
+        let field = ResolvedField::new(&FIELDS[0]).expect("field metadata should parse");
+        let options = FieldCodegenOptions {
+            validation_message_renderer: Some(&|value| {
+                quote::quote! { crate::i18n::localize_validation_debug(&#value) }
+            }),
+            ..FieldCodegenOptions::default()
+        };
+        let compact =
+            compact(&generate_description_fn_tokens(&field, &SHAPE, &options).to_string());
+
+        assert!(
+            compact.contains(
+                "leterrors=e.index().all().map(|v|crate::i18n::localize_validation_debug(&v)).collect::<Vec<_>>();"
+            ),
+            "custom validation renderers should control validation message formatting: {compact}"
         );
     }
 }

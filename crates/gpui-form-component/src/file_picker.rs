@@ -93,11 +93,66 @@ pub enum FilePickerEvent {
     Error(SharedString),
 }
 
+/// Render and native-dialog options for [`FilePicker`].
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "component-shape", derive(bon::Builder))]
+pub struct FilePickerOptions {
+    #[cfg_attr(feature = "component-shape", builder(default))]
+    mode: FilePickerMode,
+    #[cfg_attr(feature = "component-shape", builder(default))]
+    multiple: bool,
+    prompt: Option<SharedString>,
+    placeholder: Option<SharedString>,
+    browse_label: Option<SharedString>,
+    #[cfg_attr(feature = "component-shape", builder(default))]
+    cleanable: bool,
+    #[cfg_attr(feature = "component-shape", builder(default = true))]
+    appearance: bool,
+    #[cfg_attr(feature = "component-shape", builder(default))]
+    disabled: bool,
+    #[cfg_attr(feature = "component-shape", builder(default))]
+    size: Size,
+}
+
+impl Default for FilePickerOptions {
+    fn default() -> Self {
+        Self {
+            mode: FilePickerMode::default(),
+            multiple: false,
+            prompt: None,
+            placeholder: None,
+            browse_label: None,
+            cleanable: false,
+            appearance: true,
+            disabled: false,
+            size: Size::default(),
+        }
+    }
+}
+
+impl FilePickerOptions {
+    /// Create file-picker options with default file-only selection.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Returns the selected path mode.
+    pub fn mode(&self) -> FilePickerMode {
+        self.mode
+    }
+
+    /// Returns whether the native prompt allows multiple selected paths.
+    pub fn multiple(&self) -> bool {
+        self.multiple
+    }
+}
+
 /// State for a native file picker control.
 pub struct FilePickerState {
     focus_handle: FocusHandle,
     paths: Vec<PathBuf>,
     last_error: Option<SharedString>,
+    options: FilePickerOptions,
 }
 
 #[cfg(feature = "component-shape")]
@@ -132,10 +187,16 @@ impl EventEmitter<FilePickerEvent> for FilePickerState {}
 impl FilePickerState {
     /// Create an empty file-picker state.
     pub fn new(_: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self::new_with_options(FilePickerOptions::default(), cx)
+    }
+
+    /// Create an empty file-picker state with configured render/dialog options.
+    pub fn new_with_options(options: FilePickerOptions, cx: &mut Context<Self>) -> Self {
         Self {
             focus_handle: cx.focus_handle(),
             paths: Vec::new(),
             last_error: None,
+            options,
         }
     }
 
@@ -157,6 +218,11 @@ impl FilePickerState {
     /// Returns the latest platform-dialog error, if one occurred.
     pub fn last_error(&self) -> Option<&SharedString> {
         self.last_error.as_ref()
+    }
+
+    /// Returns the configured render/dialog options for this picker.
+    pub fn options(&self) -> &FilePickerOptions {
+        &self.options
     }
 
     /// Programmatically replace the current selection with one path.
@@ -257,15 +323,15 @@ pub struct FilePicker {
     id: ElementId,
     style: StyleRefinement,
     state: Entity<FilePickerState>,
-    mode: FilePickerMode,
-    multiple: bool,
+    mode: Option<FilePickerMode>,
+    multiple: Option<bool>,
     prompt: Option<SharedString>,
     placeholder: Option<SharedString>,
     browse_label: Option<SharedString>,
-    cleanable: bool,
-    appearance: bool,
-    disabled: bool,
-    size: Size,
+    cleanable: Option<bool>,
+    appearance: Option<bool>,
+    disabled: Option<bool>,
+    size: Option<Size>,
 }
 
 #[cfg(feature = "component-shape")]
@@ -275,7 +341,7 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for FilePicker {
 
 impl Sizable for FilePicker {
     fn with_size(mut self, size: impl Into<Size>) -> Self {
-        self.size = size.into();
+        self.size = Some(size.into());
         self
     }
 }
@@ -294,57 +360,63 @@ impl Styled for FilePicker {
 
 impl Disableable for FilePicker {
     fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+        self.disabled = Some(disabled);
         self
     }
 }
 
 impl FilePicker {
+    /// Use configured file-picker options as a component-shape builder.
+    #[cfg(feature = "component-shape")]
+    pub fn from(options: FilePickerOptions) -> FilePickerOptions {
+        options
+    }
+
     /// Create a file-only picker with the given state.
     pub fn new(state: &Entity<FilePickerState>) -> Self {
         Self {
             id: ("file-picker", state.entity_id()).into(),
             state: state.clone(),
-            mode: FilePickerMode::default(),
-            multiple: false,
+            mode: None,
+            multiple: None,
             prompt: None,
             placeholder: None,
             browse_label: None,
-            cleanable: false,
-            appearance: true,
-            disabled: false,
-            size: Size::default(),
+            cleanable: None,
+            appearance: None,
+            disabled: None,
+            size: None,
             style: StyleRefinement::default(),
         }
     }
 
     /// Select files only.
     pub fn files(mut self) -> Self {
-        self.mode = FilePickerMode::File;
+        self.mode = Some(FilePickerMode::File);
         self
     }
 
     /// Select directories only.
     pub fn directories(mut self) -> Self {
-        self.mode = FilePickerMode::Directory;
+        self.mode = Some(FilePickerMode::Directory);
         self
     }
 
     /// Select either files or directories when the platform supports it.
     pub fn files_or_directories(mut self) -> Self {
-        self.mode = FilePickerMode::FileOrDirectory;
+        self.mode = Some(FilePickerMode::FileOrDirectory);
         self
     }
 
     /// Set the picker mode.
     pub fn mode(mut self, mode: FilePickerMode) -> Self {
-        self.mode = mode;
+        self.mode = Some(mode);
         self
     }
 
     /// Allow multiple selected paths.
     pub fn multiple(mut self, multiple: bool) -> Self {
-        self.multiple = multiple;
+        self.multiple = Some(multiple);
         self
     }
 
@@ -368,14 +440,21 @@ impl FilePicker {
 
     /// Show a clear button when paths are selected.
     pub fn cleanable(mut self, cleanable: bool) -> Self {
-        self.cleanable = cleanable;
+        self.cleanable = Some(cleanable);
         self
     }
 
     /// Set whether to render the picker with the default bordered input style.
     pub fn appearance(mut self, appearance: bool) -> Self {
-        self.appearance = appearance;
+        self.appearance = Some(appearance);
         self
+    }
+}
+
+#[cfg(feature = "component-shape")]
+impl component_shape_gpui::GpuiComponentShapeBuilder<FilePicker> for FilePickerOptions {
+    fn build(self, _window: &mut Window, cx: &mut Context<'_, FilePickerState>) -> FilePickerState {
+        FilePickerState::new_with_options(self, cx)
     }
 }
 
@@ -386,21 +465,23 @@ impl RenderOnce for FilePicker {
         let state = self.state.read(cx);
         let paths = state.paths.clone();
         let last_error = state.last_error.clone();
+        let options = state.options.clone();
+        let mode = self.mode.unwrap_or(options.mode);
+        let multiple = self.multiple.unwrap_or(options.multiple);
+        let prompt = self.prompt.clone().or(options.prompt.clone());
+        let placeholder = self.placeholder.clone().or(options.placeholder.clone());
+        let browse_label = self.browse_label.clone().or(options.browse_label.clone());
+        let cleanable = self.cleanable.unwrap_or(options.cleanable);
+        let appearance = self.appearance.unwrap_or(options.appearance);
+        let disabled = self.disabled.unwrap_or(options.disabled);
+        let size = self.size.unwrap_or(options.size);
         let has_paths = !paths.is_empty();
-        let show_clean = self.cleanable && has_paths;
-        let placeholder = self
-            .placeholder
-            .clone()
-            .unwrap_or_else(|| self.mode.default_placeholder());
+        let show_clean = cleanable && has_paths;
+        let placeholder = placeholder.unwrap_or_else(|| mode.default_placeholder());
         let display_title = display_paths(&paths, placeholder);
-        let prompt = self
-            .prompt
-            .clone()
-            .or_else(|| Some(self.mode.default_prompt()));
-        let browse_label = self
-            .browse_label
-            .clone()
-            .unwrap_or_else(|| FilePickerText::Browse.default_text().into());
+        let prompt = prompt.or_else(|| Some(mode.default_prompt()));
+        let browse_label =
+            browse_label.unwrap_or_else(|| FilePickerText::Browse.default_text().into());
         let text_state = self.state.clone();
         let text_prompt = prompt.clone();
         let browse_state = self.state.clone();
@@ -411,9 +492,9 @@ impl RenderOnce for FilePicker {
             .track_focus(&self.focus_handle(cx).tab_stop(true))
             .flex_none()
             .w_full()
-            .input_text_size(self.size)
+            .input_text_size(size)
             .refine_style(&self.style)
-            .when(self.disabled, |this| this.opacity(0.5))
+            .when(disabled, |this| this.opacity(0.5))
             .child(
                 div()
                     .id("file-picker-input")
@@ -421,7 +502,7 @@ impl RenderOnce for FilePicker {
                     .items_center()
                     .justify_between()
                     .gap_2()
-                    .when(self.appearance, |this| {
+                    .when(appearance, |this| {
                         this.bg(cx.theme().background)
                             .text_color(cx.theme().foreground)
                             .border_1()
@@ -430,8 +511,8 @@ impl RenderOnce for FilePicker {
                             .when(cx.theme().shadow, |this| this.shadow_xs())
                             .when(is_focused, |this| this.focused_border(cx))
                     })
-                    .input_text_size(self.size)
-                    .input_size(self.size)
+                    .input_text_size(size)
+                    .input_size(size)
                     .overflow_hidden()
                     .child(
                         h_flex()
@@ -440,13 +521,13 @@ impl RenderOnce for FilePicker {
                             .items_center()
                             .gap_2()
                             .overflow_hidden()
-                            .when(!self.disabled, |this| this.cursor_pointer())
-                            .when(!self.disabled, |this| {
+                            .when(!disabled, |this| this.cursor_pointer())
+                            .when(!disabled, |this| {
                                 this.on_click(move |_, window, cx| {
                                     prompt_for_selection(
                                         text_state.clone(),
-                                        self.mode,
-                                        self.multiple,
+                                        mode,
+                                        multiple,
                                         text_prompt.clone(),
                                         window,
                                         cx,
@@ -454,7 +535,7 @@ impl RenderOnce for FilePicker {
                                 })
                             })
                             .child(
-                                Icon::new(self.mode.icon_name())
+                                Icon::new(mode.icon_name())
                                     .xsmall()
                                     .text_color(cx.theme().muted_foreground),
                             )
@@ -468,7 +549,7 @@ impl RenderOnce for FilePicker {
                                     .child(display_title),
                             ),
                     )
-                    .when(!self.disabled && show_clean, |this| {
+                    .when(!disabled && show_clean, |this| {
                         this.child(
                             Button::new(("clear-file-picker", entity_id))
                                 .small()
@@ -484,16 +565,16 @@ impl RenderOnce for FilePicker {
                     })
                     .child(
                         Button::new(("browse-file-picker", entity_id))
-                            .with_size(self.size)
+                            .with_size(size)
                             .secondary()
-                            .icon(self.mode.icon_name())
+                            .icon(mode.icon_name())
                             .label(browse_label)
-                            .disabled(self.disabled)
+                            .disabled(disabled)
                             .on_click(move |_, window, cx| {
                                 prompt_for_selection(
                                     browse_state.clone(),
-                                    self.mode,
-                                    self.multiple,
+                                    mode,
+                                    multiple,
                                     browse_prompt.clone(),
                                     window,
                                     cx,
@@ -556,7 +637,10 @@ fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
 
 #[cfg(all(test, feature = "component-shape"))]
 mod tests {
-    use super::{FilePickerEvent, file_picker_form_value_change};
+    use super::{
+        FilePicker, FilePickerEvent, FilePickerMode, FilePickerOptions,
+        file_picker_form_value_change,
+    };
     use gpui_form_runtime::shape::ValueChange;
 
     #[test]
@@ -564,5 +648,24 @@ mod tests {
         let change = file_picker_form_value_change(&FilePickerEvent::Change(Vec::new()));
 
         assert!(matches!(change, ValueChange::Clear));
+    }
+
+    #[test]
+    fn file_picker_options_are_shape_builders() {
+        fn accepts_file_picker_builder(
+            _: impl component_shape_gpui::GpuiComponentShapeBuilder<FilePicker>,
+        ) {
+        }
+
+        let options = FilePicker::from(
+            FilePickerOptions::builder()
+                .mode(FilePickerMode::Directory)
+                .multiple(true)
+                .build(),
+        );
+
+        assert_eq!(options.mode(), FilePickerMode::Directory);
+        assert!(options.multiple());
+        accepts_file_picker_builder(options);
     }
 }

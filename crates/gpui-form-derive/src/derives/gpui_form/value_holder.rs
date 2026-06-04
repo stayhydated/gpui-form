@@ -791,9 +791,9 @@ fn value_storage_policy_validator_tokens(
                 fn to_fluent_string_with(
                     &self,
                     _localize: &mut dyn for<'a> FnMut(
-                        &str,
-                        &str,
-                        Option<&::std::collections::HashMap<&str, ::es_fluent::FluentValue<'a>>>,
+                        ::es_fluent::registry::StaticFluentDomain,
+                        ::es_fluent::registry::StaticFluentEntryId,
+                        Option<&::es_fluent::FluentArgs<'a>>,
                     ) -> String,
                 ) -> String {
                     "This field is required.".to_string()

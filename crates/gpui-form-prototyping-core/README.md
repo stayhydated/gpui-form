@@ -28,6 +28,10 @@ for shape in inventory::iter::<GpuiFormShape>() {
   fragments for one shape
 - `FormShapeAdapter::generate_file(&impl FormLayout)` renders a full file with
   your chosen layout
+- `FormShapeAdapter::remap_paths(...)` lets cross-crate generators rewrite
+  source-crate-relative paths before imports and component fragments are emitted
+- `FormShapeAdapter::render_validation_messages_with(...)` lets layouts format
+  validator refs without replacing the whole generated field layout
 - `FormLayout` lets callers define the overall file structure
 - `PrototypingError` reports malformed metadata without panicking
 
@@ -43,6 +47,35 @@ shows the normal flow:
 1. clear stale generated modules and write the generated form files into
    `examples/some-lib-forms/src/forms`
 1. run `rustfmt` over the written files before treating the scaffold as ready
+
+Generators that write forms into a different crate than the source request
+models can remap inventory paths before rendering:
+
+```rs
+use gpui_form_prototyping_core::FormShapeAdapter;
+use quote::{format_ident, quote};
+
+fn remap_path(path: &syn::Path) -> Option<syn::Path> {
+    if path.leading_colon.is_some()
+        || path.segments.len() < 2
+        || path.segments[0].ident != "crate"
+        || path.segments[1].ident != "requests"
+    {
+        return None;
+    }
+
+    let mut remapped = path.clone();
+    remapped.segments[0].ident = format_ident!("request_crate");
+    Some(remapped)
+}
+
+let file = FormShapeAdapter::new(shape)
+    .remap_paths(remap_path)
+    .render_validation_messages_with(|value| quote! {
+        crate::i18n::render_validation_error(&#value)
+    })
+    .generate_file(&layout)?;
+```
 
 When the layout emits `gpui_storybook::Story`, pass the `cx: &gpui::App`
 provided by `Story::title` into `gpui_es_fluent::localize_label` so generated

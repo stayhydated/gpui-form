@@ -1,20 +1,15 @@
-use es_fluent::{EsFluent, unic_langid::LanguageIdentifier};
-use es_fluent_lang::es_fluent_language;
+use es_fluent::unic_langid::LanguageIdentifier;
 use gpui::BorrowAppContext as _;
 use gpui_storybook::{Assets, Gallery};
 use gpui_storybook_core::{
     language::Language,
     locale::{LocaleManager, LocaleStore},
 };
-use strum::EnumIter;
+use some_lib_forms::i18n::Languages;
 
 // bring the stories in scope for inventory
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use some_lib_forms;
-
-#[es_fluent_language]
-#[derive(Clone, Copy, Debug, EnumIter, EsFluent, PartialEq)]
-pub enum Languages {}
 
 struct FormLocaleStore<L: Language> {
     inner: LocaleManager<L>,

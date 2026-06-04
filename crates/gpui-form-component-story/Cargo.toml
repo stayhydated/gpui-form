@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 anyhow = { workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
+es-fluent = { workspace = true }
 es-fluent-lang = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }

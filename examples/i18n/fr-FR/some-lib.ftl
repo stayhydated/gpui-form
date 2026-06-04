@@ -211,26 +211,38 @@ usa_state_label_variants-Texas = Texas
 
 user_description_variants_label = Description de l'utilisateur
 user_description_variants-age = Âge
+user_description_variants-attention_level = Attention Level
 user_description_variants-balance = Solde
 user_description_variants-birth_date = Date de naissance
+user_description_variants-brand_color = Brand Color
 user_description_variants-country = Pays
 user_description_variants-debt = Dette
 user_description_variants-email = Courriel
 user_description_variants-enable_notifications = Activer les notifications
+user_description_variants-holiday_range = Holiday Range
+user_description_variants-otp_code = Otp Code
 user_description_variants-preferred = Préféré
+user_description_variants-rating = Rating
 user_description_variants-subscribe_newsletter = S'abonner à la newsletter
+user_description_variants-uploaded_files = Uploaded Files
 user_description_variants-username = Nom d'utilisateur
 
 ## UserLabelVariants
 
 user_label_variants_label = Libellé de l'utilisateur
 user_label_variants-age = Âge
+user_label_variants-attention_level = Attention Level
 user_label_variants-balance = Solde
 user_label_variants-birth_date = Date de naissance
+user_label_variants-brand_color = Brand Color
 user_label_variants-country = Pays
 user_label_variants-debt = Dette
 user_label_variants-email = Courriel
 user_label_variants-enable_notifications = Activer les notifications
+user_label_variants-holiday_range = Holiday Range
+user_label_variants-otp_code = Otp Code
 user_label_variants-preferred = Préféré
+user_label_variants-rating = Rating
 user_label_variants-subscribe_newsletter = S'abonner à la newsletter
+user_label_variants-uploaded_files = Uploaded Files
 user_label_variants-username = Nom d'utilisateur

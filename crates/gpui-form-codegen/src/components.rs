@@ -146,6 +146,7 @@ impl ResolvedComponentShape {
             #shape_assertions
 
             {
+                #[allow(non_snake_case)]
                 fn #value_binding_assertion<
                     Shape: #runtime_crate::shape::GpuiComponentShape
                         + #runtime_crate::shape::ComponentShapeMetadata,

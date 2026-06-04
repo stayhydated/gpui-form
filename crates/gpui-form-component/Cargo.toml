@@ -26,7 +26,7 @@ bon = { optional = true, workspace = true }
 chrono = { workspace = true }
 component-shape = { optional = true, workspace = true }
 component-shape-gpui = { optional = true, workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
+es-fluent = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }

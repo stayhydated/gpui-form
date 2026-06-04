@@ -7,8 +7,8 @@ use quote::quote;
 
 use crate::error::{PrototypingError, PrototypingResult};
 use crate::implementations::{
-    ComponentCreation, EventHandler, FieldInitializer, GeneratedSubscription, SubscriptionBinding,
-    field_generator,
+    ComponentCreation, EventHandler, FieldCodegenOptions, FieldInitializer, GeneratedSubscription,
+    SubscriptionBinding, field_generator,
 };
 use crate::imports::{Alias, ImportItem, ImportSet};
 
@@ -128,17 +128,61 @@ fn map_resolve_error(error: ResolveError) -> PrototypingError {
 
 pub struct FormShapeAdapter<'a> {
     pub shape_data: &'a GpuiFormShape,
+    path_remapper: Option<Box<PathRemapper<'a>>>,
+    validation_message_renderer: Option<Box<ValidationMessageRenderer<'a>>>,
 }
 
 impl<'a> FormShapeAdapter<'a> {
     pub fn new(shape_data: &'a GpuiFormShape) -> Self {
-        Self { shape_data }
+        Self {
+            shape_data,
+            path_remapper: None,
+            validation_message_renderer: None,
+        }
+    }
+
+    /// Rewrite generated Rust paths before they are emitted.
+    ///
+    /// This is intended for generators that consume inventory from one crate
+    /// but write forms into another crate, for example remapping
+    /// `crate::requests::...` to `tm_zmq_client::requests::...`.
+    pub fn remap_paths(mut self, remapper: impl Fn(&syn::Path) -> Option<syn::Path> + 'a) -> Self {
+        self.path_remapper = Some(Box::new(remapper));
+        self
+    }
+
+    /// Render one borrowed validation error value into a user-facing string.
+    ///
+    /// The callback receives tokens for the borrowed validator-ref value inside
+    /// the generated `.map(|v| ...)` closure and must return an expression that
+    /// evaluates to `String`.
+    pub fn render_validation_messages_with(
+        mut self,
+        renderer: impl Fn(TokenStream) -> TokenStream + 'a,
+    ) -> Self {
+        self.validation_message_renderer = Some(Box::new(renderer));
+        self
+    }
+
+    fn field_options(&self) -> FieldCodegenOptions<'_> {
+        FieldCodegenOptions {
+            path_remapper: self.path_remapper.as_deref(),
+            validation_message_renderer: self.validation_message_renderer.as_deref(),
+        }
+    }
+
+    fn remap_path(&self, path: &syn::Path) -> syn::Path {
+        self.path_remapper
+            .as_ref()
+            .and_then(|remapper| remapper(path))
+            .unwrap_or_else(|| path.clone())
     }
 
     fn collect_fields(
         &self,
         resolved_shape: &ResolvedGpuiFormShape<'a>,
     ) -> PrototypingResult<Vec<GeneratedField<'a>>> {
+        let options = self.field_options();
         resolved_shape
             .fields()
             .iter()
@@ -147,7 +191,6 @@ impl<'a> FormShapeAdapter<'a> {
                 let resolved = resolved.clone();
                 let generator = field_generator();
                 let imports = generator.generate_imports(&resolved);
-                let subscription = generator.generate_subscription(&resolved, self.shape_data)?;
 
                 Ok(GeneratedField {
                     imports,
@@ -155,11 +198,19 @@ impl<'a> FormShapeAdapter<'a> {
                     field_initializer: generator
                         .generate_field_initializers(&resolved, self.shape_data)?,
                     render_child: generator
-                        .generate_render_child(&resolved, self.shape_data)?
+                        .generate_render_child(&resolved, self.shape_data, &options)?
                         .into(),
-                    subscription,
+                    subscription: generator.generate_subscription(
+                        &resolved,
+                        self.shape_data,
+                        &options,
+                    )?,
                     post_subscription_initialization: generator
-                        .generate_post_subscription_initialization(&resolved, self.shape_data)?
+                        .generate_post_subscription_initialization(
+                            &resolved,
+                            self.shape_data,
+                            &options,
+                        )?
                         .into(),
                     _resolved: resolved,
                 })
@@ -224,7 +275,7 @@ impl<'a> FormShapeAdapter<'a> {
         let form_fields_ident = resolved_shape.name().fields_ident().clone();
         let form_id_literal = resolved_shape.name().form_id().to_string();
         let context_str = format!("{}Form", resolved_shape.name().source());
-        let source_module_path = resolved_shape.source_module_path().clone();
+        let source_module_path = self.remap_path(resolved_shape.source_module_path());
         let holder_conversion_shape = data.holder_conversion_shape();
         let has_skipped_fields = holder_conversion_shape.needs_skipped_fields();
 
@@ -438,6 +489,9 @@ impl<'a> FormShapeAdapter<'a> {
         Ok(layout.generate_file(&parts))
     }
 }
+
+type PathRemapper<'a> = dyn Fn(&syn::Path) -> Option<syn::Path> + 'a;
+type ValidationMessageRenderer<'a> = dyn Fn(TokenStream) -> TokenStream + 'a;
 
 // ── FormParts ─────────────────────────────────────────────────────────────────
 
@@ -742,6 +796,35 @@ mod tests {
                 field_name: "country".to_string(),
                 capability: "value binding metadata",
             }
+        );
+    }
+
+    #[test]
+    fn parts_remap_source_module_path_before_rendering_imports() {
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &[],
+            RustPath::from_macro_tokens_unchecked("crate::requests::system"),
+            false,
+        );
+
+        let parts = FormShapeAdapter::new(&SHAPE)
+            .remap_paths(|path| {
+                (compact(&quote::quote! { #path }.to_string()) == "crate::requests::system")
+                    .then(|| syn::parse_quote!(tm_zmq_client::requests::system))
+            })
+            .parts()
+            .expect("valid shape metadata should produce form parts");
+        let source_module_path = &parts.source_module_path;
+
+        assert_eq!(
+            compact(&quote::quote! { #source_module_path }.to_string()),
+            "tm_zmq_client::requests::system"
+        );
+        assert!(
+            compact(&parts.imports.to_string()).contains("usetm_zmq_client::requests::system::*;"),
+            "remapped source path should be used in generated imports: {}",
+            parts.imports
         );
     }
 

@@ -7,8 +7,8 @@ use crate::error::PrototypingResult;
 use crate::imports::ImportItem;
 
 use super::{
-    ComponentCreation, EventHandler, FieldCodeGenerator, FieldInitializer, GeneratedSubscription,
-    ResolvedField, SubscriptionBinding, generate_entity_creation,
+    ComponentCreation, EventHandler, FieldCodeGenerator, FieldCodegenOptions, FieldInitializer,
+    GeneratedSubscription, ResolvedField, SubscriptionBinding, generate_entity_creation,
     generate_entity_field_initializer, missing_component_capability, render_standard_field,
 };
 
@@ -16,13 +16,18 @@ use super::{
 /// shape-owned value bindings when the metadata opts in.
 pub struct ShapeCodeGenerator;
 
-fn form_default_tokens(field: &ResolvedField<'_>, expr: &syn::Expr) -> TokenStream {
-    let source_default = source_default_tokens(expr, proc_macro2::Span::call_site());
+fn form_default_tokens(
+    field: &ResolvedField<'_>,
+    expr: &syn::Expr,
+    options: &FieldCodegenOptions<'_>,
+) -> TokenStream {
+    let expr = options.remap_expr(expr);
+    let from_expr = field.from_expr().map(|expr| options.remap_expr(expr));
+    let from_expr = from_expr.as_ref();
+    let source_default = source_default_tokens(&expr, proc_macro2::Span::call_site());
     apply_source_to_form_conversion_tokens(
-        field.from_expr(),
-        field
-            .from_expr()
-            .map_or_else(proc_macro2::Span::call_site, syn::spanned::Spanned::span),
+        from_expr,
+        from_expr.map_or_else(proc_macro2::Span::call_site, syn::spanned::Spanned::span),
         source_default,
     )
 }
@@ -98,6 +103,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
+        options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<TokenStream> {
         let field_in_struct_name_ident = field.field_ident();
         let capabilities = component_capabilities(field, component)?;
@@ -110,21 +116,27 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             ));
         }
 
-        let shape_path = runtime_shape_path(field, component)?;
+        let shape_path = options.remap_path(&runtime_shape_path(field, component)?);
         let child_tokens = quote! {
             <<#shape_path as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent
                 as gpui_form::runtime::shape::GpuiComponentRender<
                     <#shape_path as gpui_form::runtime::shape::GpuiComponentShape>::State
-                >>::new(&self.fields.#field_in_struct_name_ident)
+            >>::new(&self.fields.#field_in_struct_name_ident)
         };
 
-        Ok(render_standard_field(field, component, child_tokens))
+        Ok(render_standard_field(
+            field,
+            component,
+            child_tokens,
+            options,
+        ))
     }
 
     fn generate_subscription(
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
+        options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<GeneratedSubscription> {
         let capabilities = component_capabilities(field, component)?;
         if !capabilities.value_binding_enabled() {
@@ -136,8 +148,8 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         }
         ensure_default_storage_support(field, component)?;
 
-        let shape = runtime_shape_path(field, component)?;
-        let field_type = field.value_type();
+        let shape = options.remap_path(&runtime_shape_path(field, component)?);
+        let field_type = options.remap_type(field.value_type());
         let field_var_name_ident = field.field_ident();
         let field_name_ident = field.field_ident();
         let event_handler_fn_name_ident = field.component_event_handler_ident();
@@ -157,7 +169,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let clear_tokens = if field.value_holder_uses_option() {
             quote! { self.current_data.#field_name_ident = None; }
         } else if let Some(default_expr) = field.default_expr() {
-            let default_expr = form_default_tokens(field, default_expr);
+            let default_expr = form_default_tokens(field, default_expr, options);
             quote! { self.current_data.#field_name_ident = #default_expr; }
         } else {
             quote! {
@@ -210,6 +222,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         &self,
         field: &ResolvedField<'_>,
         component: &GpuiFormShape,
+        options: &FieldCodegenOptions<'_>,
     ) -> PrototypingResult<TokenStream> {
         let capabilities = component_capabilities(field, component)?;
         if !capabilities.value_binding_enabled() {
@@ -220,8 +233,8 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
             ));
         }
 
-        let shape = runtime_shape_path(field, component)?;
-        let field_type = field.value_type();
+        let shape = options.remap_path(&runtime_shape_path(field, component)?);
+        let field_type = options.remap_type(field.value_type());
         let field_var_name_ident = field.field_ident();
         let field_name_ident = field.field_ident();
         let value_tokens = if field.value_holder_uses_option() {
@@ -246,7 +259,7 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
 #[cfg(test)]
 mod tests {
     use super::ShapeCodeGenerator;
-    use crate::implementations::FieldCodeGenerator as _;
+    use crate::implementations::{FieldCodeGenerator as _, FieldCodegenOptions};
     use gpui_form_schema::registry::{
         ComponentSuffix, ConversionMetadata, FieldComponentVariant, FieldValuePresence,
         FieldValueSpec, FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType,
@@ -381,9 +394,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS_WITH_COMPONENT[0]).unwrap();
         let tokens = generator
-            .generate_render_child(&field, &SHAPE)
+            .generate_render_child(&field, &SHAPE, &options)
             .expect("render-enabled shape-backed fields should generate render children");
 
         #[cfg(feature = "fluent")]
@@ -413,9 +427,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound shape-backed fields should generate subscriptions");
 
         assert!(
@@ -432,7 +447,7 @@ mod tests {
         );
 
         let init = generator
-            .generate_post_subscription_initialization(&field, &SHAPE)
+            .generate_post_subscription_initialization(&field, &SHAPE, &options)
             .expect("value-bound shape-backed fields should seed initial values");
         insta::assert_snapshot!(
             "shape_generator_wires_shape_value_binding_seed",
@@ -458,9 +473,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound direct-storage fields should generate subscriptions");
 
         insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
@@ -486,9 +502,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound direct-storage fields should generate subscriptions");
 
         insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
@@ -513,9 +530,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound direct-storage fields should generate subscriptions");
 
         insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
@@ -550,9 +568,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound converted fields should generate subscriptions");
 
         insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
@@ -577,12 +596,13 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let created = generator
             .generate_cx_new_call(&field, &SHAPE)
             .expect("valid shape-backed fields should initialize state entities");
         let generated = generator
-            .generate_subscription(&field, &SHAPE)
+            .generate_subscription(&field, &SHAPE, &options)
             .expect("value-bound shape-backed fields should generate subscriptions");
         let compact_created = compact(&created.to_string());
         let compact_handler = compact(&generated.handlers[0].to_string());
@@ -624,9 +644,10 @@ mod tests {
         );
 
         let generator = ShapeCodeGenerator;
+        let options = FieldCodegenOptions::default();
         let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
         let tokens = generator
-            .generate_render_child(&field, &SHAPE)
+            .generate_render_child(&field, &SHAPE, &options)
             .expect("render-enabled generic shape-backed fields should generate render children");
 
         #[cfg(feature = "fluent")]
@@ -636,5 +657,81 @@ mod tests {
             "shape_generator_renders_generic_component_type_without_fluent",
             pretty_tokens(tokens)
         );
+    }
+
+    #[test]
+    fn shape_generator_remaps_component_shape_paths() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            "upload",
+            value_spec(
+                "crate::components::UploadValue",
+                FieldValuePresence::RequiresValue,
+            ),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::components::UploadPicker",
+            ))
+            .with_render_component(true)
+            .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("demo"),
+            false,
+        );
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let options = FieldCodegenOptions {
+            path_remapper: Some(
+                &|path| match compact(&quote! { #path }.to_string()).as_str() {
+                    "crate::components::UploadPicker" => {
+                        Some(syn::parse_quote!(app_components::UploadPicker))
+                    },
+                    "crate::components::UploadValue" => {
+                        Some(syn::parse_quote!(app_components::UploadValue))
+                    },
+                    _ => None,
+                },
+            ),
+            ..FieldCodegenOptions::default()
+        };
+        let rendered = generator
+            .generate_render_child(&field, &SHAPE, &options)
+            .expect("render-enabled fields should generate render children");
+        let subscription = generator
+            .generate_subscription(&field, &SHAPE, &options)
+            .expect("value-bound fields should generate subscriptions");
+        let seed = generator
+            .generate_post_subscription_initialization(&field, &SHAPE, &options)
+            .expect("value-bound fields should generate seed initialization");
+
+        for (tokens, includes_value_type) in [
+            (rendered.to_string(), false),
+            (subscription.handlers[0].to_string(), true),
+            (seed.to_string(), true),
+        ] {
+            let compact = compact(&tokens);
+            assert!(
+                compact.contains("app_components::UploadPicker"),
+                "remapped component path should be emitted in generated fragments: {compact}"
+            );
+            assert!(
+                !includes_value_type || compact.contains("app_components::UploadValue"),
+                "remapped value type path should be emitted in value-bearing generated fragments: {compact}"
+            );
+            assert!(
+                includes_value_type || !compact.contains("app_components::UploadValue"),
+                "render-only generated fragments should not be expected to mention the value type: {compact}"
+            );
+            assert!(
+                !compact.contains("crate::components::UploadPicker"),
+                "source-crate component path should not leak after remapping: {compact}"
+            );
+            assert!(
+                !compact.contains("crate::components::UploadValue"),
+                "source-crate value type path should not leak after remapping: {compact}"
+            );
+        }
     }
 }

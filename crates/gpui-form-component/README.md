@@ -221,6 +221,25 @@ use the element type as the form shape:
 pub uploaded_files: Vec<std::path::PathBuf>;
 ```
 
+Generated forms can configure the public `FilePicker` shape through
+`FilePickerOptions`. The value binding remains `Vec<PathBuf>` for both
+single-path and multi-path fields; `multiple(false)` only limits the native
+prompt to one selected path.
+
+```rs
+use gpui_form_component::file_picker::{FilePicker, FilePickerOptions};
+
+#[gpui_form(component(FilePicker::from(
+    FilePickerOptions::builder().multiple(false).build()
+)))]
+pub upload_file: Vec<std::path::PathBuf>;
+
+#[gpui_form(component(FilePicker::from(
+    FilePickerOptions::builder().multiple(true).build()
+)))]
+pub upload_files: Vec<std::path::PathBuf>;
+```
+
 ## Component Stories
 
 This crate is library-only. The interactive infinite-select, date-picker, and

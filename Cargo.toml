@@ -32,19 +32,19 @@ version = "0.5.1"
 anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
-component-shape = { git = "https://github.com/stayhydated/component-shape" }
-component-shape-codegen = { git = "https://github.com/stayhydated/component-shape" }
-component-shape-gpui = { git = "https://github.com/stayhydated/component-shape" }
+component-shape = { path = "../component-shape/crates/component-shape" }
+component-shape-codegen = { path = "../component-shape/crates/component-shape-codegen" }
+component-shape-gpui = { path = "../component-shape/crates/component-shape-gpui" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
-es-fluent = "0.16"
-es-fluent-build = "0.16"
-es-fluent-lang = "0.16"
-es-fluent-manager-embedded = "0.16"
+es-fluent = { path = "../es-fluent/crates/es-fluent", version = "0.16" }
+es-fluent-build = { path = "../es-fluent/crates/es-fluent-build", version = "0.16" }
+es-fluent-lang = { path = "../es-fluent/crates/es-fluent-lang", version = "0.16" }
+es-fluent-manager-embedded = { path = "../es-fluent/crates/es-fluent-manager-embedded", version = "0.16" }
 gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
+gpui-es-fluent = { path = "../gpui-es-fluent/crates/gpui-es-fluent", version = "0.1" }
 gpui-form = { path = "crates/gpui-form", version = "0.5.1" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.5.1" }
 gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.5.1" }
@@ -57,8 +57,8 @@ gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook" }
-gpui-storybook-core = { git = "https://github.com/stayhydated/gpui-storybook" }
+gpui-storybook = { path = "../gpui-storybook/crates/gpui-storybook", version = "0.5.0" }
+gpui-storybook-core = { path = "../gpui-storybook/crates/gpui-storybook-core", version = "0.5.0" }
 gpui_platform = { features = [
   "font-kit",
   "x11",
