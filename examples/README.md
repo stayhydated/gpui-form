@@ -18,6 +18,7 @@ Source structs and enums that demonstrate the supported derive surface:
 - newtype-backed numeric validation
 - `cfg_attr`-gated derive usage
 - empty forms and date conversion
+- package-local `es-fluent` config, embedded resources, and language enum
 
 ## some-lib-forms
 
@@ -62,7 +63,8 @@ cargo run -p prototyping
 
 ## i18n
 
-Shared localization assets used by the example crates. The example crates keep
-small `i18n` modules for embedded asset registration and startup, while GPUI
-story rendering calls `gpui_es_fluent` app-global helpers for localized labels
-and messages.
+`examples/some-lib/i18n.toml` lives next to that package's `Cargo.toml`, and
+its `i18n/` directory owns the generated Fluent assets for the example domain
+types. The `some-lib` `i18n` module also declares the language enum used by
+`some-lib-forms`, so the storybook app consumes one package-owned localization
+surface instead of sharing a sibling `examples/i18n` directory.

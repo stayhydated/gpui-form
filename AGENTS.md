@@ -194,11 +194,9 @@ inventory or codegen workflows change.
 - `examples/README.md`
   Canonical index of runnable workspace examples.
 
-- `examples/i18n`
-  Shared localization assets used by the example crates.
-
 - `examples/some-lib`
-  Shared example domain types and source structs that derive `GpuiForm`.
+  Shared example domain types and source structs that derive `GpuiForm`, plus
+  package-local `es-fluent` config and Fluent assets used by the example app.
 
 - `examples/some-lib-forms`
   Storybook-like GPUI example app for browsing generated forms.

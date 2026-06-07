@@ -5,7 +5,7 @@ use gpui_storybook_core::{
     language::Language,
     locale::{LocaleManager, LocaleStore},
 };
-use some_lib_forms::i18n::Languages;
+use some_lib::i18n::Languages;
 
 // bring the stories in scope for inventory
 #[allow(unused_imports, clippy::single_component_path_imports)]
