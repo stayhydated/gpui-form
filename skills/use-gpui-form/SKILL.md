@@ -17,10 +17,9 @@ For custom app-owned components, external state wrappers, reusable
 `GpuiComponentShape` implementations, or shape-level value bindings, use
 `use-gpui-form-component-shapes`.
 
-Do not use this skill as a contributor guide for `gpui-form` repository
-internals. For build, test, format, lint, maintenance, release, or architecture
-work, read the repository source, `AGENTS.md`, and the relevant crate
-documentation directly.
+This reusable skill does not cover crate internals, release workflow,
+repository maintenance, or contributor-only architecture work. Use
+project-specific contributor documentation for those tasks.
 
 ## Core Workflow
 
