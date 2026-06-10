@@ -38,8 +38,8 @@ Before editing, classify the change:
 3. **Sync public workflow changes.** If derive attributes, supported component
    behavior, Koruma validation wiring, runtime imports, component shapes,
    prototyping output, or recommended usage changes, update the relevant
-   README, example, architecture note, and public `skills/*` guidance in the
-   same change when applicable.
+   README, example, architecture note, and public skill guidance in the same
+   change when applicable.
 4. **Validate narrowly.** Run the smallest command that proves the edited
    behavior or documentation surface is sound.
 
@@ -88,15 +88,12 @@ Keep these topics in architecture documents, not in READMEs:
 ### Skill Guidance
 
 `skills/use-gpui-form` and `skills/use-gpui-form-component-shapes` are public
-usage guidance for application developers. They are not internal architecture,
-maintenance, CI, release, or contributor-only workflow documentation.
+application-developer guidance, not repo-local maintenance guidance. Keep
+maintainer-only details in this guide or the relevant `docs/ARCHITECTURE.md`.
 
-Do not assume root-level `skills/*` entries are auto-loaded as repo-local Codex
-skills. Treat `skills/*` as public distribution sources.
-
-Update relevant public `skills/*` guidance when a code change
-alters user-facing workflows, derive attributes, generated output, component
-syntax, runtime integration patterns, prototyping patterns, or recommended usage.
+Update them when user-facing workflows, derive attributes, generated output,
+component syntax, runtime integration patterns, prototyping patterns, or
+recommended usage change.
 
 ## Synchronization Rules
 
@@ -108,7 +105,8 @@ contract, prototyping workflow, or other user-visible API shape:
 2. Update `crates/gpui-form/README.md`.
 3. Update the affected crate `README.md` files.
 4. Update `examples/README.md` and the relevant example crates when showcased behavior changes.
-5. Update relevant public `skills/*` guidance.
+5. Update `skills/use-gpui-form` or
+   `skills/use-gpui-form-component-shapes` when public usage guidance changes.
 6. Update the matching crate `docs/ARCHITECTURE.md` when boundaries or behavior change.
 7. Keep these surfaces aligned in the same change unless there is a documented reason not to.
 
@@ -232,7 +230,9 @@ inventory or codegen workflows change.
 - Keep READMEs user-facing.
 - Move macro expansion details, parser internals, and subsystem design into `docs/ARCHITECTURE.md`.
 - Prefer examples over prose-only explanations.
-- Sync the root `README.md`, `crates/gpui-form/README.md`, `examples/README.md`, and public `skills/*` guidance when the primary workflow changes.
+- Sync the root `README.md`, `crates/gpui-form/README.md`,
+  `examples/README.md`, and public skill guidance when the primary workflow
+  changes.
 
 ### When Editing Rust Crates
 
