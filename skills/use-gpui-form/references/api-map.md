@@ -9,8 +9,8 @@ versions to the version guidance for the `gpui-form` version in use.
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-form = "*"
 gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 gpui-form-collection = "*"

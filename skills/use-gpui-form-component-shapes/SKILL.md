@@ -166,7 +166,8 @@ keep the relevant public surfaces aligned:
 - affected crate READMEs
 - `examples/README.md` and showcased examples when behavior changes
 - in-repository `skills/*` guidance
-- matching crate `docs/ARCHITECTURE.md` when boundaries or behavior change
+- matching rustdocs, source-adjacent comments, tests, and examples when
+  boundaries or behavior change
 
 Do not duplicate generic component-shape macro guidance here; update the
 component-shape-owned skills instead.

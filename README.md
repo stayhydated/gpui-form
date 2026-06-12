@@ -20,14 +20,14 @@ It is designed for three things:
 | `gpui-form` | `gpui-component` | `gpui` |
 | :---------- | :--------------- | :----- |
 | **git** | | |
-| `branch = "master"` | `branch = "main"` | `rev = "4bee412118dafea3bbd491cd044d354f16b3d665"` |
+| `branch = "master"` | default branch | `rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de"` |
 
 ## Installation
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "4bee412118dafea3bbd491cd044d354f16b3d665" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component", branch = "main" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 
 gpui-form = "*"
 
@@ -725,3 +725,6 @@ workspace examples.
 - `cargo run -p prototyping`: regenerate the `some-lib-forms` scaffolded GPUI
   form files and the checked-in `examples/prototyping/output` mirror from shape
   inventory
+- `cargo run -p mcp-submit`: serve generated form submit tools over stdio MCP
+- `cargo run -p mcp-form-table`: run the composed form submit plus table-filter
+  MCP server
