@@ -14,6 +14,9 @@ It demonstrates:
   for skipped-field forms whose missing context is application-owned
 - explicit per-tool MCP names, titles, and descriptions with
   `#[gpui_form(mcp(...))]`
+- headless edit-session tools for a support ticket value holder:
+  `mcp_submit_support_ticket_edit_open`, `_edit_read`, `_edit_patch`,
+  `_edit_validate`, and `_edit_close`
 
 Run a tool list request:
 

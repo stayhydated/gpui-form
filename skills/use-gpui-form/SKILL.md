@@ -156,6 +156,13 @@ Common patterns:
   Register manual handlers with
   `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
   `.holder(handler)?` for handlers returning `Result<T, E>`.
+  Register headless field-editing tools with
+  `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The generated editor
+  tools open a value-holder session, patch one field at a time through the same
+  component-shape-aware decoder used by submit calls, read agent-supplied
+  values and `submit_arguments`, validate, and close the session. Treat this as
+  holder editing only; live GPUI widget mutation still needs an app-owned
+  bridge from the holder/session into GPUI entities.
   Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
   when generated MCP tools need application-owned names or descriptions.
   Registration reports setup errors such as duplicate tool names.

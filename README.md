@@ -303,6 +303,24 @@ Manual form tools can still be registered directly:
 `Result`.
 Registration reports setup errors such as duplicate tool names.
 
+MCP forms can also expose editable holder sessions:
+
+```rs
+let mut server = gpui_form::mcp::McpServer::new("my-app", env!("CARGO_PKG_VERSION"));
+gpui_form::mcp::form::<ContactRequest>(&mut server).editor()?;
+```
+
+This registers `*_edit_open`, `*_edit_read`, `*_edit_patch`,
+`*_edit_validate`, and `*_edit_close` tools derived from the form's MCP tool
+name. `edit_open` accepts an optional `values` object, `edit_patch` accepts a
+`session_id`, `field`, and `value`, and tool results include the
+agent-supplied `values` plus `submit_arguments` that can be sent to the normal
+submit tool. Field patches use the same generated decoding path as submit
+calls, including component-shape `MCP_INPUT` schemas and value-storage
+policies. These tools edit headless generated value holders; live GPUI widgets
+still need an application-owned runtime bridge from the holder/session state
+into GPUI entities.
+
 For component-backed fields, generated MCP input schemas use value-specific
 shape metadata from `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when it is
 available. If the shape does not publish MCP input metadata for that field

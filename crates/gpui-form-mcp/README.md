@@ -78,6 +78,20 @@ Use struct-level
 override the generated MCP tool name, title, or description. Registration
 reports setup errors such as duplicate tool names.
 
+MCP forms can also register editable holder sessions with
+`gpui_form::mcp::form::<Form>(&mut server).editor()?`. The editor adds
+`*_edit_open`, `*_edit_read`, `*_edit_patch`, `*_edit_validate`, and
+`*_edit_close` tools derived from the form's MCP tool name. These tools keep a
+headless generated value holder in server memory: `edit_open` creates a
+session from optional initial `values`, `edit_patch` updates one `field` from
+structured JSON, `edit_read` returns agent-supplied `values`, missing required
+fields, and `submit_arguments`, `edit_validate` reports generated validation
+errors, and `edit_close` drops the session. Field patches use the same
+generated decoding path as submit calls, including component-shape `MCP_INPUT`
+schemas and value-storage policies. The editor does not mutate live GPUI
+widgets unless the application adds its own runtime bridge from the holder
+session into GPUI entities.
+
 Component-backed fields use value-specific shape metadata from
 `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` in generated input schemas
 when the shape publishes one. `component_shape_gpui` infers common shape MCP

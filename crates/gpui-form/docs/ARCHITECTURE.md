@@ -110,6 +110,12 @@ those component APIs explicitly.
    generated holder validation, performs holder-to-model conversion when
    available, and calls the application-owned handler with a `Result<T, E>`
    return type (where `T: serde::Serialize`, `E: fmt::Display`).
+1. Manual servers can additionally call
+   `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The generated editor
+   path keeps headless value-holder sessions in the MCP server, decodes one
+   field at a time with the same component-shape metadata and storage policy as
+   submit calls, and returns agent-supplied JSON values plus
+   `submit_arguments` for normal submit tools.
 
 This facade feature does not make GPUI widgets, windows, or button callbacks
 part of the MCP execution path.

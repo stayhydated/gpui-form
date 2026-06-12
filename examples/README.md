@@ -66,7 +66,10 @@ cargo run -p prototyping
 Stdio MCP server example that exposes generated form value holders as MCP
 tools. It demonstrates generated tool schemas, `tools/call` argument decoding,
 holder validation, model conversion, component-backed fields, and skipped-field
-holder submission, plus explicit per-tool MCP metadata.
+holder submission, plus explicit per-tool MCP metadata. The support-ticket
+form also registers headless edit-session tools so agents can open a generated
+value holder, patch individual fields, read `submit_arguments`, and then call
+the normal submit tool.
 
 Run it with:
 

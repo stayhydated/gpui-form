@@ -144,6 +144,9 @@ Behavior notes:
   available. Struct-level
   `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
   overrides generated MCP tool metadata.
+- the same opt-in emits a `gpui_form::mcp::McpEditableForm` implementation.
+  The editor API decodes one field at a time through the same generated holder
+  storage path for headless MCP edit sessions.
 - the `#[gpui_form::mcp_submit]` attribute macro registers application-owned
   submit functions into MCP handler inventory. It infers model submission from
   the source model's generated `McpSubmitArgument` impl and holder submission

@@ -104,6 +104,25 @@ fn field_decode_tokens(context: &DeriveContext, field: &HolderFieldIr) -> TokenS
     }
 }
 
+fn field_decode_arm_tokens(context: &DeriveContext, field: &HolderFieldIr) -> TokenStream {
+    let facade_crate = &context.paths.gpui_form;
+    let field_name_str = field.field_name().to_string();
+    let field_decode = field_decode_tokens(context, field);
+
+    quote! {
+        #field_name_str => {
+            let mut __gpui_form_values = #facade_crate::mcp::serde_json::Map::new();
+            __gpui_form_values.insert(field.to_string(), value);
+            let mut __gpui_form_arguments =
+                #facade_crate::mcp::McpArguments::new(__gpui_form_values);
+            let __gpui_form_holder = holder;
+            #field_decode
+            __gpui_form_arguments.finish()?;
+            Ok(())
+        }
+    }
+}
+
 fn field_descriptor_tokens(context: &DeriveContext, field: &FieldPlan) -> Option<TokenStream> {
     let shared = field.shared()?;
     let facade_crate = &context.paths.gpui_form;
@@ -185,6 +204,15 @@ pub(super) fn generate_mcp_impl(
         .rendered_fields()
         .iter()
         .map(|field| field_decode_tokens(context, field.field))
+        .collect();
+    let rendered_fields: Vec<&HolderFieldIr> = holder_plan
+        .rendered_fields()
+        .iter()
+        .map(|field| field.field)
+        .collect();
+    let field_decode_arms: Vec<TokenStream> = rendered_fields
+        .iter()
+        .map(|field| field_decode_arm_tokens(context, field))
         .collect();
 
     let validation_tokens = if enable_koruma {
@@ -336,6 +364,23 @@ pub(super) fn generate_mcp_impl(
         }
 
         #model_impl
+
+        impl #impl_generics #facade_crate::mcp::McpEditableForm
+            for #original_ident #ty_generics #where_clause
+        {
+            fn decode_field(
+                holder: &mut Self::ValueHolder,
+                field: &str,
+                value: #facade_crate::mcp::serde_json::Value,
+            ) -> Result<(), #facade_crate::mcp::McpToolError> {
+                match field {
+                    #(#field_decode_arms),*,
+                    _ => Err(#facade_crate::mcp::McpToolError::UnknownField {
+                        field: field.to_string(),
+                    }),
+                }
+            }
+        }
 
         impl #impl_generics #facade_crate::mcp::McpSubmitArgument
             for #holder_ident #ty_generics #where_clause

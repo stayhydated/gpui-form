@@ -3,7 +3,8 @@
 use gpui_form::{
     GpuiForm,
     mcp::{
-        McpForm as _, McpServer, McpToolError, form, server as generated_server, tool_definitions,
+        McpEditableForm as _, McpForm as _, McpServer, McpToolError, editor_tool_names, form,
+        server as generated_server, tool_definitions,
     },
 };
 use koruma_collection::collection::NonEmptyValidation;
@@ -68,11 +69,23 @@ impl FromStr for ComponentOnlyValue {
     }
 }
 
+#[derive(Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq)]
+#[mcp(crate = gpui_form::mcp)]
+#[serde(transparent)]
+pub struct DecodeOnlyValue(String);
+
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentNoSchemaRequest {
     #[gpui_form(component(gpui_form_collection::input::Input::<ComponentOnlyValue>))]
     title: ComponentOnlyValue,
+}
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq)]
+#[gpui_form(mcp)]
+pub struct DecodeOnlyRequest {
+    #[gpui_form(hidden)]
+    value: DecodeOnlyValue,
 }
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
@@ -388,6 +401,177 @@ fn component_backed_field_decodes_without_gpui_runtime() {
 }
 
 #[test]
+fn generated_mcp_editor_decodes_single_field_updates() {
+    let mut holder = PlainRequestFormValueHolder::default();
+
+    PlainRequest::decode_field(&mut holder, "title", json!("Draft")).expect("title should patch");
+    PlainRequest::decode_field(&mut holder, "retries", json!(3))
+        .expect("optional value should patch");
+    PlainRequest::decode_field(&mut holder, "enabled", json!(false))
+        .expect("defaulted value should patch");
+
+    assert_eq!(holder.title, "Draft");
+    assert_eq!(holder.retries, Some(3));
+    assert!(!holder.enabled);
+
+    let error = PlainRequest::decode_field(&mut holder, "unknown", json!(true))
+        .expect_err("unknown fields should fail");
+    assert_eq!(
+        error,
+        McpToolError::UnknownField {
+            field: "unknown".to_string()
+        }
+    );
+}
+
+#[test]
+fn editor_tools_open_patch_read_validate_and_close_sessions() {
+    let mut server = test_server();
+    form::<PlainRequest>(&mut server)
+        .editor()
+        .expect("editor tools should register");
+    let tools = editor_tool_names(PlainRequest::descriptor());
+
+    let open = server.call_tool(&tools.open, Some(json!({})));
+    assert_eq!(open.is_error, Some(false));
+    let opened = open
+        .structured_content
+        .expect("open should return a session");
+    let session_id = opened["session_id"]
+        .as_str()
+        .expect("session id should be a string");
+    assert_eq!(opened["missing_required"], json!(["title"]));
+    assert_eq!(opened["submit_arguments"], json!({}));
+
+    let patched = server.call_tool(
+        &tools.patch,
+        Some(json!({
+            "session_id": session_id,
+            "field": "title",
+            "value": "Edited title"
+        })),
+    );
+    assert_eq!(patched.is_error, Some(false));
+    let patched = patched
+        .structured_content
+        .expect("patch should return state");
+    assert_eq!(patched["missing_required"], json!([]));
+    assert_eq!(patched["values"]["title"], "Edited title");
+    assert_eq!(
+        patched["submit_arguments"],
+        json!({ "title": "Edited title" })
+    );
+
+    let patched = server.call_tool(
+        &tools.patch,
+        Some(json!({
+            "session_id": session_id,
+            "field": "retries",
+            "value": 5
+        })),
+    );
+    assert_eq!(patched.is_error, Some(false));
+    let patched = patched
+        .structured_content
+        .expect("patch should return state");
+    assert_eq!(patched["values"]["retries"], 5);
+    assert_eq!(
+        patched["submit_arguments"],
+        json!({ "title": "Edited title", "retries": 5 })
+    );
+
+    let validation = server.call_tool(
+        &tools.validate,
+        Some(json!({
+            "session_id": session_id
+        })),
+    );
+    assert_eq!(validation.is_error, Some(false));
+    assert_eq!(
+        validation.structured_content.expect("validation")["valid"],
+        true
+    );
+
+    let read = server.call_tool(
+        &tools.read,
+        Some(json!({
+            "session_id": session_id
+        })),
+    );
+    assert_eq!(read.is_error, Some(false));
+    assert_eq!(
+        read.structured_content.expect("read")["submit_arguments"],
+        json!({ "title": "Edited title", "retries": 5 })
+    );
+
+    let close = server.call_tool(
+        &tools.close,
+        Some(json!({
+            "session_id": session_id
+        })),
+    );
+    assert_eq!(close.is_error, Some(false));
+
+    let read_after_close = server.call_tool(
+        &tools.read,
+        Some(json!({
+            "session_id": session_id
+        })),
+    );
+    assert_eq!(read_after_close.is_error, Some(true));
+}
+
+#[test]
+fn editor_tools_patch_component_backed_fields_through_shape_schema() {
+    let mut server = test_server();
+    form::<ComponentRequest>(&mut server)
+        .editor()
+        .expect("component-backed editor tools should register");
+    let tools = editor_tool_names(ComponentRequest::descriptor());
+    let patch_tool = server
+        .list_tools()
+        .into_iter()
+        .find(|tool| tool.name == tools.patch)
+        .expect("patch tool should be registered");
+    assert_eq!(
+        patch_tool.input_schema["oneOf"][0]["properties"]["value"]["type"],
+        "string"
+    );
+
+    let open = server.call_tool(
+        &tools.open,
+        Some(json!({
+            "values": {
+                "title": "Component title"
+            }
+        })),
+    );
+    assert_eq!(open.is_error, Some(false));
+    let opened = open
+        .structured_content
+        .expect("open should return a session");
+    let session_id = opened["session_id"]
+        .as_str()
+        .expect("session id should be a string");
+    assert_eq!(opened["values"]["title"], "Component title");
+    assert_eq!(opened["missing_required"], json!([]));
+
+    let patched = server.call_tool(
+        &tools.patch,
+        Some(json!({
+            "session_id": session_id,
+            "field": "title",
+            "value": "Updated component title"
+        })),
+    );
+    assert_eq!(patched.is_error, Some(false));
+    assert_eq!(
+        patched.structured_content.expect("patch")["submit_arguments"],
+        json!({ "title": "Updated component title" })
+    );
+}
+
+#[test]
 fn component_backed_field_uses_typed_schema_when_shape_input_is_unavailable() {
     let schema = ComponentNoSchemaRequest::descriptor().input_schema();
     assert_eq!(schema["properties"]["title"]["type"], "string");
@@ -410,6 +594,25 @@ fn component_backed_field_uses_typed_schema_when_shape_input_is_unavailable() {
     assert_eq!(
         result.structured_content,
         Some(json!({ "title": "Headless" }))
+    );
+}
+
+#[test]
+fn submit_only_mcp_forms_do_not_require_serializable_field_values() {
+    let mut server = test_server();
+    form::<DecodeOnlyRequest>(&mut server)
+        .model(|request| Ok::<Value, String>(json!({ "value": request.value.0 })))
+        .expect("submit tool should register without editor serialization bounds");
+
+    let result = server.call_tool(
+        &DecodeOnlyRequest::descriptor().tool_name(),
+        Some(json!({ "value": "decode-only" })),
+    );
+
+    assert_eq!(result.is_error, Some(false));
+    assert_eq!(
+        result.structured_content,
+        Some(json!({ "value": "decode-only" }))
     );
 }
 

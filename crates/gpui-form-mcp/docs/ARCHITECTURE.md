@@ -14,6 +14,7 @@ This crate owns:
 1. JSON Schema generation for MCP tool `inputSchema`
 1. JSON argument decoding helpers used by generated `McpForm` impls
 1. a typed tool handler registry for model and holder submission
+1. optional headless edit sessions for generated value holders
 1. form-specific wrappers around the shared MCP tool server
 
 It does not own GPUI widget state, GPUI windows, button callbacks, native CLI
@@ -41,6 +42,11 @@ helper functions in this crate:
   `ValueStorage::present` API in generated code.
 - `McpArguments::finish` rejects fields that are not part of the generated form
   descriptor.
+- The derive also emits `McpEditableForm` when MCP is enabled. That contract
+  decodes a single named field into an existing holder for headless
+  edit-session tools. Field-level decoding reuses the same generated
+  `McpArguments` path as submit calls, so shape-owned storage policies and
+  component MCP schemas stay aligned.
 
 The generated descriptor builds non-component fields through
 `McpField::typed::<T>` and component-backed fields through
@@ -93,6 +99,24 @@ The lower-level manual registration API remains available:
 - `model` and `holder` include both sync and async variants and use the same decode
   path for `Result<T, E>` handlers.
 - `*_async` variants await async handlers.
+- `form::<Form>(&mut server).editor()` registers stateful headless holder
+  editing tools when `Form: McpEditableForm`. The tool set is named from the
+  form submit tool: `*_edit_open`, `*_edit_read`, `*_edit_patch`,
+  `*_edit_validate`, and `*_edit_close`.
+
+Editor sessions live in the MCP server process behind a typed per-form mutex.
+`edit_open` starts from a generated holder default and optionally applies a
+partial `values` object, `edit_patch` decodes one `field` and `value`,
+`edit_read` returns the agent-supplied values plus `submit_arguments`,
+`edit_validate` reports missing required fields and generated holder validation
+without treating invalid form state as a protocol error, and `edit_close`
+drops the session. Required direct storage fields are tracked with a
+session-side present-field set because the holder storage itself cannot
+distinguish "missing" from a synthesized default. The session stores
+agent-supplied JSON values beside the typed holder rather than serializing
+holder internals, so submit-only MCP forms do not need serializable field
+types. This is a headless holder editing surface. Live GPUI widget mutation
+remains an application-owned bridge from session state into GPUI entities.
 
 Manual tool registration returns `Result<(), McpToolError>`. Tool setup
 failures are reported during server construction; decode, validation,
