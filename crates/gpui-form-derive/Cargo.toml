@@ -40,10 +40,10 @@ gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { default-features = false, features = [ "derive", "mcp" ], path = "../gpui-form" }
 gpui-form-runtime = { workspace = true }
-serde = { workspace = true, features = [ "derive" ] }
 insta = { workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }
 prettyplease = { workspace = true }
+serde = { features = [ "derive" ], workspace = true }
 strum = { workspace = true }
 trybuild = "1.0"

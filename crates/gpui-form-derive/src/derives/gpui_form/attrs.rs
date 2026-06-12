@@ -45,7 +45,7 @@ pub struct McpToolOptions {
     pub description: Option<String>,
 }
 
-#[derive(Debug, darling::FromMeta, Default)]
+#[derive(Debug, Default, darling::FromMeta)]
 struct McpToolOptionsMeta {
     #[darling(default)]
     pub name: Option<String>,
