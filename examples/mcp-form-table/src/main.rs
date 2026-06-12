@@ -76,11 +76,15 @@ fn ticket_rows() -> Result<Vec<TicketRow>, String> {
     ])
 }
 
-fn main() -> gpui_form::mcp::ServeStdioResult {
+fn server() -> Result<gpui_form::mcp::McpServer, gpui_form::mcp::McpToolError> {
     let mut server = gpui_form::mcp::McpServer::new("mcp-form-table", env!("CARGO_PKG_VERSION"));
     gpui_form::mcp::register(&mut server)?;
     gpui_table::mcp::register(&mut server)?;
+    Ok(server)
+}
 
+fn main() -> gpui_form::mcp::ServeStdioResult {
+    let server = server()?;
     if std::env::args().any(|arg| arg == "--stdio") {
         return server.serve_stdio_blocking();
     }
@@ -107,4 +111,98 @@ fn main() -> gpui_form::mcp::ServeStdioResult {
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn composed_mcp_server_registers_form_and_table_tools() {
+        let server = server().expect("form and table MCP tools should register together");
+        let tool_names: Vec<_> = server
+            .list_tools()
+            .into_iter()
+            .map(|tool| tool.name.to_string())
+            .collect();
+
+        assert!(tool_names.contains(&TicketForm::descriptor().tool_name()));
+        assert!(tool_names.contains(&TicketRow::descriptor().tool_name()));
+    }
+
+    #[test]
+    fn composed_mcp_server_exposes_usable_form_and_table_schemas() {
+        let server = server().expect("form and table MCP tools should register together");
+
+        let form_tool = server
+            .list_tools()
+            .into_iter()
+            .find(|tool| tool.name == TicketForm::descriptor().tool_name())
+            .expect("form tool should be registered");
+        assert_eq!(
+            form_tool.input_schema["properties"]["title"]["type"],
+            "string"
+        );
+        assert_eq!(
+            form_tool.input_schema["properties"]["title"]["x-gpuiFormComponentBacked"],
+            true
+        );
+        assert_eq!(form_tool.input_schema["required"], json!(["title"]));
+
+        let table_tool = server
+            .list_tools()
+            .into_iter()
+            .find(|tool| tool.name == TicketRow::descriptor().tool_name())
+            .expect("table tool should be registered");
+        assert_eq!(
+            table_tool.input_schema["properties"]["title"]["type"],
+            "string"
+        );
+        assert_eq!(
+            table_tool.input_schema["properties"]["title"]["x-gpuiTableFilterType"],
+            "text"
+        );
+        assert_eq!(table_tool.input_schema["properties"]["limit"]["minimum"], 0);
+        let output_schema = table_tool
+            .output_schema
+            .as_ref()
+            .expect("table tool should advertise output schema");
+        assert_eq!(
+            output_schema["required"],
+            json!(["rows", "total", "offset", "limit"])
+        );
+    }
+
+    #[test]
+    fn composed_mcp_server_calls_form_submit_and_table_query_handlers() {
+        let server = server().expect("form and table MCP tools should register together");
+
+        let submit = server.call_tool(
+            &TicketForm::descriptor().tool_name(),
+            Some(json!({
+                "title": "DX pass",
+                "details": "No manual mcp_input or filter decoder required."
+            })),
+        );
+        assert_eq!(submit.is_error, Some(false));
+        assert_eq!(
+            submit.structured_content,
+            Some(json!({
+                "accepted": true,
+                "title": "DX pass",
+                "details": "No manual mcp_input or filter decoder required."
+            }))
+        );
+
+        let query = server.call_tool(
+            &TicketRow::descriptor().tool_name(),
+            Some(json!({ "title": "MCP" })),
+        );
+        assert_eq!(query.is_error, Some(false));
+        let content = query
+            .structured_content
+            .expect("table query should return content");
+        assert_eq!(content["total"], 1);
+        assert_eq!(content["rows"][0]["title"], "Expose table query over MCP");
+    }
 }
