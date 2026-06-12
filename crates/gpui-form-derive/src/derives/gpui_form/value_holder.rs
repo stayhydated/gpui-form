@@ -790,11 +790,7 @@ fn value_storage_policy_validator_tokens(
             impl<Target> ::es_fluent::FluentMessage for #validator_ident<Target> {
                 fn to_fluent_string_with(
                     &self,
-                    _localize: &mut dyn for<'a> FnMut(
-                        ::es_fluent::registry::StaticFluentDomain,
-                        ::es_fluent::registry::StaticFluentEntryId,
-                        Option<&::es_fluent::FluentArgs<'a>>,
-                    ) -> String,
+                    _localize: &mut ::es_fluent::FluentMessageLookup<'_>,
                 ) -> String {
                     "This field is required.".to_string()
                 }
@@ -967,6 +963,7 @@ pub(super) fn generate_value_holder(
     holder_plan: &ValueHolderPlan<'_>,
     enable_koruma: bool,
     enable_koruma_fluent: bool,
+    generate_mcp: bool,
 ) -> ValueHolderResult<TokenStream> {
     let has_skipped_fields = holder_plan.has_skipped_fields();
     let rendered_field_plans = holder_plan.rendered_fields();
@@ -1316,11 +1313,25 @@ pub(super) fn generate_value_holder(
         quote! {}
     };
 
+    let facade_crate = &context.paths.gpui_form;
+    let mcp_value_holder_impl = if generate_mcp {
+        quote! {
+            impl #holder_impl_generics #facade_crate::mcp::McpFormValueHolder
+                for #storage_ident #holder_ty_generics #holder_where_clause
+            {
+                type Form = #original_ident #ty_generics;
+            }
+        }
+    } else {
+        quote! {}
+    };
+
     let mut tokens = quote! {
         #conversion_error_type
         #required_policy_validator
         #conversion_signature_assertions
         #(#default_storage_assertions)*
+        #mcp_value_holder_impl
         #derive_output
         #builder_attr
         pub struct #storage_ident #holder_declaration_generics #holder_where_clause {

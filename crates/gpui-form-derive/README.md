@@ -97,6 +97,8 @@ Supporting struct attributes:
 - `#[gpui_form(empty)]`
 - `#[gpui_form(koruma)]`
 - `#[gpui_form(koruma(fluent))]`
+- `#[gpui_form(no_inventory)]`
+- `#[gpui_form(mcp)]` or `#[gpui_form(mcp(name = ..., title = ..., description = ...))]`
 
 Behavior notes:
 
@@ -125,6 +127,31 @@ Behavior notes:
 - generated `GpuiForm` component field code references
   `gpui_form::runtime::shape`; normal application crates do not need
   `gpui-form-runtime` directly just because a field uses a component shape
+- the derive crate's `mcp` feature emits a `gpui_form::mcp::McpForm`
+  implementation plus MCP submit inventory registration beside
+  `GpuiFormShape` only for forms that opt in with
+  `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`).
+  Most users should enable this through
+  `gpui-form = { features = ["mcp"] }`, which also enables the facade re-export
+  and `gpui-form-mcp` integration crate.
+  MCP submit forms must be concrete, cannot use `#[gpui_form(no_inventory)]`,
+  and require the `mcp` feature when the attribute is present.
+- MCP argument decoding writes through generated value-holder storage and shape
+  value-storage policies; it does not instantiate GPUI state or route through
+  button callbacks. Skipped-field forms get holder submission support but no
+  generated model-handler conversion. Component-backed field schemas use
+  value-specific `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when
+  available. Struct-level
+  `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
+  overrides generated MCP tool metadata.
+- the `#[gpui_form::mcp_submit]` attribute macro registers application-owned
+  submit functions into MCP handler inventory. It infers model submission from
+  the source model's generated `McpSubmitArgument` impl and holder submission
+  from the generated `*FormValueHolder` impl (for skipped fields or app-owned
+  context).
+  Handlers must be synchronous or async and return `Result<T, E>`. The attribute
+  macro resolves the facade crate
+  path, so renamed `gpui-form` dependencies work like the derive output.
 - `value(type = ..., from_source = ..., into_source = ...)` lets the generated
   holder edit a type that differs from the original model field. The `type = ...`
   option is the form-side base value type; use `type = T`, not

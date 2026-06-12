@@ -3,7 +3,9 @@ use gpui_form_codegen::components::ShapeOptions;
 use proc_macro2::Span;
 use syn::{parse::Parser as _, punctuated::Punctuated};
 
-use crate::derives::gpui_form::attrs::{EmptyForm, GpuiFormFieldOption, NoInventory};
+use crate::derives::gpui_form::attrs::{
+    EmptyForm, GpuiFormFieldOption, McpToolOptions, NoInventory,
+};
 use crate::derives::gpui_form::ir::{
     DefaultExpr, FieldAttrContext, FieldContext, RenderedFieldIntent, RenderedValueIntent, Spanned,
 };
@@ -346,6 +348,8 @@ pub struct ComponentStruct {
     pub no_inventory: Option<NoInventory>,
     #[darling(default)]
     pub koruma: Option<KorumaField>,
+    #[darling(default)]
+    pub mcp: Option<McpToolOptions>,
 }
 
 #[cfg(test)]

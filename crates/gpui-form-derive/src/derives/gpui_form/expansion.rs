@@ -14,6 +14,7 @@ use crate::derives::gpui_form::intent::ComponentStruct;
 use crate::derives::gpui_form::ir::{
     ComponentFieldPlan, DeriveContext, FieldPlan, HolderStoragePlan, ValidationRule,
 };
+use crate::derives::gpui_form::mcp::generate_mcp_impl;
 use crate::derives::gpui_form::planner::plan_form;
 use crate::derives::gpui_form::structs::GpuiFormOptions;
 use crate::derives::gpui_form::value_holder::generate_value_holder;
@@ -143,7 +144,30 @@ pub fn expand_gpui_form(
     };
 
     let struct_name = &context.original_ident;
+    if parsed.mcp.is_some() && !options.generate_mcp {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` requires the `gpui-form/mcp` feature",
+        )
+        .to_compile_error();
+    }
+    if parsed.mcp.is_some() && parsed.no_inventory.is_some() {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` cannot be combined with `#[gpui_form(no_inventory)]`; MCP submit registration uses inventory",
+        )
+        .to_compile_error();
+    }
+    if parsed.mcp.is_some() && !original_input.generics.params.is_empty() {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` does not support generic forms because MCP submit tools are registered in inventory",
+        )
+        .to_compile_error();
+    }
+
     let generate_inventory = options.generate_shape && parsed.no_inventory.is_none();
+    let generate_mcp = options.generate_mcp && parsed.mcp.is_some();
     if generate_inventory && !original_input.generics.params.is_empty() {
         return syn::Error::new_spanned(
             struct_name,
@@ -174,6 +198,7 @@ pub fn expand_gpui_form(
             &holder_plan,
             enable_koruma,
             enable_koruma_fluent,
+            generate_mcp,
         ) {
             Ok(value_holder_tokens) => value_holder_tokens,
             Err(error) => return error.to_compile_error(),
@@ -188,6 +213,21 @@ pub fn expand_gpui_form(
                         #enable_koruma
                     ).with_holder_conversion(#conversion_metadata)
                 }
+            }
+        } else {
+            quote! {}
+        };
+        let mcp_impl = if generate_mcp {
+            match generate_mcp_impl(
+                &context,
+                &original_input,
+                &empty_fields,
+                &holder_plan,
+                enable_koruma,
+                parsed.mcp.as_ref(),
+            ) {
+                Ok(tokens) => tokens,
+                Err(error) => return error.to_compile_error(),
             }
         } else {
             quote! {}
@@ -213,6 +253,8 @@ pub fn expand_gpui_form(
             #value_holder_tokens
 
             #shape_impl
+
+            #mcp_impl
 
             #empty_struct_declarations
         };
@@ -267,6 +309,7 @@ pub fn expand_gpui_form(
         &holder_plan,
         effective_enable_koruma,
         enable_koruma_fluent,
+        generate_mcp,
     ) {
         Ok(value_holder_tokens) => value_holder_tokens,
         Err(error) => return error.to_compile_error(),
@@ -451,6 +494,21 @@ pub fn expand_gpui_form(
     } else {
         quote! {}
     };
+    let mcp_impl = if generate_mcp {
+        match generate_mcp_impl(
+            &context,
+            &original_input,
+            &field_plans,
+            &holder_plan,
+            effective_enable_koruma,
+            parsed.mcp.as_ref(),
+        ) {
+            Ok(tokens) => tokens,
+            Err(error) => return error.to_compile_error(),
+        }
+    } else {
+        quote! {}
+    };
 
     let components_base_declarations = if original_input.generics.params.is_empty() {
         quote! {
@@ -485,6 +543,8 @@ pub fn expand_gpui_form(
         #component_type_checks
 
         #shape_impl
+
+        #mcp_impl
 
         #components_base_declarations
     };

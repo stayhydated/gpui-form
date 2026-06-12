@@ -4,8 +4,8 @@
 //! binding are provided by `component-shape` and `component-shape-gpui`.
 
 pub use component_shape::{
-    ComponentCapabilities, ComponentPrototyping, ComponentShapeMetadata, ComponentSuffix,
-    RenderCapability, ValueBindingCapability, ValueChange,
+    ComponentCapabilities, ComponentPrototyping, ComponentShapeMetadata, ComponentSuffix, McpInput,
+    McpInputShape, McpPrimitiveKind, RenderCapability, ValueBindingCapability, ValueChange,
     is_valid_component_suffix as is_valid_component_field_suffix,
 };
 pub use component_shape_gpui::{

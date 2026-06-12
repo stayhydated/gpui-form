@@ -14,9 +14,9 @@ and keeps form-specific storage and holder behavior local to `gpui-form`.
 
 - `src/lib.rs`: public module surface
 - `src/shape.rs`: component-shape contracts from `component-shape` and
-  `component-shape-gpui`, `GpuiComponentShape`, required-value and value-binding
-  policy markers, value-holder storage helpers, and generated-code helper
-  functions
+  `component-shape-gpui`, shared metadata helpers such as `McpInput`,
+  `GpuiComponentShape`, required-value and value-binding policy markers,
+  value-holder storage helpers, and generated-code helper functions
 
 ## Boundaries
 

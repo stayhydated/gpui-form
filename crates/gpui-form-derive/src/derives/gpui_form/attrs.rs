@@ -1,4 +1,4 @@
-use darling::FromMeta;
+use darling::{Error as DarlingError, FromMeta};
 use proc_macro2::Span;
 use syn::{
     Expr, Ident, Token, Type,
@@ -36,6 +36,61 @@ impl FromMeta for NoInventory {
     fn from_word() -> darling::Result<Self> {
         Ok(Self)
     }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct McpToolOptions {
+    pub name: Option<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, darling::FromMeta, Default)]
+struct McpToolOptionsMeta {
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub title: Option<String>,
+    #[darling(default)]
+    pub description: Option<String>,
+}
+
+impl FromMeta for McpToolOptions {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self::default())
+    }
+
+    fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
+        let options = McpToolOptionsMeta::from_list(items)?.into();
+        validate_mcp_tool_options(&options)?;
+        Ok(options)
+    }
+}
+
+impl From<McpToolOptionsMeta> for McpToolOptions {
+    fn from(value: McpToolOptionsMeta) -> Self {
+        Self {
+            name: value.name,
+            title: value.title,
+            description: value.description,
+        }
+    }
+}
+
+fn validate_mcp_tool_options(options: &McpToolOptions) -> darling::Result<()> {
+    if let Some(name) = options.name.as_deref() {
+        component_shape::validate_mcp_tool_name(name)
+            .map_err(|error| DarlingError::custom(error.to_string()))?;
+    }
+    if let Some(title) = options.title.as_deref() {
+        component_shape::validate_mcp_tool_metadata_text("title", title)
+            .map_err(|error| DarlingError::custom(error.to_string()))?;
+    }
+    if let Some(description) = options.description.as_deref() {
+        component_shape::validate_mcp_tool_metadata_text("description", description)
+            .map_err(|error| DarlingError::custom(error.to_string()))?;
+    }
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -293,6 +348,7 @@ fn peel_type_wrappers(mut ty: &Type) -> &Type {
 mod tests {
     use super::*;
     use quote::quote;
+    use syn::parse_quote;
     use syn::{parse::Parser as _, punctuated::Punctuated};
 
     fn parse_options(
@@ -369,6 +425,74 @@ mod tests {
             error
                 .to_string()
                 .contains("expects the form-side base value type, not Option<T>"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_parse_word_and_list_forms() {
+        let parsed_word = McpToolOptions::from_word().expect("mcp word form should parse");
+        assert!(parsed_word.name.is_none());
+        assert!(parsed_word.title.is_none());
+        assert!(parsed_word.description.is_none());
+
+        let parsed_list = McpToolOptions::from_list(&[
+            parse_quote!(name = "submit_contact"),
+            parse_quote!(title = "Submit Contact"),
+            parse_quote!(description = "Submit a contact request"),
+        ])
+        .expect("mcp list form should parse");
+
+        assert_eq!(parsed_list.name.as_deref(), Some("submit_contact"));
+        assert_eq!(parsed_list.title.as_deref(), Some("Submit Contact"));
+        assert_eq!(
+            parsed_list.description.as_deref(),
+            Some("Submit a contact request")
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_unknown_fields() {
+        let error = McpToolOptions::from_list(&[parse_quote!(invalid = "value")])
+            .expect_err("invalid mcp option should fail");
+        assert!(
+            error.to_string().contains("Unknown field"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_invalid_name() {
+        let error = McpToolOptions::from_list(&[parse_quote!(name = "bad name")])
+            .expect_err("invalid mcp name should fail");
+
+        assert!(
+            error.to_string().contains("tool name may only contain"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_blank_metadata() {
+        let error =
+            McpToolOptions::from_list(&[parse_quote!(title = ""), parse_quote!(name = "ok-name")])
+                .expect_err("empty title should fail");
+
+        assert!(
+            error.to_string().contains("tool title cannot be empty"),
+            "unexpected error: {error}"
+        );
+
+        let error = McpToolOptions::from_list(&[
+            parse_quote!(description = "   "),
+            parse_quote!(name = "ok-name"),
+        ])
+        .expect_err("empty description should fail");
+
+        assert!(
+            error
+                .to_string()
+                .contains("tool description cannot be empty"),
             "unexpected error: {error}"
         );
     }

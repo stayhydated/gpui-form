@@ -6,6 +6,7 @@ pub mod holder_plan;
 pub mod intent;
 pub mod ir;
 pub mod koruma;
+pub mod mcp;
 pub mod planner;
 pub mod structs;
 pub mod tests;

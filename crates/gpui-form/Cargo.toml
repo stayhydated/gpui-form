@@ -16,13 +16,23 @@ keywords = [ "gpui", "gpui-component", "form" ]
 default = [ "derive" ]
 derive = [ "dep:gpui-form-derive" ]
 inventory = [ "gpui-form-derive?/inventory" ]
+mcp = [ "dep:gpui-form-mcp", "inventory", "gpui-form-derive?/mcp" ]
 
 [dependencies]
 bon = { workspace = true }
 gpui-form-core = { workspace = true }
 gpui-form-derive = { optional = true, workspace = true }
+gpui-form-mcp = { optional = true, workspace = true }
 gpui-form-runtime = { workspace = true }
 gpui-form-schema = { workspace = true }
+
+[dev-dependencies]
+gpui = { workspace = true }
+gpui-form-collection = { workspace = true }
+koruma = { workspace = true }
+koruma-collection = { workspace = true }
+serde = { features = [ "derive" ], workspace = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

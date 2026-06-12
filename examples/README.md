@@ -61,6 +61,36 @@ Run it with:
 cargo run -p prototyping
 ```
 
+## mcp-submit
+
+Stdio MCP server example that exposes generated form value holders as MCP
+tools. It demonstrates generated tool schemas, `tools/call` argument decoding,
+holder validation, model conversion, component-backed fields, and skipped-field
+holder submission, plus explicit per-tool MCP metadata.
+
+Run it with:
+
+```sh
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"manual","version":"0.0.0"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
+  '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  | cargo run -p mcp-submit
+```
+
+## mcp-form-table
+
+Headless composed MCP server example that declares a custom
+`component_shape_gpui` form component shape, exposes a generated form submit
+tool, exposes inferred `gpui-table` filter arguments, and serves both
+integrations through one shared MCP server.
+
+Run a local smoke test with:
+
+```sh
+cargo run -p mcp-form-table
+```
+
 ## i18n
 
 `examples/some-lib/i18n.toml` lives next to that package's `Cargo.toml`, and

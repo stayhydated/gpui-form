@@ -129,7 +129,7 @@ inventory or codegen workflows change.
 - `crates/gpui-form`
   Audience: **User-facing**
   Docs: [Architecture](crates/gpui-form/docs/ARCHITECTURE.md)
-  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `schema`, and `bon`; numeric helpers are available under `gpui_form::core::numeric`. Component shape runtime contracts, component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
+  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports `GpuiForm` plus `core`, `runtime`, `schema`, and `bon`; re-exports `mcp` only behind the experimental `mcp` feature. Numeric helpers are available under `gpui_form::core::numeric`. Component shape runtime contracts, component runtimes, collection shapes, and their derives are imported explicitly from their own crates.
 
 ### Public Integration Crates
 
@@ -173,6 +173,11 @@ inventory or codegen workflows change.
   Docs: [Architecture](crates/gpui-form-derive/docs/ARCHITECTURE.md)
   Role: proc macro for `#[derive(GpuiForm)]`. GPUI component shape declarations live in `component-shape-gpui`. Most users should depend on `gpui-form` rather than this crate directly.
 
+- `crates/gpui-form-mcp`
+  Audience: **Public integration**
+  Docs: [Architecture](crates/gpui-form-mcp/docs/ARCHITECTURE.md)
+  Role: experimental MCP submit integration for generated form value holders, including tool schema generation, typed handler registration, and `rmcp` stdio serving. Most application users should enable it through the `gpui-form` `mcp` feature only when they need MCP submission.
+
 - `crates/gpui-form-prototyping-core`
   Audience: **Public integration**
   Docs: [Architecture](crates/gpui-form-prototyping-core/docs/ARCHITECTURE.md)
@@ -202,6 +207,12 @@ inventory or codegen workflows change.
   Storybook-like GPUI example app for browsing generated forms.
 
   Run with `cargo run -p some-lib-forms`.
+
+- `examples/mcp-submit`
+  Stdio MCP server example that exposes generated form value holders as MCP
+  tools.
+
+  Run with `cargo run -p mcp-submit`.
 
 - `crates/gpui-form-component-story`
   Storybook-like GPUI example app for browsing the reusable runtime components.

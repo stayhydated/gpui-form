@@ -80,6 +80,16 @@ Use:
 When reviewing a field type mismatch, check the storage policy separately from
 value compatibility. Compatibility determines whether a shape can support a
 value type; storage policy determines how required values are represented.
+When the shape should participate in MCP submit schemas, rely on inferred MCP
+metadata for unambiguous declared values such as `String`, booleans, numbers,
+dates, `Vec<T>`, set-like primitive collections, fixed arrays,
+`gpui_form::mcp::McpRange<T>`, or `(Option<T>, Option<T>)` ranges. The
+generated `ComponentShapeFor<Value>` impl carries the value-specific metadata,
+so multi-value shapes can expose distinct MCP input shapes per supported
+value. Component-backed form fields use value-specific shape MCP input metadata
+when available, then fall back to the field type's `McpJsonSchema` metadata.
+Use `McpJsonSchema` or a manual integration schema/decoder for ambiguous or
+intentionally different wire shapes.
 
 ## Field-Level Builder Configuration
 

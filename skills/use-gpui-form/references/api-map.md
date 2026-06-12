@@ -17,6 +17,9 @@ gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
 component-shape-gpui = "*"
 gpui-form-runtime = "*"
+
+# Optional experimental MCP submit integration:
+# gpui-form = { version = "*", features = ["mcp"] }
 ```
 
 ## Imports
@@ -33,6 +36,7 @@ use component_shape_gpui::GpuiComponentShape;
 Useful runtime/helper paths:
 
 - `gpui_form::runtime::shape`
+- `gpui_form::mcp` when the `gpui-form` `mcp` feature is enabled
 - `gpui_form_component::date_picker`
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
@@ -152,6 +156,74 @@ Common struct attributes:
 - Holders for forms with skipped source fields expose
   `holder.present_fields()` as a typed snapshot for debug/preview formatting;
   JSON or text formatting belongs in the app or generator layer.
+
+## MCP Submit Pattern
+
+Enable the facade `mcp` feature only when forms should be exposed through MCP
+tools. MCP calls use structured JSON arguments; they do not use `clap`, shell
+argument parsing, or GPUI button callbacks. Exposed forms must opt in with
+`#[gpui_form(mcp)]`, must not use `#[gpui_form(no_inventory)]`, and must not be
+generic.
+
+```rust
+use gpui_form::GpuiForm;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
+#[gpui_form(mcp)]
+pub struct ContactRequest {
+    #[gpui_form(hidden)]
+    pub email: String,
+}
+
+#[gpui_form::mcp_submit]
+async fn submit_contact(request: ContactRequest) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({ "email": request.email }))
+}
+
+fn main() -> gpui_form::mcp::ServeStdioResult {
+    gpui_form::mcp::serve_stdio_blocking()
+}
+```
+
+For skipped-field forms that need application-owned context, use the generated
+`*FormValueHolder` as the first parameter; `#[gpui_form::mcp_submit]` infers
+holder submission from that parameter type. Handlers must be synchronous or
+async and return `Result<T, E>`.
+Use `gpui_form::mcp::server()?` for the default generated server and
+`gpui_form::mcp::server_named(name, version)?` when application-owned server
+metadata is needed. Use `gpui_form::mcp::builder()` or
+`builder_named(name, version)` when deferred builder setup is needed.
+Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
+Use `McpServer::builder(name, version)` when composing forms with tables or
+other MCP integrations, and add generated handlers with
+`.register(gpui_form::mcp::register)`.
+Register manual handlers with
+`gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
+`.holder(handler)?` for handlers returning `Result<T, E>`.
+Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
+when generated MCP tools need application-owned names or descriptions.
+Registration reports setup errors such as duplicate tool names.
+
+For component-backed fields, MCP input schemas use value-specific
+`<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when it is
+available. Component-backed fields whose shape does not publish MCP input
+metadata for that field value type fall back to the field type's
+`McpJsonSchema` implementation.
+`component_shape_gpui` infers common MCP metadata from unambiguous declared
+values such as `String`, booleans, numbers, dates, `Vec<T>`, set-like
+primitive collections, fixed arrays, `gpui_form::mcp::McpRange<T>`, or
+`(Option<T>, Option<T>)` ranges. `Vec<T>` and fixed arrays publish list
+metadata; set-like collections publish set metadata. Inferred metadata is
+attached to generated `ComponentShapeFor<Value>` impls, so multi-value shapes
+can expose distinct MCP input shapes per supported value. For custom field
+value types, generated descriptors call
+`gpui_form::mcp::McpJsonSchema::json_schema()`. Type aliases inherit the
+underlying schema. App-owned object structs, tuple or named transparent
+newtypes, and fieldless enums can derive `gpui_form::mcp::McpJsonSchema` with
+`#[mcp(crate = gpui_form::mcp)]`. The derive follows serde deserialize names,
+includes enum deserialize aliases, skips deserialization-skipped fields,
+rejects flattened fields, and treats serde-defaulted fields as not required.
 
 ## Generated Names
 

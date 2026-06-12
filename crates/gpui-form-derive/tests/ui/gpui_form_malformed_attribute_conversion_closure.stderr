@@ -9,7 +9,7 @@ error[E0631]: type mismatch in closure arguments
   |         required by a bound introduced by this call
   |
   = note: expected closure signature `fn(u64) -> _`
-             found closure signature `fn(String) -> _`
+             found closure signature `fn(std::string::String) -> _`
 note: required by a bound in `assert_source_to_form`
  --> tests/ui/gpui_form_malformed_attribute_conversion_closure.rs:7:16
   |

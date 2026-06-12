@@ -22,6 +22,7 @@ This crate exists to:
 
 - `gpui_form_derive::GpuiForm` behind the `derive` feature
 - `gpui_form_core` as `gpui_form::core`
+- `gpui_form_mcp` as `gpui_form::mcp` behind the `mcp` feature
 - `gpui_form_runtime` as `gpui_form::runtime`
 - `gpui_form_schema` as `gpui_form::schema`
 - `bon` as `gpui_form::bon`
@@ -40,6 +41,8 @@ directly.
 - `derive` (default): re-exports `GpuiForm` from `gpui-form-derive`
 - `inventory`: forwards inventory-enabled `GpuiForm` behavior so
   `#[derive(GpuiForm)]` emits `GpuiFormShape` registrations
+- `mcp`: re-exports `gpui-form-mcp`, enables inventory, and forwards
+  derive-side MCP submit registration emission
 
 `inventory` is meaningful only when `derive` is also enabled.
 
@@ -52,6 +55,8 @@ directly.
 - `gpui-form-runtime` for the `gpui_form::runtime` facade path used by
   generated component field code
 - `gpui-form-derive` for `GpuiForm`
+- `gpui-form-mcp` for experimental MCP tool schema, registration, handler, and
+  `rmcp` stdio serving helpers when the `mcp` feature is enabled
 - `bon` because generated value holders with skipped fields derive
   `::gpui_form::bon::Builder`
 
@@ -84,9 +89,37 @@ those component APIs explicitly.
 1. `gpui-form-prototyping-core` converts those shapes into scaffolded GPUI
    code.
 
+### MCP submit flow
+
+1. The user enables `gpui-form`'s `mcp` feature.
+1. `#[derive(GpuiForm)]` emits normal holder code, `GpuiFormShape` inventory,
+   and MCP submit registration only for forms that opt in with
+   `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`) when the `mcp` feature is
+   enabled.
+1. Application code annotates submit handlers with
+   `#[gpui_form::mcp_submit]`; the handler parameter chooses model or holder
+   submission.
+   `model` mode passes the reconstructed source model when conversion is
+   available; `holder` mode passes the generated value holder for skipped-field
+   forms and app-owned context. Those annotations register handler functions in
+   MCP inventory. Handlers can be synchronous or async and must return
+   `Result<T, E>`.
+   Struct-level `#[gpui_form(mcp(...))]` options can override generated MCP
+   tool names, titles, and descriptions.
+1. The MCP runtime decodes JSON tool arguments into the generated holder, runs
+   generated holder validation, performs holder-to-model conversion when
+   available, and calls the application-owned handler with a `Result<T, E>`
+   return type (where `T: serde::Serialize`, `E: fmt::Display`).
+
+This facade feature does not make GPUI widgets, windows, or button callbacks
+part of the MCP execution path.
+
 ## Public Path Notes
 
 - `gpui_form::bon` remains public because generated value holders use it.
+- `gpui_form::mcp` remains feature-gated because it carries MCP runtime,
+  transport, JSON, schema, and submit-handler dependencies that should not be
+  part of the default form derive path.
 - Numeric helpers live under `gpui_form::core::numeric`.
 - Generated shape contract paths live under `gpui_form::runtime::shape`.
   Direct `gpui-form-runtime` dependencies are reserved for lower-level shape

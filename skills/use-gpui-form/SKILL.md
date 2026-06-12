@@ -53,7 +53,19 @@ helpers and component-specific derives explicitly:
 7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
    `inventory` feature is enabled; generic forms cannot register concrete
    prototyping metadata.
-8. Use paths such as `gpui_form_component::date_picker`,
+8. For MCP submit tools, enable `gpui-form`'s `mcp` feature, derive `serde`
+   support for field value types, add `#[gpui_form(mcp)]` to a concrete
+   non-`no_inventory` form type, and annotate application-owned handlers with
+   `#[gpui_form::mcp_submit]`. Use a source-model first parameter for model
+   handlers and a generated `*FormValueHolder` first parameter when
+   skipped-field forms need application-owned context.
+   Handlers can be synchronous or async and must return `Result<T, E>`.
+   Do not add CLI, shell parsing, or GPUI button-callback execution for MCP.
+   For component-backed fields, MCP input schemas use value-specific
+   `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when the component
+   shape publishes it, otherwise they fall back to the field type's
+   `McpJsonSchema` implementation.
+9. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
    Generated `GpuiForm` component fields use the facade path
@@ -123,6 +135,41 @@ Common patterns:
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - For Koruma validation, add `#[gpui_form(koruma)]` or `#[gpui_form(koruma(fluent))]` to the form struct and write field validators with Koruma's direct syntax, such as `#[koruma(NonEmptyValidation::<_>)]` or `#[koruma(RangeValidation::<_>::min(18).max(120))]`. Use Koruma target selectors such as `full(...)` when a validator must receive the full optional value.
 - Convert generated holders with `holder.try_into_original()` when conversion can fail or when a required shape-backed field has no declared default, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. For skipped-field debug UI, format `holder.present_fields()` outside the generated holder instead of expecting a JSON helper.
+- For MCP submit integration, keep GPUI as a presentation surface over the same
+  holder and submit handler. MCP tool calls should populate the generated value
+  holder from structured JSON, run generated validation, and call an
+  application-owned handler registered through `#[gpui_form::mcp_submit]`.
+  The first parameter chooses the mode through generated `McpSubmitArgument`
+  implementations: source model for model submission, generated
+  `*FormValueHolder` for holder submission.
+  Exposed forms must opt in with `#[gpui_form(mcp)]`, must not use
+  `#[gpui_form(no_inventory)]`, and must not be generic.
+  Handlers can be synchronous or async and must return `Result<T, E>`.
+  Use `gpui_form::mcp::server()?` for the default generated server and
+  `gpui_form::mcp::server_named(name, version)?` when application-owned server
+  metadata is needed. Use `gpui_form::mcp::builder()` or
+  `builder_named(name, version)` when deferred builder setup is needed.
+  Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
+  Use `McpServer::builder(name, version)` when composing forms with tables or
+  other MCP integrations, and add generated handlers with
+  `.register(gpui_form::mcp::register)`.
+  Register manual handlers with
+  `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
+  `.holder(handler)?` for handlers returning `Result<T, E>`.
+  Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
+  when generated MCP tools need application-owned names or descriptions.
+  Registration reports setup errors such as duplicate tool names.
+  Component-backed fields use value-specific
+  `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata in generated
+  schemas when available, then fall back to the field type's schema.
+  Custom field value types exposed through MCP should implement or derive
+  `gpui_form::mcp::McpJsonSchema`. Aliases inherit their target type schema,
+  and tuple or named transparent newtypes, named structs, or fieldless enums can
+  derive it with `#[mcp(crate = gpui_form::mcp)]`. The
+  derive follows serde deserialize names, includes enum deserialize aliases,
+  skips deserialization-skipped fields, rejects flattened fields, and treats
+  serde-defaulted fields as not required. Use `gpui_form::mcp::McpRange<T>` for
+  typed `{ "min": ..., "max": ... }` range arguments.
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,

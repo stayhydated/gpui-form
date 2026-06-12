@@ -44,6 +44,9 @@ component-shape-gpui = "*"
 
 # Optional: inventory registration for prototyping/code generation
 # gpui-form = { version = "*", features = ["inventory"] }
+
+# Optional: experimental MCP submit integration
+# gpui-form = { version = "*", features = ["mcp"] }
 ```
 
 ## Quick Start
@@ -214,6 +217,132 @@ Common struct-level helpers:
 - `#[gpui_form(koruma)]` enables Koruma-backed validation wiring.
 - `#[gpui_form(koruma(fluent))]` enables Koruma validation plus fluent error
   rendering.
+
+## Experimental MCP Submit
+
+Enable the facade `mcp` feature to generate typed MCP submit metadata for forms
+that opt in with `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`). Those
+forms get a `gpui_form::mcp::McpForm` implementation beside the normal GPUI
+form types.
+The feature implies inventory registration and routes through the
+`gpui-form-mcp` integration crate. `#[gpui_form(mcp)]` requires the `mcp`
+feature and cannot be combined with `#[gpui_form(no_inventory)]` or generic
+form types, because MCP submit tools are discovered through inventory.
+
+```toml
+[dependencies]
+gpui-form = { version = "*", features = ["mcp"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+```
+
+```rs
+use gpui_form::GpuiForm;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
+#[gpui_form(mcp(
+    name = "submit_contact",
+    title = "Submit contact request",
+    description = "Submit a contact request from structured MCP arguments."
+))]
+pub struct ContactRequest {
+    #[gpui_form(hidden)]
+    pub email: String,
+}
+
+#[gpui_form::mcp_submit]
+async fn submit_contact(request: ContactRequest) -> Result<serde_json::Value, String> {
+    Ok(serde_json::json!({ "email": request.email }))
+}
+
+fn main() -> gpui_form::mcp::ServeStdioResult {
+    gpui_form::mcp::serve_stdio_blocking()
+}
+```
+
+MCP tool calls populate the generated `ContactRequestFormValueHolder`, run
+generated holder validation, convert to `ContactRequest` when the holder can
+reconstruct the model, and then call the application-owned handler. Forms with
+`#[gpui_form(skip)]` fields intentionally do not get model-handler conversion;
+give those handlers the generated `FormValueHolder` as their first parameter.
+`#[gpui_form::mcp_submit]` infers model submission when the handler takes the
+source model. For forms with `#[gpui_form(skip)]` context or other
+application-owned context, give the handler the generated `*FormValueHolder`
+parameter and the macro registers holder submission instead. This inference is
+type-directed through generated `McpSubmitArgument` implementations, not a
+name suffix convention.
+Submit handlers can be synchronous or async. Return `Result<T, E>` for handler
+errors and normal responses, where `T: serde::Serialize` and `E: fmt::Display`.
+Use struct-level
+`#[gpui_form(mcp(name = "...", title = "...", description = "..."))]` to
+override the generated MCP tool name, title, or description. The lower-level
+`McpServer` API remains
+available when an application wants to compose form tools with other
+`component-shape-mcp` integrations. Use `gpui_form::mcp::server_named(name,
+version)?` when generated form handlers should advertise application-owned
+metadata, then call `.serve_stdio().await` or `.serve_stdio_blocking()`. Use
+`gpui_form::mcp::builder()` or `builder_named(name, version)` when deferred
+setup is useful. Use `gpui_form::mcp::serve_stdio_blocking()` for the default
+stdio server.
+
+For a composed server, such as a binary that also depends on `gpui-table`,
+use the shared builder:
+
+```rs
+let server = gpui_form::mcp::McpServer::builder("my-app", env!("CARGO_PKG_VERSION"))
+    .register(gpui_form::mcp::register)
+    // If your binary also enables gpui-table MCP integration:
+    .register(gpui_table::mcp::register)
+    .build()?;
+```
+
+Manual form tools can still be registered directly:
+`gpui_form::mcp::form::<ContactRequest>(&mut server).model(handler)?` or
+`.holder(handler)?` for `Result<T, E>` handlers and `handler` must return
+`Result`.
+Registration reports setup errors such as duplicate tool names.
+
+For component-backed fields, generated MCP input schemas use value-specific
+shape metadata from `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when it is
+available. If the shape does not publish MCP input metadata for that field
+value type, the generated schema falls back to the field type's
+`McpJsonSchema` implementation. `component_shape_gpui` infers common
+value-specific MCP input from declared value metadata; custom or ambiguous
+wire schemas should use `McpJsonSchema` on the field type or a manual
+integration schema/decoder.
+For custom field value types exposed through MCP, implement or derive
+`gpui_form::mcp::McpJsonSchema`; aliases inherit the schema of their target
+type, and tuple or named transparent newtypes, named structs, or fieldless enums can derive
+the trait with `#[mcp(crate = gpui_form::mcp)]`. The derive follows serde
+deserialize names, includes enum deserialize aliases, skips
+deserialization-skipped fields, rejects flattened fields, and treats
+serde-defaulted fields as not required. Use `gpui_form::mcp::McpRange<T>` for
+typed `{ "min": ..., "max": ... }` range arguments.
+
+This integration is MCP-only. It does not add `gpui-form-cli`, `clap`, shell
+completion, shell argument parsing, or exit-code behavior. The crate includes a
+stdio MCP server backed by the official `rmcp` SDK for local MCP clients, but
+it does not start with GPUI app startup or instantiate GPUI widgets to execute
+submissions.
+
+See `examples/mcp-submit` for a runnable stdio MCP server:
+
+```sh
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"manual","version":"0.0.0"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
+  '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  | cargo run -p mcp-submit
+```
+
+See `examples/mcp-form-table` for a headless composed server that declares a
+custom component shape, exposes a form submit tool, and composes it with a
+`gpui-table` MCP query tool:
+
+```sh
+cargo run -p mcp-form-table
+```
 
 ## Infinite Select Runtime
 
@@ -394,6 +523,17 @@ It uses `state = ...` for the wrapped external state type, plus `new`,
 `component`, `value = ...`, `values(...)`, `value_binding`, and `field_suffix`
 metadata. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`.
+For MCP submit schemas, common shape metadata is inferred from unambiguous
+declared values such as `String`, booleans, numbers, dates, `Vec<T>`,
+set-like primitive collections, fixed arrays, `gpui_form::mcp::McpRange<T>`,
+or `(Option<T>, Option<T>)` ranges. `Vec<T>` and fixed arrays publish list
+metadata; set-like collections publish set metadata. Inferred metadata is
+attached to the generated `ComponentShapeFor<Value>` impl, so multi-value
+shapes can expose different MCP input metadata for different supported value
+types. MCP descriptors store a typed schema function for every visible form
+field using `gpui_form::mcp::McpJsonSchema`, which gives aliases and derived
+tuple or named transparent newtypes, named structs, and fieldless enums precise
+schemas and makes unsupported MCP-visible field types fail at compile time.
 `component = ...` must be a path-like type, and `field_suffix = "..."` must be
 a non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
@@ -554,7 +694,8 @@ skipped-field reconstruction API.
 Generic forms are not registered in inventory because inventory metadata must
 name one concrete source type and module path. When the `inventory` feature is
 enabled, add `#[gpui_form(no_inventory)]` to generic forms that derive
-holders/components without registering prototyping metadata.
+holders/components without registering prototyping metadata. MCP submit forms
+cannot use `no_inventory` or generic parameters.
 
 ## Examples
 

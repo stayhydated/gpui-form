@@ -22,7 +22,9 @@ gpui-form-derive = "*"
 `GpuiComponentShapeBuilder<Shape>`, `GpuiComponentValueBinding<T>`,
 `component_shape!`, and
 `#[derive(GpuiComponentShape)]`. This crate re-exports those contracts and adds
-the `gpui-form` storage policy contract used by generated forms.
+the `gpui-form` storage policy contract used by generated forms. It also
+re-exports shared metadata helpers such as `McpInput` for custom shapes that
+publish MCP schema metadata.
 
 `shape::GpuiComponentShape` is the GPUI construction trait for declared component
 shapes. `#[derive(GpuiForm)]` also requires `DeclaredGpuiComponentShape`; GPUI

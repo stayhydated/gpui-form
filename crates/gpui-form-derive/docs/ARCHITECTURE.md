@@ -40,6 +40,9 @@ that crate's `derive` feature is enabled.
   codegen layouts
 - `src/derives/gpui_form/value_holder.rs`: generated holder types, defaults,
   conversion logic, and skip-field handling
+- `src/derives/gpui_form/mcp.rs`: generated MCP form descriptors, argument
+  decoding, validation bridge, model-conversion bridge, and MCP submit
+  registration
 - `src/derives/gpui_form/validation.rs`: Koruma option parsing and projection
   into gpui-form validation metadata
 - `src/derives/gpui_form/koruma.rs`: Koruma metadata mirroring helpers
@@ -71,6 +74,8 @@ that crate's `derive` feature is enabled.
    - `FormValueHolder`
    - conversions between the original type and the holder
    - optional inventory metadata
+- optional MCP submit integration when the derive `mcp` feature is enabled and
+  the form opts in with `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`)
 
 ## Value Holder Responsibilities
 
@@ -187,6 +192,55 @@ When the `inventory` feature is enabled:
    paths, component shape UI paths for component fields, and holder conversion
    metadata that records skipped-field reconstruction requirements for
    downstream generators.
+
+## MCP Submit Integration
+
+When the `mcp` feature is enabled, `#[derive(GpuiForm)]` still emits normal
+`GpuiForm` output plus MCP integration only for forms that opt in with
+`#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`).
+The opt-in is rejected when the facade `mcp` feature is not enabled, when the
+form also uses `no_inventory`, or when the source type is generic, because MCP
+submit discovery registers concrete descriptor and handler functions in
+inventory.
+The generated MCP code is intentionally type-directed rather than
+string-directed:
+
+1. A hidden `McpField` slice is emitted from the same `FieldPlan` and
+   `ValueHolderPlan` data used for holder and `GpuiFormShape` generation.
+   Component-backed fields use `McpField::component::<Value, Shape>` so the
+   generated descriptor is type-checked against both the field schema and the
+   selected component shape metadata.
+   Struct-level `#[gpui_form(mcp(name = ..., title = ..., description = ...))]`
+   options are emitted as `McpToolMetadata` on the descriptor.
+1. The source type implements `gpui_form::mcp::McpForm`; its
+   `decode_arguments` method populates the generated `*FormValueHolder` from
+   JSON object fields. Component-backed fields use the component shape's
+   `ValueStorage::present` API and do not instantiate GPUI entities.
+1. Koruma-enabled forms bridge generated holder `validate()` errors into MCP
+   tool execution errors. Non-Koruma forms validate as a no-op at this layer.
+1. Holders in `Infallible` and `FallibleRequired` conversion modes also
+   implement `McpFormModel`, allowing `form::<Form>(&mut server).model(...)` to
+   call an application-owned model handler. `SkippedFields` holders
+   intentionally omit that model bridge; applications register them with holder
+   handlers and supply skipped context themselves.
+1. The source model, when model conversion exists, and the generated
+   `*FormValueHolder` implement `McpSubmitArgument`. This lets
+   `#[gpui_form::mcp_submit]` infer model versus holder registration from trait
+   resolution instead of generated type-name suffixes.
+1. A `gpui_form::mcp::registry::McpSubmitRegistration` inventory item is
+   emitted for discovery.
+1. The `#[gpui_form::mcp_submit]` attribute macro emits a separate
+   `McpSubmitHandlerRegistration` inventory item for application-owned handler
+   functions. It requires the handler argument to implement
+   `McpSubmitArgument`, then routes synchronous and async handlers through that
+   generated trait impl. Handlers must return `Result<T, E>`.
+   The macro resolves the
+   facade crate path with the same crate-path machinery used by derive output,
+   propagates setup errors from registration, and does not synthesize handler
+   behavior.
+
+The derive does not emit CLI parsing, command help, shell completion, exit-code
+policy, GPUI window creation, or submit-button dispatch for MCP.
 
 ## Coordination Rules
 

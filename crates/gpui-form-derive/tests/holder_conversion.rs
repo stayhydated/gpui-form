@@ -1,13 +1,14 @@
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct NonDefault(String);
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct NonDefault(String);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct SourceCode(String);
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct SourceCode(String);
 
-struct State;
+pub struct State;
 
 impl State {
     fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
@@ -39,13 +40,13 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for AllowShape {
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(koruma)]
-struct RequiredDemo {
+pub struct RequiredDemo {
     #[gpui_form(component(RequiredShape))]
     value: NonDefault,
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
-struct DefaultedDemo {
+pub struct DefaultedDemo {
     #[gpui_form(component(
         RequiredShape,
         default = NonDefault("fallback".to_string())
@@ -54,7 +55,7 @@ struct DefaultedDemo {
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
-struct ConvertedDefaultDemo {
+pub struct ConvertedDefaultDemo {
     #[gpui_form(component(
         RequiredShape,
         value(
@@ -68,7 +69,7 @@ struct ConvertedDefaultDemo {
 }
 
 #[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
-struct DirectStorageDemo {
+pub struct DirectStorageDemo {
     #[gpui_form(component(AllowShape))]
     value: String,
 }

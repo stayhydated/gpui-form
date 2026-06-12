@@ -665,7 +665,7 @@ dependencies = [
  "log",
  "num-rational",
  "num-traits",
- "pastey",
+ "pastey 0.1.1",
  "rayon",
  "thiserror 2.0.18",
  "v_frame",
@@ -1355,6 +1355,30 @@ dependencies = [
  "component-shape",
  "proc-macro-crate 3.5.0",
  "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "component-shape-mcp"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "component-shape",
+ "component-shape-mcp-macros",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "component-shape-mcp-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro-crate 3.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -3187,6 +3211,7 @@ dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-component",
  "strum 0.28.0",
  "unic-langid",
 ]
@@ -3196,10 +3221,17 @@ name = "gpui-form"
 version = "0.5.1"
 dependencies = [
  "bon",
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-form-collection",
  "gpui-form-core",
  "gpui-form-derive",
+ "gpui-form-mcp",
  "gpui-form-runtime",
  "gpui-form-schema",
+ "koruma",
+ "koruma-collection",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3326,10 +3358,23 @@ dependencies = [
  "proc-macro-error2",
  "proc-macro2",
  "quote",
+ "serde",
  "strum 0.28.0",
  "syn 2.0.117",
  "syn-cfg-attr",
  "trybuild",
+]
+
+[[package]]
+name = "gpui-form-mcp"
+version = "0.5.1"
+dependencies = [
+ "component-shape-mcp",
+ "gpui-form-schema",
+ "inventory",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -3423,6 +3468,106 @@ version = "0.5.0"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",
+]
+
+[[package]]
+name = "gpui-table"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-component",
+ "gpui-table-core",
+ "gpui-table-derive",
+ "gpui-table-mcp",
+ "gpui-table-runtime",
+ "gpui-table-schema",
+ "serde",
+]
+
+[[package]]
+name = "gpui-table-component"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "component-shape",
+ "es-fluent",
+ "es-fluent-build",
+ "es-fluent-manager-embedded",
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-component",
+ "gpui-es-fluent",
+ "gpui-table-core",
+ "gpui-table-schema",
+ "icu",
+ "jiff",
+]
+
+[[package]]
+name = "gpui-table-core"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "derive_more",
+ "es-fluent",
+ "es-fluent-build",
+ "es-fluent-manager-embedded",
+ "gpui-table-schema",
+]
+
+[[package]]
+name = "gpui-table-derive"
+version = "0.5.0"
+dependencies = [
+ "component-shape",
+ "component-shape-codegen",
+ "darling",
+ "heck 0.5.0",
+ "proc-macro-crate 3.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "gpui-table-mcp"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "component-shape",
+ "component-shape-mcp",
+ "gpui-table-component",
+ "gpui-table-core",
+ "gpui-table-runtime",
+ "gpui-table-schema",
+ "inventory",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "gpui-table-runtime"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "component-shape",
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-component",
+ "gpui-table-component",
+ "gpui-table-core",
+ "gpui-table-schema",
+ "icu",
+ "jiff",
+]
+
+[[package]]
+name = "gpui-table-schema"
+version = "0.5.0"
+dependencies = [
+ "component-shape",
+ "inventory",
+ "strum 0.28.0",
 ]
 
 [[package]]
@@ -5205,6 +5350,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "mcp-form-table"
+version = "0.1.0"
+dependencies = [
+ "component-shape-gpui",
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-component",
+ "gpui-form",
+ "gpui-table",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mcp-submit"
+version = "0.1.0"
+dependencies = [
+ "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
+ "gpui-form",
+ "gpui-form-collection",
+ "koruma",
+ "koruma-collection",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "md-5"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5963,6 +6134,12 @@ name = "pastey"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
+
+[[package]]
+name = "pastey"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
 
 [[package]]
 name = "path-slash"
@@ -6905,6 +7082,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmcp"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0810a9f717d9828f475fe1f629f4c305c8464b7f496c3a854b58d29e65f4058e"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "pastey 0.2.3",
+ "pin-project-lite",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "ropey"
 version = "2.0.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7198,6 +7395,7 @@ version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2b42f36aa1cd011945615b92222f6bf73c599a102a300334cd7f8dbeec726cc"
 dependencies = [
+ "chrono",
  "dyn-clone",
  "indexmap",
  "ref-cast",
@@ -8267,7 +8465,19 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "socket2",
+ "tokio-macros",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "385a6cb71ab9ab790c5fe8d67f1645e6c450a7ce006a33de03daa956cf70a496"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

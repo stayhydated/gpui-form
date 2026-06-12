@@ -15,6 +15,7 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
+component-shape = { workspace = true }
 darling = { workspace = true }
 gpui-form-codegen = { workspace = true }
 koruma-derive-core = { workspace = true }
@@ -30,14 +31,16 @@ workspace = true
 [features]
 default = [  ]
 inventory = [  ]
+mcp = [ "inventory" ]
 
 [dev-dependencies]
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
-gpui-form = { default-features = false, features = [ "derive" ], path = "../gpui-form" }
+gpui-form = { default-features = false, features = [ "derive", "mcp" ], path = "../gpui-form" }
 gpui-form-runtime = { workspace = true }
+serde = { workspace = true, features = [ "derive" ] }
 insta = { workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }

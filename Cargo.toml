@@ -9,12 +9,15 @@ members = [
   "crates/gpui-form-component",
   "crates/gpui-form-component-derive",
   "crates/gpui-form-component-story",
+  "crates/gpui-form-mcp",
   "crates/gpui-form-schema",
   "crates/gpui-form-derive",
   "crates/gpui-form-runtime",
   "crates/gpui-form-prototyping-core",
   "examples/some-lib",
   "examples/some-lib-forms",
+  "examples/mcp-submit",
+  "examples/mcp-form-table",
   "examples/prototyping",
 ]
 resolver = "3"
@@ -35,6 +38,7 @@ chrono = "0.4"
 component-shape = { path = "../component-shape/crates/component-shape" }
 component-shape-codegen = { path = "../component-shape/crates/component-shape-codegen" }
 component-shape-gpui = { path = "../component-shape/crates/component-shape-gpui" }
+component-shape-mcp = { path = "../component-shape/crates/component-shape-mcp" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
@@ -54,6 +58,7 @@ gpui-form-component-derive = { path = "crates/gpui-form-component-derive", versi
 gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.5.1" }
 gpui-form-core = { path = "crates/gpui-form-core", version = "0.5.1" }
 gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.5.1" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
