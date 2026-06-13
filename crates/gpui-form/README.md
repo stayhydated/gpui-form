@@ -238,11 +238,11 @@ serde_json = "1"
 use gpui_form::GpuiForm;
 use serde::{Deserialize, Serialize};
 
+/// Submit a contact request from structured MCP arguments.
 #[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
 #[gpui_form(mcp(
     name = "submit_contact",
-    title = "Submit contact request",
-    description = "Submit a contact request from structured MCP arguments."
+    title = "Submit contact request"
 ))]
 pub struct ContactRequest {
     #[gpui_form(hidden)]
@@ -272,8 +272,9 @@ Submit handlers can be synchronous or async. Return `Result<T, E>` for handler
 errors and normal responses, where `T: serde::Serialize` and `E: fmt::Display`.
 Use struct-level
 `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]` to
-override the generated MCP tool name, title, or description. The lower-level
-`McpServer` API remains
+override the generated MCP tool name, title, or description. When
+`description` is omitted, the derive uses the form type's Rust doc comment.
+The lower-level `McpServer` API remains
 available when an application wants to compose form tools with other
 `component-shape-mcp` integrations. Use `gpui_form::mcp::server_named(name,
 version)?` when generated form handlers should advertise application-owned
@@ -317,22 +318,27 @@ policies. These tools edit headless generated value holders; live GPUI widgets
 still need an application-owned runtime bridge from the holder/session state
 into GPUI entities.
 
-For component-backed fields, generated MCP input schemas use value-specific
-shape metadata from `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when it is
-available. If the shape does not publish MCP input metadata for that field
-value type, the generated schema falls back to the field type's
-`McpJsonSchema` implementation. `component_shape_gpui` infers common
-value-specific MCP input from declared value metadata; custom or ambiguous
-wire schemas should use `McpJsonSchema` on the field type or a manual
-integration schema/decoder.
-For custom field value types exposed through MCP, implement or derive
-`gpui_form::mcp::McpJsonSchema`; aliases inherit the schema of their target
-type, and tuple or named transparent newtypes, named structs, or fieldless enums can derive
-the trait with `#[mcp(crate = gpui_form::mcp)]`. The derive follows serde
-deserialize names, includes enum deserialize aliases, skips
+Generated MCP input schemas use the field type's `McpToolValue` schema, so the
+published schema and generated decoder stay paired. Component-backed fields
+also attach value-specific shape metadata from
+`<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when it is available.
+`component_shape_gpui` infers common value-specific MCP input from declared
+value metadata; custom or ambiguous wire schemas should use a field type that
+implements `gpui_form::mcp::McpToolValue`. The blanket implementation covers
+`Deserialize` types that implement or derive `McpJsonSchema`; use
+`gpui_form::mcp::McpAny` when a typed field intentionally accepts
+unconstrained JSON. Aliases inherit the schema of their target type, fixed
+tuples with 1 to 4 elements publish exact array schemas, and tuple or named
+transparent newtypes, named structs, or fieldless enums can derive the schema
+trait directly through `gpui_form::mcp`.
+The derive follows serde deserialize names, records field aliases in
+`x-mcpAliases`, includes enum aliases, skips
 deserialization-skipped fields, rejects flattened fields, and treats
 serde-defaulted fields as not required. Use `gpui_form::mcp::McpRange<T>` for
-typed `{ "min": ..., "max": ... }` range arguments.
+typed `{ "min": ..., "max": ... }` range arguments. Custom top-level MCP tool
+argument structs can also derive `gpui_form::mcp::McpToolInput` through the
+facade when composing manual typed tools; that derive also implements
+`McpJsonSchema`, so object inputs can be reused as field values.
 
 This integration is MCP-only. It does not add `gpui-form-cli`, `clap`, shell
 completion, shell argument parsing, or exit-code behavior. The crate includes a
@@ -531,22 +537,29 @@ pub struct ContactForm {
 can attach the `gpui-form` contract to external component state without running
 into Rust's orphan rules.
 It uses `state = ...` for the wrapped external state type, plus `new`,
-`component`, `value = ...`, `values(...)`, `value_binding`, and `field_suffix`
-metadata. If `new` is omitted, the macro calls
+`component`, `value = ...`, `values(...)`, `value_binding`, `mcp_input = ...`,
+and `field_suffix` metadata. If `new` is omitted, the macro calls
 `<State>::new(window, cx)`.
 For MCP submit schemas, common shape metadata is inferred from unambiguous
 declared values such as `String`, booleans, numbers, dates, `Vec<T>`,
 set-like primitive collections, fixed arrays, `gpui_form::mcp::McpRange<T>`,
-or `(Option<T>, Option<T>)` ranges. `Vec<T>` and fixed arrays publish list
-metadata; set-like collections publish set metadata. Inferred metadata is
+`gpui_form::mcp::McpAny`, or `(Option<T>, Option<T>)` ranges. `Vec<T>` and
+fixed arrays publish list metadata; set-like collections publish set metadata.
+Inferred metadata is
 attached to the generated `ComponentShapeFor<Value>` impl, so multi-value
 shapes can expose different MCP input metadata for different supported value
-types. MCP descriptors store a typed schema function for every visible form
-field using `gpui_form::mcp::McpJsonSchema`, which gives aliases and derived
-tuple or named transparent newtypes, named structs, and fieldless enums precise
-schemas and makes unsupported MCP-visible field types fail at compile time.
-`component = ...` must be a path-like type, and `field_suffix = "..."` must be
-a non-empty ASCII identifier suffix.
+types. Use `mcp_input = string`, `mcp_input = object`, or another
+`McpInput` expression when a generic or custom shape knows its model-facing MCP
+input better than the value type can be inferred. MCP descriptors store a typed
+schema function for every visible form field using `gpui_form::mcp::McpToolValue`,
+which gives `Deserialize` field types that implement or derive `McpJsonSchema`
+strict decode plus aliases, fixed tuples with 1 to 4 elements, `McpAny`,
+derived tuple or named transparent newtypes, named structs, and fieldless enums
+precise schemas.
+Unsupported MCP-visible field types fail at compile time.
+`component = ...` must be a path-like type, `mcp_input = ...` accepts common
+constructor shorthands or a `McpInput` expression, and `field_suffix = "..."`
+must be a non-empty ASCII identifier suffix.
 Separate metadata entries with semicolons.
 The block may also contain `impl` items. `value = ...` and `values(...)` emit
 `GpuiComponentShapeFor<T>` impls for simple supported form-side value types.

@@ -1353,6 +1353,7 @@ name = "component-shape-gpui-macros"
 version = "0.1.0"
 dependencies = [
  "component-shape",
+ "component-shape-codegen",
  "proc-macro-crate 3.5.0",
  "proc-macro-error2",
  "proc-macro2",
@@ -3343,6 +3344,7 @@ name = "gpui-form-derive"
 version = "0.5.1"
 dependencies = [
  "component-shape",
+ "component-shape-codegen",
  "component-shape-gpui",
  "darling",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",

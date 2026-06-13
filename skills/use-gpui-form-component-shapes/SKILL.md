@@ -86,10 +86,15 @@ dates, `Vec<T>`, set-like primitive collections, fixed arrays,
 `gpui_form::mcp::McpRange<T>`, or `(Option<T>, Option<T>)` ranges. The
 generated `ComponentShapeFor<Value>` impl carries the value-specific metadata,
 so multi-value shapes can expose distinct MCP input shapes per supported
-value. Component-backed form fields use value-specific shape MCP input metadata
-when available, then fall back to the field type's `McpJsonSchema` metadata.
-Use `McpJsonSchema` or a manual integration schema/decoder for ambiguous or
-intentionally different wire shapes.
+value. Component-backed form fields publish the field type's `McpToolValue`
+schema and attach value-specific shape MCP input metadata when available.
+Use `mcp_input = string`, `mcp_input = object`, or another `McpInput`
+expression when a generic or custom shape knows its model-facing MCP input
+better than the value type can be inferred. Use value types that implement
+`gpui_form::mcp::McpToolValue` for ambiguous or intentionally different wire
+shapes; the blanket implementation covers `Deserialize` types that implement
+or derive `McpJsonSchema`. Use `gpui_form::mcp::McpAny` when a typed field
+intentionally accepts unconstrained JSON.
 
 ## Field-Level Builder Configuration
 

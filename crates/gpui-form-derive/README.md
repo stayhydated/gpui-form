@@ -143,7 +143,8 @@ Behavior notes:
   value-specific `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when
   available. Struct-level
   `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
-  overrides generated MCP tool metadata.
+  overrides generated MCP tool metadata; when `description` is omitted, the
+  derive uses the form type's Rust doc comment.
 - the same opt-in emits a `gpui_form::mcp::McpEditableForm` implementation.
   The editor API decodes one field at a time through the same generated holder
   storage path for headless MCP edit sessions.

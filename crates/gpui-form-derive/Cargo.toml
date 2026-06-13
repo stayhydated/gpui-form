@@ -16,6 +16,7 @@ proc-macro = true
 
 [dependencies]
 component-shape = { workspace = true }
+component-shape-codegen = { workspace = true }
 darling = { workspace = true }
 gpui-form-codegen = { workspace = true }
 koruma-derive-core = { workspace = true }

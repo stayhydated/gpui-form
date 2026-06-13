@@ -1,3 +1,4 @@
+use component_shape_codegen::{McpToolMetadataParts, mcp_tool_metadata_tokens};
 use gpui_form_codegen::metadata::rust_type_tokens;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -61,7 +62,8 @@ fn field_decode_tokens(context: &DeriveContext, field: &HolderFieldIr) -> TokenS
         HolderStoragePlan::OriginallyOptional => {
             quote! {
                 if let Some(__gpui_form_decoded) =
-                    __gpui_form_arguments.take_nullable::<#base_type>(#field_name_str)?
+                    __gpui_form_arguments
+                        .take_present_tool_value::<Option<#base_type>>(#field_name_str)?
                 {
                     __gpui_form_holder.#field_name = __gpui_form_decoded;
                 }
@@ -71,12 +73,14 @@ fn field_decode_tokens(context: &DeriveContext, field: &HolderFieldIr) -> TokenS
             if required {
                 quote! {
                     __gpui_form_holder.#field_name =
-                        __gpui_form_arguments.take_required::<#base_type>(#field_name_str)?;
+                        __gpui_form_arguments
+                            .take_required_tool_value::<#base_type>(#field_name_str)?;
                 }
             } else {
                 quote! {
                     if let Some(__gpui_form_decoded) =
-                        __gpui_form_arguments.take_present::<#base_type>(#field_name_str)?
+                        __gpui_form_arguments
+                            .take_present_tool_value::<#base_type>(#field_name_str)?
                     {
                         __gpui_form_holder.#field_name = __gpui_form_decoded;
                     }
@@ -88,13 +92,15 @@ fn field_decode_tokens(context: &DeriveContext, field: &HolderFieldIr) -> TokenS
             if required {
                 quote! {
                     let __gpui_form_decoded =
-                        __gpui_form_arguments.take_required::<#base_type>(#field_name_str)?;
+                        __gpui_form_arguments
+                            .take_required_tool_value::<#base_type>(#field_name_str)?;
                     __gpui_form_holder.#field_name = #shape_present;
                 }
             } else {
                 quote! {
                     if let Some(__gpui_form_decoded) =
-                        __gpui_form_arguments.take_present::<#base_type>(#field_name_str)?
+                        __gpui_form_arguments
+                            .take_present_tool_value::<#base_type>(#field_name_str)?
                     {
                         __gpui_form_holder.#field_name = #shape_present;
                     }
@@ -112,7 +118,7 @@ fn field_decode_arm_tokens(context: &DeriveContext, field: &HolderFieldIr) -> To
     quote! {
         #field_name_str => {
             let mut __gpui_form_values = #facade_crate::mcp::serde_json::Map::new();
-            __gpui_form_values.insert(field.to_string(), value);
+            __gpui_form_values.insert(field.to_string(), value.into_value());
             let mut __gpui_form_arguments =
                 #facade_crate::mcp::McpArguments::new(__gpui_form_values);
             let __gpui_form_holder = holder;
@@ -156,28 +162,23 @@ fn field_descriptor_tokens(context: &DeriveContext, field: &FieldPlan) -> Option
     })
 }
 
-fn tool_metadata_tokens(context: &DeriveContext, options: Option<&McpToolOptions>) -> TokenStream {
+fn tool_metadata_tokens(
+    context: &DeriveContext,
+    original_input: &DeriveInput,
+    options: Option<&McpToolOptions>,
+) -> McpResult<TokenStream> {
     let facade_crate = &context.paths.gpui_form;
-    let mut tokens = quote! {
-        #facade_crate::mcp::McpToolMetadata::new()
-    };
-
-    if let Some(options) = options {
-        if let Some(name) = &options.name {
-            let name = syn::LitStr::new(name, proc_macro2::Span::call_site());
-            tokens = quote! { #tokens.with_name(#name) };
-        }
-        if let Some(title) = &options.title {
-            let title = syn::LitStr::new(title, proc_macro2::Span::call_site());
-            tokens = quote! { #tokens.with_title(#title) };
-        }
-        if let Some(description) = &options.description {
-            let description = syn::LitStr::new(description, proc_macro2::Span::call_site());
-            tokens = quote! { #tokens.with_description(#description) };
-        }
-    }
-
-    tokens
+    let mcp_crate: Path = syn::parse_quote!(#facade_crate::mcp);
+    mcp_tool_metadata_tokens(
+        &mcp_crate,
+        &original_input.attrs,
+        McpToolMetadataParts {
+            name: options.and_then(|options| options.name.as_deref()),
+            title: options.and_then(|options| options.title.as_deref()),
+            description: options.and_then(|options| options.description.as_deref()),
+        },
+        original_input.ident.span(),
+    )
 }
 
 pub(super) fn generate_mcp_impl(
@@ -194,7 +195,7 @@ pub(super) fn generate_mcp_impl(
     let fields_const_ident = format_ident!("__{}GpuiFormMcpFields", original_ident);
     let descriptor_fn_ident = format_ident!("__{}_gpui_form_mcp_descriptor", original_ident);
     let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
-    let tool_metadata = tool_metadata_tokens(context, mcp_tool_options);
+    let tool_metadata = tool_metadata_tokens(context, original_input, mcp_tool_options)?;
 
     let field_descriptors: Vec<TokenStream> = field_plans
         .iter()
@@ -371,7 +372,7 @@ pub(super) fn generate_mcp_impl(
             fn decode_field(
                 holder: &mut Self::ValueHolder,
                 field: &str,
-                value: #facade_crate::mcp::serde_json::Value,
+                value: #facade_crate::mcp::McpAny,
             ) -> Result<(), #facade_crate::mcp::McpToolError> {
                 match field {
                     #(#field_decode_arms),*,

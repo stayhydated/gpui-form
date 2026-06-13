@@ -5,8 +5,8 @@
 
 pub use component_shape::{
     ComponentCapabilities, ComponentPrototyping, ComponentShapeMetadata, ComponentSuffix, McpInput,
-    McpInputShape, McpPrimitiveKind, RenderCapability, ValueBindingCapability, ValueChange,
-    is_valid_component_suffix as is_valid_component_field_suffix,
+    McpInputShape, McpPrimitiveKind, McpRangeBoundKind, RenderCapability, ValueBindingCapability,
+    ValueChange, is_valid_component_suffix as is_valid_component_field_suffix,
 };
 pub use component_shape_gpui::{
     DeclaredGpuiComponentShape, DefaultGpuiComponentShapeBuilder, GpuiComponentEventOf,

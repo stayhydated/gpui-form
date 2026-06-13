@@ -61,10 +61,9 @@ helpers and component-specific derives explicitly:
    skipped-field forms need application-owned context.
    Handlers can be synchronous or async and must return `Result<T, E>`.
    Do not add CLI, shell parsing, or GPUI button-callback execution for MCP.
-   For component-backed fields, MCP input schemas use value-specific
-   `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when the component
-   shape publishes it, otherwise they fall back to the field type's
-   `McpJsonSchema` implementation.
+   MCP input schemas use the field type's `McpToolValue` schema. Component-backed
+   fields also attach value-specific `<Shape as ComponentShapeFor<Field>>::MCP_INPUT`
+   metadata when the component shape publishes it.
 9. Use paths such as `gpui_form_component::date_picker`,
    `gpui_form_component::file_picker`, and
    `gpui_form_component::infinite_select` for helper state.
@@ -164,19 +163,30 @@ Common patterns:
   holder editing only; live GPUI widget mutation still needs an app-owned
   bridge from the holder/session into GPUI entities.
   Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
-  when generated MCP tools need application-owned names or descriptions.
+  when generated MCP tools need application-owned names or descriptions. If
+  `description` is omitted, the derive uses the form type's Rust doc comment.
   Registration reports setup errors such as duplicate tool names.
   Component-backed fields use value-specific
   `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata in generated
   schemas when available, then fall back to the field type's schema.
-  Custom field value types exposed through MCP should implement or derive
-  `gpui_form::mcp::McpJsonSchema`. Aliases inherit their target type schema,
-  and tuple or named transparent newtypes, named structs, or fieldless enums can
-  derive it with `#[mcp(crate = gpui_form::mcp)]`. The
-  derive follows serde deserialize names, includes enum deserialize aliases,
-  skips deserialization-skipped fields, rejects flattened fields, and treats
-  serde-defaulted fields as not required. Use `gpui_form::mcp::McpRange<T>` for
-  typed `{ "min": ..., "max": ... }` range arguments.
+  Generic or custom component shapes can declare `mcp_input = string`,
+  `mcp_input = object`, or another `McpInput` expression when the shape knows
+  its model-facing MCP input better than the value type can be inferred.
+  Custom field value types exposed through MCP should implement
+  `gpui_form::mcp::McpToolValue`; this is automatic for `Deserialize` types
+  that implement or derive `gpui_form::mcp::McpJsonSchema`; use
+  `gpui_form::mcp::McpAny` when a typed field intentionally accepts
+  unconstrained JSON. Aliases inherit their target type schema, fixed tuples
+  with 1 to 4 elements publish exact array schemas, and tuple or named
+  transparent newtypes, named structs, or fieldless enums can derive
+  `McpJsonSchema` directly through `gpui_form::mcp`. The
+  derive follows serde deserialize names, records field aliases in
+  `x-mcpAliases`, includes enum aliases, skips deserialization-skipped fields,
+  rejects flattened fields, and treats serde-defaulted fields as not required.
+  Custom top-level MCP inputs can derive `gpui_form::mcp::McpToolInput`; that
+  derive also implements `McpJsonSchema`, so object inputs can be reused as
+  field values. Use `gpui_form::mcp::McpRange<T>` for typed
+  `{ "min": ..., "max": ... }` range arguments.
 - `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,

@@ -3,8 +3,8 @@
 use gpui_form::{
     GpuiForm,
     mcp::{
-        McpEditableForm as _, McpForm as _, McpServer, McpToolError, editor_tool_names, form,
-        server as generated_server, tool_definitions,
+        McpAny, McpEditableForm as _, McpForm as _, McpServer, McpToolError, editor_tool_names,
+        form, server as generated_server, tool_definitions,
     },
 };
 use koruma_collection::collection::NonEmptyValidation;
@@ -17,10 +17,10 @@ type Attempts = u32;
 #[derive(
     Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
-#[mcp(crate = gpui_form::mcp)]
 #[serde(transparent)]
 pub struct AccountId(u64);
 
+/// Submit a plain request from inferred docs.
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct PlainRequest {
@@ -51,7 +51,6 @@ pub struct ComponentRequest {
 #[derive(
     Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
-#[mcp(crate = gpui_form::mcp)]
 #[serde(transparent)]
 pub struct ComponentOnlyValue(String);
 
@@ -70,9 +69,41 @@ impl FromStr for ComponentOnlyValue {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq)]
-#[mcp(crate = gpui_form::mcp)]
 #[serde(transparent)]
 pub struct DecodeOnlyValue(String);
+
+#[derive(
+    Clone, Debug, Default, Deserialize, gpui_form::mcp::McpToolInput, PartialEq, Serialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationPreferences {
+    #[mcp(alias = "email")]
+    email_updates: bool,
+    #[serde(default)]
+    topics: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SlashSeparatedTags(Vec<String>);
+
+impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
+    fn tool_value_schema() -> gpui_form::mcp::McpSchema {
+        gpui_form::mcp::McpSchema::new(json!({ "type": "string" }))
+    }
+
+    fn from_tool_value(field: &str, value: Value) -> Result<Self, McpToolError> {
+        let raw = value
+            .as_str()
+            .ok_or_else(|| McpToolError::decode(field, "expected slash-separated tags"))?;
+        Ok(Self(
+            raw.split('/')
+                .map(str::trim)
+                .filter(|tag| !tag.is_empty())
+                .map(ToString::to_string)
+                .collect(),
+        ))
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
@@ -88,6 +119,20 @@ pub struct DecodeOnlyRequest {
     value: DecodeOnlyValue,
 }
 
+#[derive(Clone, Debug, GpuiForm, PartialEq)]
+#[gpui_form(mcp)]
+pub struct CustomToolValueRequest {
+    #[gpui_form(hidden)]
+    tags: SlashSeparatedTags,
+}
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(mcp)]
+pub struct ToolInputSchemaRequest {
+    #[gpui_form(hidden)]
+    preferences: NotificationPreferences,
+}
+
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct CustomSchemaRequest {
@@ -97,10 +142,16 @@ pub struct CustomSchemaRequest {
     attempts: Attempts,
 }
 
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(mcp)]
+pub struct TupleSchemaRequest {
+    #[gpui_form(hidden)]
+    coordinates: (u32, u32),
+}
+
 #[derive(
     Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
-#[mcp(crate = gpui_form::mcp)]
 #[serde(rename_all = "kebab-case")]
 pub enum Priority {
     #[default]
@@ -272,6 +323,31 @@ fn generated_mcp_schema_marks_required_optional_default_and_component_fields() {
     assert_eq!(custom_schema["properties"]["attempts"]["type"], "integer");
     assert_eq!(custom_schema["required"], json!(["account_id", "attempts"]));
 
+    let tool_input_schema = ToolInputSchemaRequest::descriptor().input_schema();
+    assert_eq!(
+        tool_input_schema["properties"]["preferences"]["type"],
+        "object"
+    );
+    assert_eq!(
+        tool_input_schema["properties"]["preferences"]["properties"]["emailUpdates"]["type"],
+        "boolean"
+    );
+    assert_eq!(
+        tool_input_schema["properties"]["preferences"]["properties"]["emailUpdates"]["x-mcpAliases"],
+        json!(["email"])
+    );
+
+    let tuple_schema = TupleSchemaRequest::descriptor().input_schema();
+    assert_eq!(
+        tuple_schema["properties"]["coordinates"]["prefixItems"][0]["type"],
+        "integer"
+    );
+    assert_eq!(
+        tuple_schema["properties"]["coordinates"]["prefixItems"][1]["type"],
+        "integer"
+    );
+    assert_eq!(tuple_schema["properties"]["coordinates"]["minItems"], 2);
+
     let enum_schema = EnumSchemaRequest::descriptor().input_schema();
     assert_eq!(enum_schema["properties"]["priority"]["type"], "string");
     assert_eq!(
@@ -291,7 +367,10 @@ fn generated_mcp_submit_registration_is_inventory_visible() {
     assert!(registered_names.contains(&PlainRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&ComponentRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&ComponentNoSchemaRequest::descriptor().tool_name()));
+    assert!(registered_names.contains(&CustomToolValueRequest::descriptor().tool_name()));
+    assert!(registered_names.contains(&ToolInputSchemaRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&CustomSchemaRequest::descriptor().tool_name()));
+    assert!(registered_names.contains(&TupleSchemaRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&DirectRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&AsyncRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&AsyncValueRequest::descriptor().tool_name()));
@@ -309,6 +388,14 @@ fn generated_mcp_descriptor_uses_explicit_metadata() {
     assert_eq!(
         descriptor.description(),
         "Exercise explicit form MCP metadata."
+    );
+}
+
+#[test]
+fn generated_mcp_descriptor_infers_doc_description() {
+    assert_eq!(
+        PlainRequest::descriptor().description(),
+        "Submit a plain request from inferred docs."
     );
 }
 
@@ -404,17 +491,18 @@ fn component_backed_field_decodes_without_gpui_runtime() {
 fn generated_mcp_editor_decodes_single_field_updates() {
     let mut holder = PlainRequestFormValueHolder::default();
 
-    PlainRequest::decode_field(&mut holder, "title", json!("Draft")).expect("title should patch");
-    PlainRequest::decode_field(&mut holder, "retries", json!(3))
+    PlainRequest::decode_field(&mut holder, "title", McpAny::from(json!("Draft")))
+        .expect("title should patch");
+    PlainRequest::decode_field(&mut holder, "retries", McpAny::from(json!(3)))
         .expect("optional value should patch");
-    PlainRequest::decode_field(&mut holder, "enabled", json!(false))
+    PlainRequest::decode_field(&mut holder, "enabled", McpAny::from(json!(false)))
         .expect("defaulted value should patch");
 
     assert_eq!(holder.title, "Draft");
     assert_eq!(holder.retries, Some(3));
     assert!(!holder.enabled);
 
-    let error = PlainRequest::decode_field(&mut holder, "unknown", json!(true))
+    let error = PlainRequest::decode_field(&mut holder, "unknown", McpAny::from(json!(true)))
         .expect_err("unknown fields should fail");
     assert_eq!(
         error,
@@ -479,6 +567,34 @@ fn editor_tools_open_patch_read_validate_and_close_sessions() {
         patched["submit_arguments"],
         json!({ "title": "Edited title", "retries": 5 })
     );
+
+    let patched = server.call_tool(
+        &tools.patch,
+        Some(json!({
+            "session_id": session_id,
+            "field": "retries",
+            "value": null
+        })),
+    );
+    assert_eq!(patched.is_error, Some(false));
+    let patched = patched
+        .structured_content
+        .expect("patch should return state");
+    assert_eq!(patched["values"]["retries"], Value::Null);
+    assert_eq!(
+        patched["submit_arguments"],
+        json!({ "title": "Edited title", "retries": null })
+    );
+
+    let patched = server.call_tool(
+        &tools.patch,
+        Some(json!({
+            "session_id": session_id,
+            "field": "retries",
+            "value": 5
+        })),
+    );
+    assert_eq!(patched.is_error, Some(false));
 
     let validation = server.call_tool(
         &tools.validate,
@@ -569,6 +685,88 @@ fn editor_tools_patch_component_backed_fields_through_shape_schema() {
         patched.structured_content.expect("patch")["submit_arguments"],
         json!({ "title": "Updated component title" })
     );
+}
+
+#[test]
+fn generated_mcp_submit_uses_field_mcp_tool_value_decoder() {
+    let schema = CustomToolValueRequest::descriptor().input_schema();
+    assert_eq!(schema["properties"]["tags"]["type"], "string");
+
+    let mut server = test_server();
+    form::<CustomToolValueRequest>(&mut server)
+        .model(|request| Ok::<Value, String>(json!({ "tags": request.tags.0 })))
+        .expect("tool should register with the field McpToolValue impl");
+
+    let result = server.call_tool(
+        &CustomToolValueRequest::descriptor().tool_name(),
+        Some(json!({ "tags": "alpha / beta / gamma" })),
+    );
+
+    assert_eq!(result.is_error, Some(false));
+    assert_eq!(
+        result.structured_content,
+        Some(json!({ "tags": ["alpha", "beta", "gamma"] }))
+    );
+
+    let result = server.call_tool(
+        &CustomToolValueRequest::descriptor().tool_name(),
+        Some(json!({ "tags": ["alpha"] })),
+    );
+
+    assert_eq!(result.is_error, Some(true));
+    assert!(
+        result.content[0]
+            .as_text()
+            .is_some_and(|text| text.text.contains("expected slash-separated tags"))
+    );
+}
+
+#[test]
+fn generated_mcp_submit_reuses_mcp_tool_input_as_field_schema() {
+    let mut server = test_server();
+    form::<ToolInputSchemaRequest>(&mut server)
+        .model(|request| {
+            Ok::<Value, String>(json!({
+                "email_updates": request.preferences.email_updates,
+                "topics": request.preferences.topics,
+            }))
+        })
+        .expect("tool should register with the field McpToolInput-derived schema");
+
+    let result = server.call_tool(
+        &ToolInputSchemaRequest::descriptor().tool_name(),
+        Some(json!({
+            "preferences": {
+                "email": true,
+                "topics": ["rust", "gpui"]
+            }
+        })),
+    );
+
+    assert_eq!(result.is_error, Some(false));
+    assert_eq!(
+        result.structured_content,
+        Some(json!({
+            "email_updates": true,
+            "topics": ["rust", "gpui"]
+        }))
+    );
+
+    let result = server.call_tool(
+        &ToolInputSchemaRequest::descriptor().tool_name(),
+        Some(json!({
+            "preferences": {
+                "email": true,
+                "unexpected": true
+            }
+        })),
+    );
+
+    assert_eq!(result.is_error, Some(true));
+    assert!(matches!(
+        result.content[0].as_text(),
+        Some(text) if text.text.contains("unknown field `preferences.unexpected`")
+    ));
 }
 
 #[test]

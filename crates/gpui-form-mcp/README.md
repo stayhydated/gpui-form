@@ -75,8 +75,9 @@ Manual server composition uses
 `Result`.
 Use struct-level
 `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]` to
-override the generated MCP tool name, title, or description. Registration
-reports setup errors such as duplicate tool names.
+override the generated MCP tool name, title, or description. When
+`description` is omitted, the derive uses the form type's Rust doc comment.
+Registration reports setup errors such as duplicate tool names.
 
 MCP forms can also register editable holder sessions with
 `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The editor adds
@@ -92,18 +93,27 @@ schemas and value-storage policies. The editor does not mutate live GPUI
 widgets unless the application adds its own runtime bridge from the holder
 session into GPUI entities.
 
-Component-backed fields use value-specific shape metadata from
-`<Shape as ComponentShapeFor<Field>>::MCP_INPUT` in generated input schemas
-when the shape publishes one. `component_shape_gpui` infers common shape MCP
-input from declared primitive values, primitive lists, primitive sets, fixed
-arrays, and ranges, then attaches it to the generated
-`ComponentShapeFor<Value>` impl. Component-backed fields without value-specific
-shape MCP input metadata fall back to the field type's `McpJsonSchema`
-implementation. For custom field value types, generated descriptors call
-`McpJsonSchema::json_schema()`; derive `gpui_form::mcp::McpJsonSchema` with
-`#[mcp(crate = gpui_form::mcp)]` for app-owned object structs, tuple or named
-transparent newtypes, or fieldless enums that should expose precise schemas. The derive
-follows serde deserialize names, includes enum deserialize aliases, skips
+Generated input schemas use the field type's `McpToolValue` schema, so schema
+publication and generated decoding stay paired. Component-backed fields also
+attach value-specific shape metadata from
+`<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when the shape publishes one.
+`component_shape_gpui` infers common shape MCP input from declared primitive
+values, primitive lists, primitive sets, fixed arrays, and ranges, then
+attaches it to the generated `ComponentShapeFor<Value>` impl.
+Generic or custom shapes can declare `mcp_input = string`,
+`mcp_input = object`, or another `McpInput` expression when the shape knows its
+model-facing MCP input better than the value type can be inferred. For custom
+field value types, generated descriptors require `gpui_form::mcp::McpToolValue`;
+the blanket implementation covers `Deserialize` types that implement or derive
+`McpJsonSchema`; use `gpui_form::mcp::McpAny` when a typed field intentionally
+accepts unconstrained JSON. Fixed tuples with 1 to 4 elements publish exact
+array schemas, and app-owned object structs, tuple or named transparent
+newtypes, or fieldless enums that should expose precise schemas can derive
+`gpui_form::mcp::McpJsonSchema` directly. The derive follows serde deserialize
+names, records field aliases in `x-mcpAliases`, includes enum aliases, skips
 deserialization-skipped fields, rejects flattened fields, and treats
 serde-defaulted fields as not required. Use `gpui_form::mcp::McpRange<T>` for
-typed `{ "min": ..., "max": ... }` range arguments.
+typed `{ "min": ..., "max": ... }` range arguments. Custom top-level MCP tool
+argument structs can also derive `gpui_form::mcp::McpToolInput` through the
+facade when composing manual typed tools; that derive also implements
+`McpJsonSchema`, so object inputs can be reused as field values.

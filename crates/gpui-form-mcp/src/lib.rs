@@ -9,6 +9,7 @@ use std::{
     fmt,
     future::Future,
     marker::PhantomData,
+    pin::Pin,
     sync::{Arc, Mutex},
 };
 
@@ -17,13 +18,16 @@ pub use serde::Serialize;
 use serde_json::{Map, Value};
 
 pub use component_shape_mcp::{
-    ComponentShapeFor, ComponentShapeMetadata, ContentBlock, MCP_PROTOCOL_VERSION, McpArguments,
-    McpInput, McpInputShape, McpJsonSchema, McpPrimitiveKind, McpRange, McpServer,
-    McpServerBuilder, McpToolArguments, McpToolCall, McpToolError, McpToolMetadata,
-    ServeStdioResult, ToolCallResult, ToolDefinition, object_schema, rmcp, serde_json,
+    ComponentShapeFor, ComponentShapeMetadata, ContentBlock, MCP_PROTOCOL_VERSION, McpAny,
+    McpArguments, McpInput, McpInputShape, McpJsonSchema, McpPrimitiveKind, McpRange,
+    McpRangeBoundKind, McpSchema, McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder,
+    McpToolArguments, McpToolCall, McpToolError, McpToolInput, McpToolMetadata, McpToolValue,
+    McpTypedTool, ServeStdioResult, ToolCallResult, ToolDefinition, object_schema, rmcp, serde,
+    serde_json,
 };
 
-pub type FieldSchemaFn = fn() -> Value;
+pub type FieldToolValueSchemaFn = McpSchemaFn;
+type ToolFuture = Pin<Box<dyn Future<Output = ToolCallResult> + Send + 'static>>;
 
 #[derive(Clone, Copy, Debug)]
 pub struct McpField {
@@ -33,7 +37,7 @@ pub struct McpField {
     has_default: bool,
     component_backed: bool,
     mcp_input: McpInput,
-    json_schema: Option<FieldSchemaFn>,
+    tool_value_schema: FieldToolValueSchemaFn,
 }
 
 impl McpField {
@@ -43,7 +47,7 @@ impl McpField {
         presence: FieldValuePresence,
     ) -> Self
     where
-        T: McpJsonSchema,
+        T: McpToolValue,
     {
         Self {
             name,
@@ -52,7 +56,7 @@ impl McpField {
             has_default: false,
             component_backed: false,
             mcp_input: McpInput::unsupported(),
-            json_schema: Some(T::json_schema),
+            tool_value_schema: T::tool_value_schema,
         }
     }
 
@@ -62,7 +66,7 @@ impl McpField {
         presence: FieldValuePresence,
     ) -> Self
     where
-        T: McpJsonSchema,
+        T: McpToolValue,
         Shape: ComponentShapeFor<T>,
     {
         Self {
@@ -72,7 +76,7 @@ impl McpField {
             has_default: false,
             component_backed: true,
             mcp_input: <Shape as ComponentShapeFor<T>>::MCP_INPUT,
-            json_schema: Some(T::json_schema),
+            tool_value_schema: T::tool_value_schema,
         }
     }
 
@@ -105,8 +109,8 @@ impl McpField {
         self.mcp_input
     }
 
-    pub const fn json_schema(self) -> Option<FieldSchemaFn> {
-        self.json_schema
+    pub const fn tool_value_schema(self) -> FieldToolValueSchemaFn {
+        self.tool_value_schema
     }
 
     pub const fn required(self) -> bool {
@@ -181,11 +185,11 @@ impl McpFormDescriptor {
             .unwrap_or_else(|| format!("Submit a {} gpui-form request.", self.form_name))
     }
 
-    pub fn input_schema(self) -> Value {
+    pub fn input_schema(self) -> McpSchema {
         input_schema_for_fields(self.fields)
     }
 
-    pub fn tool_definition(self) -> Result<ToolDefinition, McpToolError> {
+    fn tool_definition(self) -> Result<ToolDefinition, McpToolError> {
         component_shape_mcp::tool_definition(
             self.tool_name(),
             Some(self.title()),
@@ -218,7 +222,7 @@ where
     fn decode_field(
         holder: &mut Self::ValueHolder,
         field: &str,
-        value: Value,
+        value: McpAny,
     ) -> Result<(), McpToolError>;
 }
 
@@ -232,6 +236,52 @@ pub trait McpFormValueHolder: Sized {
 
 pub trait McpFormModel: McpForm {
     fn holder_into_model(holder: Self::ValueHolder) -> Result<Self, McpToolError>;
+}
+
+/// Typed MCP submit input for a generated form.
+///
+/// Registration uses this wrapper to keep the descriptor schema, generated
+/// holder decoding, and handler input type paired at the shared MCP server
+/// boundary.
+pub struct McpFormInput<Form>
+where
+    Form: McpForm,
+{
+    holder: Form::ValueHolder,
+}
+
+impl<Form> McpFormInput<Form>
+where
+    Form: McpForm,
+{
+    pub fn tool_definition() -> Result<McpTypedTool<Self>, McpToolError> {
+        let descriptor = Form::descriptor();
+        component_shape_mcp::tool_definition_for_input::<Self>(
+            descriptor.tool_name(),
+            Some(descriptor.title()),
+            Some(descriptor.description()),
+            None,
+        )
+    }
+
+    pub fn into_value_holder(self) -> Form::ValueHolder {
+        self.holder
+    }
+}
+
+impl<Form> McpToolInput for McpFormInput<Form>
+where
+    Form: McpForm,
+{
+    fn input_schema() -> McpSchema {
+        Form::descriptor().input_schema()
+    }
+
+    fn from_tool_call(call: McpToolCall) -> Result<Self, McpToolError> {
+        Ok(Self {
+            holder: decode_valid_holder::<Form>(call)?,
+        })
+    }
 }
 
 /// Handler-argument contract used by `#[gpui_form::mcp_submit]`.
@@ -342,13 +392,8 @@ where
         Response: Serialize,
         Error: fmt::Display,
     {
-        insert_executor(self.server, Form::descriptor(), move |arguments| {
-            let holder = match decode_valid_holder::<Form>(arguments) {
-                Ok(holder) => holder,
-                Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-            };
-
-            component_shape_mcp::serialize_handler_response(handler(holder))
+        insert_executor::<Form, _>(self.server, move |input| {
+            component_shape_mcp::serialize_handler_response(handler(input.into_value_holder()))
         })
     }
     pub fn holder_async<Handler, Fut, Response, Error>(
@@ -362,16 +407,10 @@ where
         Error: fmt::Display,
     {
         let handler = Arc::new(handler);
-        insert_executor_async(self.server, Form::descriptor(), move |arguments| {
+        insert_executor_async::<Form, _>(self.server, move |input| {
             let handler = Arc::clone(&handler);
-            async move {
-                let holder = match decode_valid_holder::<Form>(arguments) {
-                    Ok(holder) => holder,
-                    Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-                };
-
-                component_shape_mcp::serialize_handler_response(handler(holder).await)
-            }
+            let future = handler(input.into_value_holder());
+            Box::pin(async move { component_shape_mcp::serialize_handler_response(future.await) })
         })
     }
 }
@@ -398,8 +437,8 @@ where
         Response: Serialize,
         Error: fmt::Display,
     {
-        insert_executor(self.server, Form::descriptor(), move |arguments| {
-            let model = match decode_valid_model::<Form>(arguments) {
+        insert_executor::<Form, _>(self.server, move |input| {
+            let model = match Form::holder_into_model(input.into_value_holder()) {
                 Ok(model) => model,
                 Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
             };
@@ -419,41 +458,37 @@ where
         Error: fmt::Display,
     {
         let handler = Arc::new(handler);
-        insert_executor_async(self.server, Form::descriptor(), move |arguments| {
+        insert_executor_async::<Form, _>(self.server, move |input| {
             let handler = Arc::clone(&handler);
-            async move {
-                let model = match decode_valid_model::<Form>(arguments) {
-                    Ok(model) => model,
-                    Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-                };
-
-                component_shape_mcp::serialize_handler_response(handler(model).await)
+            match Form::holder_into_model(input.into_value_holder()) {
+                Ok(model) => {
+                    let future = handler(model);
+                    Box::pin(async move {
+                        component_shape_mcp::serialize_handler_response(future.await)
+                    })
+                },
+                Err(error) => Box::pin(std::future::ready(component_shape_mcp::tool_error_result(
+                    error.to_string(),
+                ))),
             }
         })
     }
 }
 
-fn insert_executor<Call>(
-    server: &mut McpServer,
-    descriptor: McpFormDescriptor,
-    call: Call,
-) -> Result<(), McpToolError>
+fn insert_executor<Form, Call>(server: &mut McpServer, call: Call) -> Result<(), McpToolError>
 where
-    Call: Fn(McpToolCall) -> ToolCallResult + Send + Sync + 'static,
+    Form: McpForm,
+    Call: Fn(McpFormInput<Form>) -> ToolCallResult + Send + Sync + 'static,
 {
-    server.add_tool(descriptor.tool_definition()?, call)
+    server.add_typed_tool(McpFormInput::<Form>::tool_definition()?, call)
 }
 
-fn insert_executor_async<Call, Fut>(
-    server: &mut McpServer,
-    descriptor: McpFormDescriptor,
-    call: Call,
-) -> Result<(), McpToolError>
+fn insert_executor_async<Form, Call>(server: &mut McpServer, call: Call) -> Result<(), McpToolError>
 where
-    Call: Fn(McpToolCall) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = ToolCallResult> + Send + 'static,
+    Form: McpForm,
+    Call: Fn(McpFormInput<Form>) -> ToolFuture + Send + Sync + 'static,
 {
-    server.add_tool_async(descriptor.tool_definition()?, call)
+    server.add_typed_tool_async(McpFormInput::<Form>::tool_definition()?, call)
 }
 
 pub fn tool_name(source_module_path: &str, form_name: &str) -> String {
@@ -465,13 +500,6 @@ where
     Form: McpForm,
 {
     Form::decode_arguments(call).and_then(|holder| Form::validate_holder(&holder).map(|()| holder))
-}
-
-fn decode_valid_model<Form>(call: McpToolCall) -> Result<Form, McpToolError>
-where
-    Form: McpFormModel,
-{
-    decode_valid_holder::<Form>(call).and_then(Form::holder_into_model)
 }
 
 #[derive(Debug)]
@@ -552,79 +580,74 @@ where
 
     {
         let sessions = Arc::clone(&sessions);
-        server.add_tool(
-            editor_tool_definition(
+        server.add_typed_tool(
+            editor_tool_definition::<McpFormEditOpenInput<Form>>(
                 tool_names.open.clone(),
                 format!("Open {} edit session", descriptor.form_name()),
                 format!(
                     "Create an editable {} form value-holder session.",
                     descriptor.form_name()
                 ),
-                open_editor_input_schema(descriptor.fields()),
             )?,
-            move |call| open_edit_session::<Form>(call, &sessions),
+            move |input| open_edit_session::<Form>(input, &sessions),
         )?;
     }
 
     {
         let sessions = Arc::clone(&sessions);
-        server.add_tool(
-            editor_tool_definition(
+        server.add_typed_tool(
+            editor_tool_definition::<SessionIdInput>(
                 tool_names.read.clone(),
                 format!("Read {} edit session", descriptor.form_name()),
                 format!(
                     "Return the current values for an editable {} form session.",
                     descriptor.form_name()
                 ),
-                session_id_input_schema(),
             )?,
-            move |call| read_edit_session::<Form>(call, &sessions),
+            move |input| read_edit_session::<Form>(input, &sessions),
         )?;
     }
 
     {
         let sessions = Arc::clone(&sessions);
-        server.add_tool(
-            editor_tool_definition(
+        server.add_typed_tool(
+            editor_tool_definition::<McpFormEditPatchInput<Form>>(
                 tool_names.patch.clone(),
                 format!("Patch {} field", descriptor.form_name()),
                 format!(
                     "Update one field in an editable {} form session.",
                     descriptor.form_name()
                 ),
-                patch_editor_input_schema(descriptor.fields()),
             )?,
-            move |call| patch_edit_session::<Form>(call, &sessions),
+            move |input| patch_edit_session::<Form>(input, &sessions),
         )?;
     }
 
     {
         let sessions = Arc::clone(&sessions);
-        server.add_tool(
-            editor_tool_definition(
+        server.add_typed_tool(
+            editor_tool_definition::<SessionIdInput>(
                 tool_names.validate.clone(),
                 format!("Validate {} edit session", descriptor.form_name()),
                 format!(
                     "Validate the current values for an editable {} form session.",
                     descriptor.form_name()
                 ),
-                session_id_input_schema(),
             )?,
-            move |call| validate_edit_session::<Form>(call, &sessions),
+            move |input| validate_edit_session::<Form>(input, &sessions),
         )?;
     }
 
-    server.add_tool(
-        editor_tool_definition(
+    server.add_typed_tool(
+        editor_tool_definition::<SessionIdInput>(
             tool_names.close,
             format!("Close {} edit session", descriptor.form_name()),
             format!(
                 "Close an editable {} form value-holder session.",
                 descriptor.form_name()
             ),
-            session_id_input_schema(),
         )?,
-        move |call| close_edit_session::<Form>(call, &sessions),
+        move |input| close_edit_session::<Form>(input, &sessions),
     )?;
 
     Ok(())
@@ -650,28 +673,30 @@ pub fn editor_tool_names(descriptor: McpFormDescriptor) -> McpFormEditorToolName
     }
 }
 
-fn editor_tool_definition(
+fn editor_tool_definition<Input>(
     name: String,
     title: String,
     description: String,
-    input_schema: Value,
-) -> Result<ToolDefinition, McpToolError> {
-    component_shape_mcp::tool_definition(name, Some(title), Some(description), input_schema, None)
+) -> Result<McpTypedTool<Input>, McpToolError>
+where
+    Input: McpToolInput,
+{
+    component_shape_mcp::tool_definition_for_input::<Input>(
+        name,
+        Some(title),
+        Some(description),
+        None,
+    )
 }
 
 fn open_edit_session<Form>(
-    call: McpToolCall,
+    input: McpFormEditOpenInput<Form>,
     sessions: &SharedEditSessions<Form::ValueHolder>,
 ) -> ToolCallResult
 where
     Form: McpEditableForm,
     Form::ValueHolder: Default,
 {
-    let (holder, present_fields, values) = match decode_open_values::<Form>(call) {
-        Ok(decoded) => decoded,
-        Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-    };
-
     let mut sessions = match sessions.lock() {
         Ok(sessions) => sessions,
         Err(error) => {
@@ -681,7 +706,7 @@ where
             );
         },
     };
-    let session_id = sessions.open(holder, present_fields, values);
+    let session_id = sessions.open(input.holder, input.present_fields, input.values);
     let session = sessions
         .get(&session_id)
         .expect("opened session should be readable");
@@ -689,17 +714,13 @@ where
 }
 
 fn read_edit_session<Form>(
-    call: McpToolCall,
+    input: SessionIdInput,
     sessions: &SharedEditSessions<Form::ValueHolder>,
 ) -> ToolCallResult
 where
     Form: McpEditableForm,
     Form::ValueHolder: Default,
 {
-    let session_id = match decode_session_id(call) {
-        Ok(session_id) => session_id,
-        Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-    };
     let sessions = match sessions.lock() {
         Ok(sessions) => sessions,
         Err(error) => {
@@ -709,24 +730,21 @@ where
             );
         },
     };
-    match sessions.get(&session_id) {
-        Ok(session) => edit_session_snapshot_result::<Form>(&session_id, session),
+    match sessions.get(&input.session_id) {
+        Ok(session) => edit_session_snapshot_result::<Form>(&input.session_id, session),
         Err(error) => component_shape_mcp::tool_error_result(error.to_string()),
     }
 }
 
 fn patch_edit_session<Form>(
-    call: McpToolCall,
+    input: McpFormEditPatchInput<Form>,
     sessions: &SharedEditSessions<Form::ValueHolder>,
 ) -> ToolCallResult
 where
     Form: McpEditableForm,
     Form::ValueHolder: Default,
 {
-    let patch = match decode_patch(call) {
-        Ok(patch) => patch,
-        Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-    };
+    let patch = input.into_patch();
     let mut sessions = match sessions.lock() {
         Ok(sessions) => sessions,
         Err(error) => {
@@ -745,23 +763,19 @@ where
         return component_shape_mcp::tool_error_result(error.to_string());
     }
     session.present_fields.insert(patch.field.clone());
-    session.values.insert(patch.field, patch.value);
+    session.values.insert(patch.field, patch.value.into_value());
 
     edit_session_snapshot_result::<Form>(&patch.session_id, session)
 }
 
 fn validate_edit_session<Form>(
-    call: McpToolCall,
+    input: SessionIdInput,
     sessions: &SharedEditSessions<Form::ValueHolder>,
 ) -> ToolCallResult
 where
     Form: McpEditableForm,
     Form::ValueHolder: Default,
 {
-    let session_id = match decode_session_id(call) {
-        Ok(session_id) => session_id,
-        Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-    };
     let sessions = match sessions.lock() {
         Ok(sessions) => sessions,
         Err(error) => {
@@ -771,7 +785,7 @@ where
             );
         },
     };
-    let session = match sessions.get(&session_id) {
+    let session = match sessions.get(&input.session_id) {
         Ok(session) => session,
         Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
     };
@@ -786,24 +800,20 @@ where
 
     component_shape_mcp::tool_structured_result(serde_json::json!({
         "form": Form::descriptor().tool_name(),
-        "session_id": session_id,
+        "session_id": input.session_id,
         "valid": errors.is_empty(),
         "errors": errors,
     }))
 }
 
 fn close_edit_session<Form>(
-    call: McpToolCall,
+    input: SessionIdInput,
     sessions: &SharedEditSessions<Form::ValueHolder>,
 ) -> ToolCallResult
 where
     Form: McpEditableForm,
     Form::ValueHolder: Default,
 {
-    let session_id = match decode_session_id(call) {
-        Ok(session_id) => session_id,
-        Err(error) => return component_shape_mcp::tool_error_result(error.to_string()),
-    };
     let mut sessions = match sessions.lock() {
         Ok(sessions) => sessions,
         Err(error) => {
@@ -813,9 +823,9 @@ where
             );
         },
     };
-    match sessions.close(&session_id) {
+    match sessions.close(&input.session_id) {
         Ok(closed) => component_shape_mcp::tool_structured_result(serde_json::json!({
-            "session_id": session_id,
+            "session_id": input.session_id,
             "closed": closed,
         })),
         Err(error) => component_shape_mcp::tool_error_result(error.to_string()),
@@ -843,7 +853,7 @@ where
     let mut present_fields = BTreeSet::new();
     let mut accepted_values = Map::new();
     for (field, value) in values {
-        Form::decode_field(&mut holder, &field, value.clone())?;
+        Form::decode_field(&mut holder, &field, McpAny::from(value.clone()))?;
         present_fields.insert(field.clone());
         accepted_values.insert(field, value);
     }
@@ -854,29 +864,92 @@ where
 struct FieldPatch {
     session_id: String,
     field: String,
-    value: Value,
+    value: McpAny,
 }
 
-fn decode_patch(call: McpToolCall) -> Result<FieldPatch, McpToolError> {
-    let mut arguments = call.into_arguments();
-    let session_id = arguments.take_required::<String>("session_id")?;
-    let field = arguments.take_required::<String>("field")?;
-    let value = arguments
-        .take_raw("value")
-        .ok_or_else(|| McpToolError::missing_field("value"))?;
-    arguments.finish()?;
-    Ok(FieldPatch {
-        session_id,
-        field,
-        value,
-    })
+struct McpFormEditOpenInput<Form>
+where
+    Form: McpForm,
+{
+    holder: Form::ValueHolder,
+    present_fields: BTreeSet<String>,
+    values: Map<String, Value>,
 }
 
-fn decode_session_id(call: McpToolCall) -> Result<String, McpToolError> {
-    let mut arguments = call.into_arguments();
-    let session_id = arguments.take_required::<String>("session_id")?;
-    arguments.finish()?;
-    Ok(session_id)
+impl<Form> McpToolInput for McpFormEditOpenInput<Form>
+where
+    Form: McpEditableForm,
+    Form::ValueHolder: Default,
+{
+    fn input_schema() -> McpSchema {
+        open_editor_input_schema(Form::descriptor().fields())
+    }
+
+    fn from_tool_call(call: McpToolCall) -> Result<Self, McpToolError> {
+        let (holder, present_fields, values) = decode_open_values::<Form>(call)?;
+        Ok(Self {
+            holder,
+            present_fields,
+            values,
+        })
+    }
+}
+
+#[derive(component_shape_mcp::McpToolInput)]
+#[mcp(crate = component_shape_mcp)]
+struct FieldPatchInput {
+    session_id: String,
+    field: String,
+    value: McpAny,
+}
+
+impl From<FieldPatchInput> for FieldPatch {
+    fn from(input: FieldPatchInput) -> Self {
+        Self {
+            session_id: input.session_id,
+            field: input.field,
+            value: input.value,
+        }
+    }
+}
+
+struct McpFormEditPatchInput<Form>
+where
+    Form: McpForm,
+{
+    patch: FieldPatch,
+    _form: PhantomData<fn() -> Form>,
+}
+
+impl<Form> McpFormEditPatchInput<Form>
+where
+    Form: McpForm,
+{
+    fn into_patch(self) -> FieldPatch {
+        self.patch
+    }
+}
+
+impl<Form> McpToolInput for McpFormEditPatchInput<Form>
+where
+    Form: McpForm,
+{
+    fn input_schema() -> McpSchema {
+        patch_editor_input_schema(Form::descriptor().fields())
+    }
+
+    fn from_tool_call(call: McpToolCall) -> Result<Self, McpToolError> {
+        Ok(Self {
+            patch: <FieldPatchInput as McpToolInput>::from_tool_call(call)?.into(),
+            _form: PhantomData,
+        })
+    }
+}
+
+#[derive(component_shape_mcp::McpToolInput)]
+#[mcp(crate = component_shape_mcp)]
+struct SessionIdInput {
+    session_id: String,
 }
 
 fn edit_session_snapshot_result<Form>(
@@ -971,16 +1044,16 @@ pub fn register(server: &mut McpServer) -> Result<(), McpToolError> {
     Ok(())
 }
 
-fn input_schema_for_fields(fields: &[McpField]) -> Value {
+fn input_schema_for_fields(fields: &[McpField]) -> McpSchema {
     input_schema_for_fields_with_required(fields, true)
 }
 
-fn optional_input_schema_for_fields(fields: &[McpField]) -> Value {
+fn optional_input_schema_for_fields(fields: &[McpField]) -> McpSchema {
     input_schema_for_fields_with_required(fields, false)
 }
 
-fn input_schema_for_fields_with_required(fields: &[McpField], include_required: bool) -> Value {
-    let mut properties = Map::new();
+fn input_schema_for_fields_with_required(fields: &[McpField], include_required: bool) -> McpSchema {
+    let mut properties = McpSchemaProperties::new();
     let mut required = Vec::new();
 
     for field in fields {
@@ -993,17 +1066,8 @@ fn input_schema_for_fields_with_required(fields: &[McpField], include_required: 
     component_shape_mcp::object_schema(properties, required)
 }
 
-fn session_id_input_schema() -> Value {
-    let mut properties = Map::new();
-    properties.insert(
-        "session_id".to_string(),
-        serde_json::json!({ "type": "string" }),
-    );
-    component_shape_mcp::object_schema(properties, ["session_id"])
-}
-
-fn open_editor_input_schema(fields: &[McpField]) -> Value {
-    let mut properties = Map::new();
+fn open_editor_input_schema(fields: &[McpField]) -> McpSchema {
+    let mut properties = McpSchemaProperties::new();
     properties.insert(
         "values".to_string(),
         optional_input_schema_for_fields(fields),
@@ -1011,24 +1075,24 @@ fn open_editor_input_schema(fields: &[McpField]) -> Value {
     component_shape_mcp::object_schema(properties, std::iter::empty::<&str>())
 }
 
-fn patch_editor_input_schema(fields: &[McpField]) -> Value {
-    let mut properties = Map::new();
+fn patch_editor_input_schema(fields: &[McpField]) -> McpSchema {
+    let mut properties = McpSchemaProperties::new();
     properties.insert(
         "session_id".to_string(),
-        serde_json::json!({ "type": "string" }),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
     );
     properties.insert(
         "field".to_string(),
-        serde_json::json!({
+        McpSchema::new(serde_json::json!({
             "type": "string",
             "enum": fields.iter().map(|field| field.name()).collect::<Vec<_>>()
-        }),
+        })),
     );
-    properties.insert("value".to_string(), serde_json::json!({}));
+    properties.insert("value".to_string(), McpSchema::new(serde_json::json!({})));
     let mut schema =
         component_shape_mcp::object_schema(properties, ["session_id", "field", "value"]);
 
-    if let Value::Object(object) = &mut schema {
+    if let Some(object) = schema.as_object_mut() {
         object.insert(
             "oneOf".to_string(),
             Value::Array(
@@ -1038,7 +1102,7 @@ fn patch_editor_input_schema(fields: &[McpField]) -> Value {
                         serde_json::json!({
                             "properties": {
                                 "field": { "const": field.name() },
-                                "value": schema_for_field(*field)
+                                "value": schema_for_field(*field).into_value()
                             }
                         })
                     })
@@ -1050,21 +1114,15 @@ fn patch_editor_input_schema(fields: &[McpField]) -> Value {
     schema
 }
 
-fn schema_for_field(field: McpField) -> Value {
-    let base = if field.mcp_input().supported() {
-        component_shape_mcp::schema_for_input(field.mcp_input())
-    } else if let Some(json_schema) = field.json_schema() {
-        json_schema()
-    } else {
-        component_shape_mcp::schema_for_input(McpInput::unsupported())
-    };
+fn schema_for_field(field: McpField) -> McpSchema {
+    let base = (field.tool_value_schema())();
     let mut schema = if field.presence().optional() {
         component_shape_mcp::nullable_schema(base)
     } else {
         base
     };
 
-    if let Value::Object(object) = &mut schema {
+    if let Some(object) = schema.as_object_mut() {
         object.insert(
             "x-rustType".to_string(),
             Value::String(field.value_type().as_str().to_string()),
@@ -1075,6 +1133,12 @@ fn schema_for_field(field: McpField) -> Value {
         );
         if field.component_backed() {
             object.insert("x-gpuiFormComponentBacked".to_string(), Value::Bool(true));
+        }
+        if field.mcp_input().supported() {
+            object.insert(
+                "x-gpuiFormComponentMcpInput".to_string(),
+                component_shape_mcp::schema_for_input(field.mcp_input()).into_value(),
+            );
         }
         if field.has_default() {
             object.insert("x-gpuiFormHasDefault".to_string(), Value::Bool(true));
@@ -1101,7 +1165,10 @@ pub fn tool_definitions() -> Result<Vec<ToolDefinition>, McpToolError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{McpField, McpForm as _, McpFormDescriptor, McpInput, McpServer, form, tool_name};
+    use super::{
+        McpField, McpForm as _, McpFormDescriptor, McpFormInput, McpInput, McpServer,
+        McpToolInput as _, form, tool_name,
+    };
     use gpui_form_schema::registry::{FieldValuePresence, RustPath, RustType};
 
     struct StringComponentShape;
@@ -1110,7 +1177,7 @@ mod tests {
         const MCP_INPUT: McpInput = McpInput::number();
     }
     impl super::ComponentShapeFor<String> for StringComponentShape {
-        const MCP_INPUT: McpInput = McpInput::string();
+        const MCP_INPUT: McpInput = McpInput::number();
     }
 
     #[test]
@@ -1151,7 +1218,7 @@ mod tests {
     }
 
     #[test]
-    fn input_schema_prefers_component_mcp_input_when_present() {
+    fn input_schema_records_component_mcp_input_when_present() {
         const FIELDS: &[McpField] = &[McpField::component::<String, StringComponentShape>(
             "available_on",
             RustType::from_macro_tokens_unchecked("String"),
@@ -1167,6 +1234,10 @@ mod tests {
         .input_schema();
 
         assert_eq!(schema["properties"]["available_on"]["type"], "string");
+        assert_eq!(
+            schema["properties"]["available_on"]["x-gpuiFormComponentMcpInput"]["type"],
+            "number"
+        );
         assert_eq!(
             schema["properties"]["available_on"]["x-gpuiFormComponentBacked"],
             true
@@ -1221,7 +1292,7 @@ mod tests {
     }
 
     #[test]
-    fn input_schema_uses_field_json_schema_when_no_component_input_exists() {
+    fn input_schema_uses_field_tool_value_schema_when_no_component_input_exists() {
         type UserId = u64;
 
         const FIELDS: &[McpField] = &[McpField::typed::<UserId>(
@@ -1244,7 +1315,7 @@ mod tests {
     }
 
     #[test]
-    fn input_schema_keeps_component_mcp_input_ahead_of_field_json_schema() {
+    fn input_schema_keeps_field_tool_value_schema_ahead_of_component_mcp_input() {
         const FIELDS: &[McpField] = &[McpField::component::<String, StringComponentShape>(
             "window",
             RustType::from_macro_tokens_unchecked("String"),
@@ -1261,6 +1332,10 @@ mod tests {
         .input_schema();
 
         assert_eq!(schema["properties"]["window"]["type"], "string");
+        assert_eq!(
+            schema["properties"]["window"]["x-gpuiFormComponentMcpInput"]["type"],
+            "number"
+        );
         assert_eq!(schema["properties"]["window"]["x-rustType"], "String");
     }
 
@@ -1283,6 +1358,27 @@ mod tests {
         );
 
         assert_eq!(result.is_error, Some(false));
+    }
+
+    #[test]
+    fn form_input_pairs_descriptor_schema_with_generated_decode() {
+        let tool = McpFormInput::<Booking>::tool_definition().expect("tool should build");
+        fn assert_typed_tool(_tool: &super::McpTypedTool<super::McpFormInput<Booking>>) {}
+        assert_typed_tool(&tool);
+        assert_eq!(
+            tool.input_schema["properties"]["available_on"]["type"],
+            "string"
+        );
+
+        let input = McpFormInput::<Booking>::from_tool_call(
+            super::McpToolCall::from_value(Some(serde_json::json!({
+                "available_on": "2026-06-10"
+            })))
+            .expect("arguments should normalize"),
+        )
+        .expect("form input should decode");
+
+        assert_eq!(input.into_value_holder().available_on, "2026-06-10");
     }
 
     struct Booking;
@@ -1314,7 +1410,7 @@ mod tests {
         ) -> Result<Self::ValueHolder, super::McpToolError> {
             let mut arguments = call.into_arguments();
             let available_on = arguments
-                .take_present::<String>("available_on")?
+                .take_present_tool_value::<String>("available_on")?
                 .unwrap_or_default();
             arguments.finish()?;
             Ok(BookingHolder { available_on })
