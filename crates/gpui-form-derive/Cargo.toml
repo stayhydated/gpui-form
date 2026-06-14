@@ -39,7 +39,11 @@ component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
-gpui-form = { default-features = false, features = [ "derive", "mcp" ], path = "../gpui-form" }
+gpui-form = { default-features = false, features = [
+  "derive",
+  "mcp",
+  "runtime",
+], path = "../gpui-form" }
 gpui-form-runtime = { workspace = true }
 insta = { workspace = true }
 koruma = { workspace = true }

@@ -1,7 +1,6 @@
 use gpui_form::GpuiForm;
 use koruma_collection::collection::NonEmptyValidation;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
 #[gpui_form(
@@ -38,30 +37,46 @@ pub struct TenantNote {
     tenant_id: u64,
 }
 
-#[gpui_form::mcp_submit]
-async fn submit_support_ticket(ticket: SupportTicket) -> Result<serde_json::Value, String> {
-    Ok::<serde_json::Value, String>(serde_json::json!({
-        "accepted": true,
-        "kind": "support_ticket",
-        "title": ticket.title,
-        "details": ticket.details,
-        "urgent": ticket.urgent
-    }))
+#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
+struct SupportTicketResponse {
+    accepted: bool,
+    kind: String,
+    title: String,
+    details: Option<String>,
+    urgent: bool,
+}
+
+#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
+struct TenantNoteResponse {
+    accepted: bool,
+    kind: String,
+    body: String,
+    tenant_id: String,
 }
 
 #[gpui_form::mcp_submit]
-fn submit_tenant_note(holder: TenantNoteFormValueHolder) -> Result<serde_json::Value, String> {
-    Ok::<serde_json::Value, String>(json!({
-        "accepted": true,
-        "kind": "tenant_note",
-        "body": holder.body,
-        "tenant_id": "provided-by-application-context"
-    }))
+async fn submit_support_ticket(ticket: SupportTicket) -> Result<SupportTicketResponse, String> {
+    Ok(SupportTicketResponse {
+        accepted: true,
+        kind: "support_ticket".to_string(),
+        title: ticket.title,
+        details: ticket.details,
+        urgent: ticket.urgent,
+    })
+}
+
+#[gpui_form::mcp_submit]
+fn submit_tenant_note(holder: TenantNoteFormValueHolder) -> Result<TenantNoteResponse, String> {
+    Ok(TenantNoteResponse {
+        accepted: true,
+        kind: "tenant_note".to_string(),
+        body: holder.body,
+        tenant_id: "provided-by-application-context".to_string(),
+    })
 }
 
 fn main() -> gpui_form::mcp::ServeStdioResult {
     let mut server = gpui_form::mcp::McpServer::new("mcp-submit", env!("CARGO_PKG_VERSION"));
     gpui_form::mcp::register(&mut server)?;
-    gpui_form::mcp::form::<SupportTicket>(&mut server).editor()?;
     server.serve_stdio_blocking()
 }

@@ -98,7 +98,11 @@ Supporting struct attributes:
 - `#[gpui_form(koruma)]`
 - `#[gpui_form(koruma(fluent))]`
 - `#[gpui_form(no_inventory)]`
-- `#[gpui_form(mcp)]` or `#[gpui_form(mcp(name = ..., title = ..., description = ...))]`
+- `#[gpui_form(mcp)]` or
+  `#[gpui_form(mcp(...))]` with `name`, `title`, `description`, `read_only`,
+  `destructive`, `idempotent`, `open_world`, `context(Type)`, and
+  optional `response(Type)`, `error(Type)`, `submit(path)`, and
+  `map_response(path)` options
 
 Behavior notes:
 
@@ -127,8 +131,8 @@ Behavior notes:
 - generated `GpuiForm` component field code references
   `gpui_form::runtime::shape`; normal application crates do not need
   `gpui-form-runtime` directly just because a field uses a component shape
-- the derive crate's `mcp` feature emits a `gpui_form::mcp::McpForm`
-  implementation plus MCP submit inventory registration beside
+- the derive crate's `mcp` feature emits `gpui_form::mcp::McpForm` and
+  `McpEditableForm` implementations plus MCP inventory registration beside
   `GpuiFormShape` only for forms that opt in with
   `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`).
   Most users should enable this through
@@ -144,16 +148,33 @@ Behavior notes:
   available. Struct-level
   `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
   overrides generated MCP tool metadata; when `description` is omitted, the
-  derive uses the form type's Rust doc comment.
+  derive uses the form type's Rust doc comment. The same list accepts optional
+  MCP tool annotation hints with `read_only = ...`, `destructive = ...`,
+  `idempotent = ...`, and `open_world = ...`.
+  Adding `context(MyContext)` emits context-submit inventory for forms that
+  implement `gpui_form::mcp::McpContextSubmit<MyContext>`. Add
+  `submit(path::to::async_fn)` to have the derive generate that impl instead;
+  the function is called with `(model, context)`. Add `map_response(path::to::fn)`
+  when the async function returns a raw value that needs conversion into the
+  published response, and `error(MyError)` when the generated impl should use a
+  non-`String` error type. Add `response(MyResponse)` when the response should
+  publish a precise schema; otherwise the registration uses
+  `gpui_form::mcp::McpObject`. Use
+  `gpui_form::mcp::register_context_submitters(...)` or the
+  `*_with_editor_options` variant to register all matching context-backed
+  submit tools and their `*_edit_submit` tools from one shared context value.
 - the same opt-in emits a `gpui_form::mcp::McpEditableForm` implementation.
-  The editor API decodes one field at a time through the same generated holder
-  storage path for headless MCP edit sessions.
+  Generated MCP servers register those editor tools by default, and the editor
+  API decodes one field at a time through the same generated holder storage
+  path for headless MCP edit sessions.
 - the `#[gpui_form::mcp_submit]` attribute macro registers application-owned
   submit functions into MCP handler inventory. It infers model submission from
   the source model's generated `McpSubmitArgument` impl and holder submission
   from the generated `*FormValueHolder` impl (for skipped fields or app-owned
   context).
-  Handlers must be synchronous or async and return `Result<T, E>`. The attribute
+  Handlers must be synchronous or async and return `Result<T, E>`, where
+  `T: serde::Serialize + gpui_form::mcp::McpJsonSchema`. Prefer a typed
+  response struct or newtype whose schema declares an object root. The attribute
   macro resolves the facade crate
   path, so renamed `gpui-form` dependencies work like the derive output.
 - `value(type = ..., from_source = ..., into_source = ...)` lets the generated

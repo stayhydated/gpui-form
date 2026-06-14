@@ -1,7 +1,8 @@
 use darling::{Error as DarlingError, FromMeta};
 use proc_macro2::Span;
+use quote::ToTokens as _;
 use syn::{
-    Expr, Ident, Token, Type,
+    Expr, Ident, Lit, Meta, Token, Type,
     parse::{Parse, ParseStream},
 };
 
@@ -43,16 +44,20 @@ pub struct McpToolOptions {
     pub name: Option<String>,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub read_only: Option<bool>,
+    pub destructive: Option<bool>,
+    pub idempotent: Option<bool>,
+    pub open_world: Option<bool>,
+    pub context_submit: Option<McpContextSubmitOptions>,
 }
 
-#[derive(Debug, Default, darling::FromMeta)]
-struct McpToolOptionsMeta {
-    #[darling(default)]
-    pub name: Option<String>,
-    #[darling(default)]
-    pub title: Option<String>,
-    #[darling(default)]
-    pub description: Option<String>,
+#[derive(Clone, Debug)]
+pub struct McpContextSubmitOptions {
+    pub context: Type,
+    pub response: Option<Type>,
+    pub error: Option<Type>,
+    pub submit: Option<Expr>,
+    pub map_response: Option<Expr>,
 }
 
 impl FromMeta for McpToolOptions {
@@ -61,23 +66,282 @@ impl FromMeta for McpToolOptions {
     }
 
     fn from_list(items: &[darling::ast::NestedMeta]) -> darling::Result<Self> {
-        let options = McpToolOptionsMeta::from_list(items)?.into();
+        let options = parse_mcp_tool_options(items)?;
         validate_mcp_tool_options(&options)?;
         Ok(options)
     }
 }
 
-impl From<McpToolOptionsMeta> for McpToolOptions {
-    fn from(value: McpToolOptionsMeta) -> Self {
-        Self {
-            name: value.name,
-            title: value.title,
-            description: value.description,
+fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result<McpToolOptions> {
+    let mut options = McpToolOptions::default();
+    let mut context = None;
+    let mut response = None;
+    let mut error = None;
+    let mut submit = None;
+    let mut map_response = None;
+
+    for item in items {
+        let darling::ast::NestedMeta::Meta(meta) = item else {
+            return Err(DarlingError::unsupported_format("literal"));
+        };
+
+        match meta {
+            Meta::NameValue(name_value) if name_value.path.is_ident("name") => {
+                assign_once(
+                    "name",
+                    &mut options.name,
+                    String::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("title") => {
+                assign_once(
+                    "title",
+                    &mut options.title,
+                    String::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("description") => {
+                assign_once(
+                    "description",
+                    &mut options.description,
+                    String::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("read_only") => {
+                assign_once(
+                    "read_only",
+                    &mut options.read_only,
+                    bool::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("destructive") => {
+                assign_once(
+                    "destructive",
+                    &mut options.destructive,
+                    bool::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("idempotent") => {
+                assign_once(
+                    "idempotent",
+                    &mut options.idempotent,
+                    bool::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("open_world") => {
+                assign_once(
+                    "open_world",
+                    &mut options.open_world,
+                    bool::from_meta(meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("context") => {
+                assign_once(
+                    "context",
+                    &mut context,
+                    syn::parse2::<Type>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("response") => {
+                assign_once(
+                    "response",
+                    &mut response,
+                    syn::parse2::<Type>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("error") => {
+                assign_once(
+                    "error",
+                    &mut error,
+                    syn::parse2::<Type>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("submit") => {
+                assign_once(
+                    "submit",
+                    &mut submit,
+                    syn::parse2::<Expr>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("map_response") => {
+                assign_once(
+                    "map_response",
+                    &mut map_response,
+                    syn::parse2::<Expr>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("context") => {
+                assign_once(
+                    "context",
+                    &mut context,
+                    parse_lit_str_type(meta, "context")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("error") => {
+                assign_once(
+                    "error",
+                    &mut error,
+                    parse_lit_str_type(meta, "error")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("submit") => {
+                assign_once(
+                    "submit",
+                    &mut submit,
+                    parse_lit_str_expr(meta, "submit")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("map_response") => {
+                assign_once(
+                    "map_response",
+                    &mut map_response,
+                    parse_lit_str_expr(meta, "map_response")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("response") => {
+                assign_once(
+                    "response",
+                    &mut response,
+                    parse_lit_str_type(meta, "response")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::Path(path)
+            | Meta::List(syn::MetaList { path, .. })
+            | Meta::NameValue(syn::MetaNameValue { path, .. }) => {
+                return Err(DarlingError::custom(format!(
+                    "Unknown field: `{}`",
+                    path.to_token_stream()
+                )));
+            },
         }
     }
+
+    if context.is_none() {
+        if response.is_some() {
+            return Err(DarlingError::custom(
+                "`response(...)` requires `context(...)` in the same `gpui_form(mcp(...))` option",
+            ));
+        }
+        if error.is_some() {
+            return Err(DarlingError::custom(
+                "`error(...)` requires `context(...)` in the same `gpui_form(mcp(...))` option",
+            ));
+        }
+        if submit.is_some() {
+            return Err(DarlingError::custom(
+                "`submit(...)` requires `context(...)` in the same `gpui_form(mcp(...))` option",
+            ));
+        }
+        if map_response.is_some() {
+            return Err(DarlingError::custom(
+                "`map_response(...)` requires `context(...)` in the same `gpui_form(mcp(...))` option",
+            ));
+        }
+    }
+    if submit.is_none() && map_response.is_some() {
+        return Err(DarlingError::custom(
+            "`map_response(...)` requires `submit(...)` in the same `gpui_form(mcp(...))` option",
+        ));
+    }
+    if submit.is_none() && error.is_some() {
+        return Err(DarlingError::custom(
+            "`error(...)` requires `submit(...)` in the same `gpui_form(mcp(...))` option",
+        ));
+    }
+
+    options.context_submit = context.map(|context| McpContextSubmitOptions {
+        context,
+        response,
+        error,
+        submit,
+        map_response,
+    });
+
+    Ok(options)
+}
+
+fn assign_once<T>(
+    field: &str,
+    target: &mut Option<T>,
+    value: T,
+    tokens: proc_macro2::TokenStream,
+) -> darling::Result<()> {
+    if target.is_some() {
+        return Err(DarlingError::custom(format!("Duplicate field: `{field}`")).with_span(&tokens));
+    }
+
+    *target = Some(value);
+    Ok(())
+}
+
+fn parse_lit_str_type(meta: &Meta, field: &str) -> darling::Result<Type> {
+    let Meta::NameValue(name_value) = meta else {
+        return Err(DarlingError::unsupported_format(field));
+    };
+    let Expr::Lit(expr_lit) = &name_value.value else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal type; prefer `{field}(Type)`"
+        )));
+    };
+    let Lit::Str(value) = &expr_lit.lit else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal type; prefer `{field}(Type)`"
+        )));
+    };
+
+    value
+        .parse::<Type>()
+        .map_err(|error| DarlingError::custom(error.to_string()))
+}
+
+fn parse_lit_str_expr(meta: &Meta, field: &str) -> darling::Result<Expr> {
+    let Meta::NameValue(name_value) = meta else {
+        return Err(DarlingError::unsupported_format(field));
+    };
+    let Expr::Lit(expr_lit) = &name_value.value else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal expression; prefer `{field}(path::to::function)`"
+        )));
+    };
+    let Lit::Str(value) = &expr_lit.lit else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal expression; prefer `{field}(path::to::function)`"
+        )));
+    };
+
+    value
+        .parse::<Expr>()
+        .map_err(|error| DarlingError::custom(error.to_string()))
 }
 
 fn validate_mcp_tool_options(options: &McpToolOptions) -> darling::Result<()> {
+    if options.read_only == Some(true) && options.destructive == Some(true) {
+        return Err(DarlingError::custom(
+            "MCP tool annotation hints cannot be both read-only and destructive",
+        ));
+    }
     if let Some(name) = options.name.as_deref() {
         component_shape::validate_mcp_tool_name(name)
             .map_err(|error| DarlingError::custom(error.to_string()))?;
@@ -440,6 +704,15 @@ mod tests {
             parse_quote!(name = "submit_contact"),
             parse_quote!(title = "Submit Contact"),
             parse_quote!(description = "Submit a contact request"),
+            parse_quote!(read_only = false),
+            parse_quote!(destructive = true),
+            parse_quote!(idempotent = false),
+            parse_quote!(open_world = true),
+            parse_quote!(context(crate::SubmitContext)),
+            parse_quote!(response(crate::SubmitResponse)),
+            parse_quote!(error(crate::SubmitError)),
+            parse_quote!(submit(crate::submit_request)),
+            parse_quote!(map_response(crate::map_response)),
         ])
         .expect("mcp list form should parse");
 
@@ -449,6 +722,64 @@ mod tests {
             parsed_list.description.as_deref(),
             Some("Submit a contact request")
         );
+        assert_eq!(parsed_list.read_only, Some(false));
+        assert_eq!(parsed_list.destructive, Some(true));
+        assert_eq!(parsed_list.idempotent, Some(false));
+        assert_eq!(parsed_list.open_world, Some(true));
+        let submit = parsed_list
+            .context_submit
+            .expect("context submit options should parse");
+        assert_eq!(
+            submit.context.to_token_stream().to_string(),
+            "crate :: SubmitContext"
+        );
+        assert_eq!(
+            submit
+                .response
+                .expect("response should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: SubmitResponse"
+        );
+        assert_eq!(
+            submit
+                .error
+                .expect("error should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: SubmitError"
+        );
+        assert_eq!(
+            submit
+                .submit
+                .expect("submit should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: submit_request"
+        );
+        assert_eq!(
+            submit
+                .map_response
+                .expect("map_response should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: map_response"
+        );
+
+        let parsed_context_only =
+            McpToolOptions::from_list(&[parse_quote!(context(crate::SubmitContext))])
+                .expect("context-only mcp list form should parse");
+        let context_only = parsed_context_only
+            .context_submit
+            .expect("context submit options should parse");
+        assert_eq!(
+            context_only.context.to_token_stream().to_string(),
+            "crate :: SubmitContext"
+        );
+        assert!(context_only.response.is_none());
+        assert!(context_only.error.is_none());
+        assert!(context_only.submit.is_none());
+        assert!(context_only.map_response.is_none());
     }
 
     #[test]
@@ -493,6 +824,22 @@ mod tests {
             error
                 .to_string()
                 .contains("tool description cannot be empty"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_conflicting_annotation_hints() {
+        let error = McpToolOptions::from_list(&[
+            parse_quote!(read_only = true),
+            parse_quote!(destructive = true),
+        ])
+        .expect_err("conflicting annotation hints should fail");
+
+        assert!(
+            error
+                .to_string()
+                .contains("cannot be both read-only and destructive"),
             "unexpected error: {error}"
         );
     }

@@ -145,15 +145,9 @@ impl HolderStorageStrategy for HolderStoragePlan {
     ) -> ValueHolderResult<TokenStream> {
         match self {
             HolderStoragePlan::OriginallyOptional => Ok(quote! { None }),
-            HolderStoragePlan::Direct => {
-                let runtime_crate = context.paths.gpui_form_facade_runtime();
-                Ok(quote_spanned! {field_name.span()=>
-                    <#runtime_crate::shape::DirectValueStorage
-                        as #runtime_crate::shape::DefaultValueStorage<
-                            #base_type
-                        >>::default_storage()
-                })
-            },
+            HolderStoragePlan::Direct => Ok(quote_spanned! {field_name.span()=>
+                <#base_type as ::core::default::Default>::default()
+            }),
             HolderStoragePlan::ShapePolicy { .. } => {
                 let policy = self.shape_policy_type_tokens(context, field_name)?;
                 let runtime_crate = context.paths.gpui_form_facade_runtime();

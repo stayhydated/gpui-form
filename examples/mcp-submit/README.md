@@ -5,8 +5,8 @@ tools.
 
 It demonstrates:
 
-- `#[gpui_form::mcp_submit]` for an async model handler returning
-  `Result<serde_json::Value, String>`
+- `#[gpui_form::mcp_submit]` for an async model handler returning a typed
+  response with `Serialize` and `McpJsonSchema`
 - Koruma validation before submit
 - a component-backed field decoded without starting GPUI
 - handler-mode inference from the first parameter: source models use model

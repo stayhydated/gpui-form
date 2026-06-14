@@ -65,11 +65,16 @@ cargo run -p prototyping
 
 Stdio MCP server example that exposes generated form value holders as MCP
 tools. It demonstrates generated tool schemas, `tools/call` argument decoding,
-holder validation, model conversion, component-backed fields, and skipped-field
-holder submission, plus explicit per-tool MCP metadata. The support-ticket
-form also registers headless edit-session tools so agents can open a generated
-value holder, patch individual fields, read `submit_arguments`, and then call
-the normal submit tool.
+holder validation, model conversion, component-backed fields, skipped-field
+holder submission, explicit per-tool MCP metadata, and default headless
+edit-session tools. Agents can open a generated value holder, apply atomic bulk
+patches through `values` and `clear`, use session `revision` with
+`expected_revision` to reject stale edits, inspect `session_limit` and
+`session_idle_timeout_ms`, inspect `submit_arguments`, and call
+`*_edit_submit` for handler-backed sessions. Editor sessions are bounded and
+idle-expiring by default, and evict the oldest session when the per-form limit
+is exceeded. `edit_open` and `edit_list` return cleanup metadata for expired
+or evicted session IDs.
 
 Run it with:
 

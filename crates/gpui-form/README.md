@@ -47,6 +47,9 @@ component-shape-gpui = "*"
 
 # Optional: experimental MCP submit integration
 # gpui-form = { version = "*", features = ["mcp"] }
+
+# Optional: headless MCP-only forms without the GPUI runtime re-export
+# gpui-form = { version = "*", default-features = false, features = ["derive", "mcp"] }
 ```
 
 ## Quick Start
@@ -220,19 +223,21 @@ Common struct-level helpers:
 
 Enable the facade `mcp` feature to generate typed MCP submit metadata for forms
 that opt in with `#[gpui_form(mcp)]` (or `#[gpui_form(mcp(...))]`). Those
-forms get a `gpui_form::mcp::McpForm` implementation beside the normal GPUI
-form types.
+forms get `gpui_form::mcp::McpForm` and `McpEditableForm` implementations
+beside the normal GPUI form types.
 The feature implies inventory registration and routes through the
 `gpui-form-mcp` integration crate. `#[gpui_form(mcp)]` requires the `mcp`
 feature and cannot be combined with `#[gpui_form(no_inventory)]` or generic
-form types, because MCP submit tools are discovered through inventory.
+form types, because generated MCP tools are discovered through inventory.
 
 ```toml
 [dependencies]
-gpui-form = { version = "*", features = ["mcp"] }
+gpui-form = { version = "*", default-features = false, features = ["derive", "mcp"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 ```
+
+Keep the default features, or enable `runtime`, when the same crate also
+renders component-backed GPUI forms or references `gpui_form::runtime`.
 
 ```rs
 use gpui_form::GpuiForm;
@@ -249,9 +254,16 @@ pub struct ContactRequest {
     pub email: String,
 }
 
+#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
+pub struct ContactSubmitResponse {
+    pub email: String,
+}
+
 #[gpui_form::mcp_submit]
-async fn submit_contact(request: ContactRequest) -> Result<serde_json::Value, String> {
-    Ok(serde_json::json!({ "email": request.email }))
+async fn submit_contact(request: ContactRequest) -> Result<ContactSubmitResponse, String> {
+    Ok(ContactSubmitResponse {
+        email: request.email,
+    })
 }
 
 fn main() -> gpui_form::mcp::ServeStdioResult {
@@ -269,19 +281,45 @@ source model. For forms with `#[gpui_form(skip)]` fields or app-owned context,
 give the handler the generated `*FormValueHolder` parameter and the macro
 registers holder submission instead.
 Submit handlers can be synchronous or async. Return `Result<T, E>` for handler
-errors and normal responses, where `T: serde::Serialize` and `E: fmt::Display`.
+errors and normal responses, where `T: serde::Serialize + gpui_form::mcp::McpJsonSchema`
+and `E: fmt::Display`. Prefer a typed response struct or newtype that derives
+`gpui_form::mcp::McpJsonSchema` for precise output schemas, or return
+`gpui_form::mcp::McpObject` for dynamic object-shaped JSON.
+For submit flows with shared runtime state, declare the context on the form
+itself with `#[gpui_form(mcp(context(MyContext), ...))]`, optionally add
+`response(MyResponse)` for a precise output schema, and either implement
+`gpui_form::mcp::McpContextSubmit<MyContext>` for the source model or add
+`submit(path::to::async_fn)` so the derive emits that impl. Generated submit
+impls can also use `map_response(path::to::fn)` to convert a raw handler
+response into the published response type, and `error(MyError)` to override
+the default `String` error type. Then call
+`gpui_form::mcp::register_context_submitters(&mut server, context)?` or
+`register_context_submitters_with_editor_options(...)`. The derive inventories
+those forms, so one registration call wires every matching context-backed
+submit tool plus `*_edit_submit`; the context type must be
+`Clone + Send + Sync + 'static`. If `response(...)` is omitted, the generated
+registration uses `McpObject`.
 Use struct-level
 `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]` to
 override the generated MCP tool name, title, or description. When
 `description` is omitted, the derive uses the form type's Rust doc comment.
+The same list accepts optional MCP tool annotation hints with
+`read_only = ...`, `destructive = ...`, `idempotent = ...`, and
+`open_world = ...`, so generated submit tools can advertise whether they
+inspect local/server state, mutate it, or call into external systems.
+`read_only = true` and `destructive = true` cannot be combined.
 The lower-level `McpServer` API remains
 available when an application wants to compose form tools with other
 `component-shape-mcp` integrations. Use `gpui_form::mcp::server_named(name,
-version)?` when generated form handlers should advertise application-owned
-metadata, then call `.serve_stdio().await` or `.serve_stdio_blocking()`. Use
-`gpui_form::mcp::builder()` or `builder_named(name, version)` when deferred
-setup is useful. Use `gpui_form::mcp::serve_stdio_blocking()` for the default
-stdio server.
+version)?` when generated form handlers and editor tools should advertise
+application-owned metadata, then call `.serve_stdio().await` or
+`.serve_stdio_blocking()`. Use `gpui_form::mcp::builder()` or
+`builder_named(name, version)` when deferred setup is useful. Use
+`gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
+Generated servers register `#[gpui_form::mcp_submit]` submit handlers plus
+editable holder-session tools for every `#[gpui_form(mcp)]` form. Forms that
+also have a submit handler get `*_edit_submit`, so agents can submit a valid
+edit session by `session_id`.
 
 For a composed server, such as a binary that also depends on `gpui-table`, use
 the shared builder:
@@ -298,25 +336,81 @@ Manual form tools can still be registered directly:
 `gpui_form::mcp::form::<ContactRequest>(&mut server).model(handler)?` or
 `.holder(handler)?` for `Result<T, E>` handlers and `handler` must return
 `Result`.
+Use `.model_with_editor(handler)?`, `.model_async_with_editor(handler)?`,
+`.holder_with_editor(handler)?`, or `.holder_async_with_editor(handler)?` when
+the same form should publish submit, editable holder-session tools, and
+`*_edit_submit` for submitting the current edit session through the same
+handler.
+Use the matching `*_with_editor_options` helpers with
+`McpFormEditorOptions` when a server needs a custom session cap.
 Registration reports setup errors such as duplicate tool names.
 
-MCP forms can also expose editable holder sessions:
+MCP forms can also expose editable holder sessions directly:
 
 ```rs
 let mut server = gpui_form::mcp::McpServer::new("my-app", env!("CARGO_PKG_VERSION"));
 gpui_form::mcp::form::<ContactRequest>(&mut server).editor()?;
 ```
 
-This registers `*_edit_open`, `*_edit_read`, `*_edit_patch`,
-`*_edit_validate`, and `*_edit_close` tools derived from the form's MCP tool
-name. `edit_open` accepts an optional `values` object, `edit_patch` accepts a
-`session_id`, `field`, and `value`, and tool results include the
-agent-supplied `values` plus `submit_arguments` that can be sent to the normal
-submit tool. Field patches use the same generated decoding path as submit
-calls, including component-shape `MCP_INPUT` schemas and value-storage
-policies. These tools edit headless generated value holders; live GPUI widgets
-still need an application-owned runtime bridge from the holder/session state
-into GPUI entities.
+This registers `*_edit_open`, `*_edit_list`, `*_edit_read`, `*_edit_patch`,
+`*_edit_validate`, `*_edit_close`, and `*_edit_close_all` tools derived from
+the form's MCP tool name. `edit_open` accepts an optional `values` object,
+`edit_patch` accepts a `session_id`, optional `values` object, optional
+`clear` field-name array, optional `replace = true` to replace the whole
+pending value set instead of merging, and optional `expected_revision` to reject
+stale client updates. Tool results include the session `revision`,
+agent-supplied `values`, missing required fields, validation `errors`, `valid`,
+`fields` metadata with per-field schemas plus current `has_value`/`value` state
+and field-level `errors`, and `submit_arguments` that can be sent to the normal
+submit tool. The published snapshot schema keeps `fields[]` typed with a
+per-field `oneOf`. Field patches and clears are decoded by rebuilding a cloned
+holder before they are committed, so a failed bulk patch does not partially
+mutate the session.
+`edit_list` returns every active session for the form using the same snapshot
+shape plus `session_limit` and `session_idle_timeout_ms`, and
+`edit_close` accepts an optional `expected_revision` before closing one
+session. `edit_close_all` closes every active session for that form and returns
+`closed_count` plus the closed `session_ids`.
+Editors retain at most `DEFAULT_EDITOR_SESSION_LIMIT` active sessions per form
+by default and expire idle sessions after
+`DEFAULT_EDITOR_SESSION_IDLE_TIMEOUT`; opening another session evicts the oldest
+session when the cap is exceeded. Use
+`.editor_with_options(McpFormEditorOptions::default().with_session_limit(n).with_session_idle_timeout(duration))`,
+the matching `*_with_editor_options` helpers, or
+`McpFormEditorOptions::default().without_session_limit().without_session_idle_timeout()`
+to tune that policy.
+`edit_open` and `edit_list` report a `cleanup` object with expired and evicted
+session IDs so clients can drop local handles that the server removed while
+servicing the request.
+When the form is registered with one of the `*_with_editor` submit helpers, or
+through a generated `#[gpui_form::mcp_submit]` handler, `*_edit_submit` accepts
+a `session_id`, optional `expected_revision`, and optional
+`close_on_success = false`, validates the current session, and calls the same
+submit handler without copying `submit_arguments` into a second tool call.
+Successful edit submits close the session by default only when the session has
+not advanced while the handler was running; validation, stale revision, handler
+failure, or concurrent patch cases leave it open for repair or retry.
+Generated editor tool definitions publish MCP annotations: `edit_list`,
+`edit_read`, and `edit_validate` are read-only and idempotent, `edit_open` is a
+non-destructive session mutation, `edit_patch`, `edit_close`, and
+`edit_close_all` are destructive session mutations, and `edit_submit` is a
+destructive open-world submit call.
+Patches use the same generated decoding path as submit calls, including
+component-shape `MCP_INPUT` schemas and value-storage policies. These tools
+edit headless generated value holders; live GPUI widgets still need an
+application-owned runtime bridge from the holder/session state into GPUI
+entities.
+
+MCP failures keep their text content and also set `structured_content.error`
+with a stable `kind` plus relevant fields such as `field`, `value`, `name`, or
+`detail`, so agents can inspect decode, validation, session, unknown-tool, and
+handler failures without parsing prose. Generated form validation failures also
+include a `details` array with individual validation messages.
+Generated tool definitions also publish output schemas: submit tools advertise
+the handler response type's `McpJsonSchema` or `McpObject` for dynamic JSON,
+and editor tools publish strict schemas for session snapshots and close
+results. Output schemas must declare root `type: "object"` to match MCP
+structured content.
 
 Generated MCP input schemas use the field type's `McpToolValue` schema, so the
 published schema and generated decoder stay paired. Component-backed fields
@@ -331,6 +425,9 @@ unconstrained JSON. Aliases inherit the schema of their target type, fixed
 tuples with 1 to 4 elements publish exact array schemas, and tuple or named
 transparent newtypes, named structs, or fieldless enums can derive the schema
 trait directly through `gpui_form::mcp`.
+In crates that also depend on another MCP facade such as `gpui-table`, add
+`#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
+derives so generated schema impls target the gpui-form facade.
 The derive follows serde deserialize names, records field aliases in
 `x-mcpAliases`, includes enum aliases, skips
 deserialization-skipped fields, rejects flattened fields, and treats
@@ -731,6 +828,6 @@ workspace examples.
 - `cargo run -p prototyping`: regenerate the `some-lib-forms` scaffolded GPUI
   form files and the checked-in `examples/prototyping/output` mirror from shape
   inventory
-- `cargo run -p mcp-submit`: serve generated form submit tools over stdio MCP
+- `cargo run -p mcp-submit`: serve generated form submit and edit tools over stdio MCP
 - `cargo run -p mcp-form-table`: run the composed form submit plus table-filter
   MCP server

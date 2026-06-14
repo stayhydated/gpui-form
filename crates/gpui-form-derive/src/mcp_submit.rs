@@ -18,18 +18,20 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
 
     let fn_ident = &item_fn.sig.ident;
     let register_ident = format_ident!("__gpui_form_mcp_register_{fn_ident}");
+    let descriptor_ident = format_ident!("__gpui_form_mcp_descriptor_{fn_ident}");
+    let tool_definitions_ident = format_ident!("__gpui_form_mcp_tool_definitions_{fn_ident}");
     let is_async = item_fn.sig.asyncness.is_some();
 
     let register_call = if is_async {
         quote! {
-            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_async(
+            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_async_with_editor(
                 server,
                 #fn_ident,
             )
         }
     } else {
         quote! {
-            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_sync(
+            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_sync_with_editor(
                 server,
                 #fn_ident,
             )
@@ -50,11 +52,33 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
             __gpui_form_mcp_submit_assert_error::<#result_error_type>();
             fn __gpui_form_mcp_submit_assert_serialize<T: #facade_crate::mcp::Serialize>() {}
             __gpui_form_mcp_submit_assert_serialize::<#result_type>();
+            fn __gpui_form_mcp_submit_assert_schema<T: #facade_crate::mcp::McpJsonSchema>() {}
+            __gpui_form_mcp_submit_assert_schema::<#result_type>();
             #register_call
         }
 
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #descriptor_ident() -> #facade_crate::mcp::McpFormDescriptor {
+            <
+                <#first_type as #facade_crate::mcp::McpSubmitArgument>::Form
+                as #facade_crate::mcp::McpForm
+            >::descriptor()
+        }
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #tool_definitions_ident(
+        ) -> Result<Vec<#facade_crate::mcp::ToolDefinition>, #facade_crate::mcp::McpToolError> {
+            <#first_type as #facade_crate::mcp::McpSubmitArgument>::tool_definitions_with_editor::<#result_type>()
+        }
+
         #facade_crate::mcp::registry::inventory::submit! {
-            #facade_crate::mcp::registry::McpSubmitHandlerRegistration::new(#register_ident)
+            #facade_crate::mcp::registry::McpSubmitHandlerRegistration::new(
+                #descriptor_ident,
+                #register_ident,
+                #tool_definitions_ident,
+            )
         }
     })
 }
@@ -273,24 +297,26 @@ mod tests {
     }
 
     #[test]
-    fn requires_serialize_success_type() {
+    fn requires_serializable_schema_success_type() {
         let item_fn: ItemFn = parse2(
-            "fn submit(request: String) -> Result<serde_json::Value, String> { Ok(serde_json::json!({\"ok\": request})) }"
+            "fn submit(request: String) -> Result<SubmitResponse, String> { submit_response(request) }"
                 .parse()
                 .expect("valid function"),
         )
         .expect("parse item");
         let expanded = expand(quote! {}, quote! { #item_fn })
-            .expect("mcp_submit should accept a serializable response type");
+            .expect("mcp_submit should accept a serializable schema response type");
         let expanded = expanded.to_string();
         assert!(expanded.contains("mcp_submit_assert_serialize"));
         assert!(expanded.contains("Serialize"));
+        assert!(expanded.contains("mcp_submit_assert_schema"));
+        assert!(expanded.contains("McpJsonSchema"));
     }
 
     #[test]
     fn delegates_sync_registration_to_submit_argument_trait() {
         let item_fn: ItemFn = parse2(
-            "fn submit(request: ContactRequest) -> Result<serde_json::Value, String> { Ok(serde_json::json!({})) }"
+            "fn submit(request: ContactRequest) -> Result<SubmitResponse, String> { submit_response(request) }"
                 .parse()
                 .expect("valid function"),
         )
@@ -305,7 +331,7 @@ mod tests {
     #[test]
     fn delegates_async_registration_to_submit_argument_trait() {
         let item_fn: ItemFn = parse2(
-            "async fn submit(holder: ContactRequestFormValueHolder) -> Result<serde_json::Value, String> { Ok(serde_json::json!({})) }"
+            "async fn submit(holder: ContactRequestFormValueHolder) -> Result<SubmitResponse, String> { submit_response(holder).await }"
                 .parse()
                 .expect("valid function"),
         )

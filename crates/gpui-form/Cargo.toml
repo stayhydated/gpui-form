@@ -13,17 +13,18 @@ readme = "README.md"
 keywords = [ "gpui", "gpui-component", "form" ]
 
 [features]
-default = [ "derive" ]
+default = [ "derive", "runtime" ]
 derive = [ "dep:gpui-form-derive" ]
 inventory = [ "gpui-form-derive?/inventory" ]
 mcp = [ "dep:gpui-form-mcp", "inventory", "gpui-form-derive?/mcp" ]
+runtime = [ "dep:gpui-form-runtime" ]
 
 [dependencies]
 bon = { workspace = true }
 gpui-form-core = { workspace = true }
 gpui-form-derive = { optional = true, workspace = true }
 gpui-form-mcp = { optional = true, workspace = true }
-gpui-form-runtime = { workspace = true }
+gpui-form-runtime = { optional = true, workspace = true }
 gpui-form-schema = { workspace = true }
 
 [dev-dependencies]

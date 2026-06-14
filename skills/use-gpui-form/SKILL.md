@@ -59,6 +59,16 @@ helpers and component-specific derives explicitly:
    `#[gpui_form::mcp_submit]`. Use a source-model first parameter for model
    handlers and a generated `*FormValueHolder` first parameter when
    skipped-field forms need application-owned context.
+   For many forms sharing one runtime context, put
+   `context(MyContext)` inside each struct's `gpui_form(mcp(...))`, optionally
+   add `response(MyResponse)` for a precise output schema, implement
+   `McpContextSubmit<MyContext>` for those source models or add
+   `submit(path::to::async_fn)` so the derive emits the impl, and register them with
+   `gpui_form::mcp::register_context_submitters(...)` or the
+   `*_with_editor_options` variant. Omitted `response(...)` uses
+   `gpui_form::mcp::McpObject` for dynamic object-shaped JSON. Use
+   `map_response(path::to::fn)` when the async submit function returns a raw
+   value that needs conversion, and `error(MyError)` for non-`String` errors.
    Handlers can be synchronous or async and must return `Result<T, E>`.
    Do not add CLI, shell parsing, or GPUI button-callback execution for MCP.
    MCP input schemas use the field type's `McpToolValue` schema. Component-backed
@@ -155,16 +165,28 @@ Common patterns:
   Register manual handlers with
   `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
   `.holder(handler)?` for handlers returning `Result<T, E>`.
+  For context-backed fleets of form submit tools, prefer struct-level
+  `context(MyContext)` MCP options plus `McpContextSubmit<MyContext>`
+  implementations or generated impls from `submit(path::to::async_fn)`,
+  adding `response(MyResponse)` only when precise response schemas matter, then call
+  `gpui_form::mcp::register_context_submitters(&mut server, context)?` once.
   Register headless field-editing tools with
   `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The generated editor
-  tools open a value-holder session, patch one field at a time through the same
-  component-shape-aware decoder used by submit calls, read agent-supplied
-  values and `submit_arguments`, validate, and close the session. Treat this as
-  holder editing only; live GPUI widget mutation still needs an app-owned
+  tools open a bounded value-holder session, bulk patch or clear fields through
+  the same component-shape-aware decoder used by submit calls, expose
+  `revision`, `session_limit`, `session_idle_timeout_ms`, agent-supplied
+  values, and `submit_arguments`, validate, expire idle sessions, and close the
+  session. Use `McpFormEditorOptions` or the `*_with_editor_options` submit
+  helpers when a server needs a custom session cap or idle timeout. Treat this
+  as holder editing only; live GPUI widget mutation still needs an app-owned
   bridge from the holder/session into GPUI entities.
   Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
-  when generated MCP tools need application-owned names or descriptions. If
-  `description` is omitted, the derive uses the form type's Rust doc comment.
+  when generated MCP tools need application-owned names or descriptions. Add
+  `context(Type)` there when the form should emit context-submit inventory,
+  `submit(path)` when the derive should generate `McpContextSubmit`, and
+  `response(Type)` only to override the default `McpObject` response.
+  If `description` is omitted, the derive uses the form type's Rust doc
+  comment.
   Registration reports setup errors such as duplicate tool names.
   Component-backed fields use value-specific
   `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata in generated

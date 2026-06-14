@@ -3,7 +3,7 @@ use gpui_form::{GpuiForm, mcp::McpForm as _};
 use gpui_table::GpuiTable;
 use gpui_table::mcp::McpTable as _;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::json;
 
 pub struct TicketTitleState;
 
@@ -55,13 +55,21 @@ struct TicketRow {
     title: String,
 }
 
+#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
+#[mcp(crate = gpui_form::mcp)]
+struct TicketSubmitResponse {
+    accepted: bool,
+    title: String,
+    details: Option<String>,
+}
+
 #[gpui_form::mcp_submit]
-fn submit_ticket(ticket: TicketForm) -> Result<Value, String> {
-    Ok(json!({
-        "accepted": true,
-        "title": ticket.title,
-        "details": ticket.details
-    }))
+fn submit_ticket(ticket: TicketForm) -> Result<TicketSubmitResponse, String> {
+    Ok(TicketSubmitResponse {
+        accepted: true,
+        title: ticket.title,
+        details: ticket.details,
+    })
 }
 
 #[gpui_table::mcp_query]
@@ -116,6 +124,7 @@ fn main() -> gpui_form::mcp::ServeStdioResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gpui_form::mcp::editor_tool_names;
 
     #[test]
     fn composed_mcp_server_registers_form_and_table_tools() {
@@ -125,8 +134,11 @@ mod tests {
             .into_iter()
             .map(|tool| tool.name.to_string())
             .collect();
+        let form_editor_names = editor_tool_names(TicketForm::descriptor());
 
         assert!(tool_names.contains(&TicketForm::descriptor().tool_name()));
+        assert!(tool_names.contains(&form_editor_names.open));
+        assert!(tool_names.contains(&form_editor_names.patch));
         assert!(tool_names.contains(&TicketRow::descriptor().tool_name()));
     }
 

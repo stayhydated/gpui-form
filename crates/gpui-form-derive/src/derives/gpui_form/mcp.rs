@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Path, Type};
 
-use crate::derives::gpui_form::attrs::McpToolOptions;
+use crate::derives::gpui_form::attrs::{McpContextSubmitOptions, McpToolOptions};
 use crate::derives::gpui_form::holder_plan::{HolderConversionMode, ValueHolderPlan};
 use crate::derives::gpui_form::ir::{DeriveContext, FieldPlan, HolderFieldIr, HolderStoragePlan};
 
@@ -176,9 +176,160 @@ fn tool_metadata_tokens(
             name: options.and_then(|options| options.name.as_deref()),
             title: options.and_then(|options| options.title.as_deref()),
             description: options.and_then(|options| options.description.as_deref()),
+            read_only: options.and_then(|options| options.read_only),
+            destructive: options.and_then(|options| options.destructive),
+            idempotent: options.and_then(|options| options.idempotent),
+            open_world: options.and_then(|options| options.open_world),
         },
         original_input.ident.span(),
     )
+}
+
+fn context_submit_registration_tokens(
+    context: &DeriveContext,
+    original_input: &DeriveInput,
+    context_submit: Option<&McpContextSubmitOptions>,
+) -> TokenStream {
+    let Some(context_submit) = context_submit else {
+        return quote! {};
+    };
+
+    let facade_crate = &context.paths.gpui_form;
+    let original_ident = &original_input.ident;
+    let context_type = &context_submit.context;
+    let response_type = context_submit
+        .response
+        .as_ref()
+        .map(|response_type| quote! { #response_type })
+        .unwrap_or_else(|| quote! { #facade_crate::mcp::McpObject });
+    let error_type = context_submit
+        .error
+        .as_ref()
+        .map(|error_type| quote! { #error_type })
+        .unwrap_or_else(|| quote! { String });
+    let context_type_id_fn_ident =
+        format_ident!("__{}_gpui_form_mcp_context_submit_type_id", original_ident);
+    let context_register_fn_ident =
+        format_ident!("__{}_gpui_form_mcp_register_context_submit", original_ident);
+    let context_definitions_fn_ident = format_ident!(
+        "__{}_gpui_form_mcp_context_submit_tool_definitions",
+        original_ident
+    );
+    let descriptor_fn_ident = format_ident!("__{}_gpui_form_mcp_descriptor", original_ident);
+    let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
+    let context_submit_impl = context_submit
+        .submit
+        .as_ref()
+        .map(|submit| {
+            let submit_body = if let Some(map_response) = context_submit.map_response.as_ref() {
+                quote! {
+                    async move {
+                        let __gpui_form_response = (#submit)(self, context).await?;
+                        (#map_response)(__gpui_form_response)
+                    }
+                }
+            } else {
+                quote! {
+                    (#submit)(self, context)
+                }
+            };
+
+            quote! {
+                impl #impl_generics #facade_crate::mcp::McpContextSubmit<#context_type>
+                    for #original_ident #ty_generics
+                    #where_clause
+                {
+                    type Response = #response_type;
+                    type Error = #error_type;
+
+                    fn submit_with_context(
+                        self,
+                        context: #context_type,
+                    ) -> impl ::std::future::Future<
+                        Output = Result<Self::Response, Self::Error>
+                    > + Send + 'static {
+                        #submit_body
+                    }
+                }
+            }
+        })
+        .unwrap_or_else(|| quote! {});
+
+    quote! {
+        #context_submit_impl
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #context_type_id_fn_ident() -> ::std::any::TypeId {
+            ::std::any::TypeId::of::<#context_type>()
+        }
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #context_register_fn_ident(
+            server: &mut #facade_crate::mcp::McpServer,
+            context: #facade_crate::mcp::McpSubmitContext,
+            options: #facade_crate::mcp::McpFormEditorOptions,
+        ) -> Result<(), #facade_crate::mcp::McpToolError> {
+            fn __gpui_form_mcp_context_submit_assert<T, Context, Response>()
+            where
+                T: #facade_crate::mcp::McpContextSubmit<Context, Response = Response>,
+                Context: Clone + Send + Sync + 'static,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+            {}
+            __gpui_form_mcp_context_submit_assert::<
+                #original_ident #ty_generics,
+                #context_type,
+                #response_type,
+            >();
+
+            let context = context.downcast::<#context_type>().map_err(|_| {
+                #facade_crate::mcp::McpToolError::validation(format!(
+                    "context submitter for `{}` requires context `{}`",
+                    stringify!(#original_ident),
+                    ::std::any::type_name::<#context_type>(),
+                ))
+            })?;
+
+            #facade_crate::mcp::form::<#original_ident #ty_generics>(server)
+                .model_async_with_editor_options(options, move |request| {
+                    let context = (*context).clone();
+                    <
+                        #original_ident #ty_generics
+                        as #facade_crate::mcp::McpContextSubmit<#context_type>
+                    >::submit_with_context(request, context)
+                })
+        }
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #context_definitions_fn_ident(
+        ) -> Result<Vec<#facade_crate::mcp::ToolDefinition>, #facade_crate::mcp::McpToolError> {
+            fn __gpui_form_mcp_context_submit_assert<T, Context, Response>()
+            where
+                T: #facade_crate::mcp::McpContextSubmit<Context, Response = Response>,
+                Context: Clone + Send + Sync + 'static,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+            {}
+            __gpui_form_mcp_context_submit_assert::<
+                #original_ident #ty_generics,
+                #context_type,
+                #response_type,
+            >();
+            <
+                #original_ident #ty_generics as #facade_crate::mcp::McpSubmitArgument
+            >::tool_definitions_with_editor::<#response_type>()
+        }
+
+        #facade_crate::mcp::registry::inventory::submit! {
+            #facade_crate::mcp::registry::McpContextSubmitRegistration::new(
+                #descriptor_fn_ident,
+                #context_type_id_fn_ident,
+                #context_register_fn_ident,
+                #context_definitions_fn_ident,
+            )
+        }
+    }
 }
 
 pub(super) fn generate_mcp_impl(
@@ -194,8 +345,17 @@ pub(super) fn generate_mcp_impl(
     let holder_ident = format_ident!("{}FormValueHolder", original_ident);
     let fields_const_ident = format_ident!("__{}GpuiFormMcpFields", original_ident);
     let descriptor_fn_ident = format_ident!("__{}_gpui_form_mcp_descriptor", original_ident);
+    let editor_register_fn_ident =
+        format_ident!("__{}_gpui_form_mcp_register_editor", original_ident);
+    let editor_definitions_fn_ident =
+        format_ident!("__{}_gpui_form_mcp_editor_tool_definitions", original_ident);
     let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
     let tool_metadata = tool_metadata_tokens(context, original_input, mcp_tool_options)?;
+    let context_submit_registration = context_submit_registration_tokens(
+        context,
+        original_input,
+        mcp_tool_options.and_then(|options| options.context_submit.as_ref()),
+    );
 
     let field_descriptors: Vec<TokenStream> = field_plans
         .iter()
@@ -219,7 +379,7 @@ pub(super) fn generate_mcp_impl(
     let validation_tokens = if enable_koruma {
         quote! {
             holder.validate().map_err(|error| {
-                #facade_crate::mcp::McpToolError::validation(format!("{error:?}"))
+                #facade_crate::mcp::McpToolError::validation_details([format!("{error:?}")])
             })
         }
     } else {
@@ -253,7 +413,7 @@ pub(super) fn generate_mcp_impl(
                     ) -> Result<(), #facade_crate::mcp::McpToolError>
                     where
                         Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
-                        Response: #facade_crate::mcp::Serialize,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                         Error: ::core::fmt::Display,
                     {
                         #facade_crate::mcp::form::<Self>(server).model(handler)
@@ -266,10 +426,41 @@ pub(super) fn generate_mcp_impl(
                     where
                         Handler: Fn(Self) -> Fut + Send + Sync + 'static,
                         Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
-                        Response: #facade_crate::mcp::Serialize,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                         Error: ::core::fmt::Display,
                     {
                         #facade_crate::mcp::form::<Self>(server).model_async(handler)
+                    }
+
+                    fn register_sync_with_editor<Handler, Response, Error>(
+                        server: &mut #facade_crate::mcp::McpServer,
+                        handler: Handler,
+                    ) -> Result<(), #facade_crate::mcp::McpToolError>
+                    where
+                        Self::Form: #facade_crate::mcp::McpEditableForm,
+                        <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                            Clone + Default + Send + 'static,
+                        Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                        Error: ::core::fmt::Display,
+                    {
+                        #facade_crate::mcp::form::<Self>(server).model_with_editor(handler)
+                    }
+
+                    fn register_async_with_editor<Handler, Fut, Response, Error>(
+                        server: &mut #facade_crate::mcp::McpServer,
+                        handler: Handler,
+                    ) -> Result<(), #facade_crate::mcp::McpToolError>
+                    where
+                        Self::Form: #facade_crate::mcp::McpEditableForm,
+                        <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                            Clone + Default + Send + 'static,
+                        Handler: Fn(Self) -> Fut + Send + Sync + 'static,
+                        Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                        Error: ::core::fmt::Display,
+                    {
+                        #facade_crate::mcp::form::<Self>(server).model_async_with_editor(handler)
                     }
                 }
             }
@@ -299,7 +490,7 @@ pub(super) fn generate_mcp_impl(
                     ) -> Result<(), #facade_crate::mcp::McpToolError>
                     where
                         Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
-                        Response: #facade_crate::mcp::Serialize,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                         Error: ::core::fmt::Display,
                     {
                         #facade_crate::mcp::form::<Self>(server).model(handler)
@@ -312,10 +503,41 @@ pub(super) fn generate_mcp_impl(
                     where
                         Handler: Fn(Self) -> Fut + Send + Sync + 'static,
                         Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
-                        Response: #facade_crate::mcp::Serialize,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                         Error: ::core::fmt::Display,
                     {
                         #facade_crate::mcp::form::<Self>(server).model_async(handler)
+                    }
+
+                    fn register_sync_with_editor<Handler, Response, Error>(
+                        server: &mut #facade_crate::mcp::McpServer,
+                        handler: Handler,
+                    ) -> Result<(), #facade_crate::mcp::McpToolError>
+                    where
+                        Self::Form: #facade_crate::mcp::McpEditableForm,
+                        <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                            Clone + Default + Send + 'static,
+                        Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                        Error: ::core::fmt::Display,
+                    {
+                        #facade_crate::mcp::form::<Self>(server).model_with_editor(handler)
+                    }
+
+                    fn register_async_with_editor<Handler, Fut, Response, Error>(
+                        server: &mut #facade_crate::mcp::McpServer,
+                        handler: Handler,
+                    ) -> Result<(), #facade_crate::mcp::McpToolError>
+                    where
+                        Self::Form: #facade_crate::mcp::McpEditableForm,
+                        <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                            Clone + Default + Send + 'static,
+                        Handler: Fn(Self) -> Fut + Send + Sync + 'static,
+                        Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
+                        Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                        Error: ::core::fmt::Display,
+                    {
+                        #facade_crate::mcp::form::<Self>(server).model_async_with_editor(handler)
                     }
                 }
             }
@@ -394,7 +616,7 @@ pub(super) fn generate_mcp_impl(
             ) -> Result<(), #facade_crate::mcp::McpToolError>
             where
                 Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
-                Response: #facade_crate::mcp::Serialize,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                 Error: ::core::fmt::Display,
             {
                 #facade_crate::mcp::form::<
@@ -409,12 +631,47 @@ pub(super) fn generate_mcp_impl(
             where
                 Handler: Fn(Self) -> Fut + Send + Sync + 'static,
                 Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
-                Response: #facade_crate::mcp::Serialize,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
                 Error: ::core::fmt::Display,
             {
                 #facade_crate::mcp::form::<
                     <Self as #facade_crate::mcp::McpSubmitArgument>::Form
                 >(server).holder_async(handler)
+            }
+
+            fn register_sync_with_editor<Handler, Response, Error>(
+                server: &mut #facade_crate::mcp::McpServer,
+                handler: Handler,
+            ) -> Result<(), #facade_crate::mcp::McpToolError>
+            where
+                Self::Form: #facade_crate::mcp::McpEditableForm,
+                <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                    Clone + Default + Send + 'static,
+                Handler: Fn(Self) -> Result<Response, Error> + Send + Sync + 'static,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                Error: ::core::fmt::Display,
+            {
+                #facade_crate::mcp::form::<
+                    <Self as #facade_crate::mcp::McpSubmitArgument>::Form
+                >(server).holder_with_editor(handler)
+            }
+
+            fn register_async_with_editor<Handler, Fut, Response, Error>(
+                server: &mut #facade_crate::mcp::McpServer,
+                handler: Handler,
+            ) -> Result<(), #facade_crate::mcp::McpToolError>
+            where
+                Self::Form: #facade_crate::mcp::McpEditableForm,
+                <Self::Form as #facade_crate::mcp::McpForm>::ValueHolder:
+                    Clone + Default + Send + 'static,
+                Handler: Fn(Self) -> Fut + Send + Sync + 'static,
+                Fut: ::core::future::Future<Output = Result<Response, Error>> + Send + 'static,
+                Response: #facade_crate::mcp::Serialize + #facade_crate::mcp::McpJsonSchema,
+                Error: ::core::fmt::Display,
+            {
+                #facade_crate::mcp::form::<
+                    <Self as #facade_crate::mcp::McpSubmitArgument>::Form
+                >(server).holder_async_with_editor(handler)
             }
         }
 
@@ -424,8 +681,33 @@ pub(super) fn generate_mcp_impl(
             <#original_ident #ty_generics as #facade_crate::mcp::McpForm>::descriptor()
         }
 
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #editor_register_fn_ident(
+            server: &mut #facade_crate::mcp::McpServer
+        ) -> Result<(), #facade_crate::mcp::McpToolError> {
+            #facade_crate::mcp::register_editor::<#original_ident #ty_generics>(server)
+        }
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #editor_definitions_fn_ident(
+        ) -> Result<Vec<#facade_crate::mcp::ToolDefinition>, #facade_crate::mcp::McpToolError> {
+            #facade_crate::mcp::editor_tool_definitions::<#original_ident #ty_generics>()
+        }
+
         #facade_crate::mcp::registry::inventory::submit! {
             #facade_crate::mcp::registry::McpSubmitRegistration::new(#descriptor_fn_ident)
         }
+
+        #facade_crate::mcp::registry::inventory::submit! {
+            #facade_crate::mcp::registry::McpEditorRegistration::new(
+                #descriptor_fn_ident,
+                #editor_register_fn_ident,
+                #editor_definitions_fn_ident,
+            )
+        }
+
+        #context_submit_registration
     })
 }
