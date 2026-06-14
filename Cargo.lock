@@ -3525,6 +3525,7 @@ dependencies = [
  "component-shape-codegen",
  "darling",
  "heck 0.5.0",
+ "koruma-derive-core",
  "proc-macro-crate 3.5.0",
  "proc-macro2",
  "quote",
