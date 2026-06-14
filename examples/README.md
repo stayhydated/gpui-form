@@ -66,8 +66,10 @@ cargo run -p prototyping
 Stdio MCP server example that exposes generated form value holders as MCP
 tools. It demonstrates generated tool schemas, `tools/call` argument decoding,
 holder validation, model conversion, component-backed fields, skipped-field
-holder submission, explicit per-tool MCP metadata, and default headless
-edit-session tools. Agents can open a generated value holder, apply atomic bulk
+holder submission, explicit per-tool MCP metadata, field labels/descriptions
+and examples in schemas, descriptor/schema/examples resources, opt-in
+fill/repair/submit prompt templates, and default headless edit-session tools.
+Agents can open a generated value holder, apply atomic bulk
 patches through `values` and `clear`, use session `revision` with
 `expected_revision` to reject stale edits, inspect `session_limit` and
 `session_idle_timeout_ms`, inspect `submit_arguments`, and call
@@ -83,6 +85,8 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"manual","version":"0.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
   '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}' \
+  '{"jsonrpc":"2.0","id":3,"method":"prompts/list","params":{}}' \
   | cargo run -p mcp-submit
 ```
 
@@ -90,7 +94,7 @@ printf '%s\n' \
 
 Headless composed MCP server example that declares a custom
 `component_shape_gpui` form component shape, exposes a generated form submit
-tool, exposes inferred `gpui-table` filter arguments, and serves both
+tool, exposes explicit `gpui-table` text filter arguments, and serves both
 integrations through one shared MCP server.
 
 Run a local smoke test with:

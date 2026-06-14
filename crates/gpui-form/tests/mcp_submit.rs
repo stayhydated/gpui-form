@@ -4,13 +4,17 @@ use gpui_form::{
     GpuiForm,
     mcp::{
         DEFAULT_EDITOR_SESSION_IDLE_TIMEOUT, DEFAULT_EDITOR_SESSION_LIMIT, McpAny,
-        McpEditableForm as _, McpForm as _, McpFormEditorOptions, McpServer, McpToolError,
-        context_submit_tool_definitions, editor_tool_names, form,
-        register_context_submitters_with_editor_options, server as generated_server,
-        tool_definitions,
+        McpEditableForm as _, McpForm as _, McpFormEditorOptions, McpFormRegistrationOptions,
+        McpServer, McpToolError, context_submit_tool_definitions, editor_tool_names, form,
+        register_context_submitters_strict, register_context_submitters_with_editor_options,
+        register_with_options, server as generated_server, tool_definitions,
+        tool_definitions_with_options,
     },
 };
-use koruma_collection::collection::NonEmptyValidation;
+use koruma_collection::{
+    collection::{LenValidation, NonEmptyValidation},
+    numeric::RangeValidation,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
@@ -32,8 +36,15 @@ pub struct AccountId(u64);
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct PlainRequest {
+    /// Title from rustdoc that explicit MCP field metadata overrides.
+    #[gpui_form(
+        label = "Support title",
+        description = "Short title shown to agents and users.",
+        example = "Cannot log in"
+    )]
     #[gpui_form(hidden)]
     title: String,
+    /// Number of retry attempts to allow.
     #[gpui_form(hidden)]
     retries: Option<u32>,
     #[gpui_form(hidden(default = true))]
@@ -69,6 +80,18 @@ pub struct ValidatedRequest {
     #[gpui_form(hidden)]
     #[koruma(NonEmptyValidation::<_>)]
     name: String,
+}
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(koruma)]
+#[gpui_form(mcp)]
+pub struct ConstrainedRequest {
+    #[gpui_form(hidden)]
+    #[koruma(LenValidation::<_>::min(2).max(8))]
+    title: String,
+    #[gpui_form(hidden)]
+    #[koruma(RangeValidation::<_>::min(1).max(5).exclusive_max(true))]
+    retries: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
@@ -315,7 +338,14 @@ fn dynamic_context_response(value: Value) -> Result<gpui_form::mcp::McpObject, S
     read_only = true,
     destructive = false,
     idempotent = true,
-    open_world = false
+    open_world = false,
+    task_support = "optional",
+    icon(
+        src = "https://example.com/submit-metadata.png",
+        mime_type = "image/png",
+        size = "48x48",
+        theme = "light"
+    )
 ))]
 pub struct MetadataRequest {
     #[gpui_form(hidden)]
@@ -473,6 +503,47 @@ fn generated_mcp_schema_marks_required_optional_default_and_component_fields() {
 }
 
 #[test]
+fn generated_mcp_schema_publishes_koruma_validation_metadata_and_constraints() {
+    let non_empty_schema = ValidatedRequest::descriptor().input_schema();
+    let name_schema = &non_empty_schema["properties"]["name"];
+    assert_eq!(name_schema["minLength"], json!(1));
+    assert_eq!(
+        name_schema["x-gpuiFormValidation"],
+        json!([{
+            "scope": "field",
+            "validator": "NonEmptyValidation",
+            "path": "NonEmptyValidation",
+            "target": "default",
+            "type_arg_mode": "infer"
+        }])
+    );
+
+    let constrained_schema = ConstrainedRequest::descriptor().input_schema();
+    let title_schema = &constrained_schema["properties"]["title"];
+    assert_eq!(title_schema["minLength"], json!(2));
+    assert_eq!(title_schema["maxLength"], json!(8));
+    assert_eq!(
+        title_schema["x-gpuiFormValidation"][0]["params"],
+        json!([
+            { "name": "min", "value": "2" },
+            { "name": "max", "value": "8" }
+        ])
+    );
+
+    let retries_schema = &constrained_schema["properties"]["retries"];
+    assert_eq!(retries_schema["minimum"], json!(1));
+    assert_eq!(retries_schema["exclusiveMaximum"], json!(5));
+    assert_eq!(
+        retries_schema["x-gpuiFormValidation"][0]["params"],
+        json!([
+            { "name": "min", "value": "1" },
+            { "name": "max", "value": "5" },
+            { "name": "exclusive_max", "value": "true" }
+        ])
+    );
+}
+
+#[test]
 fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
     let tools = tool_definitions().expect("tool definitions should be generated");
     let registered_names: Vec<_> = tools.iter().map(|tool| tool.name.to_string()).collect();
@@ -509,6 +580,33 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
     assert_eq!(metadata_annotations.destructive_hint, Some(false));
     assert_eq!(metadata_annotations.idempotent_hint, Some(true));
     assert_eq!(metadata_annotations.open_world_hint, Some(false));
+    let metadata_icons = metadata_submit
+        .icons
+        .as_ref()
+        .expect("explicit mcp icons should publish tool icons");
+    assert_eq!(
+        metadata_icons[0].src,
+        "https://example.com/submit-metadata.png"
+    );
+    assert_eq!(metadata_icons[0].mime_type.as_deref(), Some("image/png"));
+    assert_eq!(
+        metadata_icons[0]
+            .sizes
+            .as_ref()
+            .expect("icon sizes should be published")[0],
+        "48x48"
+    );
+    assert_eq!(
+        metadata_icons[0].theme,
+        Some(gpui_form::mcp::McpIconTheme::Light)
+    );
+    assert_eq!(
+        metadata_submit
+            .execution
+            .as_ref()
+            .and_then(|execution| execution.task_support),
+        Some(gpui_form::mcp::McpToolTaskSupport::Optional)
+    );
 
     let component_editor_names = editor_tool_names(ComponentRequest::descriptor());
     assert!(registered_names.contains(&component_editor_names.open));
@@ -521,6 +619,14 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
         .iter()
         .find(|tool| tool.name.as_ref() == PlainRequest::descriptor().tool_name())
         .expect("plain submit tool should be registered");
+    let plain_submit_annotations = plain_submit
+        .annotations
+        .as_ref()
+        .expect("plain submit tool should publish default annotations");
+    assert_eq!(plain_submit_annotations.read_only_hint, Some(false));
+    assert_eq!(plain_submit_annotations.destructive_hint, Some(true));
+    assert_eq!(plain_submit_annotations.idempotent_hint, Some(false));
+    assert_eq!(plain_submit_annotations.open_world_hint, Some(true));
     let plain_submit_output = Value::Object(
         plain_submit
             .output_schema
@@ -635,7 +741,12 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
     assert_eq!(
         plain_open_output["properties"]["fields"]["items"]["oneOf"][0]["properties"]["errors"]["items"]
             ["type"],
-        json!("string")
+        json!("object")
+    );
+    assert_eq!(
+        plain_open_output["properties"]["fields"]["items"]["oneOf"][0]["properties"]["errors"]["items"]
+            ["properties"]["scope"]["enum"],
+        json!(["form", "field", "element"])
     );
     assert_eq!(
         plain_open_output["properties"]["fields"]["items"]["oneOf"][2]["properties"]["has_default"]
@@ -826,6 +937,17 @@ fn generated_mcp_descriptor_uses_explicit_metadata() {
     assert_eq!(annotations.destructive_hint, Some(false));
     assert_eq!(annotations.idempotent_hint, Some(true));
     assert_eq!(annotations.open_world_hint, Some(false));
+    let icons = descriptor
+        .tool_icons()
+        .expect("explicit icon metadata should publish icons");
+    assert_eq!(icons[0].src, "https://example.com/submit-metadata.png");
+    assert_eq!(icons[0].mime_type.as_deref(), Some("image/png"));
+    assert_eq!(
+        descriptor
+            .tool_execution()
+            .and_then(|execution| execution.task_support),
+        Some(gpui_form::mcp::McpToolTaskSupport::Optional)
+    );
 }
 
 #[test]
@@ -833,6 +955,155 @@ fn generated_mcp_descriptor_infers_doc_description() {
     assert_eq!(
         PlainRequest::descriptor().description(),
         "Submit a plain request from inferred docs."
+    );
+}
+
+#[test]
+fn generated_mcp_fields_publish_inferred_and_explicit_metadata() {
+    let descriptor = PlainRequest::descriptor();
+    let fields = descriptor.fields();
+    let title = fields
+        .iter()
+        .find(|field| field.name() == "title")
+        .expect("title field should be described");
+    let retries = fields
+        .iter()
+        .find(|field| field.name() == "retries")
+        .expect("retries field should be described");
+
+    assert_eq!(title.explicit_label(), Some("Support title"));
+    assert_eq!(title.label(), "Support title");
+    assert_eq!(
+        title.description(),
+        Some("Short title shown to agents and users.")
+    );
+    assert_eq!(title.examples(), &["Cannot log in"]);
+    assert_eq!(retries.explicit_label(), None);
+    assert_eq!(retries.label(), "Retries");
+    assert_eq!(
+        retries.description(),
+        Some("Number of retry attempts to allow.")
+    );
+
+    let schema = descriptor.input_schema();
+    assert_eq!(schema["properties"]["title"]["title"], "Support title");
+    assert_eq!(
+        schema["properties"]["title"]["description"],
+        "Short title shown to agents and users."
+    );
+    assert_eq!(
+        schema["properties"]["title"]["x-gpuiFormExplicitLabel"],
+        "Support title"
+    );
+    assert_eq!(
+        schema["properties"]["title"]["examples"],
+        json!(["Cannot log in"])
+    );
+    assert_eq!(schema["properties"]["retries"]["title"], "Retries");
+    assert_eq!(
+        schema["properties"]["retries"]["description"],
+        "Number of retry attempts to allow."
+    );
+
+    let mut server = test_server();
+    form::<PlainRequest>(&mut server)
+        .editor()
+        .expect("editor tools should register");
+    let tools = editor_tool_names(descriptor);
+    let opened = server.call_tool(&tools.open, Some(json!({})));
+    assert_eq!(opened.is_error, Some(false));
+    let opened = opened
+        .structured_content
+        .expect("open should return a session");
+    assert_eq!(opened["fields"][0]["label"], "Support title");
+    assert_eq!(
+        opened["fields"][0]["description"],
+        "Short title shown to agents and users."
+    );
+    assert_eq!(opened["fields"][0]["examples"], json!(["Cannot log in"]));
+    assert_eq!(opened["fields"][1]["label"], "Retries");
+    assert_eq!(
+        opened["fields"][1]["description"],
+        "Number of retry attempts to allow."
+    );
+}
+
+#[test]
+fn generated_registration_profiles_select_tools_and_report_skips() {
+    let plain_submit = PlainRequest::descriptor().tool_name();
+    let plain_editor = editor_tool_names(PlainRequest::descriptor());
+
+    let submit_only_definitions =
+        tool_definitions_with_options(McpFormRegistrationOptions::submit_only())
+            .expect("submit-only definitions should build");
+    let submit_only_names: Vec<_> = submit_only_definitions
+        .iter()
+        .map(|tool| tool.name.to_string())
+        .collect();
+    assert!(submit_only_names.contains(&plain_submit));
+    assert!(!submit_only_names.contains(&plain_editor.open));
+    assert!(!submit_only_names.contains(&plain_editor.submit));
+
+    let mut submit_only_server = test_server();
+    let submit_only_report = register_with_options(
+        &mut submit_only_server,
+        McpFormRegistrationOptions::submit_only(),
+    )
+    .expect("submit-only profile should register");
+    assert!(submit_only_server.contains_tool(&plain_submit));
+    assert!(!submit_only_server.contains_tool(&plain_editor.open));
+    assert_eq!(submit_only_report.registered_tool_names, submit_only_names);
+    assert!(
+        submit_only_report.skipped_tools.iter().any(
+            |skipped| skipped.name == plain_editor.open && skipped.reason == "editors_disabled"
+        )
+    );
+    assert!(
+        submit_only_report
+            .skipped_tools
+            .iter()
+            .any(|skipped| skipped.name == plain_editor.submit
+                && skipped.reason == "edit_submit_disabled")
+    );
+
+    let mut editor_only_server = test_server();
+    let editor_only_report = register_with_options(
+        &mut editor_only_server,
+        McpFormRegistrationOptions::editor_only(),
+    )
+    .expect("editor-only profile should register");
+    assert!(!editor_only_server.contains_tool(&plain_submit));
+    assert!(editor_only_server.contains_tool(&plain_editor.open));
+    assert!(!editor_only_server.contains_tool(&plain_editor.submit));
+    assert!(editor_only_report.skipped_tools.iter().any(
+        |skipped| skipped.name == plain_submit && skipped.reason == "submit_handlers_disabled"
+    ));
+    assert!(
+        editor_only_report
+            .skipped_tools
+            .iter()
+            .any(|skipped| skipped.name == plain_editor.submit
+                && skipped.reason == "edit_submit_disabled")
+    );
+
+    let mut metadata_server = test_server();
+    let metadata_report = register_with_options(
+        &mut metadata_server,
+        McpFormRegistrationOptions::metadata_only(),
+    )
+    .expect("metadata-only profile should build report");
+    assert_eq!(metadata_server.tool_count(), 0);
+    assert!(metadata_report.registered_tool_names.is_empty());
+    assert!(!metadata_report.tool_definitions.is_empty());
+    assert_eq!(
+        metadata_report.skipped_tools.len(),
+        metadata_report.tool_definitions.len()
+    );
+    assert!(
+        metadata_report
+            .skipped_tools
+            .iter()
+            .all(|skipped| skipped.reason == "metadata_only")
     );
 }
 
@@ -950,7 +1221,12 @@ fn form_tool_can_register_model_submit_with_editor_tools() {
             "kind": "validation",
             "message": "validation failed: missing required field `title`",
             "detail": "missing required field `title`",
-            "details": ["missing required field `title`"]
+            "details": [{
+                "scope": "field",
+                "message": "missing required field `title`",
+                "field": "title",
+                "validator": "required"
+            }]
         })
     );
     let invalid_read = server.call_tool(
@@ -1115,6 +1391,40 @@ fn context_submitters_register_from_derive_inventory() {
             "prefixed": "ctx:Editable"
         }))
     );
+}
+
+#[test]
+fn strict_context_submitters_report_matches_and_reject_zero_matches() {
+    #[derive(Clone)]
+    struct MissingContext;
+
+    let mut missing_server = test_server();
+    let error = register_context_submitters_strict(&mut missing_server, MissingContext)
+        .expect_err("strict context registration should reject zero matches");
+    assert_eq!(error.kind(), "validation");
+    assert!(
+        error
+            .to_string()
+            .contains("no MCP context submitters registered for context")
+    );
+    assert_eq!(missing_server.tool_count(), 0);
+
+    let mut server = test_server();
+    let report = register_context_submitters_strict(
+        &mut server,
+        SubmitContext {
+            prefix: "strict:".to_string(),
+        },
+    )
+    .expect("strict context submitters should register matching inventory");
+
+    let submit_name = ContextRequest::descriptor().tool_name();
+    let editor_names = editor_tool_names(ContextRequest::descriptor());
+    assert_eq!(report.context_registration_count, 2);
+    assert!(report.registered_tool_names.contains(&submit_name));
+    assert!(report.registered_tool_names.contains(&editor_names.submit));
+    assert!(server.contains_tool(&submit_name));
+    assert!(server.contains_tool(&editor_names.submit));
 }
 
 #[test]
@@ -1285,7 +1595,12 @@ fn koruma_validation_runs_before_submit_handler() {
         .as_array()
         .expect("validation details should be an array");
     assert_eq!(details.len(), 1);
-    assert_eq!(details[0], json!(detail));
+    assert_eq!(details[0]["scope"], json!("field"));
+    assert_eq!(details[0]["field"], json!("name"));
+    assert_eq!(details[0]["validator"], json!("NonEmptyValidation"));
+    assert_eq!(details[0]["path"], json!("NonEmptyValidation"));
+    assert_eq!(details[0]["target"], json!("default"));
+    assert_eq!(details[0]["message"], json!(detail));
     assert!(
         result.content[0]
             .as_text()
@@ -1405,7 +1720,15 @@ fn editor_tools_open_patch_read_validate_and_close_sessions() {
     );
     assert_eq!(opened["missing_required"], json!(["title"]));
     assert_eq!(opened["valid"], false);
-    assert_eq!(opened["errors"], json!(["missing required field `title`"]));
+    assert_eq!(
+        opened["errors"],
+        json!([{
+            "scope": "field",
+            "message": "missing required field `title`",
+            "field": "title",
+            "validator": "required"
+        }])
+    );
     assert_eq!(opened["fields"][0]["name"], "title");
     assert_eq!(opened["fields"][0]["required"], true);
     assert_eq!(opened["fields"][0]["present"], false);
@@ -1414,7 +1737,12 @@ fn editor_tools_open_patch_read_validate_and_close_sessions() {
     assert_eq!(opened["fields"][0]["missing"], true);
     assert_eq!(
         opened["fields"][0]["errors"],
-        json!(["missing required field `title`"])
+        json!([{
+            "scope": "field",
+            "message": "missing required field `title`",
+            "field": "title",
+            "validator": "required"
+        }])
     );
     assert_eq!(opened["fields"][0]["schema"]["type"], "string");
     assert_eq!(opened["fields"][2]["name"], "enabled");
@@ -1642,7 +1970,12 @@ fn editor_tools_open_patch_read_validate_and_close_sessions() {
     assert_eq!(patched["missing_required"], json!(["title"]));
     assert_eq!(
         patched["fields"][0]["errors"],
-        json!(["missing required field `title`"])
+        json!([{
+            "scope": "field",
+            "message": "missing required field `title`",
+            "field": "title",
+            "validator": "required"
+        }])
     );
     assert_eq!(patched["submit_arguments"], json!({ "retries": 5 }));
     let close_revision = patched["revision"]

@@ -18,8 +18,11 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
 
     let fn_ident = &item_fn.sig.ident;
     let register_ident = format_ident!("__gpui_form_mcp_register_{fn_ident}");
+    let register_submit_ident = format_ident!("__gpui_form_mcp_register_submit_{fn_ident}");
     let descriptor_ident = format_ident!("__gpui_form_mcp_descriptor_{fn_ident}");
     let tool_definitions_ident = format_ident!("__gpui_form_mcp_tool_definitions_{fn_ident}");
+    let submit_tool_definitions_ident =
+        format_ident!("__gpui_form_mcp_submit_tool_definitions_{fn_ident}");
     let is_async = item_fn.sig.asyncness.is_some();
 
     let register_call = if is_async {
@@ -32,6 +35,21 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
     } else {
         quote! {
             <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_sync_with_editor(
+                server,
+                #fn_ident,
+            )
+        }
+    };
+    let register_submit_call = if is_async {
+        quote! {
+            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_async(
+                server,
+                #fn_ident,
+            )
+        }
+    } else {
+        quote! {
+            <#first_type as #facade_crate::mcp::McpSubmitArgument>::register_sync(
                 server,
                 #fn_ident,
             )
@@ -59,6 +77,22 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
 
         #[doc(hidden)]
         #[allow(non_snake_case)]
+        fn #register_submit_ident(
+            server: &mut #facade_crate::mcp::McpServer
+        ) -> Result<(), #facade_crate::mcp::McpToolError> {
+            fn __gpui_form_mcp_submit_assert_argument<T: #facade_crate::mcp::McpSubmitArgument>() {}
+            __gpui_form_mcp_submit_assert_argument::<#first_type>();
+            fn __gpui_form_mcp_submit_assert_error<T: ::core::fmt::Display>() {}
+            __gpui_form_mcp_submit_assert_error::<#result_error_type>();
+            fn __gpui_form_mcp_submit_assert_serialize<T: #facade_crate::mcp::Serialize>() {}
+            __gpui_form_mcp_submit_assert_serialize::<#result_type>();
+            fn __gpui_form_mcp_submit_assert_schema<T: #facade_crate::mcp::McpJsonSchema>() {}
+            __gpui_form_mcp_submit_assert_schema::<#result_type>();
+            #register_submit_call
+        }
+
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
         fn #descriptor_ident() -> #facade_crate::mcp::McpFormDescriptor {
             <
                 <#first_type as #facade_crate::mcp::McpSubmitArgument>::Form
@@ -73,11 +107,27 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> syn::Result<TokenStream> 
             <#first_type as #facade_crate::mcp::McpSubmitArgument>::tool_definitions_with_editor::<#result_type>()
         }
 
+        #[doc(hidden)]
+        #[allow(non_snake_case)]
+        fn #submit_tool_definitions_ident(
+        ) -> Result<Vec<#facade_crate::mcp::ToolDefinition>, #facade_crate::mcp::McpToolError> {
+            Ok(vec![
+                #facade_crate::mcp::submit_tool_definition_for_response::<
+                    <
+                        #first_type as #facade_crate::mcp::McpSubmitArgument
+                    >::Form,
+                    #result_type,
+                >()?
+            ])
+        }
+
         #facade_crate::mcp::registry::inventory::submit! {
-            #facade_crate::mcp::registry::McpSubmitHandlerRegistration::new(
+            #facade_crate::mcp::registry::McpSubmitHandlerRegistration::new_with_submit_only(
                 #descriptor_ident,
                 #register_ident,
+                #register_submit_ident,
                 #tool_definitions_ident,
+                #submit_tool_definitions_ident,
             )
         }
     })

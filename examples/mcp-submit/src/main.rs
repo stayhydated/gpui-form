@@ -78,5 +78,6 @@ fn submit_tenant_note(holder: TenantNoteFormValueHolder) -> Result<TenantNoteRes
 fn main() -> gpui_form::mcp::ServeStdioResult {
     let mut server = gpui_form::mcp::McpServer::new("mcp-submit", env!("CARGO_PKG_VERSION"));
     gpui_form::mcp::register(&mut server)?;
+    gpui_form::mcp::register_prompt_templates(&mut server)?;
     server.serve_stdio_blocking()
 }

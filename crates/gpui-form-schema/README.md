@@ -19,8 +19,9 @@ prototyping flows around generated form metadata.
 component-backed fields and explicit hidden value-holder-only fields.
 `FieldVariant` records both source-model and form-side value types,
 required-value holder behavior, conversion expressions, component shape
-metadata, resolved component suffixes, and opt-in value-binding metadata for
-generators. Its fields are private; construct complete value metadata with
+metadata, resolved component suffixes, opt-in value-binding metadata, and
+field-facing label/description/example metadata for generators. Its fields are
+private; construct complete value metadata with
 `FieldValueSpec::new(value_type, source_value_type, value_presence)` before
 calling `FieldVariant::component(field_name, value, component)` or
 `FieldVariant::hidden(field_name, value)`. That keeps `FieldValuePresence`

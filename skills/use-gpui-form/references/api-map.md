@@ -216,19 +216,52 @@ the default `String` error type. Then call
 those forms, so one registration call wires every matching context-backed
 submit tool plus `*_edit_submit`; the context type must be
 `Clone + Send + Sync + 'static`. If `response(...)` is omitted, the generated
-registration uses `McpObject`.
+registration uses `McpObject`. Use `register_context_submitters_strict(...)`
+or `register_context_submitters_strict_with_editor_options(...)` when zero
+matching context registrations should fail setup instead of succeeding as a
+no-op; the strict variants return a registration report with the matched
+context registration count.
 Use `gpui_form::mcp::server()?` for the default generated server and
 `gpui_form::mcp::server_named(name, version)?` when application-owned server
 metadata is needed. Generated servers register `#[gpui_form::mcp_submit]`
 submit handlers plus editable holder-session tools for every
 `#[gpui_form(mcp)]` form. Forms that also have a submit handler get
 `*_edit_submit`, so agents can submit a valid edit session by `session_id`.
+Use `register_with_options(&mut server, McpFormRegistrationOptions::submit_only())`
+to publish only generated submit handlers,
+`McpFormRegistrationOptions::editor_only()` to publish only editable holder
+sessions, or `McpFormRegistrationOptions::metadata_only()` to inspect selected
+tool definitions and skipped-tool report without mutating the server.
+`tool_definitions_with_options(...)` returns the profile-selected definitions
+directly. `register()` remains equivalent to `McpFormRegistrationOptions::all()`.
+Generated servers also advertise `resources` and publish JSON resources for
+every registered form at `gpui-form://forms/{tool_name}/descriptor`,
+`gpui-form://forms/{tool_name}/schema`, and
+`gpui-form://forms/{tool_name}/examples`. The descriptor resource includes
+form/tool metadata, resource links, field labels, descriptions, examples,
+required/default/storage metadata, component MCP input metadata, validation
+rules, and per-field schemas; the schema resource contains the submit input
+schema; the examples resource groups field examples. `metadata_only()` does not
+register resources. Use `form_resource_uris`, `form_descriptor_resource_value`,
+`form_schema_resource_value`, and `form_examples_resource_value` in tests or
+manual integrations that need the same resource contract without serving an
+MCP transport.
+Prompt templates are opt-in: use
+`register_prompt_templates(&mut server)?` for inventory-discovered forms,
+`register_context_submitter_prompt_templates::<Context>(...)` for
+context-backed submitters, or `register_form_prompt_templates::<Form>(...)`
+for one form. Generated prompt names are `fill_{tool_name}_form`,
+`repair_{tool_name}_form`, and `submit_{tool_name}_form`; the text references
+the generated descriptor/schema/examples resources and matching edit tools
+when iterative repair is useful.
 Use `gpui_form::mcp::builder()` or
 `builder_named(name, version)` when deferred builder setup is needed.
 Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
 Use `McpServer::builder(name, version)` when composing forms with tables or
 other MCP integrations, and add generated handlers and editors with
-`.register(gpui_form::mcp::register)`.
+`.register(gpui_form::mcp::register)`. Chain
+`.register(gpui_form::mcp::register_prompt_templates)` when the server should
+also expose generated prompt templates.
 Register manual handlers with
 `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
 `.holder(handler)?` for handlers returning `Result<T, E>`.
@@ -241,8 +274,9 @@ Use the matching `*_with_editor_options` helpers with
 `McpFormEditorOptions` when a server needs a custom session cap.
 Editor `open`, `read`, `patch`, and `validate` responses include
 the session `revision`, agent-supplied `values`, missing required fields,
-validation `errors`, `valid`, `fields` metadata with per-field schemas plus
-current `has_value`/`value` state and field-level `errors`, and
+validation `errors`, `valid`, `fields` metadata with per-field schemas, field
+labels, descriptions, examples, current `has_value`/`value` state, and
+field-level `errors`, plus
 `submit_arguments` that can be passed to the submit tool.
 Published snapshot schemas keep `fields[]` typed with a per-field `oneOf`.
 `*_edit_list` returns all active sessions for that form using the same snapshot
@@ -284,25 +318,45 @@ MCP failures keep their text content and also set `structured_content.error`
 with a stable `kind` plus relevant fields such as `field`, `value`, `name`, or
 `detail`, so agents can inspect decode, validation, session, unknown-tool, and
 handler failures without parsing prose. Generated form validation failures also
-include a `details` array with individual validation messages.
+include a `details` array of structured issue objects with `scope`, `message`,
+and, when available, `field`, `validator`, `path`, `target`, `element_index`,
+and validator `params`. Editor session `errors` and field-level `errors` use
+the same issue object shape.
 Generated tool definitions also publish output schemas: submit tools advertise
 the handler response type's `McpJsonSchema` or `McpObject` for dynamic JSON,
 and editor tools publish strict schemas for session snapshots and close
 results. Output schemas must declare root `type: "object"` to match MCP
 structured content.
 Use struct-level `#[gpui_form(mcp(...))]` with `name`, `title`, `description`,
-`read_only`, `destructive`, `idempotent`, `open_world`, `context(Type)`, and
+`read_only`, `destructive`, `idempotent`, `open_world`, repeated `icon(...)`,
+`task_support = "forbidden" | "optional" | "required"`, `context(Type)`, and
 optional `response(Type)`, `error(Type)`, `submit(path)`, and
 `map_response(path)` when generated MCP tools need application-owned metadata,
-MCP tool annotation hints, context-submit inventory, generated context submit
-impls, or precise response schemas. If `description` is omitted, the derive
-uses the form type's Rust doc comment.
+MCP tool annotation hints, MCP tool icons, execution task support,
+context-submit inventory, generated context submit impls, or precise response
+schemas. Direct submit tools default to destructive open-world annotations
+unless overridden. If `description` is omitted, the derive uses the form type's
+Rust doc comment.
 `read_only = true` and `destructive = true` cannot be combined.
-Registration reports setup errors such as duplicate tool names.
+Use field-level `#[gpui_form(label = "...")]`,
+`#[gpui_form(description = "...")]`, and `#[gpui_form(example = "...")]` for
+MCP field metadata. Field descriptions infer from `///` rustdoc when not
+overridden, labels default from the field name, and examples may be repeated.
+Registration reports setup errors such as duplicate tool names or generated
+resource URIs.
 
 MCP input schemas use the field type's `McpToolValue` schema. Component-backed
 fields also attach value-specific `<Shape as ComponentShapeFor<Field>>::MCP_INPUT`
 metadata when it is available.
+When Koruma validation is enabled, generated field schemas attach
+`x-gpuiFormValidation` rule metadata. Literal `LenValidation`,
+`RangeValidation`, and `NonEmptyValidation` arguments are also reflected as
+JSON Schema hints such as `minLength`, `maxLength`, `minimum`,
+`maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minItems`, and `maxItems`
+when the field schema type is unambiguous.
+Generated MCP validation errors use gpui-form's field rule metadata first and
+fall back to Koruma's generic `ValidationIssues` output when no field-specific
+rule extractor is available.
 `component_shape_gpui` infers common MCP metadata from unambiguous declared
 values such as `String`, booleans, numbers, dates, `Vec<T>`, set-like
 primitive collections, fixed arrays, `gpui_form::mcp::McpRange<T>`, or

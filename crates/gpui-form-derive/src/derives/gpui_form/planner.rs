@@ -113,6 +113,7 @@ pub fn plan_form(
             storage,
             validation,
             validation_metadata,
+            metadata: field.metadata().clone(),
             default_expr: rendered.default.map(|expr| expr.value.0.clone()),
             default_span: rendered.default.map(|expr| expr.span),
             value_mapping,

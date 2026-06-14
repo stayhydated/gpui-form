@@ -74,6 +74,7 @@ When composing multiple integrations, such as a binary that also depends on
 ```rust
 let server = gpui_form::mcp::McpServer::builder("my-app", env!("CARGO_PKG_VERSION"))
     .register(gpui_form::mcp::register)
+    .register(gpui_form::mcp::register_prompt_templates)
     // If your binary also enables gpui-table MCP integration:
     .register(gpui_table::mcp::register)
     .build()?;
@@ -100,7 +101,12 @@ the default `String` error type. Then call
 those forms, so one registration call wires every matching context-backed
 submit tool plus `*_edit_submit`; the context type must be
 `Clone + Send + Sync + 'static`. If `response(...)` is omitted, the generated
-registration uses `McpObject`.
+registration uses `McpObject`. Use
+`register_context_submitters_strict(...)` or
+`register_context_submitters_strict_with_editor_options(...)` when zero
+matching context registrations should fail setup instead of succeeding as a
+no-op; the strict variants return a registration report with the matched
+context registration count.
 Manual server composition uses
 `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
 `.holder(handler)?` for `Result<T, E>` handlers. The handler must return
@@ -118,8 +124,26 @@ The same list accepts optional MCP tool annotation hints with
 `read_only = ...`, `destructive = ...`, `idempotent = ...`, and
 `open_world = ...`, so generated submit tools can advertise whether they
 inspect local/server state, mutate it, or call into external systems.
+Direct submit tools default to `read_only = false`, `destructive = true`,
+`idempotent = false`, and `open_world = true` unless overridden. Add repeated
+`icon(src = "...", mime_type = "...", size = "...", theme = "light" | "dark")`
+entries to publish MCP tool icons, and `task_support = "forbidden" |
+"optional" | "required"` to publish MCP tool execution task support.
 `read_only = true` and `destructive = true` cannot be combined.
-Registration reports setup errors such as duplicate tool names.
+Use field-level `#[gpui_form(label = "...")]`,
+`#[gpui_form(description = "...")]`, and `#[gpui_form(example = "...")]` to
+publish form-author intent in MCP schemas and editor snapshots. Field
+descriptions infer from `///` rustdoc when no explicit description is present,
+labels default from the field name, and examples may be repeated.
+Use `register_with_options(&mut server, McpFormRegistrationOptions::submit_only())`
+to publish only generated submit handlers,
+`McpFormRegistrationOptions::editor_only()` to publish only editable holder
+sessions, or `McpFormRegistrationOptions::metadata_only()` to inspect the
+selected tool definitions and skipped-tool report without mutating the server.
+`tool_definitions_with_options(...)` returns the profile-selected definitions
+directly. `register()` remains equivalent to `McpFormRegistrationOptions::all()`.
+Registration reports setup errors such as duplicate tool names or generated
+resource URIs.
 
 MCP forms can also register editable holder sessions directly with
 `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The editor adds
@@ -135,8 +159,9 @@ applies a `values` object and/or a `clear` field-name array to the session, and
 `edit_list` returns every active session for the form plus the effective
 `session_limit` and `session_idle_timeout_ms`, `edit_read` returns the session
 `revision`, agent-supplied `values`, missing required fields,
-validation `errors`, `valid`, `fields` metadata with per-field schemas plus
-current `has_value`/`value` state and field-level `errors`, and
+validation `errors`, `valid`, `fields` metadata with each field's label,
+description, examples, schema, current `has_value`/`value` state, and
+field-level `errors`, and
 `submit_arguments`, `edit_validate` returns the same state snapshot after
 running validation, `edit_close` accepts an optional `expected_revision` before
 dropping one session, and `edit_close_all` drops every active session for that
@@ -178,17 +203,56 @@ MCP failures keep their text content and also set `structured_content.error`
 with a stable `kind` plus relevant fields such as `field`, `value`, `name`, or
 `detail`, so agents can inspect decode, validation, session, unknown-tool, and
 handler failures without parsing prose. Generated form validation failures also
-include a `details` array with individual validation messages.
+include a `details` array of structured issue objects with `scope`, `message`,
+and, when available, `field`, `validator`, `path`, `target`, `element_index`,
+and validator `params`. Editor session `errors` and field-level `errors` use
+the same issue object shape.
 Generated tool definitions also publish output schemas: submit tools advertise
 the handler response type's `McpJsonSchema` or `McpObject` for dynamic JSON,
 and editor tools publish strict schemas for session snapshots and close
 results. Output schemas must declare root `type: "object"` to match MCP
 structured content.
+Generated MCP servers also advertise `resources` and publish JSON resources for
+every registered form:
+`gpui-form://forms/{tool_name}/descriptor`,
+`gpui-form://forms/{tool_name}/schema`, and
+`gpui-form://forms/{tool_name}/examples`. The descriptor resource contains the
+form name, source module path, tool metadata, resource links, field labels,
+descriptions, examples, required/default/storage metadata, component MCP input
+metadata, validation rules, and per-field schemas. The schema resource contains
+the submit input JSON Schema, and the examples resource groups field examples
+for clients that want lightweight prompt or repair context. Direct per-form
+registration helpers and inventory registration publish the same resources;
+`McpFormRegistrationOptions::metadata_only()` remains non-mutating. Use
+`form_resource_uris`, `form_descriptor_resource_value`,
+`form_schema_resource_value`, and `form_examples_resource_value` when tests or
+manual integrations need the same generated resource contract without serving
+an MCP transport.
+Prompt templates are opt-in. Call
+`gpui_form::mcp::register_prompt_templates(&mut server)?` after inventory
+registration, `register_context_submitter_prompt_templates::<Context>(...)`
+after context-backed submitter registration, or
+`register_form_prompt_templates::<Form>(&mut server)?` when manually exposing
+one form. The generated prompt names are `fill_{tool_name}_form`,
+`repair_{tool_name}_form`, and `submit_{tool_name}_form`. They direct clients
+to the descriptor/schema/examples resources and, for repair or iterative
+submission, to the generated edit-session tools when those tools are
+registered. Prompt registration publishes the same resources first if they are
+not already registered.
 
 Generated input schemas use the field type's `McpToolValue` schema, so schema
 publication and generated decoding stay paired. Component-backed fields also
 attach value-specific shape metadata from
 `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` when the shape publishes one.
+When Koruma validation is enabled, generated field schemas attach
+`x-gpuiFormValidation` rule metadata. Literal `LenValidation`,
+`RangeValidation`, and `NonEmptyValidation` arguments are also reflected as
+JSON Schema hints such as `minLength`, `maxLength`, `minimum`,
+`maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minItems`, and `maxItems`
+when the field schema type is unambiguous.
+Generated validation errors use gpui-form's field rule metadata first and fall
+back to Koruma's generic `ValidationIssues` output when no field-specific rule
+extractor is available.
 `component_shape_gpui` infers common shape MCP input from declared primitive
 values, primitive lists, primitive sets, fixed arrays, and ranges, then
 attaches it to the generated `ComponentShapeFor<Value>` impl.

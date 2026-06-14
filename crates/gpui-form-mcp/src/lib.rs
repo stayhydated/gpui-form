@@ -21,11 +21,14 @@ use serde_json::{Map, Value};
 
 pub use component_shape_mcp::{
     ComponentShapeFor, ComponentShapeMetadata, ContentBlock, MCP_PROTOCOL_VERSION, McpAny,
-    McpArguments, McpInput, McpInputShape, McpJsonSchema, McpPrimitiveKind, McpRange,
-    McpRangeBoundKind, McpSchema, McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder,
-    McpToolAnnotations, McpToolArguments, McpToolCall, McpToolError, McpToolInput, McpToolMetadata,
-    McpToolValue, McpTypedTool, ServeStdioResult, ToolCallResult, ToolDefinition, object_schema,
-    rmcp, serde, serde_json,
+    McpArguments, McpIconTheme, McpInput, McpInputShape, McpJsonSchema, McpPrimitiveKind,
+    McpPromptArgument, McpPromptMessage, McpPromptMessageContent, McpPromptMessageRole,
+    McpPromptResult, McpRange, McpRangeBoundKind, McpResourceContents, McpResourceResult,
+    McpSchema, McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder, McpToolAnnotations,
+    McpToolArguments, McpToolCall, McpToolError, McpToolIcon, McpToolInput, McpToolMetadata,
+    McpToolTaskSupport, McpToolValue, McpTypedTool, PromptDefinition, RawResourceDefinition,
+    RawResourceTemplateDefinition, ResourceDefinition, ResourceTemplateDefinition,
+    ServeStdioResult, ToolCallResult, ToolDefinition, object_schema, rmcp, serde, serde_json,
 };
 
 pub type FieldToolValueSchemaFn = McpSchemaFn;
@@ -34,6 +37,105 @@ pub type McpSubmitContext = Arc<dyn Any + Send + Sync>;
 
 pub const DEFAULT_EDITOR_SESSION_LIMIT: usize = 128;
 pub const DEFAULT_EDITOR_SESSION_IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+
+/// Generated MCP tool registration profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct McpFormRegistrationOptions {
+    pub submit_handlers: bool,
+    pub editors: bool,
+    pub edit_submit: bool,
+}
+
+impl McpFormRegistrationOptions {
+    /// Register submit handlers, standalone editors, and handler-backed
+    /// edit-submit tools.
+    pub const fn all() -> Self {
+        Self {
+            submit_handlers: true,
+            editors: true,
+            edit_submit: true,
+        }
+    }
+
+    /// Register only `#[gpui_form::mcp_submit]` submit tools.
+    pub const fn submit_only() -> Self {
+        Self {
+            submit_handlers: true,
+            editors: false,
+            edit_submit: false,
+        }
+    }
+
+    /// Register only editable holder-session tools.
+    pub const fn editor_only() -> Self {
+        Self {
+            submit_handlers: false,
+            editors: true,
+            edit_submit: false,
+        }
+    }
+
+    /// Build registration metadata without mutating the server.
+    pub const fn metadata_only() -> Self {
+        Self {
+            submit_handlers: false,
+            editors: false,
+            edit_submit: false,
+        }
+    }
+
+    const fn registers_tools(self) -> bool {
+        self.submit_handlers || self.editors || self.edit_submit
+    }
+}
+
+impl Default for McpFormRegistrationOptions {
+    fn default() -> Self {
+        Self::all()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct McpSkippedTool {
+    pub name: String,
+    pub reason: &'static str,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct McpFormRegistrationReport {
+    pub tool_definitions: Vec<ToolDefinition>,
+    pub registered_tool_names: Vec<String>,
+    pub skipped_tools: Vec<McpSkippedTool>,
+    pub context_registration_count: usize,
+}
+
+impl McpFormRegistrationReport {
+    fn from_tool_definitions(tool_definitions: Vec<ToolDefinition>) -> Self {
+        let registered_tool_names = tool_definitions
+            .iter()
+            .map(|definition| definition.name.to_string())
+            .collect();
+        Self {
+            tool_definitions,
+            registered_tool_names,
+            skipped_tools: Vec::new(),
+            context_registration_count: 0,
+        }
+    }
+
+    fn metadata_only(mut self) -> Self {
+        self.skipped_tools.extend(
+            self.registered_tool_names
+                .iter()
+                .map(|name| McpSkippedTool {
+                    name: name.clone(),
+                    reason: "metadata_only",
+                }),
+        );
+        self.registered_tool_names.clear();
+        self
+    }
+}
 
 /// Runtime policy for generated MCP edit-session tools.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -162,6 +264,398 @@ impl McpJsonSchema for McpObject {
     }
 }
 
+/// Where a generated MCP validation issue applies.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum McpValidationScope {
+    /// The whole form failed validation without a precise field.
+    Form,
+    /// A field-level validator failed.
+    Field,
+    /// A validator for one item inside a collection field failed.
+    Element,
+}
+
+impl McpValidationScope {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Form => "form",
+            Self::Field => "field",
+            Self::Element => "element",
+        }
+    }
+}
+
+/// Koruma target selector recorded for an MCP validation rule.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum McpValidationTarget {
+    /// Koruma selected the default target for the field type.
+    Default,
+    /// The validator targets the full field value, such as an `Option<T>`.
+    Full,
+    /// The validator targets the unwrapped field value.
+    Unwrapped,
+}
+
+impl McpValidationTarget {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Default => "default",
+            Self::Full => "full",
+            Self::Unwrapped => "unwrapped",
+        }
+    }
+}
+
+/// Type argument syntax used by the source Koruma validator.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum McpValidationTypeArgMode {
+    /// The validator path did not supply a type argument.
+    None,
+    /// The validator used `::<_>`.
+    Infer,
+    /// The validator supplied an explicit type argument.
+    Explicit,
+}
+
+impl McpValidationTypeArgMode {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Infer => "infer",
+            Self::Explicit => "explicit",
+        }
+    }
+}
+
+/// One builder argument captured from a Koruma validator chain.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct McpValidationParam {
+    name: &'static str,
+    literal: Option<&'static str>,
+    expr: Option<&'static str>,
+}
+
+impl McpValidationParam {
+    /// Record a literal argument value that can be reflected into schemas.
+    pub const fn literal(name: &'static str, literal: &'static str) -> Self {
+        Self {
+            name,
+            literal: Some(literal),
+            expr: None,
+        }
+    }
+
+    /// Record a non-literal expression for tool clients to display or inspect.
+    pub const fn expr(name: &'static str, expr: &'static str) -> Self {
+        Self {
+            name,
+            literal: None,
+            expr: Some(expr),
+        }
+    }
+
+    /// Builder method or argument name.
+    pub const fn name(self) -> &'static str {
+        self.name
+    }
+
+    /// Literal argument value, when the derive could statically identify one.
+    pub const fn literal_value(self) -> Option<&'static str> {
+        self.literal
+    }
+
+    /// Non-literal argument expression, when no literal value is available.
+    pub const fn expr_value(self) -> Option<&'static str> {
+        self.expr
+    }
+
+    fn to_value(self) -> Value {
+        let mut object = Map::new();
+        object.insert("name".to_string(), Value::String(self.name.to_string()));
+        if let Some(literal) = self.literal {
+            object.insert("value".to_string(), Value::String(literal.to_string()));
+        }
+        if let Some(expr) = self.expr {
+            object.insert("expr".to_string(), Value::String(expr.to_string()));
+        }
+        Value::Object(object)
+    }
+}
+
+/// Shared empty validation parameter slice for generated descriptors.
+pub const MCP_VALIDATION_PARAMS_NONE: &[McpValidationParam] = &[];
+
+/// Static validator metadata attached to an MCP-visible form field.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct McpValidationRule {
+    scope: McpValidationScope,
+    validator: &'static str,
+    path: &'static str,
+    label: Option<&'static str>,
+    target: McpValidationTarget,
+    type_arg_mode: McpValidationTypeArgMode,
+    params: &'static [McpValidationParam],
+}
+
+impl McpValidationRule {
+    /// Create a validation rule descriptor for generated form metadata.
+    pub const fn new(
+        scope: McpValidationScope,
+        validator: &'static str,
+        path: &'static str,
+        label: Option<&'static str>,
+        target: McpValidationTarget,
+        type_arg_mode: McpValidationTypeArgMode,
+        params: &'static [McpValidationParam],
+    ) -> Self {
+        Self {
+            scope,
+            validator,
+            path,
+            label,
+            target,
+            type_arg_mode,
+            params,
+        }
+    }
+
+    /// Scope where this validator runs.
+    pub const fn scope(self) -> McpValidationScope {
+        self.scope
+    }
+
+    /// Terminal validator type name.
+    pub const fn validator(self) -> &'static str {
+        self.validator
+    }
+
+    /// Validator path as written in the Koruma attribute.
+    pub const fn path(self) -> &'static str {
+        self.path
+    }
+
+    /// Optional Koruma label assigned to this validator.
+    pub const fn label(self) -> Option<&'static str> {
+        self.label
+    }
+
+    /// Koruma target selector used by this validator.
+    pub const fn target(self) -> McpValidationTarget {
+        self.target
+    }
+
+    /// Type argument syntax used by this validator.
+    pub const fn type_arg_mode(self) -> McpValidationTypeArgMode {
+        self.type_arg_mode
+    }
+
+    /// Captured builder parameters for this validator.
+    pub const fn params(self) -> &'static [McpValidationParam] {
+        self.params
+    }
+
+    fn to_value(self) -> Value {
+        let mut object = Map::new();
+        object.insert(
+            "scope".to_string(),
+            Value::String(self.scope.as_str().to_string()),
+        );
+        object.insert(
+            "validator".to_string(),
+            Value::String(self.validator.to_string()),
+        );
+        object.insert("path".to_string(), Value::String(self.path.to_string()));
+        if let Some(label) = self.label {
+            object.insert("label".to_string(), Value::String(label.to_string()));
+        }
+        object.insert(
+            "target".to_string(),
+            Value::String(self.target.as_str().to_string()),
+        );
+        object.insert(
+            "type_arg_mode".to_string(),
+            Value::String(self.type_arg_mode.as_str().to_string()),
+        );
+        if !self.params.is_empty() {
+            object.insert(
+                "params".to_string(),
+                Value::Array(self.params.iter().map(|param| param.to_value()).collect()),
+            );
+        }
+        Value::Object(object)
+    }
+}
+
+/// Structured validation failure returned in MCP error details and editor snapshots.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct McpValidationIssue {
+    field: Option<String>,
+    scope: McpValidationScope,
+    validator: Option<String>,
+    path: Option<String>,
+    label: Option<String>,
+    target: Option<McpValidationTarget>,
+    element_index: Option<usize>,
+    message: String,
+    params: Vec<McpValidationParam>,
+}
+
+impl McpValidationIssue {
+    /// Build a form-scoped issue when no field-specific metadata is available.
+    pub fn form(message: impl Into<String>) -> Self {
+        Self {
+            field: None,
+            scope: McpValidationScope::Form,
+            validator: None,
+            path: None,
+            label: None,
+            target: None,
+            element_index: None,
+            message: message.into(),
+            params: Vec::new(),
+        }
+    }
+
+    /// Build a generic issue for tooling integrations that already have
+    /// structured validation metadata.
+    pub fn custom(scope: McpValidationScope, message: impl Into<String>) -> Self {
+        Self {
+            field: None,
+            scope,
+            validator: None,
+            path: None,
+            label: None,
+            target: None,
+            element_index: None,
+            message: message.into(),
+            params: Vec::new(),
+        }
+    }
+
+    /// Build a required-field issue.
+    pub fn required(field: impl Into<String>) -> Self {
+        let field = field.into();
+        Self {
+            field: Some(field.clone()),
+            scope: McpValidationScope::Field,
+            validator: Some("required".to_string()),
+            path: None,
+            label: None,
+            target: None,
+            element_index: None,
+            message: format!("missing required field `{field}`"),
+            params: Vec::new(),
+        }
+    }
+
+    /// Build an issue from a static validation rule descriptor.
+    pub fn for_rule(
+        field: impl Into<String>,
+        rule: McpValidationRule,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            field: Some(field.into()),
+            scope: rule.scope(),
+            validator: Some(rule.validator().to_string()),
+            path: Some(rule.path().to_string()),
+            label: rule.label().map(str::to_string),
+            target: Some(rule.target()),
+            element_index: None,
+            message: message.into(),
+            params: rule.params().to_vec(),
+        }
+    }
+
+    /// Attach the failing collection element index to an element issue.
+    pub fn with_element_index(mut self, element_index: usize) -> Self {
+        self.element_index = Some(element_index);
+        self
+    }
+
+    /// Attach a field name to a generic issue.
+    pub fn with_field(mut self, field: impl Into<String>) -> Self {
+        self.field = Some(field.into());
+        self
+    }
+
+    /// Attach a validator name to a generic issue.
+    pub fn with_validator(mut self, validator: impl Into<String>) -> Self {
+        self.validator = Some(validator.into());
+        self
+    }
+
+    /// Attach a source label to a generic issue.
+    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    /// Field name for field or element issues.
+    pub fn field(&self) -> Option<&str> {
+        self.field.as_deref()
+    }
+
+    /// Human-readable validation message.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Convert the issue to JSON for MCP structured content.
+    pub fn to_value(&self) -> Value {
+        let mut object = Map::new();
+        object.insert(
+            "scope".to_string(),
+            Value::String(self.scope.as_str().to_string()),
+        );
+        object.insert("message".to_string(), Value::String(self.message.clone()));
+        if let Some(field) = &self.field {
+            object.insert("field".to_string(), Value::String(field.clone()));
+        }
+        if let Some(validator) = &self.validator {
+            object.insert("validator".to_string(), Value::String(validator.clone()));
+        }
+        if let Some(path) = &self.path {
+            object.insert("path".to_string(), Value::String(path.clone()));
+        }
+        if let Some(label) = &self.label {
+            object.insert("label".to_string(), Value::String(label.clone()));
+        }
+        if let Some(target) = self.target {
+            object.insert(
+                "target".to_string(),
+                Value::String(target.as_str().to_string()),
+            );
+        }
+        if let Some(element_index) = self.element_index {
+            object.insert(
+                "element_index".to_string(),
+                Value::Number((element_index as u64).into()),
+            );
+        }
+        if !self.params.is_empty() {
+            object.insert(
+                "params".to_string(),
+                Value::Array(self.params.iter().map(|param| param.to_value()).collect()),
+            );
+        }
+        Value::Object(object)
+    }
+}
+
+/// Convert validation issues into a structured MCP validation error.
+pub fn validation_issues_error(issues: Vec<McpValidationIssue>) -> McpToolError {
+    let message = issues
+        .iter()
+        .map(McpValidationIssue::message)
+        .collect::<Vec<_>>()
+        .join("; ");
+    McpToolError::validation_structured_details(
+        message,
+        issues.into_iter().map(|issue| issue.to_value()),
+    )
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct McpField {
     name: &'static str,
@@ -171,6 +665,10 @@ pub struct McpField {
     component_backed: bool,
     mcp_input: McpInput,
     tool_value_schema: FieldToolValueSchemaFn,
+    label: Option<&'static str>,
+    description: Option<&'static str>,
+    examples: &'static [&'static str],
+    validation_rules: &'static [McpValidationRule],
 }
 
 impl McpField {
@@ -190,6 +688,10 @@ impl McpField {
             component_backed: false,
             mcp_input: McpInput::unsupported(),
             tool_value_schema: T::tool_value_schema,
+            label: None,
+            description: None,
+            examples: &[],
+            validation_rules: &[],
         }
     }
 
@@ -210,11 +712,38 @@ impl McpField {
             component_backed: true,
             mcp_input: <Shape as ComponentShapeFor<T>>::MCP_INPUT,
             tool_value_schema: T::tool_value_schema,
+            label: None,
+            description: None,
+            examples: &[],
+            validation_rules: &[],
         }
     }
 
     pub const fn with_default(mut self, has_default: bool) -> Self {
         self.has_default = has_default;
+        self
+    }
+
+    pub const fn with_label(mut self, label: &'static str) -> Self {
+        self.label = Some(label);
+        self
+    }
+
+    pub const fn with_description(mut self, description: &'static str) -> Self {
+        self.description = Some(description);
+        self
+    }
+
+    pub const fn with_examples(mut self, examples: &'static [&'static str]) -> Self {
+        self.examples = examples;
+        self
+    }
+
+    pub const fn with_validation_rules(
+        mut self,
+        validation_rules: &'static [McpValidationRule],
+    ) -> Self {
+        self.validation_rules = validation_rules;
         self
     }
 
@@ -246,9 +775,54 @@ impl McpField {
         self.tool_value_schema
     }
 
+    pub const fn explicit_label(self) -> Option<&'static str> {
+        self.label
+    }
+
+    pub fn label(self) -> String {
+        self.label
+            .map(str::to_string)
+            .unwrap_or_else(|| label_from_field_name(self.name))
+    }
+
+    pub const fn description(self) -> Option<&'static str> {
+        self.description
+    }
+
+    pub const fn examples(self) -> &'static [&'static str] {
+        self.examples
+    }
+
+    pub const fn validation_rules(self) -> &'static [McpValidationRule] {
+        self.validation_rules
+    }
+
     pub const fn required(self) -> bool {
         !self.presence.optional() && !self.has_default
     }
+}
+
+fn label_from_field_name(name: &str) -> String {
+    let mut label = String::with_capacity(name.len());
+    let mut previous_was_separator = false;
+    for ch in name.chars() {
+        if ch == '_' || ch == '-' {
+            if !label.is_empty() {
+                previous_was_separator = true;
+            }
+            continue;
+        }
+        if label.is_empty() {
+            label.extend(ch.to_uppercase());
+        } else if previous_was_separator {
+            label.push(' ');
+            label.extend(ch.to_lowercase());
+        } else {
+            label.push(ch);
+        }
+        previous_was_separator = false;
+    }
+    label
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -331,34 +905,795 @@ impl McpFormDescriptor {
 
     pub fn tool_annotations(self) -> Option<McpToolAnnotations> {
         let metadata = self.tool_metadata;
-        if metadata.read_only_hint().is_none()
-            && metadata.destructive_hint().is_none()
-            && metadata.idempotent_hint().is_none()
-            && metadata.open_world_hint().is_none()
-        {
-            return None;
-        }
+        let read_only = metadata.read_only_hint().unwrap_or(false);
+        let destructive = metadata.destructive_hint().unwrap_or(!read_only);
+        let idempotent = metadata.idempotent_hint().unwrap_or(false);
+        let open_world = metadata.open_world_hint().unwrap_or(true);
 
         Some(McpToolAnnotations::from_raw(
             Some(self.title()),
-            metadata.read_only_hint(),
-            metadata.destructive_hint(),
-            metadata.idempotent_hint(),
-            metadata.open_world_hint(),
+            Some(read_only),
+            Some(destructive),
+            Some(idempotent),
+            Some(open_world),
         ))
+    }
+
+    pub fn tool_icons(self) -> Option<Vec<component_shape_mcp::McpIcon>> {
+        self.tool_metadata.tool_icons()
+    }
+
+    pub fn tool_execution(self) -> Option<component_shape_mcp::McpToolExecution> {
+        self.tool_metadata.tool_execution()
+    }
+
+    fn apply_tool_metadata(self, tool: &mut ToolDefinition) {
+        tool.annotations = self.tool_annotations();
+        tool.icons = self.tool_icons();
+        tool.execution = self.tool_execution();
     }
 
     fn tool_definition(self) -> Result<ToolDefinition, McpToolError> {
         self.tool_metadata.validate()?;
-        component_shape_mcp::tool_definition_with_annotations(
+        let mut tool = component_shape_mcp::tool_definition_with_annotations(
             self.tool_name(),
             Some(self.title()),
             Some(self.description()),
             self.input_schema(),
             None,
-            self.tool_annotations(),
-        )
+            None,
+        )?;
+        self.apply_tool_metadata(&mut tool);
+        component_shape_mcp::validate_tool_definition(&tool)?;
+        Ok(tool)
     }
+}
+
+/// MCP resource URIs generated for one form descriptor.
+///
+/// The `{tool_name}` segment is the form's MCP tool name, including any
+/// struct-level `#[gpui_form(mcp(name = "..."))]` override.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct McpFormResourceUris {
+    /// JSON resource with form, tool, field, validation, and per-field schema metadata.
+    pub descriptor: String,
+    /// JSON Schema resource for the generated submit input.
+    pub schema: String,
+    /// JSON resource grouping field-level examples.
+    pub examples: String,
+}
+
+impl McpFormResourceUris {
+    /// Return all generated resource URIs in descriptor, schema, examples order.
+    pub fn all(&self) -> [&str; 3] {
+        [
+            self.descriptor.as_str(),
+            self.schema.as_str(),
+            self.examples.as_str(),
+        ]
+    }
+}
+
+struct McpFormResourceSpec {
+    uri: String,
+    definition: ResourceDefinition,
+    value: Arc<Value>,
+}
+
+/// MCP prompt template names generated for one form descriptor.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct McpFormPromptNames {
+    /// Prompt for drafting a complete direct-submit argument object.
+    pub fill: String,
+    /// Prompt for repairing invalid arguments or an edit-session patch.
+    pub repair: String,
+    /// Prompt for choosing direct submit versus edit-session submit.
+    pub submit: String,
+}
+
+impl McpFormPromptNames {
+    /// Return all generated prompt names in fill, repair, submit order.
+    pub fn all(&self) -> [&str; 3] {
+        [
+            self.fill.as_str(),
+            self.repair.as_str(),
+            self.submit.as_str(),
+        ]
+    }
+}
+
+#[derive(Clone, Copy)]
+enum McpFormPromptKind {
+    Fill,
+    Repair,
+    Submit,
+}
+
+struct McpFormPromptSpec {
+    name: String,
+    definition: PromptDefinition,
+    descriptor: McpFormDescriptor,
+    kind: McpFormPromptKind,
+}
+
+/// Return the three MCP resource URIs generated for `descriptor`.
+pub fn form_resource_uris(descriptor: McpFormDescriptor) -> McpFormResourceUris {
+    let base = format!("gpui-form://forms/{}", descriptor.tool_name());
+    McpFormResourceUris {
+        descriptor: format!("{base}/descriptor"),
+        schema: format!("{base}/schema"),
+        examples: format!("{base}/examples"),
+    }
+}
+
+/// Return generated MCP prompt template names for `descriptor`.
+pub fn form_prompt_names(descriptor: McpFormDescriptor) -> McpFormPromptNames {
+    let tool_name = descriptor.tool_name();
+    McpFormPromptNames {
+        fill: format!("fill_{tool_name}_form"),
+        repair: format!("repair_{tool_name}_form"),
+        submit: format!("submit_{tool_name}_form"),
+    }
+}
+
+/// Build the JSON value served by a form's descriptor resource.
+///
+/// The descriptor includes resource links, form/tool metadata, field labels,
+/// descriptions, examples, required/default/storage metadata, component MCP
+/// input metadata, validation rules, and per-field schemas.
+pub fn form_descriptor_resource_value(descriptor: McpFormDescriptor) -> Value {
+    let resources = form_resource_uris(descriptor);
+    serde_json::json!({
+        "form_name": descriptor.form_name(),
+        "source_module_path": descriptor.source_module_path().as_str(),
+        "tool_name": descriptor.tool_name(),
+        "title": descriptor.title(),
+        "description": descriptor.description(),
+        "koruma_enabled": descriptor.koruma_enabled(),
+        "resources": {
+            "descriptor": resources.descriptor,
+            "schema": resources.schema,
+            "examples": resources.examples,
+        },
+        "fields": descriptor
+            .fields()
+            .iter()
+            .map(|field| form_field_descriptor_value(*field))
+            .collect::<Vec<_>>(),
+    })
+}
+
+/// Build the JSON Schema value served by a form's schema resource.
+pub fn form_schema_resource_value(descriptor: McpFormDescriptor) -> Value {
+    descriptor.input_schema().into_value()
+}
+
+/// Build the JSON value served by a form's examples resource.
+pub fn form_examples_resource_value(descriptor: McpFormDescriptor) -> Value {
+    let fields = descriptor
+        .fields()
+        .iter()
+        .filter(|field| !field.examples().is_empty())
+        .map(|field| {
+            serde_json::json!({
+                "name": field.name(),
+                "label": field.label(),
+                "examples": field.examples(),
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut examples = Map::new();
+    for field in descriptor.fields() {
+        if !field.examples().is_empty() {
+            examples.insert(
+                field.name().to_string(),
+                Value::Array(
+                    field
+                        .examples()
+                        .iter()
+                        .map(|example| Value::String((*example).to_string()))
+                        .collect(),
+                ),
+            );
+        }
+    }
+
+    serde_json::json!({
+        "form_name": descriptor.form_name(),
+        "tool_name": descriptor.tool_name(),
+        "fields": fields,
+        "examples": examples,
+    })
+}
+
+fn form_field_descriptor_value(field: McpField) -> Value {
+    let mut object = Map::new();
+    object.insert("name".to_string(), Value::String(field.name().to_string()));
+    object.insert("label".to_string(), Value::String(field.label()));
+    if let Some(label) = field.explicit_label() {
+        object.insert(
+            "explicit_label".to_string(),
+            Value::String(label.to_string()),
+        );
+    }
+    if let Some(description) = field.description() {
+        object.insert(
+            "description".to_string(),
+            Value::String(description.to_string()),
+        );
+    }
+    if !field.examples().is_empty() {
+        object.insert(
+            "examples".to_string(),
+            Value::Array(
+                field
+                    .examples()
+                    .iter()
+                    .map(|example| Value::String((*example).to_string()))
+                    .collect(),
+            ),
+        );
+    }
+    object.insert(
+        "value_type".to_string(),
+        Value::String(field.value_type().as_str().to_string()),
+    );
+    object.insert(
+        "presence".to_string(),
+        Value::String(field_presence_name(field.presence()).to_string()),
+    );
+    object.insert("required".to_string(), Value::Bool(field.required()));
+    object.insert("has_default".to_string(), Value::Bool(field.has_default()));
+    object.insert(
+        "component_backed".to_string(),
+        Value::Bool(field.component_backed()),
+    );
+    object.insert(
+        "mcp_input".to_string(),
+        mcp_input_descriptor_value(field.mcp_input()),
+    );
+    if !field.validation_rules().is_empty() {
+        object.insert(
+            "validation_rules".to_string(),
+            Value::Array(
+                field
+                    .validation_rules()
+                    .iter()
+                    .map(|rule| rule.to_value())
+                    .collect(),
+            ),
+        );
+    }
+    object.insert("schema".to_string(), schema_for_field(field).into_value());
+    Value::Object(object)
+}
+
+fn field_presence_name(presence: FieldValuePresence) -> &'static str {
+    match presence {
+        FieldValuePresence::Optional => "optional",
+        FieldValuePresence::RequiresValue => "requires_value",
+        FieldValuePresence::DirectStorage => "direct_storage",
+    }
+}
+
+fn mcp_input_descriptor_value(input: McpInput) -> Value {
+    match input.input_shape() {
+        McpInputShape::Unsupported => serde_json::json!({
+            "supported": false,
+            "shape": "unsupported",
+        }),
+        McpInputShape::Scalar(kind) => serde_json::json!({
+            "supported": true,
+            "shape": "scalar",
+            "primitive": primitive_kind_name(kind),
+        }),
+        McpInputShape::List(kind) => serde_json::json!({
+            "supported": true,
+            "shape": "list",
+            "items": primitive_kind_name(kind),
+        }),
+        McpInputShape::Set(kind) => serde_json::json!({
+            "supported": true,
+            "shape": "set",
+            "items": primitive_kind_name(kind),
+        }),
+        McpInputShape::Range(kind) => serde_json::json!({
+            "supported": true,
+            "shape": "range",
+            "bound": range_bound_kind_name(kind),
+        }),
+        McpInputShape::Object => serde_json::json!({
+            "supported": true,
+            "shape": "object",
+        }),
+    }
+}
+
+fn primitive_kind_name(kind: McpPrimitiveKind) -> &'static str {
+    match kind {
+        McpPrimitiveKind::Any => "any",
+        McpPrimitiveKind::Boolean => "boolean",
+        McpPrimitiveKind::Integer => "integer",
+        McpPrimitiveKind::Number => "number",
+        McpPrimitiveKind::Decimal => "decimal",
+        McpPrimitiveKind::String => "string",
+        McpPrimitiveKind::Date => "date",
+        McpPrimitiveKind::DateTime => "date_time",
+    }
+}
+
+fn range_bound_kind_name(kind: McpRangeBoundKind) -> &'static str {
+    match kind {
+        McpRangeBoundKind::Integer => "integer",
+        McpRangeBoundKind::Number => "number",
+        McpRangeBoundKind::Decimal => "decimal",
+        McpRangeBoundKind::Date => "date",
+        McpRangeBoundKind::DateTime => "date_time",
+    }
+}
+
+/// Register descriptor, schema, and examples resources for one form.
+///
+/// Direct submit/editor registration calls this automatically. Use this helper
+/// only when a server should expose form resources without registering form
+/// tools.
+pub fn register_form_resources<Form>(server: &mut McpServer) -> Result<(), McpToolError>
+where
+    Form: McpForm,
+{
+    register_form_resources_for_descriptor(server, Form::descriptor())
+}
+
+fn register_form_resources_for_descriptor(
+    server: &mut McpServer,
+    descriptor: McpFormDescriptor,
+) -> Result<(), McpToolError> {
+    let specs = form_resource_specs(descriptor)?;
+    ensure_resource_specs_available(server, &specs)?;
+    register_form_resource_specs(server, specs)
+}
+
+fn form_resource_specs(
+    descriptor: McpFormDescriptor,
+) -> Result<Vec<McpFormResourceSpec>, McpToolError> {
+    let uris = form_resource_uris(descriptor);
+    let tool_name = descriptor.tool_name();
+    let title = descriptor.title();
+    Ok(vec![
+        form_json_resource_spec(
+            uris.descriptor,
+            format!("{tool_name}_descriptor"),
+            format!("{title} descriptor"),
+            format!("Field metadata for the {title} generated form."),
+            form_descriptor_resource_value(descriptor),
+        )?,
+        form_json_resource_spec(
+            uris.schema,
+            format!("{tool_name}_schema"),
+            format!("{title} schema"),
+            format!("Input JSON Schema for the {title} generated form."),
+            form_schema_resource_value(descriptor),
+        )?,
+        form_json_resource_spec(
+            uris.examples,
+            format!("{tool_name}_examples"),
+            format!("{title} examples"),
+            format!("Field examples for the {title} generated form."),
+            form_examples_resource_value(descriptor),
+        )?,
+    ])
+}
+
+fn form_json_resource_spec(
+    uri: String,
+    name: String,
+    title: String,
+    description: String,
+    value: Value,
+) -> Result<McpFormResourceSpec, McpToolError> {
+    let definition = component_shape_mcp::resource_definition(
+        uri.clone(),
+        name,
+        Some(title),
+        Some(description),
+        Some("application/json".to_string()),
+    )?;
+    Ok(McpFormResourceSpec {
+        uri,
+        definition,
+        value: Arc::new(value),
+    })
+}
+
+fn register_form_resource_specs(
+    server: &mut McpServer,
+    specs: Vec<McpFormResourceSpec>,
+) -> Result<(), McpToolError> {
+    for spec in specs {
+        let uri = spec.uri.clone();
+        let value = Arc::clone(&spec.value);
+        server.add_resource(spec.definition, move || {
+            component_shape_mcp::json_resource_result(uri.clone(), value.as_ref())
+                .expect("gpui-form generated resource JSON should encode")
+        })?;
+    }
+    Ok(())
+}
+
+fn register_form_resource_specs_if_missing(
+    server: &mut McpServer,
+    specs: Vec<McpFormResourceSpec>,
+) -> Result<(), McpToolError> {
+    if specs.iter().all(|spec| server.contains_resource(&spec.uri)) {
+        return Ok(());
+    }
+    ensure_resource_specs_available(server, &specs)?;
+    register_form_resource_specs(server, specs)
+}
+
+fn ensure_resource_specs_available(
+    server: &McpServer,
+    specs: &[McpFormResourceSpec],
+) -> Result<(), McpToolError> {
+    for spec in specs {
+        if server.contains_resource(&spec.uri) {
+            return Err(McpToolError::duplicate_resource(spec.uri.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn form_resource_specs_for_options(
+    options: McpFormRegistrationOptions,
+) -> Result<Vec<McpFormResourceSpec>, McpToolError> {
+    if !options.registers_tools() {
+        return Ok(Vec::new());
+    }
+
+    let mut seen_tool_names = BTreeSet::new();
+    let mut specs = Vec::new();
+    if options.submit_handlers {
+        for registration in registry::submit_handler_registrations() {
+            push_descriptor_resource_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    if options.editors {
+        for registration in registry::editor_registrations() {
+            push_descriptor_resource_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    Ok(specs)
+}
+
+fn context_submit_resource_specs<Context>() -> Result<Vec<McpFormResourceSpec>, McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    let mut seen_tool_names = BTreeSet::new();
+    let mut specs = Vec::new();
+    let context_type_id = TypeId::of::<Context>();
+    for registration in registry::context_submit_registrations() {
+        if registration.context_type_id() == context_type_id {
+            push_descriptor_resource_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    Ok(specs)
+}
+
+fn push_descriptor_resource_specs(
+    seen_tool_names: &mut BTreeSet<String>,
+    specs: &mut Vec<McpFormResourceSpec>,
+    descriptor: McpFormDescriptor,
+) -> Result<(), McpToolError> {
+    if !seen_tool_names.insert(descriptor.tool_name()) {
+        return Ok(());
+    }
+    specs.extend(form_resource_specs(descriptor)?);
+    Ok(())
+}
+
+/// Register generated fill, repair, and submit prompt templates for one form.
+///
+/// Prompt templates are opt-in and reference the generated descriptor, schema,
+/// and examples resources. This helper registers those resources first if they
+/// are not already present.
+pub fn register_form_prompt_templates<Form>(server: &mut McpServer) -> Result<(), McpToolError>
+where
+    Form: McpForm,
+{
+    register_form_prompt_templates_for_descriptor(server, Form::descriptor())
+}
+
+fn register_form_prompt_templates_for_descriptor(
+    server: &mut McpServer,
+    descriptor: McpFormDescriptor,
+) -> Result<(), McpToolError> {
+    let resource_specs = form_resource_specs(descriptor)?;
+    let prompt_specs = form_prompt_specs(descriptor)?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
+    ensure_prompt_specs_available(server, &prompt_specs)?;
+    register_form_prompt_specs(server, prompt_specs)
+}
+
+fn form_prompt_specs(
+    descriptor: McpFormDescriptor,
+) -> Result<Vec<McpFormPromptSpec>, McpToolError> {
+    let names = form_prompt_names(descriptor);
+    let title = descriptor.title();
+    Ok(vec![
+        form_prompt_spec(
+            names.fill,
+            format!("Fill {title}"),
+            format!("Draft valid direct-submit arguments for {title}."),
+            vec![optional_prompt_argument(
+                "goal",
+                "Optional user goal or context for filling the form.",
+            )],
+            descriptor,
+            McpFormPromptKind::Fill,
+        )?,
+        form_prompt_spec(
+            names.repair,
+            format!("Repair {title}"),
+            format!("Repair invalid arguments or edit-session values for {title}."),
+            vec![
+                optional_prompt_argument(
+                    "validation_issues",
+                    "Validation issue details from the last failed submit or edit validation.",
+                ),
+                optional_prompt_argument(
+                    "current_values",
+                    "Current direct-submit arguments or edit-session values.",
+                ),
+            ],
+            descriptor,
+            McpFormPromptKind::Repair,
+        )?,
+        form_prompt_spec(
+            names.submit,
+            format!("Submit {title}"),
+            format!("Choose a direct submit or edit-session submit path for {title}."),
+            vec![optional_prompt_argument(
+                "workflow",
+                "Optional workflow notes, such as direct submit or edit-session submit.",
+            )],
+            descriptor,
+            McpFormPromptKind::Submit,
+        )?,
+    ])
+}
+
+fn form_prompt_spec(
+    name: String,
+    title: String,
+    description: String,
+    arguments: Vec<McpPromptArgument>,
+    descriptor: McpFormDescriptor,
+    kind: McpFormPromptKind,
+) -> Result<McpFormPromptSpec, McpToolError> {
+    let definition = component_shape_mcp::prompt_definition(
+        name.clone(),
+        Some(title),
+        Some(description),
+        Some(arguments),
+    )?;
+    Ok(McpFormPromptSpec {
+        name,
+        definition,
+        descriptor,
+        kind,
+    })
+}
+
+fn optional_prompt_argument(name: &'static str, description: &'static str) -> McpPromptArgument {
+    McpPromptArgument::new(name)
+        .with_description(description)
+        .with_required(false)
+}
+
+fn register_form_prompt_specs(
+    server: &mut McpServer,
+    specs: Vec<McpFormPromptSpec>,
+) -> Result<(), McpToolError> {
+    for spec in specs {
+        let descriptor = spec.descriptor;
+        let kind = spec.kind;
+        server.add_prompt(spec.definition, move |arguments| {
+            form_prompt_result(descriptor, kind, arguments)
+        })?;
+    }
+    Ok(())
+}
+
+fn ensure_prompt_specs_available(
+    server: &McpServer,
+    specs: &[McpFormPromptSpec],
+) -> Result<(), McpToolError> {
+    for spec in specs {
+        if server.contains_prompt(&spec.name) {
+            return Err(McpToolError::duplicate_prompt(spec.name.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn form_prompt_result(
+    descriptor: McpFormDescriptor,
+    kind: McpFormPromptKind,
+    arguments: Option<Map<String, Value>>,
+) -> McpPromptResult {
+    let description = match kind {
+        McpFormPromptKind::Fill => format!("Fill {}.", descriptor.title()),
+        McpFormPromptKind::Repair => format!("Repair {}.", descriptor.title()),
+        McpFormPromptKind::Submit => format!("Submit {}.", descriptor.title()),
+    };
+    component_shape_mcp::text_prompt_result(
+        Some(description),
+        form_prompt_text(descriptor, kind, arguments),
+    )
+}
+
+fn form_prompt_text(
+    descriptor: McpFormDescriptor,
+    kind: McpFormPromptKind,
+    arguments: Option<Map<String, Value>>,
+) -> String {
+    let resources = form_resource_uris(descriptor);
+    let names = editor_tool_names(descriptor);
+    let mut text = match kind {
+        McpFormPromptKind::Fill => format!(
+            "Fill the gpui-form `{form_name}` for MCP tool `{tool_name}`.\n\
+             Read `{descriptor_uri}` for field labels, descriptions, examples, validation rules, and per-field schemas.\n\
+             Read `{schema_uri}` for the direct-submit JSON Schema and `{examples_uri}` for example values.\n\
+             Return a JSON object that can be used as `arguments` for `{tool_name}`.",
+            form_name = descriptor.form_name(),
+            tool_name = descriptor.tool_name(),
+            descriptor_uri = resources.descriptor,
+            schema_uri = resources.schema,
+            examples_uri = resources.examples,
+        ),
+        McpFormPromptKind::Repair => format!(
+            "Repair invalid values for gpui-form `{form_name}` and MCP tool `{tool_name}`.\n\
+             Use `{descriptor_uri}` for field metadata and validation rules, and `{schema_uri}` for the expected argument shape.\n\
+             If editing an open session, return a minimal patch with `values` and optional `clear` entries for `{patch_tool}`.\n\
+             If submitting directly, return a corrected `arguments` object for `{tool_name}`.",
+            form_name = descriptor.form_name(),
+            tool_name = descriptor.tool_name(),
+            descriptor_uri = resources.descriptor,
+            schema_uri = resources.schema,
+            patch_tool = names.patch,
+        ),
+        McpFormPromptKind::Submit => format!(
+            "Submit gpui-form `{form_name}` through MCP.\n\
+             Use direct tool `{tool_name}` when all required arguments are ready.\n\
+             When iterative repair is useful and editor tools are registered, use `{open_tool}`, `{patch_tool}`, `{validate_tool}`, and `{submit_tool}`.\n\
+             Use `{descriptor_uri}` and `{schema_uri}` to inspect field metadata and the direct-submit schema before calling tools.",
+            form_name = descriptor.form_name(),
+            tool_name = descriptor.tool_name(),
+            open_tool = names.open,
+            patch_tool = names.patch,
+            validate_tool = names.validate,
+            submit_tool = names.submit,
+            descriptor_uri = resources.descriptor,
+            schema_uri = resources.schema,
+        ),
+    };
+
+    if let Some(arguments) = arguments
+        && !arguments.is_empty()
+    {
+        text.push_str("\n\nCaller-provided context:\n");
+        text.push_str(
+            &serde_json::to_string_pretty(&Value::Object(arguments)).unwrap_or_else(|error| {
+                format!("{{\"error\":\"failed to render prompt arguments: {error}\"}}")
+            }),
+        );
+    }
+
+    text
+}
+
+/// Register prompt templates for every inventory-discovered generated MCP form.
+///
+/// This is opt-in. It can be chained with `McpServer::builder(...).register(...)`
+/// after `gpui_form::mcp::register`, or called directly on a mutable server.
+pub fn register_prompt_templates(server: &mut McpServer) -> Result<(), McpToolError> {
+    let options = McpFormRegistrationOptions::all();
+    let resource_specs = form_resource_specs_for_options(options)?;
+    let prompt_specs = form_prompt_specs_for_options(options)?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
+    ensure_prompt_specs_available(server, &prompt_specs)?;
+    register_form_prompt_specs(server, prompt_specs)
+}
+
+/// Register prompt templates for every context-backed form matching `Context`.
+///
+/// Use this with [`register_context_submitters`] when context-backed forms
+/// should also expose reusable fill, repair, and submit prompt templates.
+pub fn register_context_submitter_prompt_templates<Context>(
+    server: &mut McpServer,
+) -> Result<(), McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    let resource_specs = context_submit_resource_specs::<Context>()?;
+    let prompt_specs = context_submit_prompt_specs::<Context>()?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
+    ensure_prompt_specs_available(server, &prompt_specs)?;
+    register_form_prompt_specs(server, prompt_specs)
+}
+
+fn form_prompt_specs_for_options(
+    options: McpFormRegistrationOptions,
+) -> Result<Vec<McpFormPromptSpec>, McpToolError> {
+    if !options.registers_tools() {
+        return Ok(Vec::new());
+    }
+
+    let mut seen_tool_names = BTreeSet::new();
+    let mut specs = Vec::new();
+    if options.submit_handlers {
+        for registration in registry::submit_handler_registrations() {
+            push_descriptor_prompt_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    if options.editors {
+        for registration in registry::editor_registrations() {
+            push_descriptor_prompt_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    Ok(specs)
+}
+
+fn context_submit_prompt_specs<Context>() -> Result<Vec<McpFormPromptSpec>, McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    let mut seen_tool_names = BTreeSet::new();
+    let mut specs = Vec::new();
+    let context_type_id = TypeId::of::<Context>();
+    for registration in registry::context_submit_registrations() {
+        if registration.context_type_id() == context_type_id {
+            push_descriptor_prompt_specs(
+                &mut seen_tool_names,
+                &mut specs,
+                registration.descriptor(),
+            )?;
+        }
+    }
+    Ok(specs)
+}
+
+fn push_descriptor_prompt_specs(
+    seen_tool_names: &mut BTreeSet<String>,
+    specs: &mut Vec<McpFormPromptSpec>,
+    descriptor: McpFormDescriptor,
+) -> Result<(), McpToolError> {
+    if !seen_tool_names.insert(descriptor.tool_name()) {
+        return Ok(());
+    }
+    specs.extend(form_prompt_specs(descriptor)?);
+    Ok(())
 }
 
 pub trait McpForm: Sized + 'static {
@@ -369,6 +1704,22 @@ pub trait McpForm: Sized + 'static {
     fn decode_arguments(call: McpToolCall) -> Result<Self::ValueHolder, McpToolError>;
 
     fn validate_holder(holder: &Self::ValueHolder) -> Result<(), McpToolError>;
+
+    /// Validate a holder and return structured validation issues.
+    ///
+    /// Manual implementations can rely on the default adapter from
+    /// [`McpForm::validate_holder`]. Generated Koruma-backed forms override
+    /// this to return field and validator metadata.
+    fn validate_holder_issues(holder: &Self::ValueHolder) -> Result<(), Vec<McpValidationIssue>> {
+        Self::validate_holder(holder)
+            .map_err(|error| vec![McpValidationIssue::form(error.to_string())])
+    }
+}
+
+/// Marker contract for generated forms with structured validation issue support.
+pub trait McpFormValidation: McpForm {
+    /// Validate a holder and return structured validation issues.
+    fn validate_holder_issues(holder: &Self::ValueHolder) -> Result<(), Vec<McpValidationIssue>>;
 }
 
 /// Contract for generated forms that can be edited over MCP.
@@ -418,13 +1769,16 @@ where
     pub fn tool_definition() -> Result<McpTypedTool<Self>, McpToolError> {
         let descriptor = Form::descriptor();
         descriptor.tool_metadata().validate()?;
-        component_shape_mcp::tool_definition_for_input_with_annotations::<Self>(
+        let mut tool = component_shape_mcp::tool_definition_for_input_with_annotations::<Self>(
             descriptor.tool_name(),
             Some(descriptor.title()),
             Some(descriptor.description()),
             None,
-            descriptor.tool_annotations(),
-        )
+            None,
+        )?;
+        descriptor.apply_tool_metadata(tool.definition_mut());
+        component_shape_mcp::validate_tool_definition(tool.definition())?;
+        Ok(tool)
     }
 
     pub fn tool_definition_for_response<Response>() -> Result<McpTypedTool<Self>, McpToolError>
@@ -433,13 +1787,16 @@ where
     {
         let descriptor = Form::descriptor();
         descriptor.tool_metadata().validate()?;
-        component_shape_mcp::tool_definition_for_input_with_annotations::<Self>(
+        let mut tool = component_shape_mcp::tool_definition_for_input_with_annotations::<Self>(
             descriptor.tool_name(),
             Some(descriptor.title()),
             Some(descriptor.description()),
             Some(descriptor.output_schema::<Response>()),
-            descriptor.tool_annotations(),
-        )
+            None,
+        )?;
+        descriptor.apply_tool_metadata(tool.definition_mut());
+        component_shape_mcp::validate_tool_definition(tool.definition())?;
+        Ok(tool)
     }
 
     pub fn into_value_holder(self) -> Form::ValueHolder {
@@ -621,7 +1978,9 @@ pub mod registry {
     pub struct McpSubmitHandlerRegistration {
         descriptor: fn() -> McpFormDescriptor,
         register: fn(&mut McpServer) -> Result<(), McpToolError>,
+        register_submit: fn(&mut McpServer) -> Result<(), McpToolError>,
         tool_definitions: fn() -> Result<Vec<ToolDefinition>, McpToolError>,
+        submit_tool_definitions: fn() -> Result<Vec<ToolDefinition>, McpToolError>,
     }
 
     impl McpSubmitHandlerRegistration {
@@ -633,7 +1992,25 @@ pub mod registry {
             Self {
                 descriptor,
                 register,
+                register_submit: register,
                 tool_definitions,
+                submit_tool_definitions: tool_definitions,
+            }
+        }
+
+        pub const fn new_with_submit_only(
+            descriptor: fn() -> McpFormDescriptor,
+            register: fn(&mut McpServer) -> Result<(), McpToolError>,
+            register_submit: fn(&mut McpServer) -> Result<(), McpToolError>,
+            tool_definitions: fn() -> Result<Vec<ToolDefinition>, McpToolError>,
+            submit_tool_definitions: fn() -> Result<Vec<ToolDefinition>, McpToolError>,
+        ) -> Self {
+            Self {
+                descriptor,
+                register,
+                register_submit,
+                tool_definitions,
+                submit_tool_definitions,
             }
         }
 
@@ -645,8 +2022,16 @@ pub mod registry {
             (self.register)(server)
         }
 
+        pub fn register_submit(&self, server: &mut McpServer) -> Result<(), McpToolError> {
+            (self.register_submit)(server)
+        }
+
         pub fn tool_definitions(&self) -> Result<Vec<ToolDefinition>, McpToolError> {
             (self.tool_definitions)()
+        }
+
+        pub fn submit_tool_definitions(&self) -> Result<Vec<ToolDefinition>, McpToolError> {
+            (self.submit_tool_definitions)()
         }
     }
 
@@ -788,8 +2173,58 @@ pub fn register_context_submitters_with_editor_options<Context>(
 where
     Context: Clone + Send + Sync + 'static,
 {
+    register_context_submitters_report(server, context, options, false).map(|_| ())
+}
+
+/// Register every inventory-discovered context submitter for `Context`,
+/// failing when no registration matches the context type.
+pub fn register_context_submitters_strict<Context>(
+    server: &mut McpServer,
+    context: Context,
+) -> Result<McpFormRegistrationReport, McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    register_context_submitters_strict_with_editor_options(
+        server,
+        context,
+        McpFormEditorOptions::default(),
+    )
+}
+
+/// Register every inventory-discovered context submitter for `Context` with an
+/// explicit edit-session policy, failing when no registration matches.
+pub fn register_context_submitters_strict_with_editor_options<Context>(
+    server: &mut McpServer,
+    context: Context,
+    options: McpFormEditorOptions,
+) -> Result<McpFormRegistrationReport, McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    register_context_submitters_report(server, context, options, true)
+}
+
+fn register_context_submitters_report<Context>(
+    server: &mut McpServer,
+    context: Context,
+    options: McpFormEditorOptions,
+    strict: bool,
+) -> Result<McpFormRegistrationReport, McpToolError>
+where
+    Context: Clone + Send + Sync + 'static,
+{
     let definitions = context_submit_tool_definitions::<Context>()?;
+    let context_registration_count = context_submit_registration_count::<Context>();
+    if strict && context_registration_count == 0 {
+        return Err(McpToolError::validation(format!(
+            "no MCP context submitters registered for context `{}`",
+            std::any::type_name::<Context>()
+        )));
+    }
+    let resource_specs = context_submit_resource_specs::<Context>()?;
     ensure_tool_definitions_available(server, &definitions)?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
 
     let context: McpSubmitContext = Arc::new(context);
     let context_type_id = TypeId::of::<Context>();
@@ -799,7 +2234,9 @@ where
         }
     }
 
-    Ok(())
+    let mut report = McpFormRegistrationReport::from_tool_definitions(definitions);
+    report.context_registration_count = context_registration_count;
+    Ok(report)
 }
 
 /// Return tool definitions for every inventory-discovered context submitter
@@ -821,6 +2258,16 @@ where
         }
     }
     Ok(tools)
+}
+
+fn context_submit_registration_count<Context>() -> usize
+where
+    Context: Clone + Send + Sync + 'static,
+{
+    let context_type_id = TypeId::of::<Context>();
+    registry::context_submit_registrations()
+        .filter(|registration| registration.context_type_id() == context_type_id)
+        .count()
 }
 
 pub struct FormTool<'server, Form> {
@@ -1183,10 +2630,11 @@ where
     Response: McpJsonSchema,
     Call: Fn(McpFormInput<Form>) -> ToolCallResult + Send + Sync + 'static,
 {
-    server.add_typed_tool(
-        McpFormInput::<Form>::tool_definition_for_response::<Response>()?,
-        call,
-    )
+    let definition = McpFormInput::<Form>::tool_definition_for_response::<Response>()?;
+    let resource_specs = form_resource_specs(Form::descriptor())?;
+    ensure_tool_definitions_available(server, &[definition.definition().clone()])?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
+    server.add_typed_tool(definition, call)
 }
 
 fn insert_executor_async<Form, Response, Call>(
@@ -1198,10 +2646,11 @@ where
     Response: McpJsonSchema,
     Call: Fn(McpFormInput<Form>) -> ToolFuture + Send + Sync + 'static,
 {
-    server.add_typed_tool_async(
-        McpFormInput::<Form>::tool_definition_for_response::<Response>()?,
-        call,
-    )
+    let definition = McpFormInput::<Form>::tool_definition_for_response::<Response>()?;
+    let resource_specs = form_resource_specs(Form::descriptor())?;
+    ensure_tool_definitions_available(server, &[definition.definition().clone()])?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
+    server.add_typed_tool_async(definition, call)
 }
 
 pub fn tool_name(source_module_path: &str, form_name: &str) -> String {
@@ -1212,7 +2661,11 @@ fn decode_valid_holder<Form>(call: McpToolCall) -> Result<Form::ValueHolder, Mcp
 where
     Form: McpForm,
 {
-    Form::decode_arguments(call).and_then(|holder| Form::validate_holder(&holder).map(|()| holder))
+    Form::decode_arguments(call).and_then(|holder| {
+        <Form as McpForm>::validate_holder_issues(&holder)
+            .map(|()| holder)
+            .map_err(validation_issues_error)
+    })
 }
 
 fn ensure_form_tool_and_editor_submit_tools_available<Form, Response>(
@@ -1422,7 +2875,9 @@ where
     Form::ValueHolder: Clone + Default + Send + 'static,
 {
     let definitions = editor_typed_tool_definitions::<Form>(descriptor)?;
+    let resource_specs = form_resource_specs(descriptor)?;
     ensure_tool_definitions_available(server, &definitions.as_tool_definitions())?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
 
     let sessions = Arc::new(Mutex::new(EditSessions::new(options)));
     insert_editor_tools_with_sessions::<Form>(server, definitions, sessions)
@@ -1985,9 +3440,9 @@ where
     {
         return Err(revision_mismatch_error(expected_revision, session.revision));
     }
-    let errors = edit_session_errors::<Form>(Form::descriptor(), session);
-    if !errors.is_empty() {
-        return Err(McpToolError::validation_details(errors));
+    let issues = edit_session_validation_issues::<Form>(Form::descriptor(), session);
+    if !issues.is_empty() {
+        return Err(validation_issues_error(issues));
     }
     Ok(SubmittedEditSession {
         holder: session.holder.clone(),
@@ -2339,14 +3794,20 @@ where
     Form::ValueHolder: Clone + Default,
 {
     let descriptor = Form::descriptor();
-    let errors = edit_session_errors::<Form>(descriptor, session);
+    let issues = edit_session_validation_issues::<Form>(descriptor, session);
+    let errors = validation_issue_values(&issues);
 
     Ok(serde_json::json!({
         "form": descriptor.tool_name(),
         "form_name": descriptor.form_name(),
         "session_id": session_id,
         "revision": session.revision,
-        "fields": edit_session_fields(descriptor, &session.present_fields, &session.values),
+        "fields": edit_session_fields(
+            descriptor,
+            &session.present_fields,
+            &session.values,
+            &issues
+        ),
         "present_fields": session.present_fields.iter().collect::<Vec<_>>(),
         "missing_required": required_missing_fields(descriptor, &session.present_fields),
         "valid": errors.is_empty(),
@@ -2409,6 +3870,7 @@ fn edit_session_fields(
     descriptor: McpFormDescriptor,
     present_fields: &BTreeSet<String>,
     values: &Map<String, Value>,
+    issues: &[McpValidationIssue],
 ) -> Vec<Value> {
     descriptor
         .fields()
@@ -2417,13 +3879,16 @@ fn edit_session_fields(
             let present = present_fields.contains(field.name());
             let value = values.get(field.name()).cloned().unwrap_or(Value::Null);
             let missing = field.required() && !present;
-            let errors = if missing {
-                vec![format!("missing required field `{}`", field.name())]
-            } else {
-                Vec::new()
-            };
+            let errors = issues
+                .iter()
+                .filter(|issue| issue.field() == Some(field.name()))
+                .map(McpValidationIssue::to_value)
+                .collect::<Vec<_>>();
             serde_json::json!({
                 "name": field.name(),
+                "label": field.label(),
+                "description": field.description(),
+                "examples": field.examples(),
                 "value_type": field.value_type().as_str(),
                 "required": field.required(),
                 "present": present,
@@ -2439,22 +3904,29 @@ fn edit_session_fields(
         .collect()
 }
 
-fn edit_session_errors<Form>(
+fn edit_session_validation_issues<Form>(
     descriptor: McpFormDescriptor,
     session: &EditSession<Form::ValueHolder>,
-) -> Vec<String>
+) -> Vec<McpValidationIssue>
 where
     Form: McpEditableForm,
     Form::ValueHolder: Clone + Default,
 {
-    let mut errors = required_missing_fields(descriptor, &session.present_fields)
+    let mut issues = required_missing_fields(descriptor, &session.present_fields)
         .into_iter()
-        .map(|field| format!("missing required field `{field}`"))
+        .map(McpValidationIssue::required)
         .collect::<Vec<_>>();
-    if let Err(error) = Form::validate_holder(&session.holder) {
-        errors.push(error.to_string());
+    if let Err(validation_issues) = <Form as McpForm>::validate_holder_issues(&session.holder) {
+        issues.extend(validation_issues);
     }
-    errors
+    issues
+}
+
+fn validation_issue_values(issues: &[McpValidationIssue]) -> Vec<Value> {
+    issues
+        .iter()
+        .map(McpValidationIssue::to_value)
+        .collect::<Vec<_>>()
 }
 
 fn required_missing_fields(
@@ -2513,19 +3985,178 @@ pub fn builder_named(
 /// Add every inventory-discovered form submit handler and editable form session
 /// tool to a shared MCP server.
 pub fn register(server: &mut McpServer) -> Result<(), McpToolError> {
-    let definitions = tool_definitions()?;
-    ensure_tool_definitions_available(server, &definitions)?;
+    register_with_options(server, McpFormRegistrationOptions::all()).map(|_| ())
+}
+
+/// Add inventory-discovered form tools to a shared MCP server using a
+/// registration profile.
+pub fn register_with_options(
+    server: &mut McpServer,
+    options: McpFormRegistrationOptions,
+) -> Result<McpFormRegistrationReport, McpToolError> {
+    let report = registration_report_for_options(options)?;
+    if !options.registers_tools() {
+        return Ok(report);
+    }
+
+    let resource_specs = form_resource_specs_for_options(options)?;
+    ensure_tool_definitions_available(server, &report.tool_definitions)?;
+    register_form_resource_specs_if_missing(server, resource_specs)?;
     let submit_tool_names = submit_handler_tool_names();
     for registration in registry::submit_handler_registrations() {
-        registration.register(server)?;
+        if !options.submit_handlers {
+            continue;
+        }
+        if options.editors && options.edit_submit {
+            registration.register(server)?;
+        } else {
+            registration.register_submit(server)?;
+        }
     }
     for registration in registry::editor_registrations() {
-        if submit_tool_names.contains(&registration.descriptor().tool_name()) {
+        if !options.editors {
+            continue;
+        }
+        if options.submit_handlers
+            && options.edit_submit
+            && submit_tool_names.contains(&registration.descriptor().tool_name())
+        {
             continue;
         }
         registration.register(server)?;
     }
-    Ok(())
+    Ok(report)
+}
+
+/// Return MCP tool definitions selected by a registration profile without
+/// mutating a server.
+pub fn tool_definitions_with_options(
+    options: McpFormRegistrationOptions,
+) -> Result<Vec<ToolDefinition>, McpToolError> {
+    Ok(registration_report_for_options(options)?.tool_definitions)
+}
+
+fn registration_report_for_options(
+    options: McpFormRegistrationOptions,
+) -> Result<McpFormRegistrationReport, McpToolError> {
+    if !options.registers_tools() {
+        return Ok(
+            McpFormRegistrationReport::from_tool_definitions(tool_definitions()?).metadata_only(),
+        );
+    }
+
+    let mut seen = BTreeSet::new();
+    let mut definitions = Vec::new();
+    let mut skipped_tools = Vec::new();
+    let submit_tool_names = submit_handler_tool_names();
+
+    for registration in registry::submit_handler_registrations() {
+        let descriptor = registration.descriptor();
+        if options.submit_handlers {
+            let tool_definitions = if options.editors && options.edit_submit {
+                registration.tool_definitions()?
+            } else {
+                registration.submit_tool_definitions()?
+            };
+            for definition in tool_definitions {
+                push_tool_definition(&mut seen, &mut definitions, definition)?;
+            }
+        } else {
+            push_skipped_tool(
+                &mut skipped_tools,
+                descriptor.tool_name(),
+                "submit_handlers_disabled",
+            );
+        }
+
+        if !options.editors {
+            push_skipped_editor_tool_names(
+                &mut skipped_tools,
+                descriptor,
+                "editors_disabled",
+                options.edit_submit,
+            );
+            if !options.edit_submit {
+                push_skipped_tool(
+                    &mut skipped_tools,
+                    editor_tool_names(descriptor).submit,
+                    "edit_submit_disabled",
+                );
+            }
+        } else if !options.edit_submit {
+            push_skipped_tool(
+                &mut skipped_tools,
+                editor_tool_names(descriptor).submit,
+                "edit_submit_disabled",
+            );
+        } else if !options.submit_handlers {
+            push_skipped_tool(
+                &mut skipped_tools,
+                editor_tool_names(descriptor).submit,
+                "submit_handlers_disabled",
+            );
+        }
+    }
+
+    for registration in registry::editor_registrations() {
+        let descriptor = registration.descriptor();
+        let covered_by_submit_handler = options.submit_handlers
+            && options.edit_submit
+            && submit_tool_names.contains(&descriptor.tool_name());
+        if options.editors && !covered_by_submit_handler {
+            for definition in registration.tool_definitions()? {
+                push_tool_definition(&mut seen, &mut definitions, definition)?;
+            }
+        } else if !options.editors && !submit_tool_names.contains(&descriptor.tool_name()) {
+            push_skipped_editor_tool_names(
+                &mut skipped_tools,
+                descriptor,
+                "editors_disabled",
+                false,
+            );
+        }
+    }
+
+    let registered_tool_names = definitions
+        .iter()
+        .map(|definition| definition.name.to_string())
+        .collect();
+    Ok(McpFormRegistrationReport {
+        tool_definitions: definitions,
+        registered_tool_names,
+        skipped_tools,
+        context_registration_count: 0,
+    })
+}
+
+fn push_skipped_editor_tool_names(
+    skipped_tools: &mut Vec<McpSkippedTool>,
+    descriptor: McpFormDescriptor,
+    reason: &'static str,
+    include_submit: bool,
+) {
+    let names = editor_tool_names(descriptor);
+    for name in [
+        names.open,
+        names.list,
+        names.read,
+        names.patch,
+        names.validate,
+        names.close,
+        names.close_all,
+    ] {
+        push_skipped_tool(skipped_tools, name, reason);
+    }
+    if include_submit {
+        push_skipped_tool(skipped_tools, names.submit, reason);
+    }
+}
+
+fn push_skipped_tool(skipped_tools: &mut Vec<McpSkippedTool>, name: String, reason: &'static str) {
+    if skipped_tools.iter().any(|skipped| skipped.name == name) {
+        return;
+    }
+    skipped_tools.push(McpSkippedTool { name, reason });
 }
 
 fn input_schema_for_fields(fields: &[McpField]) -> McpSchema {
@@ -2631,7 +4262,7 @@ fn edit_session_snapshot_output_schema(fields: &[McpField]) -> McpSchema {
     );
     properties.insert(
         "errors".to_string(),
-        component_shape_mcp::array_schema(McpSchema::new(serde_json::json!({ "type": "string" }))),
+        component_shape_mcp::array_schema(validation_issue_schema()),
     );
     properties.insert(
         "values".to_string(),
@@ -2826,6 +4457,25 @@ fn edit_session_field_output_schema(field: McpField) -> McpSchema {
         })),
     );
     properties.insert(
+        "label".to_string(),
+        McpSchema::new(serde_json::json!({
+            "type": "string",
+            "const": field.label()
+        })),
+    );
+    properties.insert(
+        "description".to_string(),
+        component_shape_mcp::nullable_schema(McpSchema::new(serde_json::json!({
+            "type": "string"
+        }))),
+    );
+    properties.insert(
+        "examples".to_string(),
+        component_shape_mcp::array_schema(McpSchema::new(serde_json::json!({
+            "type": "string"
+        }))),
+    );
+    properties.insert(
         "required".to_string(),
         McpSchema::new(serde_json::json!({
             "type": "boolean",
@@ -2850,7 +4500,7 @@ fn edit_session_field_output_schema(field: McpField) -> McpSchema {
     );
     properties.insert(
         "errors".to_string(),
-        component_shape_mcp::array_schema(McpSchema::new(serde_json::json!({ "type": "string" }))),
+        component_shape_mcp::array_schema(validation_issue_schema()),
     );
     properties.insert(
         "has_default".to_string(),
@@ -2878,6 +4528,9 @@ fn edit_session_field_output_schema(field: McpField) -> McpSchema {
         properties,
         [
             "name",
+            "label",
+            "description",
+            "examples",
             "value_type",
             "required",
             "present",
@@ -2901,6 +4554,75 @@ fn field_name_array_schema(fields: &[McpField]) -> McpSchema {
         },
         "uniqueItems": true
     }))
+}
+
+fn validation_issue_schema() -> McpSchema {
+    let mut properties = McpSchemaProperties::new();
+    properties.insert(
+        "scope".to_string(),
+        McpSchema::new(serde_json::json!({
+            "type": "string",
+            "enum": ["form", "field", "element"]
+        })),
+    );
+    properties.insert(
+        "message".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "field".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "validator".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "path".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "label".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "target".to_string(),
+        McpSchema::new(serde_json::json!({
+            "type": "string",
+            "enum": ["default", "full", "unwrapped"]
+        })),
+    );
+    properties.insert(
+        "element_index".to_string(),
+        McpSchema::new(serde_json::json!({
+            "type": "integer",
+            "minimum": 0
+        })),
+    );
+    properties.insert(
+        "params".to_string(),
+        component_shape_mcp::array_schema(validation_param_schema()),
+    );
+
+    component_shape_mcp::object_schema(properties, ["scope", "message"])
+}
+
+fn validation_param_schema() -> McpSchema {
+    let mut properties = McpSchemaProperties::new();
+    properties.insert(
+        "name".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "value".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+    properties.insert(
+        "expr".to_string(),
+        McpSchema::new(serde_json::json!({ "type": "string" })),
+    );
+
+    component_shape_mcp::object_schema(properties, ["name"])
 }
 
 fn expected_revision_schema() -> McpSchema {
@@ -2944,6 +4666,36 @@ fn schema_for_field(field: McpField) -> McpSchema {
             "x-gpuiFormPresence".to_string(),
             Value::String(format!("{:?}", field.presence())),
         );
+        object.insert("title".to_string(), Value::String(field.label()));
+        object.insert("x-gpuiFormLabel".to_string(), Value::String(field.label()));
+        if let Some(label) = field.explicit_label() {
+            object.insert(
+                "x-gpuiFormExplicitLabel".to_string(),
+                Value::String(label.to_string()),
+            );
+        }
+        if let Some(description) = field.description() {
+            object.insert(
+                "description".to_string(),
+                Value::String(description.to_string()),
+            );
+            object.insert(
+                "x-gpuiFormDescription".to_string(),
+                Value::String(description.to_string()),
+            );
+        }
+        if !field.examples().is_empty() {
+            object.insert(
+                "examples".to_string(),
+                Value::Array(
+                    field
+                        .examples()
+                        .iter()
+                        .map(|example| Value::String((*example).to_string()))
+                        .collect(),
+                ),
+            );
+        }
         if field.component_backed() {
             object.insert("x-gpuiFormComponentBacked".to_string(), Value::Bool(true));
         }
@@ -2956,9 +4708,168 @@ fn schema_for_field(field: McpField) -> McpSchema {
         if field.has_default() {
             object.insert("x-gpuiFormHasDefault".to_string(), Value::Bool(true));
         }
+        if !field.validation_rules().is_empty() {
+            object.insert(
+                "x-gpuiFormValidation".to_string(),
+                Value::Array(
+                    field
+                        .validation_rules()
+                        .iter()
+                        .map(|rule| rule.to_value())
+                        .collect(),
+                ),
+            );
+        }
+        apply_validation_schema_hints(field, object);
     }
 
     schema
+}
+
+fn apply_validation_schema_hints(field: McpField, object: &mut Map<String, Value>) {
+    for rule in field.validation_rules() {
+        match rule.validator() {
+            "LenValidation" => apply_len_validation_schema_hint(*rule, object),
+            "RangeValidation" => apply_range_validation_schema_hint(*rule, object),
+            "NonEmptyValidation" => apply_non_empty_validation_schema_hint(object),
+            _ => {},
+        }
+    }
+}
+
+fn apply_len_validation_schema_hint(rule: McpValidationRule, object: &mut Map<String, Value>) {
+    let Some(schema_type) = primary_schema_type(object) else {
+        return;
+    };
+    let (min_keyword, max_keyword) = match schema_type {
+        "string" => ("minLength", "maxLength"),
+        "array" => ("minItems", "maxItems"),
+        _ => return,
+    };
+    if let Some(min) = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "min")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_u64)
+    {
+        object.insert(min_keyword.to_string(), Value::Number(min.into()));
+    }
+    if let Some(max) = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "max")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_u64)
+    {
+        object.insert(max_keyword.to_string(), Value::Number(max.into()));
+    }
+}
+
+fn apply_range_validation_schema_hint(rule: McpValidationRule, object: &mut Map<String, Value>) {
+    if !matches!(primary_schema_type(object), Some("integer" | "number")) {
+        return;
+    }
+    let exclusive_min = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "exclusive_min")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_bool)
+        .unwrap_or(false);
+    let exclusive_max = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "exclusive_max")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_bool)
+        .unwrap_or(false);
+    if let Some(min) = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "min")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_number_value)
+    {
+        let keyword = if exclusive_min {
+            "exclusiveMinimum"
+        } else {
+            "minimum"
+        };
+        object.insert(keyword.to_string(), min);
+    }
+    if let Some(max) = rule
+        .params()
+        .iter()
+        .find(|param| param.name() == "max")
+        .and_then(|param| param.literal_value())
+        .and_then(literal_to_number_value)
+    {
+        let keyword = if exclusive_max {
+            "exclusiveMaximum"
+        } else {
+            "maximum"
+        };
+        object.insert(keyword.to_string(), max);
+    }
+}
+
+fn apply_non_empty_validation_schema_hint(object: &mut Map<String, Value>) {
+    match primary_schema_type(object) {
+        Some("string") => {
+            object
+                .entry("minLength")
+                .or_insert(Value::Number(1_u64.into()));
+        },
+        Some("array") => {
+            object
+                .entry("minItems")
+                .or_insert(Value::Number(1_u64.into()));
+        },
+        _ => {},
+    }
+}
+
+fn primary_schema_type(object: &Map<String, Value>) -> Option<&str> {
+    object.get("type").and_then(Value::as_str).or_else(|| {
+        object
+            .get("anyOf")
+            .and_then(Value::as_array)
+            .and_then(|schemas| schemas.iter().find_map(schema_type_from_value))
+    })
+}
+
+fn schema_type_from_value(value: &Value) -> Option<&str> {
+    match value {
+        Value::Object(object) => object.get("type").and_then(Value::as_str),
+        _ => None,
+    }
+}
+
+fn literal_to_u64(literal: &str) -> Option<u64> {
+    literal.parse::<u64>().ok()
+}
+
+fn literal_to_bool(literal: &str) -> Option<bool> {
+    match literal {
+        "true" => Some(true),
+        "false" => Some(false),
+        _ => None,
+    }
+}
+
+fn literal_to_number_value(literal: &str) -> Option<Value> {
+    if let Ok(value) = literal.parse::<i64>() {
+        return Some(Value::Number(value.into()));
+    }
+    if let Ok(value) = literal.parse::<u64>() {
+        return Some(Value::Number(value.into()));
+    }
+    literal
+        .parse::<f64>()
+        .ok()
+        .and_then(serde_json::Number::from_f64)
+        .map(Value::Number)
 }
 
 /// Return MCP tool definitions registered by the default generated server,
@@ -3194,6 +5105,18 @@ mod tests {
                 })
             })
             .expect("tool should register");
+        let resource_uris = super::form_resource_uris(descriptor);
+        assert_eq!(server.resource_count(), 3);
+        for uri in resource_uris.all() {
+            assert!(server.contains_resource(uri));
+        }
+        let resources = server.list_resources();
+        assert!(
+            resources
+                .iter()
+                .any(|resource| resource.uri == resource_uris.descriptor
+                    && resource.mime_type.as_deref() == Some("application/json"))
+        );
 
         let result = server.call_tool(
             &Booking::descriptor().tool_name(),
@@ -3228,6 +5151,129 @@ mod tests {
         assert_eq!(input.into_value_holder().available_on, "2026-06-10");
     }
 
+    #[test]
+    fn form_resources_describe_generated_form() {
+        let descriptor = Booking::descriptor();
+        let resource_uris = super::form_resource_uris(descriptor);
+
+        assert_eq!(
+            resource_uris.descriptor,
+            "gpui-form://forms/reserve_booking/descriptor"
+        );
+        assert_eq!(
+            resource_uris.schema,
+            "gpui-form://forms/reserve_booking/schema"
+        );
+        assert_eq!(
+            resource_uris.examples,
+            "gpui-form://forms/reserve_booking/examples"
+        );
+
+        let descriptor_value = super::form_descriptor_resource_value(descriptor);
+        assert_eq!(descriptor_value["form_name"], "Booking");
+        assert_eq!(descriptor_value["tool_name"], "reserve_booking");
+        assert_eq!(
+            descriptor_value["resources"]["schema"],
+            "gpui-form://forms/reserve_booking/schema"
+        );
+        assert_eq!(descriptor_value["fields"][0]["name"], "available_on");
+        assert_eq!(descriptor_value["fields"][0]["label"], "Available on");
+        assert_eq!(
+            descriptor_value["fields"][0]["examples"],
+            serde_json::json!(["2026-06-10"])
+        );
+        assert_eq!(
+            descriptor_value["fields"][0]["schema"]["examples"],
+            serde_json::json!(["2026-06-10"])
+        );
+
+        let schema_value = super::form_schema_resource_value(descriptor);
+        assert_eq!(schema_value["properties"]["available_on"]["type"], "string");
+
+        let examples_value = super::form_examples_resource_value(descriptor);
+        assert_eq!(
+            examples_value["examples"]["available_on"],
+            serde_json::json!(["2026-06-10"])
+        );
+    }
+
+    #[test]
+    fn form_prompt_templates_describe_generated_form_workflows() {
+        let descriptor = Booking::descriptor();
+        let prompt_names = super::form_prompt_names(descriptor);
+
+        assert_eq!(prompt_names.fill, "fill_reserve_booking_form");
+        assert_eq!(prompt_names.repair, "repair_reserve_booking_form");
+        assert_eq!(prompt_names.submit, "submit_reserve_booking_form");
+        assert_eq!(
+            prompt_names.all(),
+            [
+                "fill_reserve_booking_form",
+                "repair_reserve_booking_form",
+                "submit_reserve_booking_form",
+            ]
+        );
+
+        let mut server = McpServer::new("example-form-server".to_string(), "9.9.9");
+        super::register_form_prompt_templates::<Booking>(&mut server)
+            .expect("prompt templates should register");
+
+        assert_eq!(server.resource_count(), 3);
+        assert_eq!(server.prompt_count(), 3);
+        for prompt_name in prompt_names.all() {
+            assert!(server.contains_prompt(prompt_name));
+        }
+
+        let prompts = server.list_prompts();
+        let fill = prompts
+            .iter()
+            .find(|prompt| prompt.name == "fill_reserve_booking_form")
+            .expect("fill prompt should be listed");
+        assert_eq!(fill.title.as_deref(), Some("Fill Reserve booking"));
+        assert_eq!(
+            fill.description.as_deref(),
+            Some("Draft valid direct-submit arguments for Reserve booking.")
+        );
+        assert_eq!(
+            fill.arguments
+                .as_ref()
+                .expect("fill prompt should expose arguments")[0]
+                .name,
+            "goal"
+        );
+
+        let repair_text = super::form_prompt_text(
+            descriptor,
+            super::McpFormPromptKind::Repair,
+            Some(serde_json::Map::from_iter([(
+                "validation_issues".to_string(),
+                serde_json::json!([{ "field": "available_on", "message": "required" }]),
+            )])),
+        );
+        assert!(repair_text.contains("gpui-form://forms/reserve_booking/descriptor"));
+        assert!(repair_text.contains("reserve_booking_edit_patch"));
+        assert!(repair_text.contains("Caller-provided context"));
+    }
+
+    #[test]
+    fn prompt_first_registration_reuses_form_resources_for_tools() {
+        let mut server = McpServer::new("example-form-server".to_string(), "9.9.9");
+
+        super::register_form_prompt_templates::<Booking>(&mut server)
+            .expect("prompt templates should register");
+        form::<Booking>(&mut server)
+            .holder(|holder| {
+                Ok::<_, String>(BookingResponse {
+                    available_on: holder.available_on,
+                })
+            })
+            .expect("tool should register after prompt resources");
+
+        assert_eq!(server.resource_count(), 3);
+        assert_eq!(server.prompt_count(), 3);
+        assert!(server.contains_tool("reserve_booking"));
+    }
+
     struct Booking;
 
     impl super::McpForm for Booking {
@@ -3238,7 +5284,8 @@ mod tests {
                 "available_on",
                 RustType::from_macro_tokens_unchecked("String"),
                 FieldValuePresence::DirectStorage,
-            )];
+            )
+            .with_examples(&["2026-06-10"])];
 
             McpFormDescriptor::new(
                 "Booking",

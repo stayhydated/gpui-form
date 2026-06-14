@@ -426,6 +426,9 @@ impl FieldValueSpec {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldVariant {
     field_name: &'static str,
+    label: Option<&'static str>,
+    description: Option<&'static str>,
+    examples: &'static [&'static str],
     /// Rust type path for the field's value type.
     ///
     /// This is the form-side base value type, not including any generated
@@ -470,6 +473,9 @@ impl FieldVariant {
     ) -> Self {
         Self {
             field_name,
+            label: None,
+            description: None,
+            examples: &[],
             value_type: value.value_type,
             source_value_type: value.source_value_type,
             value_presence: value.value_presence,
@@ -483,6 +489,33 @@ impl FieldVariant {
 
     pub const fn field_name(&self) -> &'static str {
         self.field_name
+    }
+
+    pub const fn with_label(mut self, label: &'static str) -> Self {
+        self.label = Some(label);
+        self
+    }
+
+    pub const fn with_description(mut self, description: &'static str) -> Self {
+        self.description = Some(description);
+        self
+    }
+
+    pub const fn with_examples(mut self, examples: &'static [&'static str]) -> Self {
+        self.examples = examples;
+        self
+    }
+
+    pub const fn explicit_label(&self) -> Option<&'static str> {
+        self.label
+    }
+
+    pub const fn description(&self) -> Option<&'static str> {
+        self.description
+    }
+
+    pub const fn examples(&self) -> &'static [&'static str] {
+        self.examples
     }
 
     /// Returns the serialized form-side value type.

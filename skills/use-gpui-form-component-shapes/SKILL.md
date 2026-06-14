@@ -88,6 +88,9 @@ generated `ComponentShapeFor<Value>` impl carries the value-specific metadata,
 so multi-value shapes can expose distinct MCP input shapes per supported
 value. Component-backed form fields publish the field type's `McpToolValue`
 schema and attach value-specific shape MCP input metadata when available.
+Generated MCP descriptor resources expose the same shape MCP input metadata for
+clients that inspect `gpui-form://forms/{tool_name}/descriptor` instead of the
+raw submit schema.
 Use `mcp_input = string`, `mcp_input = object`, or another `McpInput`
 expression when a generic or custom shape knows its model-facing MCP input
 better than the value type can be inferred. Use value types that implement

@@ -3,7 +3,8 @@ use proc_macro2::Span;
 use quote::ToTokens as _;
 use syn::{
     Expr, Ident, Lit, Meta, Token, Type,
-    parse::{Parse, ParseStream},
+    parse::{Parse, ParseStream, Parser},
+    punctuated::Punctuated,
 };
 
 use crate::derives::gpui_form::ir::{
@@ -14,9 +15,12 @@ use crate::derives::gpui_form::ir::{
 mod kw {
     syn::custom_keyword!(component);
     syn::custom_keyword!(default);
+    syn::custom_keyword!(description);
+    syn::custom_keyword!(example);
     syn::custom_keyword!(from_source);
     syn::custom_keyword!(hidden);
     syn::custom_keyword!(into_source);
+    syn::custom_keyword!(label);
     syn::custom_keyword!(skip);
     syn::custom_keyword!(value);
 }
@@ -48,7 +52,30 @@ pub struct McpToolOptions {
     pub destructive: Option<bool>,
     pub idempotent: Option<bool>,
     pub open_world: Option<bool>,
+    pub icons: Vec<McpIconOptions>,
+    pub task_support: Option<McpTaskSupportOption>,
     pub context_submit: Option<McpContextSubmitOptions>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct McpIconOptions {
+    pub src: String,
+    pub mime_type: Option<String>,
+    pub sizes: Vec<String>,
+    pub theme: Option<McpIconThemeOption>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum McpIconThemeOption {
+    Light,
+    Dark,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum McpTaskSupportOption {
+    Forbidden,
+    Optional,
+    Required,
 }
 
 #[derive(Clone, Debug)]
@@ -141,6 +168,17 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
                     bool::from_meta(meta)?,
                     name_value.path.to_token_stream(),
                 )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("task_support") => {
+                assign_once(
+                    "task_support",
+                    &mut options.task_support,
+                    parse_mcp_task_support(String::from_meta(meta)?)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::List(list) if list.path.is_ident("icon") => {
+                options.icons.push(parse_mcp_icon_options(list)?);
             },
             Meta::List(list) if list.path.is_ident("context") => {
                 assign_once(
@@ -282,6 +320,88 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
     Ok(options)
 }
 
+fn parse_mcp_icon_options(list: &syn::MetaList) -> darling::Result<McpIconOptions> {
+    let parser = Punctuated::<Meta, Token![,]>::parse_terminated;
+    let items = parser
+        .parse2(list.tokens.clone())
+        .map_err(|error| DarlingError::custom(error.to_string()))?;
+    let mut src = None;
+    let mut mime_type = None;
+    let mut sizes = Vec::new();
+    let mut theme = None;
+
+    for meta in items {
+        match &meta {
+            Meta::NameValue(name_value) if name_value.path.is_ident("src") => {
+                assign_once(
+                    "src",
+                    &mut src,
+                    String::from_meta(&meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("mime_type") => {
+                assign_once(
+                    "mime_type",
+                    &mut mime_type,
+                    String::from_meta(&meta)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            Meta::NameValue(name_value)
+                if name_value.path.is_ident("size") || name_value.path.is_ident("sizes") =>
+            {
+                sizes.push(String::from_meta(&meta)?);
+            },
+            Meta::NameValue(name_value) if name_value.path.is_ident("theme") => {
+                assign_once(
+                    "theme",
+                    &mut theme,
+                    parse_mcp_icon_theme(String::from_meta(&meta)?)?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
+            _ => {
+                return Err(DarlingError::custom(format!(
+                    "Unknown field: `{}`",
+                    meta.path().to_token_stream()
+                )));
+            },
+        }
+    }
+
+    let src = src.ok_or_else(|| DarlingError::missing_field("src"))?;
+    let icon = McpIconOptions {
+        src,
+        mime_type,
+        sizes,
+        theme,
+    };
+    validate_mcp_icon_options(&icon)?;
+    Ok(icon)
+}
+
+fn parse_mcp_icon_theme(value: String) -> darling::Result<McpIconThemeOption> {
+    match value.as_str() {
+        "light" => Ok(McpIconThemeOption::Light),
+        "dark" => Ok(McpIconThemeOption::Dark),
+        _ => Err(DarlingError::custom(
+            "`theme` must be either \"light\" or \"dark\"",
+        )),
+    }
+}
+
+fn parse_mcp_task_support(value: String) -> darling::Result<McpTaskSupportOption> {
+    match value.as_str() {
+        "forbidden" => Ok(McpTaskSupportOption::Forbidden),
+        "optional" => Ok(McpTaskSupportOption::Optional),
+        "required" => Ok(McpTaskSupportOption::Required),
+        _ => Err(DarlingError::custom(
+            "`task_support` must be \"forbidden\", \"optional\", or \"required\"",
+        )),
+    }
+}
+
 fn assign_once<T>(
     field: &str,
     target: &mut Option<T>,
@@ -354,11 +474,39 @@ fn validate_mcp_tool_options(options: &McpToolOptions) -> darling::Result<()> {
         component_shape::validate_mcp_tool_metadata_text("description", description)
             .map_err(|error| DarlingError::custom(error.to_string()))?;
     }
+    for icon in &options.icons {
+        validate_mcp_icon_options(icon)?;
+    }
+    Ok(())
+}
+
+fn validate_mcp_icon_options(icon: &McpIconOptions) -> darling::Result<()> {
+    component_shape::validate_mcp_tool_metadata_text("icon src", &icon.src)
+        .map_err(|error| DarlingError::custom(error.to_string()))?;
+    if let Some(mime_type) = icon.mime_type.as_deref() {
+        component_shape::validate_mcp_tool_metadata_text("icon mime_type", mime_type)
+            .map_err(|error| DarlingError::custom(error.to_string()))?;
+    }
+    for size in &icon.sizes {
+        component_shape::validate_mcp_tool_metadata_text("icon size", size)
+            .map_err(|error| DarlingError::custom(error.to_string()))?;
+    }
     Ok(())
 }
 
 #[derive(Debug)]
 pub(super) enum GpuiFormFieldOption {
+    Label {
+        span: Span,
+        value: String,
+    },
+    Description {
+        span: Span,
+        value: String,
+    },
+    Example {
+        value: String,
+    },
     Skip {
         span: Span,
     },
@@ -375,6 +523,32 @@ pub(super) enum GpuiFormFieldOption {
 
 impl Parse for GpuiFormFieldOption {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+        if input.peek(kw::label) {
+            let key = input.parse::<kw::label>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Label {
+                span: key.span,
+                value: parse_metadata_string(input, "label")?,
+            });
+        }
+
+        if input.peek(kw::description) {
+            let key = input.parse::<kw::description>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Description {
+                span: key.span,
+                value: parse_metadata_string(input, "description")?,
+            });
+        }
+
+        if input.peek(kw::example) {
+            input.parse::<kw::example>()?;
+            input.parse::<Token![=]>()?;
+            return Ok(Self::Example {
+                value: parse_metadata_string(input, "example")?,
+            });
+        }
+
         if input.peek(kw::component) {
             let key = input.parse::<kw::component>()?;
             let content;
@@ -424,9 +598,17 @@ impl Parse for GpuiFormFieldOption {
         }
 
         Err(input.error(
-            "expected gpui_form field option such as `component(MyShape)`, `hidden`, or `skip`",
+            "expected gpui_form field option such as `component(MyShape)`, `hidden`, `skip`, `label = ...`, `description = ...`, or `example = ...`",
         ))
     }
+}
+
+fn parse_metadata_string(input: ParseStream<'_>, field: &str) -> syn::Result<String> {
+    let value = input.parse::<syn::LitStr>()?;
+    let value = value.value();
+    component_shape::validate_mcp_tool_metadata_text(field, &value)
+        .map_err(|error| input.error(error.to_string()))?;
+    Ok(value)
 }
 
 fn parse_structured_field_options(
@@ -613,7 +795,7 @@ mod tests {
     use super::*;
     use quote::quote;
     use syn::parse_quote;
-    use syn::{parse::Parser as _, punctuated::Punctuated};
+    use syn::punctuated::Punctuated;
 
     fn parse_options(
         tokens: proc_macro2::TokenStream,
@@ -708,6 +890,13 @@ mod tests {
             parse_quote!(destructive = true),
             parse_quote!(idempotent = false),
             parse_quote!(open_world = true),
+            parse_quote!(task_support = "optional"),
+            parse_quote!(icon(
+                src = "https://example.com/contact.png",
+                mime_type = "image/png",
+                size = "48x48",
+                theme = "light"
+            )),
             parse_quote!(context(crate::SubmitContext)),
             parse_quote!(response(crate::SubmitResponse)),
             parse_quote!(error(crate::SubmitError)),
@@ -726,6 +915,15 @@ mod tests {
         assert_eq!(parsed_list.destructive, Some(true));
         assert_eq!(parsed_list.idempotent, Some(false));
         assert_eq!(parsed_list.open_world, Some(true));
+        assert_eq!(
+            parsed_list.task_support,
+            Some(McpTaskSupportOption::Optional)
+        );
+        assert_eq!(parsed_list.icons.len(), 1);
+        assert_eq!(parsed_list.icons[0].src, "https://example.com/contact.png");
+        assert_eq!(parsed_list.icons[0].mime_type.as_deref(), Some("image/png"));
+        assert_eq!(parsed_list.icons[0].sizes, vec!["48x48".to_string()]);
+        assert_eq!(parsed_list.icons[0].theme, Some(McpIconThemeOption::Light));
         let submit = parsed_list
             .context_submit
             .expect("context submit options should parse");
@@ -780,6 +978,25 @@ mod tests {
         assert!(context_only.error.is_none());
         assert!(context_only.submit.is_none());
         assert!(context_only.map_response.is_none());
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_invalid_icon_and_task_support() {
+        let error = McpToolOptions::from_list(&[parse_quote!(task_support = "sometimes")])
+            .expect_err("invalid task support should fail");
+        assert!(
+            error
+                .to_string()
+                .contains("task_support` must be \"forbidden\", \"optional\", or \"required\""),
+            "unexpected error: {error}"
+        );
+
+        let error = McpToolOptions::from_list(&[parse_quote!(icon(mime_type = "image/png"))])
+            .expect_err("missing icon src should fail");
+        assert!(
+            error.to_string().contains("src"),
+            "unexpected error: {error}"
+        );
     }
 
     #[test]

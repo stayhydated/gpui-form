@@ -45,13 +45,13 @@ pub struct TicketForm {
     title = "Tickets",
     filters,
     mcp(
-        name = "query_tickets_with_inferred_filter",
+        name = "query_tickets_with_text_filter",
         title = "Query tickets",
-        description = "Query tickets with an inferred MCP text filter."
+        description = "Query tickets with an MCP text filter."
     )
 )]
 struct TicketRow {
-    #[gpui_table(filter)]
+    #[gpui_table(filter(gpui_table::runtime::shape::TextFilter))]
     title: String,
 }
 

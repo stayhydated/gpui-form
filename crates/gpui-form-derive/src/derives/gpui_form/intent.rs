@@ -1,3 +1,4 @@
+use component_shape_codegen::doc_description;
 use darling::{Error as DarlingError, FromField};
 use gpui_form_codegen::components::ShapeOptions;
 use proc_macro2::Span;
@@ -7,7 +8,8 @@ use crate::derives::gpui_form::attrs::{
     EmptyForm, GpuiFormFieldOption, McpToolOptions, NoInventory,
 };
 use crate::derives::gpui_form::ir::{
-    DefaultExpr, FieldAttrContext, FieldContext, RenderedFieldIntent, RenderedValueIntent, Spanned,
+    DefaultExpr, FieldAttrContext, FieldContext, FieldMetadata, RenderedFieldIntent,
+    RenderedValueIntent, Spanned,
 };
 use crate::derives::gpui_form::validation::KorumaField;
 
@@ -15,6 +17,7 @@ use crate::derives::gpui_form::validation::KorumaField;
 pub struct ComponentField {
     pub context: FieldContext,
     attr: FieldAttr,
+    metadata: FieldMetadata,
 }
 
 #[derive(Debug)]
@@ -48,6 +51,8 @@ impl FieldAttr {
 struct ParsedComponentField {
     context: FieldContext,
     attr: Option<FieldAttr>,
+    metadata: FieldMetadata,
+    explicit_description: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -120,6 +125,10 @@ pub enum ComponentFieldIntent<'a> {
 }
 
 impl ComponentField {
+    pub fn metadata(&self) -> &FieldMetadata {
+        &self.metadata
+    }
+
     pub fn intent(&self) -> ComponentFieldIntent<'_> {
         match &self.attr {
             FieldAttr::Component(component) => {
@@ -167,6 +176,12 @@ impl FromField for ComponentField {
         let mut parsed = ParsedComponentField {
             context: FieldContext::new(ident, field.ty.clone(), syn::spanned::Spanned::span(field)),
             attr: None,
+            metadata: FieldMetadata {
+                label: None,
+                description: doc_description(&field.attrs),
+                examples: Vec::new(),
+            },
+            explicit_description: false,
         };
         let mut errors = DarlingError::accumulator();
         let mut had_attribute_errors = false;
@@ -230,10 +245,12 @@ impl FromField for ComponentField {
             Some(attr) => errors.finish_with(ComponentField {
                 context: parsed.context,
                 attr,
+                metadata: parsed.metadata,
             }),
             None => errors.finish_with(ComponentField {
                 context: parsed.context,
                 attr: FieldAttr::Skipped,
+                metadata: parsed.metadata,
             }),
         }
     }
@@ -245,6 +262,24 @@ fn parse_gpui_form_item(
     attr_span: Span,
 ) -> darling::Result<()> {
     match item {
+        GpuiFormFieldOption::Label { span, value } => {
+            assign_field_metadata_once("label", &mut field.metadata.label, value, span)
+        },
+        GpuiFormFieldOption::Description { span, value } => {
+            if field.explicit_description {
+                return Err(DarlingError::from(syn::Error::new(
+                    span,
+                    "duplicate gpui_form field metadata `description`",
+                )));
+            }
+            field.metadata.description = Some(value);
+            field.explicit_description = true;
+            Ok(())
+        },
+        GpuiFormFieldOption::Example { value, .. } => {
+            field.metadata.examples.push(value);
+            Ok(())
+        },
         GpuiFormFieldOption::Skip { span } => set_attr(field, FieldAttr::Skipped, span),
         GpuiFormFieldOption::Hidden { span, options } => {
             let context = FieldAttrContext::new(attr_span, span);
@@ -277,6 +312,22 @@ fn parse_gpui_form_item(
             )
         },
     }
+}
+
+fn assign_field_metadata_once(
+    label: &str,
+    slot: &mut Option<String>,
+    value: String,
+    span: Span,
+) -> darling::Result<()> {
+    if slot.is_some() {
+        return Err(DarlingError::from(syn::Error::new(
+            span,
+            format!("duplicate gpui_form field metadata `{label}`"),
+        )));
+    }
+    *slot = Some(value);
+    Ok(())
 }
 
 fn set_attr(

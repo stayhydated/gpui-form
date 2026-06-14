@@ -143,6 +143,14 @@ Common patterns:
 - For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly. Use `InfiniteSelect::<_>::searchable(true)` when the cascading selects should construct with search enabled.
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes should usually back optional fields or receive a default when the model field is required. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - For Koruma validation, add `#[gpui_form(koruma)]` or `#[gpui_form(koruma(fluent))]` to the form struct and write field validators with Koruma's direct syntax, such as `#[koruma(NonEmptyValidation::<_>)]` or `#[koruma(RangeValidation::<_>::min(18).max(120))]`. Use Koruma target selectors such as `full(...)` when a validator must receive the full optional value.
+- Koruma-backed MCP forms publish validation rule metadata in generated field
+  schemas through `x-gpuiFormValidation`. Literal `LenValidation`,
+  `RangeValidation`, and `NonEmptyValidation` arguments become JSON Schema
+  hints when the field schema type is unambiguous. Validation failures expose
+  structured issue objects in `structured_content.error.details`, editor
+  session `errors`, and field-level `errors`; generated MCP validation uses
+  gpui-form's field rule metadata first and falls back to Koruma's generic
+  `ValidationIssues` output when no field-specific extractor is available.
 - Convert generated holders with `holder.try_into_original()` when conversion can fail or when a required shape-backed field has no declared default, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. For skipped-field debug UI, format `holder.present_fields()` outside the generated holder instead of expecting a JSON helper.
 - For MCP submit integration, keep GPUI as a presentation surface over the same
   holder and submit handler. MCP tool calls should populate the generated value
@@ -161,7 +169,31 @@ Common patterns:
   Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
   Use `McpServer::builder(name, version)` when composing forms with tables or
   other MCP integrations, and add generated handlers with
-  `.register(gpui_form::mcp::register)`.
+  `.register(gpui_form::mcp::register)`. Add
+  `.register(gpui_form::mcp::register_prompt_templates)` when the server
+  should also advertise generated fill, repair, and submit prompt templates.
+  Use `register_with_options(&mut server, McpFormRegistrationOptions::submit_only())`
+  for quiet submit-only tool lists, `McpFormRegistrationOptions::editor_only()`
+  for editable holder sessions without submit handlers, or
+  `McpFormRegistrationOptions::metadata_only()`/`tool_definitions_with_options(...)`
+  to inspect generated definitions without mutating a server.
+  Generated MCP servers also advertise `resources` and publish JSON resources
+  for each registered form at
+  `gpui-form://forms/{tool_name}/descriptor`,
+  `gpui-form://forms/{tool_name}/schema`, and
+  `gpui-form://forms/{tool_name}/examples`. The descriptor resource includes
+  field labels, descriptions, examples, storage/default metadata, component
+  MCP input metadata, validation rules, and per-field schemas; the schema
+  resource contains the submit input schema. `metadata_only()` does not
+  register tools or resources.
+  Prompt templates are opt-in: use `register_prompt_templates(&mut server)?`
+  for inventory-discovered forms,
+  `register_context_submitter_prompt_templates::<Context>(...)` for
+  context-backed submitters, or `register_form_prompt_templates::<Form>(...)`
+  for one form. Generated names are `fill_{tool_name}_form`,
+  `repair_{tool_name}_form`, and `submit_{tool_name}_form`, and the prompt
+  text references the descriptor/schema/examples resources plus edit tools
+  when iterative repair is useful.
   Register manual handlers with
   `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
   `.holder(handler)?` for handlers returning `Result<T, E>`.
@@ -170,6 +202,8 @@ Common patterns:
   implementations or generated impls from `submit(path::to::async_fn)`,
   adding `response(MyResponse)` only when precise response schemas matter, then call
   `gpui_form::mcp::register_context_submitters(&mut server, context)?` once.
+  Use `register_context_submitters_strict(...)` when zero matching context
+  registrations should be a setup error.
   Register headless field-editing tools with
   `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The generated editor
   tools open a bounded value-holder session, bulk patch or clear fields through
@@ -185,9 +219,20 @@ Common patterns:
   `context(Type)` there when the form should emit context-submit inventory,
   `submit(path)` when the derive should generate `McpContextSubmit`, and
   `response(Type)` only to override the default `McpObject` response.
+  Direct submit tools default to destructive open-world MCP annotations unless
+  overridden. Add `icon(src = "...", mime_type = "...", size = "...", theme = "light" | "dark")`
+  entries for MCP tool icons, and
+  `task_support = "forbidden" | "optional" | "required"` for MCP execution task
+  support.
   If `description` is omitted, the derive uses the form type's Rust doc
   comment.
-  Registration reports setup errors such as duplicate tool names.
+  Use field-level `#[gpui_form(label = "...")]`,
+  `#[gpui_form(description = "...")]`, and `#[gpui_form(example = "...")]`
+  when MCP schemas and editor snapshots need form-author labels,
+  descriptions, or examples; field descriptions infer from `///` rustdoc when
+  not overridden.
+  Registration reports setup errors such as duplicate tool names or generated
+  resource URIs.
   Component-backed fields use value-specific
   `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata in generated
   schemas when available, then fall back to the field type's schema.

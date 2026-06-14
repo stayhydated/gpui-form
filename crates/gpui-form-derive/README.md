@@ -85,12 +85,17 @@ Supporting field attributes:
 - `#[gpui_form(skip)]`
 - `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
 - `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
+- `#[gpui_form(label = "...")]`
+- `#[gpui_form(description = "...")]`
+- `#[gpui_form(example = "...")]`
 
 Every non-empty-form field must choose exactly one intent: component, hidden,
 or skipped. Use `hidden` for value-holder-only fields. Defaults and value
 conversion options belong inside the component or hidden intent; `from_source`
 maps source model values into form values, and `into_source` maps form values
-back into source values.
+back into source values. MCP field descriptions infer from `///` rustdoc when
+no explicit `description = ...` is present; labels default from the field name,
+and `example = ...` may be repeated.
 
 Supporting struct attributes:
 
@@ -100,8 +105,9 @@ Supporting struct attributes:
 - `#[gpui_form(no_inventory)]`
 - `#[gpui_form(mcp)]` or
   `#[gpui_form(mcp(...))]` with `name`, `title`, `description`, `read_only`,
-  `destructive`, `idempotent`, `open_world`, `context(Type)`, and
-  optional `response(Type)`, `error(Type)`, `submit(path)`, and
+  `destructive`, `idempotent`, `open_world`, repeated `icon(...)`,
+  `task_support = "forbidden" | "optional" | "required"`, `context(Type)`,
+  and optional `response(Type)`, `error(Type)`, `submit(path)`, and
   `map_response(path)` options
 
 Behavior notes:
@@ -140,6 +146,11 @@ Behavior notes:
   and `gpui-form-mcp` integration crate.
   MCP submit forms must be concrete, cannot use `#[gpui_form(no_inventory)]`,
   and require the `mcp` feature when the attribute is present.
+- for Koruma-backed MCP forms, the derive also emits structured validation
+  issue extraction and attaches `x-gpuiFormValidation` rule metadata to field
+  schemas. Literal `LenValidation`, `RangeValidation`, and
+  `NonEmptyValidation` arguments become JSON Schema constraint hints when the
+  field schema type is unambiguous.
 - MCP argument decoding writes through generated value-holder storage and shape
   value-storage policies; it does not instantiate GPUI state or route through
   button callbacks. Skipped-field forms get holder submission support but no
@@ -150,7 +161,11 @@ Behavior notes:
   overrides generated MCP tool metadata; when `description` is omitted, the
   derive uses the form type's Rust doc comment. The same list accepts optional
   MCP tool annotation hints with `read_only = ...`, `destructive = ...`,
-  `idempotent = ...`, and `open_world = ...`.
+  `idempotent = ...`, and `open_world = ...`. Direct submit tools default to
+  destructive open-world annotations unless overridden. Use repeated
+  `icon(src = "...", mime_type = "...", size = "...", theme = "light" | "dark")`
+  entries for MCP tool icons, and `task_support = "forbidden" | "optional" |
+  "required"` for MCP tool execution task support.
   Adding `context(MyContext)` emits context-submit inventory for forms that
   implement `gpui_form::mcp::McpContextSubmit<MyContext>`. Add
   `submit(path::to::async_fn)` to have the derive generate that impl instead;

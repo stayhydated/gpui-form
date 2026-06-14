@@ -423,12 +423,12 @@ pub fn expand_gpui_form(
                 #default_expr_tokens
             };
 
-            let field_variant_tokens = match field.component() {
-                Some(component_def) => {
-                    let component_variant_tokens = component_def.component_variant_tokens();
-                    quote! {
-                        #facade_crate::schema::registry::FieldVariant::component(
-                            #field_name_str,
+                let field_variant_constructor_tokens = match field.component() {
+                    Some(component_def) => {
+                        let component_variant_tokens = component_def.component_variant_tokens();
+                        quote! {
+                            #facade_crate::schema::registry::FieldVariant::component(
+                                #field_name_str,
                             #value_spec_tokens,
                             #component_variant_tokens
                         )
@@ -440,11 +440,33 @@ pub fn expand_gpui_form(
                             #field_name_str,
                             #value_spec_tokens
                         )
-                    }
-                },
-            };
+                        }
+                    },
+                };
+                let label_tokens = shared.metadata.label.as_ref().map(|label| {
+                    let label = syn::LitStr::new(label, shared.field_name().span());
+                    quote! { .with_label(#label) }
+                });
+                let description_tokens = shared.metadata.description.as_ref().map(|description| {
+                    let description = syn::LitStr::new(description, shared.field_name().span());
+                    quote! { .with_description(#description) }
+                });
+                let examples_tokens = (!shared.metadata.examples.is_empty()).then(|| {
+                    let examples = shared
+                        .metadata
+                        .examples
+                        .iter()
+                        .map(|example| syn::LitStr::new(example, shared.field_name().span()))
+                        .collect::<Vec<_>>();
+                    quote! { .with_examples(&[#(#examples),*]) }
+                });
 
-            Some(field_variant_tokens)
+                Some(quote! {
+                    #field_variant_constructor_tokens
+                    #label_tokens
+                    #description_tokens
+                    #examples_tokens
+                })
         })
         .collect();
 

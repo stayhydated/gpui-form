@@ -1,14 +1,27 @@
 use component_shape_codegen::{McpToolMetadataParts, mcp_tool_metadata_tokens};
 use gpui_form_codegen::metadata::rust_type_tokens;
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
-use syn::{DeriveInput, Path, Type};
+use koruma_derive_core::{ParsedValidatorUse, ValidatorTargetSelector, ValidatorTypeArg};
+use proc_macro2::{Span, TokenStream};
+use quote::{ToTokens, format_ident, quote};
+use syn::{DeriveInput, Expr, Lit, LitStr, Path, Type, UnOp, spanned::Spanned as _};
 
-use crate::derives::gpui_form::attrs::{McpContextSubmitOptions, McpToolOptions};
+use crate::derives::gpui_form::attrs::{
+    McpContextSubmitOptions, McpIconThemeOption, McpTaskSupportOption, McpToolOptions,
+};
 use crate::derives::gpui_form::holder_plan::{HolderConversionMode, ValueHolderPlan};
 use crate::derives::gpui_form::ir::{DeriveContext, FieldPlan, HolderFieldIr, HolderStoragePlan};
 
 type McpResult<T> = syn::Result<T>;
+
+struct FieldDescriptorTokens {
+    constants: Vec<TokenStream>,
+    descriptor: TokenStream,
+}
+
+struct ValidationRuleTokenPlan {
+    param_const: Option<TokenStream>,
+    rule: TokenStream,
+}
 
 fn field_value_presence_tokens(
     context: &DeriveContext,
@@ -129,7 +142,12 @@ fn field_decode_arm_tokens(context: &DeriveContext, field: &HolderFieldIr) -> To
     }
 }
 
-fn field_descriptor_tokens(context: &DeriveContext, field: &FieldPlan) -> Option<TokenStream> {
+fn field_descriptor_tokens(
+    context: &DeriveContext,
+    form_ident: &syn::Ident,
+    field_index: usize,
+    field: &FieldPlan,
+) -> Option<FieldDescriptorTokens> {
     let shared = field.shared()?;
     let facade_crate = &context.paths.gpui_form;
     let field_name_str = shared.field_name().to_string();
@@ -155,11 +173,368 @@ fn field_descriptor_tokens(context: &DeriveContext, field: &FieldPlan) -> Option
             )
         }
     };
+    let label_tokens = shared.metadata.label.as_ref().map(|label| {
+        let label = LitStr::new(label, shared.field_name().span());
+        quote! { .with_label(#label) }
+    });
+    let description_tokens = shared.metadata.description.as_ref().map(|description| {
+        let description = LitStr::new(description, shared.field_name().span());
+        quote! { .with_description(#description) }
+    });
+    let examples_tokens = (!shared.metadata.examples.is_empty()).then(|| {
+        let examples = shared
+            .metadata
+            .examples
+            .iter()
+            .map(|example| LitStr::new(example, shared.field_name().span()))
+            .collect::<Vec<_>>();
+        quote! { .with_examples(&[#(#examples),*]) }
+    });
+    let (validation_rule_consts, validation_rules_tokens) =
+        validation_rules_tokens(context, form_ident, field_index, shared);
 
-    Some(quote! {
+    let descriptor = quote! {
         #field_descriptor_constructor
         .with_default(#has_default)
+        #label_tokens
+        #description_tokens
+        #examples_tokens
+        #validation_rules_tokens
+    };
+
+    Some(FieldDescriptorTokens {
+        constants: validation_rule_consts,
+        descriptor,
     })
+}
+
+fn validation_rules_tokens(
+    context: &DeriveContext,
+    form_ident: &syn::Ident,
+    field_index: usize,
+    field: &HolderFieldIr,
+) -> (Vec<TokenStream>, Option<TokenStream>) {
+    let facade_crate = &context.paths.gpui_form;
+    let rules_const_ident = field_validation_rules_const_ident(form_ident, field_index);
+    let mut consts = Vec::new();
+    let mut rules = Vec::new();
+    let mut rule_index = 0_usize;
+
+    for validator in &field.validation.field_validators {
+        let plan = validation_rule_token_plan(
+            context,
+            quote! { #facade_crate::mcp::McpValidationScope::Field },
+            validator,
+            form_ident,
+            field_index,
+            rule_index,
+        );
+        if let Some(param_const) = plan.param_const {
+            consts.push(param_const);
+        }
+        rules.push(plan.rule);
+        rule_index += 1;
+    }
+
+    for validator in &field.validation.element_validators {
+        let plan = validation_rule_token_plan(
+            context,
+            quote! { #facade_crate::mcp::McpValidationScope::Element },
+            validator,
+            form_ident,
+            field_index,
+            rule_index,
+        );
+        if let Some(param_const) = plan.param_const {
+            consts.push(param_const);
+        }
+        rules.push(plan.rule);
+        rule_index += 1;
+    }
+
+    if rules.is_empty() {
+        return (consts, None);
+    }
+
+    consts.push(quote! {
+        #[doc(hidden)]
+        #[allow(non_upper_case_globals)]
+        const #rules_const_ident: &[#facade_crate::mcp::McpValidationRule] = &[
+            #(#rules),*
+        ];
+    });
+
+    (
+        consts,
+        Some(quote! {
+            .with_validation_rules(#rules_const_ident)
+        }),
+    )
+}
+
+fn validation_rule_token_plan(
+    context: &DeriveContext,
+    scope_tokens: TokenStream,
+    validator_use: &ParsedValidatorUse,
+    form_ident: &syn::Ident,
+    field_index: usize,
+    rule_index: usize,
+) -> ValidationRuleTokenPlan {
+    let facade_crate = &context.paths.gpui_form;
+    let validator = validator_use.validator();
+    let validator_name = LitStr::new(&validator.name().to_string(), validator.name().span());
+    let validator_path = LitStr::new(&validator.path_name(), validator.path().span());
+    let label_tokens = validator_use
+        .label()
+        .map(|label| {
+            let label = LitStr::new(&label.to_string(), validator_use.source_span());
+            quote! { Some(#label) }
+        })
+        .unwrap_or_else(|| quote! { None });
+    let target_tokens = match validator_use.target() {
+        ValidatorTargetSelector::Default => {
+            quote! { #facade_crate::mcp::McpValidationTarget::Default }
+        },
+        ValidatorTargetSelector::Full { .. } => {
+            quote! { #facade_crate::mcp::McpValidationTarget::Full }
+        },
+        ValidatorTargetSelector::Unwrapped { .. } => {
+            quote! { #facade_crate::mcp::McpValidationTarget::Unwrapped }
+        },
+    };
+    let type_arg_tokens = match validator.type_arg() {
+        ValidatorTypeArg::None => quote! { #facade_crate::mcp::McpValidationTypeArgMode::None },
+        ValidatorTypeArg::Infer => quote! { #facade_crate::mcp::McpValidationTypeArgMode::Infer },
+        ValidatorTypeArg::Explicit(_) => {
+            quote! { #facade_crate::mcp::McpValidationTypeArgMode::Explicit }
+        },
+    };
+    let params = validator
+        .setter_calls()
+        .iter()
+        .flat_map(|call| {
+            let method_name = call.method().to_string();
+            let arg_count = call.args().len();
+            call.args()
+                .iter()
+                .enumerate()
+                .map(move |(index, arg)| {
+                    let param_name = if arg_count == 1 {
+                        method_name.clone()
+                    } else {
+                        format!("{method_name}[{index}]")
+                    };
+                    let param_name = LitStr::new(&param_name, call.method().span());
+                    let expr = arg.as_expr();
+                    if let Some(literal) = literal_expr_string(expr) {
+                        let literal = LitStr::new(&literal, expr.span());
+                        quote! {
+                            #facade_crate::mcp::McpValidationParam::literal(
+                                #param_name,
+                                #literal
+                            )
+                        }
+                    } else {
+                        let expr = LitStr::new(&expr.to_token_stream().to_string(), expr.span());
+                        quote! {
+                            #facade_crate::mcp::McpValidationParam::expr(
+                                #param_name,
+                                #expr
+                            )
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let params_ident = field_validation_params_const_ident(form_ident, field_index, rule_index);
+    let (param_const, params_tokens) = if params.is_empty() {
+        (
+            None,
+            quote! { #facade_crate::mcp::MCP_VALIDATION_PARAMS_NONE },
+        )
+    } else {
+        (
+            Some(quote! {
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                const #params_ident: &[#facade_crate::mcp::McpValidationParam] = &[
+                    #(#params),*
+                ];
+            }),
+            quote! { #params_ident },
+        )
+    };
+
+    let rule = quote! {
+        #facade_crate::mcp::McpValidationRule::new(
+            #scope_tokens,
+            #validator_name,
+            #validator_path,
+            #label_tokens,
+            #target_tokens,
+            #type_arg_tokens,
+            #params_tokens,
+        )
+    };
+
+    ValidationRuleTokenPlan { param_const, rule }
+}
+
+fn field_validation_rules_const_ident(form_ident: &syn::Ident, field_index: usize) -> syn::Ident {
+    format_ident!("__{}GpuiFormMcpValidationRules{field_index}", form_ident)
+}
+
+fn field_validation_params_const_ident(
+    form_ident: &syn::Ident,
+    field_index: usize,
+    rule_index: usize,
+) -> syn::Ident {
+    format_ident!(
+        "__{}GpuiFormMcpValidationParams{field_index}_{rule_index}",
+        form_ident
+    )
+}
+
+fn literal_expr_string(expr: &Expr) -> Option<String> {
+    match expr {
+        Expr::Lit(lit) => literal_string(&lit.lit),
+        Expr::Unary(unary)
+            if matches!(unary.op, UnOp::Neg(_))
+                && matches!(
+                    unary.expr.as_ref(),
+                    Expr::Lit(expr_lit)
+                        if matches!(expr_lit.lit, Lit::Int(_) | Lit::Float(_))
+                ) =>
+        {
+            let Expr::Lit(lit) = unary.expr.as_ref() else {
+                return None;
+            };
+            literal_string(&lit.lit).map(|literal| format!("-{literal}"))
+        },
+        _ => None,
+    }
+}
+
+fn literal_string(lit: &Lit) -> Option<String> {
+    match lit {
+        Lit::Int(lit) => Some(lit.base10_digits().to_string()),
+        Lit::Float(lit) => Some(lit.base10_digits().to_string()),
+        Lit::Bool(lit) => Some(lit.value.to_string()),
+        Lit::Str(lit) => Some(lit.value()),
+        _ => None,
+    }
+}
+
+fn field_validation_issue_tokens(
+    context: &DeriveContext,
+    form_ident: &syn::Ident,
+    field_index: usize,
+    field: &HolderFieldIr,
+) -> TokenStream {
+    if field.validation.field_validators.is_empty()
+        && field.validation.element_validators.is_empty()
+    {
+        return quote! {};
+    }
+
+    let facade_crate = &context.paths.gpui_form;
+    let field_ident = field.field_name();
+    let field_name = field.field_name().to_string();
+    let rules_const_ident = field_validation_rules_const_ident(form_ident, field_index);
+    let field_issues = field
+        .validation
+        .field_validators
+        .iter()
+        .enumerate()
+        .map(|(rule_index, validator)| {
+            let getter = validator_getter_ident(validator);
+            quote! {
+                if let Some(__gpui_form_validator) = __gpui_form_field_error.#getter() {
+                    __gpui_form_issues.push(
+                        #facade_crate::mcp::McpValidationIssue::for_rule(
+                            #field_name,
+                            #rules_const_ident[#rule_index],
+                            ::std::format!("{__gpui_form_validator:?}")
+                        )
+                    );
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+    let element_issues = field
+        .validation
+        .element_validators
+        .iter()
+        .enumerate()
+        .map(|(element_rule_index, validator)| {
+            let rule_index = field.validation.field_validators.len() + element_rule_index;
+            let getter = validator_getter_ident(validator);
+            quote! {
+                if let Some(__gpui_form_validator) = __gpui_form_element_error.#getter() {
+                    __gpui_form_issues.push(
+                        #facade_crate::mcp::McpValidationIssue::for_rule(
+                            #field_name,
+                            #rules_const_ident[#rule_index],
+                            ::std::format!("{__gpui_form_validator:?}")
+                        )
+                        .with_element_index(*__gpui_form_index)
+                    );
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+    let element_loop = if element_issues.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            for (__gpui_form_index, __gpui_form_element_error) in
+                __gpui_form_field_error.element_errors()
+            {
+                #(#element_issues)*
+            }
+        }
+    };
+
+    quote! {
+        let __gpui_form_field_error = __gpui_form_validation_error.#field_ident();
+        #(#field_issues)*
+        #element_loop
+    }
+}
+
+fn validator_getter_ident(validator_use: &ParsedValidatorUse) -> syn::Ident {
+    if let Some(label) = validator_use.label() {
+        return syn::Ident::new(
+            &label.to_string(),
+            validator_use
+                .label_span()
+                .unwrap_or_else(|| validator_use.source_span()),
+        );
+    }
+
+    syn::Ident::new(
+        &upper_camel_to_snake(&validator_use.validator().name().to_string()),
+        validator_use.source_span(),
+    )
+}
+
+fn upper_camel_to_snake(input: &str) -> String {
+    let mut output = String::with_capacity(input.len());
+    let mut previous_was_lower_or_digit = false;
+    for ch in input.chars() {
+        if ch.is_ascii_uppercase() {
+            if previous_was_lower_or_digit {
+                output.push('_');
+            }
+            output.push(ch.to_ascii_lowercase());
+            previous_was_lower_or_digit = false;
+        } else {
+            output.push(ch);
+            previous_was_lower_or_digit = ch.is_ascii_lowercase() || ch.is_ascii_digit();
+        }
+    }
+    output
 }
 
 fn tool_metadata_tokens(
@@ -169,7 +544,8 @@ fn tool_metadata_tokens(
 ) -> McpResult<TokenStream> {
     let facade_crate = &context.paths.gpui_form;
     let mcp_crate: Path = syn::parse_quote!(#facade_crate::mcp);
-    mcp_tool_metadata_tokens(
+    let span = original_input.ident.span();
+    let mut tokens = mcp_tool_metadata_tokens(
         &mcp_crate,
         &original_input.attrs,
         McpToolMetadataParts {
@@ -181,8 +557,65 @@ fn tool_metadata_tokens(
             idempotent: options.and_then(|options| options.idempotent),
             open_world: options.and_then(|options| options.open_world),
         },
-        original_input.ident.span(),
-    )
+        span,
+    )?;
+
+    if let Some(options) = options {
+        if !options.icons.is_empty() {
+            let icons = options
+                .icons
+                .iter()
+                .map(|icon| icon_tokens(&mcp_crate, icon, span))
+                .collect::<Vec<_>>();
+            tokens = quote! {{
+                const MCP_TOOL_ICONS: &[#mcp_crate::McpToolIcon] = &[#(#icons),*];
+                (#tokens).with_icons(MCP_TOOL_ICONS)
+            }};
+        }
+        if let Some(task_support) = options.task_support {
+            let task_support = task_support_tokens(&mcp_crate, task_support);
+            tokens = quote! { (#tokens).with_task_support(#task_support) };
+        }
+    }
+
+    Ok(tokens)
+}
+
+fn icon_tokens(
+    mcp_crate: &Path,
+    icon: &crate::derives::gpui_form::attrs::McpIconOptions,
+    span: Span,
+) -> TokenStream {
+    let src = LitStr::new(&icon.src, span);
+    let mut tokens = quote! { #mcp_crate::McpToolIcon::new(#src) };
+    if let Some(mime_type) = icon.mime_type.as_deref() {
+        let mime_type = LitStr::new(mime_type, span);
+        tokens = quote! { #tokens.with_mime_type(#mime_type) };
+    }
+    if !icon.sizes.is_empty() {
+        let sizes = icon
+            .sizes
+            .iter()
+            .map(|size| LitStr::new(size, span))
+            .collect::<Vec<_>>();
+        tokens = quote! { #tokens.with_sizes(&[#(#sizes),*]) };
+    }
+    if let Some(theme) = icon.theme {
+        let theme = match theme {
+            McpIconThemeOption::Light => quote! { #mcp_crate::McpIconTheme::Light },
+            McpIconThemeOption::Dark => quote! { #mcp_crate::McpIconTheme::Dark },
+        };
+        tokens = quote! { #tokens.with_theme(#theme) };
+    }
+    tokens
+}
+
+fn task_support_tokens(mcp_crate: &Path, task_support: McpTaskSupportOption) -> TokenStream {
+    match task_support {
+        McpTaskSupportOption::Forbidden => quote! { #mcp_crate::McpToolTaskSupport::Forbidden },
+        McpTaskSupportOption::Optional => quote! { #mcp_crate::McpToolTaskSupport::Optional },
+        McpTaskSupportOption::Required => quote! { #mcp_crate::McpToolTaskSupport::Required },
+    }
 }
 
 fn context_submit_registration_tokens(
@@ -357,9 +790,16 @@ pub(super) fn generate_mcp_impl(
         mcp_tool_options.and_then(|options| options.context_submit.as_ref()),
     );
 
+    let mut field_descriptor_consts = Vec::new();
     let field_descriptors: Vec<TokenStream> = field_plans
         .iter()
-        .filter_map(|field| field_descriptor_tokens(context, field))
+        .enumerate()
+        .filter_map(|(field_index, field)| {
+            field_descriptor_tokens(context, original_ident, field_index, field).map(|tokens| {
+                field_descriptor_consts.extend(tokens.constants);
+                tokens.descriptor
+            })
+        })
         .collect();
     let field_decoders: Vec<TokenStream> = holder_plan
         .rendered_fields()
@@ -376,17 +816,89 @@ pub(super) fn generate_mcp_impl(
         .map(|field| field_decode_arm_tokens(context, field))
         .collect();
 
-    let validation_tokens = if enable_koruma {
-        quote! {
-            holder.validate().map_err(|error| {
-                #facade_crate::mcp::McpToolError::validation_details([format!("{error:?}")])
+    let validation_issue_extractors: Vec<TokenStream> = field_plans
+        .iter()
+        .enumerate()
+        .filter_map(|(field_index, field)| {
+            field.shared().map(|field| {
+                field_validation_issue_tokens(context, original_ident, field_index, field)
             })
+        })
+        .collect();
+    let validation_issue_tokens = if enable_koruma {
+        quote! {
+            match holder.validate() {
+                Ok(()) => Ok(()),
+                Err(__gpui_form_validation_error) => {
+                    let mut __gpui_form_issues = ::std::vec::Vec::new();
+                    #(#validation_issue_extractors)*
+                    if __gpui_form_issues.is_empty() {
+                        for __gpui_form_koruma_issue in
+                            ::koruma::ValidationIssues::issues(&__gpui_form_validation_error)
+                        {
+                            let __gpui_form_scope = match __gpui_form_koruma_issue.scope() {
+                                ::koruma::ValidationIssueScope::Form => {
+                                    #facade_crate::mcp::McpValidationScope::Form
+                                }
+                                ::koruma::ValidationIssueScope::Field => {
+                                    #facade_crate::mcp::McpValidationScope::Field
+                                }
+                                ::koruma::ValidationIssueScope::Element => {
+                                    #facade_crate::mcp::McpValidationScope::Element
+                                }
+                            };
+                            let mut __gpui_form_issue =
+                                #facade_crate::mcp::McpValidationIssue::custom(
+                                    __gpui_form_scope,
+                                    __gpui_form_koruma_issue.message().to_string(),
+                                );
+                            if let Some(__gpui_form_field) =
+                                __gpui_form_koruma_issue.field_name()
+                            {
+                                __gpui_form_issue =
+                                    __gpui_form_issue.with_field(__gpui_form_field);
+                            }
+                            if let Some(__gpui_form_validator) =
+                                __gpui_form_koruma_issue.validator()
+                            {
+                                __gpui_form_issue =
+                                    __gpui_form_issue.with_validator(__gpui_form_validator);
+                            }
+                            if let Some(__gpui_form_label) =
+                                __gpui_form_koruma_issue.label()
+                            {
+                                __gpui_form_issue =
+                                    __gpui_form_issue.with_label(__gpui_form_label);
+                            }
+                            if let Some(__gpui_form_element_index) =
+                                __gpui_form_koruma_issue.element_index()
+                            {
+                                __gpui_form_issue = __gpui_form_issue
+                                    .with_element_index(__gpui_form_element_index);
+                            }
+                            __gpui_form_issues.push(__gpui_form_issue);
+                        }
+                    }
+                    if __gpui_form_issues.is_empty() {
+                        __gpui_form_issues.push(
+                            #facade_crate::mcp::McpValidationIssue::form(
+                                ::std::format!("{__gpui_form_validation_error:?}")
+                            )
+                        );
+                    }
+                    Err(__gpui_form_issues)
+                }
+            }
         }
     } else {
         quote! {
             let _ = holder;
             Ok(())
         }
+    };
+    let validation_tokens = quote! {
+        <Self as #facade_crate::mcp::McpForm>::validate_holder_issues(holder)
+            .map_err(#facade_crate::mcp::validation_issues_error)
     };
 
     let model_impl = match holder_plan.conversion_mode() {
@@ -546,6 +1058,8 @@ pub(super) fn generate_mcp_impl(
     };
 
     Ok(quote! {
+        #(#field_descriptor_consts)*
+
         #[doc(hidden)]
         #[allow(non_upper_case_globals)]
         pub const #fields_const_ident: &[#facade_crate::mcp::McpField] = &[
@@ -583,6 +1097,22 @@ pub(super) fn generate_mcp_impl(
                 holder: &Self::ValueHolder
             ) -> Result<(), #facade_crate::mcp::McpToolError> {
                 #validation_tokens
+            }
+
+            fn validate_holder_issues(
+                holder: &Self::ValueHolder
+            ) -> Result<(), ::std::vec::Vec<#facade_crate::mcp::McpValidationIssue>> {
+                #validation_issue_tokens
+            }
+        }
+
+        impl #impl_generics #facade_crate::mcp::McpFormValidation
+            for #original_ident #ty_generics #where_clause
+        {
+            fn validate_holder_issues(
+                holder: &Self::ValueHolder
+            ) -> Result<(), ::std::vec::Vec<#facade_crate::mcp::McpValidationIssue>> {
+                <Self as #facade_crate::mcp::McpForm>::validate_holder_issues(holder)
             }
         }
 

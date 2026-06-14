@@ -370,8 +370,8 @@ impl PresentFieldPlan {
 mod tests {
     use super::*;
     use crate::derives::gpui_form::ir::{
-        FieldAttrContext, HolderStoragePlan, KorumaValidationInfo, RenderedValueIntent,
-        ValidationMetadata,
+        FieldAttrContext, FieldMetadata, HolderStoragePlan, KorumaValidationInfo,
+        RenderedValueIntent, ValidationMetadata,
     };
     use proc_macro2::Span;
 
@@ -385,6 +385,7 @@ mod tests {
             storage,
             validation: KorumaValidationInfo::default(),
             validation_metadata: ValidationMetadata::default(),
+            metadata: FieldMetadata::default(),
             default_expr: None,
             default_span: None,
             value_mapping: RenderedValueIntent::Identity,

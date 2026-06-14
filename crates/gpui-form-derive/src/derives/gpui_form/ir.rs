@@ -67,6 +67,13 @@ impl FieldContext {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct FieldMetadata {
+    pub label: Option<String>,
+    pub description: Option<String>,
+    pub examples: Vec<String>,
+}
+
 #[derive(Clone, Debug)]
 pub struct TypeOverride(pub Type);
 
@@ -223,6 +230,7 @@ pub struct HolderFieldIr {
     pub storage: HolderStoragePlan,
     pub validation: KorumaValidationInfo,
     pub validation_metadata: ValidationMetadata,
+    pub metadata: FieldMetadata,
     pub default_expr: Option<Expr>,
     pub default_span: Option<Span>,
     pub value_mapping: RenderedValueIntent,
