@@ -372,10 +372,10 @@ fn validation_rule_token_plan(
             #validator_name,
             #validator_path,
             #label_tokens,
-            #target_tokens,
             #type_arg_tokens,
             #params_tokens,
         )
+        .with_target(#target_tokens)
     };
 
     ValidationRuleTokenPlan { param_const, rule }
