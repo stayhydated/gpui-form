@@ -585,11 +585,7 @@ impl McpFormResourceUris {
     }
 }
 
-struct McpFormResourceSpec {
-    uri: String,
-    definition: ResourceDefinition,
-    value: Arc<Value>,
-}
+type McpFormResourceSpec = component_shape_mcp::McpJsonResourceSpec;
 
 /// MCP prompt template names generated for one form descriptor.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -761,7 +757,7 @@ fn form_field_descriptor_value(field: McpField) -> Value {
     );
     object.insert(
         "mcp_input".to_string(),
-        mcp_input_descriptor_value(field.mcp_input()),
+        component_shape_mcp::mcp_input_descriptor_value(field.mcp_input()),
     );
     if !field.validation_rules().is_empty() {
         object.insert(
@@ -777,39 +773,6 @@ fn form_field_descriptor_value(field: McpField) -> Value {
     }
     object.insert("schema".to_string(), schema_for_field(field).into_value());
     Value::Object(object)
-}
-
-fn mcp_input_descriptor_value(input: McpInput) -> Value {
-    match input.input_shape() {
-        McpInputShape::Unsupported => serde_json::json!({
-            "supported": false,
-            "shape": "unsupported",
-        }),
-        McpInputShape::Scalar(kind) => serde_json::json!({
-            "supported": true,
-            "shape": "scalar",
-            "primitive": kind.as_str(),
-        }),
-        McpInputShape::List(kind) => serde_json::json!({
-            "supported": true,
-            "shape": "list",
-            "items": kind.as_str(),
-        }),
-        McpInputShape::Set(kind) => serde_json::json!({
-            "supported": true,
-            "shape": "set",
-            "items": kind.as_str(),
-        }),
-        McpInputShape::Range(kind) => serde_json::json!({
-            "supported": true,
-            "shape": "range",
-            "bound": kind.as_str(),
-        }),
-        McpInputShape::Object => serde_json::json!({
-            "supported": true,
-            "shape": "object",
-        }),
-    }
 }
 
 /// Register descriptor, schema, and examples resources for one form.
@@ -829,8 +792,7 @@ fn register_form_resources_for_descriptor(
     descriptor: McpFormDescriptor,
 ) -> Result<(), McpToolError> {
     let specs = form_resource_specs(descriptor)?;
-    ensure_resource_specs_available(server, &specs)?;
-    register_form_resource_specs(server, specs)
+    component_shape_mcp::register_json_resource_specs(server, specs)
 }
 
 fn form_resource_specs(
@@ -871,56 +833,14 @@ fn form_json_resource_spec(
     description: String,
     value: Value,
 ) -> Result<McpFormResourceSpec, McpToolError> {
-    let definition = component_shape_mcp::resource_definition(
-        uri.clone(),
-        name,
-        Some(title),
-        Some(description),
-        Some("application/json".to_string()),
-    )?;
-    Ok(McpFormResourceSpec {
-        uri,
-        definition,
-        value: Arc::new(value),
-    })
-}
-
-fn register_form_resource_specs(
-    server: &mut McpServer,
-    specs: Vec<McpFormResourceSpec>,
-) -> Result<(), McpToolError> {
-    for spec in specs {
-        let uri = spec.uri.clone();
-        let value = Arc::clone(&spec.value);
-        server.add_resource(spec.definition, move || {
-            component_shape_mcp::json_resource_result(uri.clone(), value.as_ref())
-                .expect("gpui-form generated resource JSON should encode")
-        })?;
-    }
-    Ok(())
+    component_shape_mcp::McpJsonResourceSpec::new(uri, name, Some(title), Some(description), value)
 }
 
 fn register_form_resource_specs_if_missing(
     server: &mut McpServer,
     specs: Vec<McpFormResourceSpec>,
 ) -> Result<(), McpToolError> {
-    if specs.iter().all(|spec| server.contains_resource(&spec.uri)) {
-        return Ok(());
-    }
-    ensure_resource_specs_available(server, &specs)?;
-    register_form_resource_specs(server, specs)
-}
-
-fn ensure_resource_specs_available(
-    server: &McpServer,
-    specs: &[McpFormResourceSpec],
-) -> Result<(), McpToolError> {
-    for spec in specs {
-        if server.contains_resource(&spec.uri) {
-            return Err(McpToolError::duplicate_resource(spec.uri.clone()));
-        }
-    }
-    Ok(())
+    component_shape_mcp::register_json_resource_specs_if_missing(server, specs)
 }
 
 fn form_resource_specs_for_options(

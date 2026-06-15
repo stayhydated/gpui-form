@@ -3228,6 +3228,7 @@ dependencies = [
  "chrono",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
  "gpui-form-collection",
+ "gpui-form-component",
  "gpui-form-core",
  "gpui-form-derive",
  "gpui-form-mcp",

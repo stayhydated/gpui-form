@@ -33,6 +33,7 @@ gpui-form-schema = { workspace = true }
 chrono = { workspace = true }
 gpui = { workspace = true }
 gpui-form-collection = { workspace = true }
+gpui-form-component = { features = [ "component-shape" ], workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }
 rust_decimal = { workspace = true }
