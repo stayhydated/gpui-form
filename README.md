@@ -836,12 +836,14 @@ pub struct User {
             )
         )
     )]
-    pub birth_date: Option<Timestamp>,
+    pub birth_date: Timestamp,
 }
 ```
 
 This pattern is useful when the model stores a domain-specific timestamp type
-but the UI should edit a calendar date.
+but the UI should edit a calendar date. With no `default = ...`, non-optional
+date fields start empty in the generated holder and are still required when
+calling `try_into_original()` or generated `validate()`.
 The collection `DatePicker` and `DateRangePicker` shapes use the upstream
 `gpui_component::date_picker::DatePicker` runtime. Range fields use
 `gpui_component::date_picker::DatePickerState::range` under the hood.

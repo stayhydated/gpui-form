@@ -102,8 +102,7 @@ pub struct User {
             type = chrono::NaiveDate,
             from_source = to_form_datetime,
             into_source = to_model_timestamp,
-        ),
-        default = Timestamp::from_micros_since_unix_epoch(0)
+        )
     ))]
     pub birth_date: Timestamp,
 
@@ -146,4 +145,19 @@ fn to_model_timestamp(value: chrono::NaiveDate) -> Timestamp {
     let datetime =
         chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(naive_datetime, chrono::Utc);
     Timestamp::from_micros_since_unix_epoch(datetime.timestamp_micros())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_holder_leaves_required_birth_date_empty() {
+        let holder = UserFormValueHolder::default();
+
+        assert!(holder.birth_date.is_none());
+
+        let error = holder.into_original(false).unwrap_err();
+        assert_eq!(error.field_name, "birth_date");
+    }
 }
