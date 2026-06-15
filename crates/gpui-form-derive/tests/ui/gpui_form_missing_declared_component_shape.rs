@@ -1,6 +1,6 @@
 use gpui_form_derive::GpuiForm;
 use gpui_form_runtime::shape::{
-    ComponentShapeMetadata, GpuiComponentShape, GpuiComponentShapeFor,
+    ComponentShapeFor, ComponentShapeMetadata, GpuiComponentShape, GpuiComponentShapeFor,
     GpuiFormComponentShapePolicy, NoGpuiRenderComponent, RequiredValueStorage,
 };
 
@@ -28,6 +28,8 @@ impl GpuiComponentShape for ManualShape {
 impl GpuiFormComponentShapePolicy for ManualShape {
     type ValueStoragePolicy = RequiredValueStorage;
 }
+
+impl<T> ComponentShapeFor<T> for ManualShape {}
 
 impl<T> GpuiComponentShapeFor<T> for ManualShape {}
 

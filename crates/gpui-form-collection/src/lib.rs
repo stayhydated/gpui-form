@@ -42,7 +42,7 @@ mod tests {
         switch::Switch,
     };
     use chrono::NaiveDate;
-    use component_shape::{ComponentShapeFor, DeclaredComponentShape};
+    use component_shape::DeclaredComponentShape;
     use gpui::{EventEmitter, Hsla};
     use gpui_component::slider::SliderValue;
     use gpui_form_runtime::shape::{
@@ -58,7 +58,7 @@ mod tests {
 
     fn assert_shape_for<Shape, Value>()
     where
-        Shape: ComponentShapeFor<Value> + GpuiComponentShapeFor<Value>,
+        Shape: GpuiComponentShapeFor<Value>,
     {
     }
 

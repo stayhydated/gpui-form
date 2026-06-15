@@ -26,7 +26,7 @@ pub mod infinite_select;
 mod tests {
     use std::path::PathBuf;
 
-    use component_shape::{ComponentShapeFor, DeclaredComponentShape};
+    use component_shape::DeclaredComponentShape;
     use gpui::EventEmitter;
     use gpui_form_runtime::shape::{
         GpuiComponentEventOf, GpuiComponentShape, GpuiComponentShapeFor, GpuiComponentStateOf,
@@ -46,7 +46,7 @@ mod tests {
 
     fn assert_shape_for<Shape, Value>()
     where
-        Shape: ComponentShapeFor<Value> + GpuiComponentShapeFor<Value>,
+        Shape: GpuiComponentShapeFor<Value>,
     {
     }
 
