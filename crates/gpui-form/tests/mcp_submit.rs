@@ -17,9 +17,9 @@ use koruma_collection::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+#[cfg(feature = "runtime")]
+use std::{fmt, str::FromStr};
 use std::{
-    fmt,
-    str::FromStr,
     sync::{Arc, Mutex, mpsc},
     time::Duration,
 };
@@ -94,6 +94,7 @@ pub struct ConstrainedRequest {
     retries: u32,
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentRequest {
@@ -101,18 +102,21 @@ pub struct ComponentRequest {
     title: String,
 }
 
+#[cfg(feature = "runtime")]
 #[derive(
     Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
 #[serde(transparent)]
 pub struct ComponentOnlyValue(String);
 
+#[cfg(feature = "runtime")]
 impl fmt::Display for ComponentOnlyValue {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(formatter)
     }
 }
 
+#[cfg(feature = "runtime")]
 impl FromStr for ComponentOnlyValue {
     type Err = std::convert::Infallible;
 
@@ -158,6 +162,7 @@ impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
     }
 }
 
+#[cfg(feature = "runtime")]
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentNoSchemaRequest {
@@ -441,7 +446,7 @@ fn test_server() -> McpServer {
 }
 
 #[test]
-fn generated_mcp_schema_marks_required_optional_default_and_component_fields() {
+fn generated_mcp_schema_marks_required_optional_and_default_fields() {
     let schema = PlainRequest::descriptor().input_schema();
 
     assert_eq!(schema["type"], "object");
@@ -457,12 +462,6 @@ fn generated_mcp_schema_marks_required_optional_default_and_component_fields() {
         true
     );
     assert_eq!(schema["required"], json!(["title"]));
-
-    let component_schema = ComponentRequest::descriptor().input_schema();
-    assert_eq!(
-        component_schema["properties"]["title"]["x-gpuiFormComponentBacked"],
-        true
-    );
 
     let custom_schema = CustomSchemaRequest::descriptor().input_schema();
     assert_eq!(custom_schema["properties"]["account_id"]["type"], "integer");
@@ -499,6 +498,16 @@ fn generated_mcp_schema_marks_required_optional_default_and_component_fields() {
     assert_eq!(
         enum_schema["properties"]["priority"]["enum"],
         json!(["low", "high-priority", "urgent"])
+    );
+}
+
+#[cfg(feature = "runtime")]
+#[test]
+fn generated_mcp_schema_marks_component_backed_fields() {
+    let component_schema = ComponentRequest::descriptor().input_schema();
+    assert_eq!(
+        component_schema["properties"]["title"]["x-gpuiFormComponentBacked"],
+        true
     );
 }
 
@@ -555,6 +564,7 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
     assert!(registered_names.contains(&MetadataRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&ExplicitModelRequest::descriptor().tool_name()));
     assert!(registered_names.contains(&ExplicitHolderRequest::descriptor().tool_name()));
+    #[cfg(feature = "runtime")]
     assert!(!registered_names.contains(&ComponentRequest::descriptor().tool_name()));
 
     let plain_editor_names = editor_tool_names(PlainRequest::descriptor());
@@ -608,12 +618,15 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
         Some(gpui_form::mcp::McpToolTaskSupport::Optional)
     );
 
-    let component_editor_names = editor_tool_names(ComponentRequest::descriptor());
-    assert!(registered_names.contains(&component_editor_names.open));
-    assert!(registered_names.contains(&component_editor_names.list));
-    assert!(registered_names.contains(&component_editor_names.patch));
-    assert!(registered_names.contains(&component_editor_names.close_all));
-    assert!(!registered_names.contains(&component_editor_names.submit));
+    #[cfg(feature = "runtime")]
+    {
+        let component_editor_names = editor_tool_names(ComponentRequest::descriptor());
+        assert!(registered_names.contains(&component_editor_names.open));
+        assert!(registered_names.contains(&component_editor_names.list));
+        assert!(registered_names.contains(&component_editor_names.patch));
+        assert!(registered_names.contains(&component_editor_names.close_all));
+        assert!(!registered_names.contains(&component_editor_names.submit));
+    }
 
     let plain_submit = tools
         .iter()
@@ -1608,8 +1621,9 @@ fn koruma_validation_runs_before_submit_handler() {
     );
 }
 
+#[cfg(feature = "runtime")]
 #[test]
-fn component_backed_field_decodes_without_gpui_runtime() {
+fn component_backed_field_decodes_through_shape_schema() {
     let mut server = test_server();
     form::<ComponentRequest>(&mut server)
         .model(|request| {
@@ -2304,6 +2318,7 @@ fn editor_bulk_patch_rejects_invalid_values_without_partial_mutation() {
     );
 }
 
+#[cfg(feature = "runtime")]
 #[test]
 fn editor_tools_patch_component_backed_fields_through_shape_schema() {
     let mut server = test_server();
@@ -2465,6 +2480,7 @@ fn generated_mcp_submit_reuses_mcp_tool_input_as_field_schema() {
     );
 }
 
+#[cfg(feature = "runtime")]
 #[test]
 fn component_backed_field_uses_typed_schema_when_shape_input_is_unavailable() {
     let schema = ComponentNoSchemaRequest::descriptor().input_schema();

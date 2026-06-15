@@ -14,6 +14,11 @@ gpui-form = { version = "0.5.1", default-features = false, features = ["derive",
 serde = { version = "1", features = ["derive"] }
 ```
 
+Enable the `chrono` or `rust_decimal` features on `gpui-form` when MCP-visible
+form fields or handler response types use `chrono` dates/times or
+`rust_decimal::Decimal`. Direct users of `gpui-form-mcp` can enable the same
+feature names on this crate.
+
 Keep the `gpui-form` defaults, or enable its `runtime` feature, when the same
 crate also renders component-backed GPUI forms or references
 `gpui_form::runtime`.

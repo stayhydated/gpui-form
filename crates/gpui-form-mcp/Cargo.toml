@@ -12,6 +12,11 @@ repository.workspace = true
 readme = "README.md"
 keywords = [ "gpui", "gpui-component", "form", "mcp" ]
 
+[features]
+chrono = [ "component-shape-mcp/chrono" ]
+default = [  ]
+rust_decimal = [ "component-shape-mcp/rust_decimal" ]
+
 [dependencies]
 component-shape-mcp = { workspace = true }
 gpui-form-schema = { workspace = true }
@@ -19,6 +24,10 @@ inventory = { workspace = true }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+chrono = { workspace = true }
+rust_decimal = { workspace = true }
 
 [lints]
 workspace = true

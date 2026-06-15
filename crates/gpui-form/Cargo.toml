@@ -13,11 +13,13 @@ readme = "README.md"
 keywords = [ "gpui", "gpui-component", "form" ]
 
 [features]
+chrono = [ "gpui-form-mcp?/chrono" ]
 default = [ "derive", "runtime" ]
 derive = [ "dep:gpui-form-derive" ]
 inventory = [ "gpui-form-derive?/inventory" ]
 mcp = [ "dep:gpui-form-mcp", "inventory", "gpui-form-derive?/mcp" ]
 runtime = [ "dep:gpui-form-runtime" ]
+rust_decimal = [ "gpui-form-mcp?/rust_decimal" ]
 
 [dependencies]
 bon = { workspace = true }
@@ -28,10 +30,12 @@ gpui-form-runtime = { optional = true, workspace = true }
 gpui-form-schema = { workspace = true }
 
 [dev-dependencies]
+chrono = { workspace = true }
 gpui = { workspace = true }
 gpui-form-collection = { workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }
+rust_decimal = { workspace = true }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
 

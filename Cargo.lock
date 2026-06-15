@@ -1370,6 +1370,7 @@ dependencies = [
  "component-shape",
  "component-shape-mcp-macros",
  "rmcp",
+ "rust_decimal",
  "serde",
  "serde_json",
  "strum 0.28.0",
@@ -3224,6 +3225,7 @@ name = "gpui-form"
 version = "0.5.1"
 dependencies = [
  "bon",
+ "chrono",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=b077f41a9f26ae5ed7fadfea55a501d34afb25de)",
  "gpui-form-collection",
  "gpui-form-core",
@@ -3233,6 +3235,7 @@ dependencies = [
  "gpui-form-schema",
  "koruma",
  "koruma-collection",
+ "rust_decimal",
  "serde",
  "serde_json",
 ]
@@ -3373,9 +3376,11 @@ dependencies = [
 name = "gpui-form-mcp"
 version = "0.5.1"
 dependencies = [
+ "chrono",
  "component-shape-mcp",
  "gpui-form-schema",
  "inventory",
+ "rust_decimal",
  "serde",
  "serde_json",
  "thiserror 2.0.18",

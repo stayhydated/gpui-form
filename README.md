@@ -48,6 +48,9 @@ component-shape-gpui = "*"
 # Optional: experimental MCP submit integration
 # gpui-form = { version = "*", features = ["mcp"] }
 
+# Optional: MCP schema support for chrono and decimal values
+# gpui-form = { version = "*", features = ["mcp", "chrono", "rust_decimal"] }
+
 # Optional: headless MCP-only forms without the GPUI runtime re-export
 # gpui-form = { version = "*", default-features = false, features = ["derive", "mcp"] }
 ```
@@ -237,6 +240,10 @@ form types, because generated MCP tools are discovered through inventory.
 gpui-form = { version = "*", default-features = false, features = ["derive", "mcp"] }
 serde = { version = "1", features = ["derive"] }
 ```
+
+Enable `chrono` or `rust_decimal` too when MCP-visible form fields or handler
+response types use `chrono` dates/times or `rust_decimal::Decimal`; those
+features publish the matching `gpui_form::mcp::McpJsonSchema` impls.
 
 Keep the default features, or enable `runtime`, when the same crate also
 renders component-backed GPUI forms or references `gpui_form::runtime`.

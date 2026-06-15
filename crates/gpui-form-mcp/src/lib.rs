@@ -4467,6 +4467,24 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "chrono")]
+    #[test]
+    fn mcp_json_schema_supports_chrono_when_feature_enabled() {
+        let schema = <chrono::NaiveDate as super::McpJsonSchema>::json_schema();
+
+        assert_eq!(schema["type"], "string");
+        assert_eq!(schema["format"], "date");
+    }
+
+    #[cfg(feature = "rust_decimal")]
+    #[test]
+    fn mcp_json_schema_supports_decimal_when_feature_enabled() {
+        let schema = <rust_decimal::Decimal as super::McpJsonSchema>::json_schema();
+
+        assert_eq!(schema["anyOf"][0]["type"], "number");
+        assert_eq!(schema["anyOf"][1]["type"], "string");
+    }
+
     #[test]
     fn input_schema_uses_field_tool_value_schema_when_no_component_input_exists() {
         type UserId = u64;
