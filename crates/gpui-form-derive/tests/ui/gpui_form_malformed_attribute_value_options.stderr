@@ -4,7 +4,7 @@ error: `value(type = ...)` requires an explicit `from_source = ...` conversion
 5 |     #[gpui_form(component(crate::InputShape, value(type = String, into_source = std::convert::identity)))]
   |                                                    ^^^^
 
-error: `value(type = ...)` requires an explicit `into_source = ...` conversion
+error: `value(type = ...)` requires an explicit `into_source = ...` or `try_into_source = ...` conversion
   --> tests/ui/gpui_form_malformed_attribute_value_options.rs:11:52
    |
 11 |     #[gpui_form(component(crate::InputShape, value(type = String, from_source = std::convert::identity)))]

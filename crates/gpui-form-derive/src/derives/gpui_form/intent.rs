@@ -455,9 +455,9 @@ mod tests {
         let error = ComponentField::from_field(&field).expect_err("field should fail");
 
         assert!(
-            error
-                .to_string()
-                .contains("requires an explicit `into_source = ...` conversion"),
+            error.to_string().contains(
+                "requires an explicit `into_source = ...` or `try_into_source = ...` conversion"
+            ),
             "unexpected error: {error}"
         );
     }

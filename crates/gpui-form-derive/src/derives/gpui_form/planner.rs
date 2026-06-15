@@ -3,8 +3,8 @@ use syn::DeriveInput;
 use crate::derives::gpui_form::components::generate_component_field;
 use crate::derives::gpui_form::intent::{ComponentFieldIntent, ComponentStruct};
 use crate::derives::gpui_form::ir::{
-    ComponentFieldPlan, FieldPlan, HolderFieldIr, HolderStoragePlan, KorumaValidationInfo,
-    RenderedValueIntent,
+    ComponentFieldPlan, ConvertedValueIntent, FieldPlan, HolderFieldIr, HolderStoragePlan,
+    KorumaValidationInfo, RenderedValueIntent, Spanned, TypeOverride,
 };
 use crate::derives::gpui_form::utils::extract_option_inner_type;
 use crate::derives::gpui_form::validation::{
@@ -68,11 +68,15 @@ pub fn plan_form(
                 "field attribute must provide rendered options unless the field is `skip`d",
             )
         })?;
-        let value_mapping = rendered.value.clone();
+        let value_mapping =
+            lower_rendered_value_mapping(rendered.value.clone(), &source_value_type);
         let form_type = match &value_mapping {
             RenderedValueIntent::Identity => source_value_type.clone(),
             RenderedValueIntent::Converted(converted) => {
                 extract_option_inner_type(&converted.form_type.value.0).1
+            },
+            RenderedValueIntent::KorumaNewtype { .. } => {
+                unreachable!("`value(koruma_newtype)` should be lowered before form type planning")
             },
         };
 
@@ -144,4 +148,39 @@ pub fn plan_form(
         enable_koruma_fluent,
         effective_enable_koruma,
     })
+}
+
+fn lower_rendered_value_mapping(
+    value_mapping: RenderedValueIntent,
+    source_value_type: &syn::Type,
+) -> RenderedValueIntent {
+    let RenderedValueIntent::KorumaNewtype { span } = value_mapping else {
+        return value_mapping;
+    };
+
+    let form_type = syn::parse_quote_spanned! {span=>
+        <#source_value_type as ::koruma::NewtypeValue>::Inner
+    };
+    let from_source = syn::parse_quote_spanned! {span=>
+        <#source_value_type as ::koruma::NewtypeValue>::into_inner
+    };
+    let into_source = syn::parse_quote_spanned! {span=>
+        <#source_value_type as ::koruma::NewtypeTryFromInner>::try_from_inner
+    };
+
+    RenderedValueIntent::Converted(Box::new(ConvertedValueIntent {
+        form_type: Spanned {
+            value: TypeOverride(form_type),
+            span,
+        },
+        from_source: Spanned {
+            value: from_source,
+            span,
+        },
+        into_source: Spanned {
+            value: into_source,
+            span,
+        },
+        into_source_is_fallible: true,
+    }))
 }

@@ -986,7 +986,16 @@ pub(super) fn generate_mcp_impl(
                         holder: Self::ValueHolder
                     ) -> Result<Self, #facade_crate::mcp::McpToolError> {
                         holder.try_into_original().map_err(|error| {
-                            #facade_crate::mcp::McpToolError::conversion(error.to_string())
+                            #facade_crate::mcp::validation_issues_error(
+                                vec![
+                                    #facade_crate::mcp::McpValidationIssue::custom(
+                                        #facade_crate::mcp::McpValidationScope::Field,
+                                        error.to_string()
+                                    )
+                                    .with_field(error.field_name)
+                                    .with_validator(error.validator_name())
+                                ]
+                            )
                         })
                     }
                 }

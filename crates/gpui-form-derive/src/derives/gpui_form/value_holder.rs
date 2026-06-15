@@ -170,36 +170,63 @@ impl HolderStorageStrategy for HolderStoragePlan {
         match self {
             HolderStoragePlan::OriginallyOptional => {
                 if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
+                    let converted =
+                        apply_into_conversion_result(field, quote! { value }, error_type);
                     Ok(quote! {
-                        #access.map(|value| #converted)
+                        #access.map(|value| #converted).transpose()?
                     })
                 } else {
                     Ok(access)
                 }
             },
             HolderStoragePlan::Direct => {
-                let converted = apply_into_conversion(field, access);
+                let converted = apply_into_conversion_result(field, access, error_type);
                 Ok(quote! {
-                    #converted
+                    #converted?
                 })
             },
             HolderStoragePlan::ShapePolicy { .. } => {
                 let base_type = form_base_type(field);
                 let field_name_str = field_name.to_string();
-                let converted = apply_into_conversion(field, quote! { value });
                 let policy = shape_policy_type_tokens(context, field)?;
                 let runtime_crate = context.paths.gpui_form_facade_runtime();
-                Ok(quote! {
-                    <#policy
-                        as #runtime_crate::shape::ValueStorage<#base_type>>::try_map_into_value(
-                            #access,
-                            |value| #converted,
-                            #error_type {
-                                field_name: #field_name_str
+                if let Some(default_expr) = field.default_expr() {
+                    let default_span = field.default_expr_span();
+                    let default_original = source_default_tokens(default_expr, default_span);
+                    let converted =
+                        apply_into_conversion_result(field, quote! { value }, error_type);
+                    Ok(quote! {
+                        {
+                            let __gpui_form_value =
+                                <#policy
+                                    as #runtime_crate::shape::ValueStorage<#base_type>>::map_into_value(
+                                        #access,
+                                        ::core::option::Option::Some,
+                                        || ::core::option::Option::None,
+                                    );
+                            if let Some(value) = __gpui_form_value {
+                                #converted?
+                            } else {
+                                #default_original
                             }
-                        )?
-                })
+                        }
+                    })
+                } else {
+                    let converted =
+                        apply_into_conversion_result(field, quote! { value }, error_type);
+                    Ok(quote! {
+                        {
+                            let value =
+                                <#policy
+                                    as #runtime_crate::shape::ValueStorage<#base_type>>::try_map_into_value(
+                                        #access,
+                                        ::core::convert::identity,
+                                        #error_type::missing_required(#field_name_str)
+                                    )?;
+                            #converted?
+                        }
+                    })
+                }
             },
         }
     }
@@ -329,12 +356,23 @@ impl HolderStorageStrategy for HolderStoragePlan {
         match self {
             HolderStoragePlan::OriginallyOptional => {
                 if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
-                    Ok(quote! {
-                        if let Some(value) = self.#field_name.clone() {
-                            entries.push(#present_field_ident::#variant_ident(#converted));
-                        }
-                    })
+                    if field.form_to_source_is_fallible() {
+                        let converted = apply_try_into_conversion_raw(field, quote! { value });
+                        Ok(quote! {
+                            if let Some(value) = self.#field_name.clone() {
+                                if let Ok(value) = #converted {
+                                    entries.push(#present_field_ident::#variant_ident(value));
+                                }
+                            }
+                        })
+                    } else {
+                        let converted = apply_into_conversion(field, quote! { value });
+                        Ok(quote! {
+                            if let Some(value) = self.#field_name.clone() {
+                                entries.push(#present_field_ident::#variant_ident(#converted));
+                            }
+                        })
+                    }
                 } else {
                     Ok(quote! {
                         if let Some(value) = self.#field_name.as_ref() {
@@ -345,11 +383,21 @@ impl HolderStorageStrategy for HolderStoragePlan {
             },
             HolderStoragePlan::Direct => {
                 if needs_into_conversion(field) {
-                    let converted = apply_into_conversion(field, quote! { value });
-                    Ok(quote! {
-                        let value = self.#field_name.clone();
-                        entries.push(#present_field_ident::#variant_ident(#converted));
-                    })
+                    if field.form_to_source_is_fallible() {
+                        let converted = apply_try_into_conversion_raw(field, quote! { value });
+                        Ok(quote! {
+                            let value = self.#field_name.clone();
+                            if let Ok(value) = #converted {
+                                entries.push(#present_field_ident::#variant_ident(value));
+                            }
+                        })
+                    } else {
+                        let converted = apply_into_conversion(field, quote! { value });
+                        Ok(quote! {
+                            let value = self.#field_name.clone();
+                            entries.push(#present_field_ident::#variant_ident(#converted));
+                        })
+                    }
                 } else {
                     Ok(quote! {
                         entries.push(#present_field_ident::#variant_ident(&self.#field_name));
@@ -358,20 +406,37 @@ impl HolderStorageStrategy for HolderStoragePlan {
             },
             HolderStoragePlan::ShapePolicy { .. } => {
                 let base_type = form_base_type(field);
-                let converted = apply_into_conversion(field, quote! { value });
                 let policy = shape_policy_type_tokens(context, field)?;
                 let runtime_crate = context.paths.gpui_form_facade_runtime();
-                Ok(quote! {
-                    if let Some(value) =
-                        <#policy
-                            as #runtime_crate::shape::ValueStorage<#base_type>>::map_present_cloned(
-                                &self.#field_name,
-                                |value| #converted
-                            )
-                    {
-                        entries.push(#present_field_ident::#variant_ident(value));
-                    }
-                })
+                if field.form_to_source_is_fallible() {
+                    let converted = apply_try_into_conversion_raw(field, quote! { value });
+                    Ok(quote! {
+                        if let Some(value) =
+                            <#policy
+                                as #runtime_crate::shape::ValueStorage<#base_type>>::map_present_cloned(
+                                    &self.#field_name,
+                                    ::core::convert::identity
+                                )
+                        {
+                            if let Ok(value) = #converted {
+                                entries.push(#present_field_ident::#variant_ident(value));
+                            }
+                        }
+                    })
+                } else {
+                    let converted = apply_into_conversion(field, quote! { value });
+                    Ok(quote! {
+                        if let Some(value) =
+                            <#policy
+                                as #runtime_crate::shape::ValueStorage<#base_type>>::map_present_cloned(
+                                    &self.#field_name,
+                                    |value| #converted
+                                )
+                        {
+                            entries.push(#present_field_ident::#variant_ident(value));
+                        }
+                    })
+                }
             },
         }
     }
@@ -438,6 +503,43 @@ fn apply_into_conversion(field: &HolderFieldIr, value: TokenStream) -> TokenStre
     )
 }
 
+fn apply_into_conversion_result(
+    field: &HolderFieldIr,
+    value: TokenStream,
+    error_type: &syn::Ident,
+) -> TokenStream {
+    if let Some(conversion) = field.form_to_source_expr() {
+        let span = field.form_to_source_span();
+        if field.form_to_source_is_fallible() {
+            let field_name = field.field_name().to_string();
+            quote_spanned! {span=>
+                (#conversion)(#value)
+                    .map_err(|error| #error_type::invalid_value(#field_name, error))
+            }
+        } else {
+            quote_spanned! {span=>
+                ::core::result::Result::Ok((#conversion)(#value))
+            }
+        }
+    } else {
+        quote! {
+            ::core::result::Result::Ok(#value)
+        }
+    }
+}
+
+fn apply_try_into_conversion_raw(field: &HolderFieldIr, value: TokenStream) -> TokenStream {
+    let Some(conversion) = field.form_to_source_expr() else {
+        return quote! { ::core::result::Result::Ok(#value) };
+    };
+    let span = field.form_to_source_span();
+    if field.form_to_source_is_fallible() {
+        quote_spanned! {span=> (#conversion)(#value) }
+    } else {
+        quote_spanned! {span=> ::core::result::Result::Ok((#conversion)(#value)) }
+    }
+}
+
 fn needs_from_conversion(field: &HolderFieldIr) -> bool {
     field.source_to_form_expr().is_some()
 }
@@ -480,17 +582,32 @@ fn conversion_signature_assertions(
             let span = shared.form_to_source_span();
             let assert_ident =
                 format_ident!("__{}_assert_{}_form_to_source", wrapped_ident, field_name);
-            assertions.push(quote_spanned! {span=>
-                #[allow(dead_code, non_snake_case)]
-                fn #assert_ident #original_impl_generics() #where_clause {
-                    fn assert_form_to_source<F>(_: F)
-                    where
-                        F: ::core::ops::FnOnce(#form_type) -> #source_type,
-                    {}
+            if shared.form_to_source_is_fallible() {
+                assertions.push(quote_spanned! {span=>
+                    #[allow(dead_code, non_snake_case)]
+                    fn #assert_ident #original_impl_generics() #where_clause {
+                        fn assert_form_to_source<F, E>(_: F)
+                        where
+                            F: ::core::ops::FnOnce(#form_type) -> ::core::result::Result<#source_type, E>,
+                            E: ::core::fmt::Debug,
+                        {}
 
-                    assert_form_to_source(#expr);
-                }
-            });
+                        assert_form_to_source(#expr);
+                    }
+                });
+            } else {
+                assertions.push(quote_spanned! {span=>
+                    #[allow(dead_code, non_snake_case)]
+                    fn #assert_ident #original_impl_generics() #where_clause {
+                        fn assert_form_to_source<F>(_: F)
+                        where
+                            F: ::core::ops::FnOnce(#form_type) -> #source_type,
+                        {}
+
+                        assert_form_to_source(#expr);
+                    }
+                });
+            }
         }
     }
 
@@ -516,19 +633,84 @@ fn try_from_field_tokens(
 }
 
 fn generate_conversion_error_type(error_name: &syn::Ident) -> TokenStream {
+    let kind_name = format_ident!("{error_name}Kind");
     quote! {
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub enum #kind_name {
+            MissingRequired,
+            InvalidValue,
+        }
+
+        #[derive(Clone, Debug, Eq, PartialEq)]
         pub struct #error_name {
             pub field_name: &'static str,
+            kind: #kind_name,
+            detail: Option<String>,
+        }
+
+        impl #error_name {
+            pub fn missing_required(field_name: &'static str) -> Self {
+                Self {
+                    field_name,
+                    kind: #kind_name::MissingRequired,
+                    detail: None,
+                }
+            }
+
+            pub fn invalid_value(
+                field_name: &'static str,
+                error: impl ::core::fmt::Debug,
+            ) -> Self {
+                Self {
+                    field_name,
+                    kind: #kind_name::InvalidValue,
+                    detail: Some(::std::format!("{error:?}")),
+                }
+            }
+
+            pub fn kind(&self) -> #kind_name {
+                self.kind
+            }
+
+            pub fn detail(&self) -> Option<&str> {
+                self.detail.as_deref()
+            }
+
+            pub fn validator_name(&self) -> &'static str {
+                match self.kind {
+                    #kind_name::MissingRequired => "required",
+                    #kind_name::InvalidValue => "conversion",
+                }
+            }
         }
 
         impl ::core::fmt::Display for #error_name {
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                write!(
-                    f,
-                    "Missing required value for field '{}'",
-                    self.field_name
-                )
+                match self.kind {
+                    #kind_name::MissingRequired => {
+                        write!(
+                            f,
+                            "Missing required value for field '{}'",
+                            self.field_name
+                        )
+                    },
+                    #kind_name::InvalidValue => {
+                        if let Some(detail) = self.detail() {
+                            write!(
+                                f,
+                                "Invalid value for field '{}': {}",
+                                self.field_name,
+                                detail
+                            )
+                        } else {
+                            write!(
+                                f,
+                                "Invalid value for field '{}'",
+                                self.field_name
+                            )
+                        }
+                    },
+                }
             }
         }
 

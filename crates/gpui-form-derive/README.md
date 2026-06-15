@@ -84,7 +84,9 @@ Supporting field attributes:
 - `#[gpui_form(hidden(default = <expr>))]`
 - `#[gpui_form(skip)]`
 - `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
+- `#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, try_into_source = <expr>), default = <expr>))]`
 - `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>), default = <expr>))]`
+- `#[gpui_form(hidden(value(koruma_newtype)))]`
 - `#[gpui_form(label = "...")]`
 - `#[gpui_form(description = "...")]`
 - `#[gpui_form(example = "...")]`
@@ -93,9 +95,13 @@ Every non-empty-form field must choose exactly one intent: component, hidden,
 or skipped. Use `hidden` for value-holder-only fields. Defaults and value
 conversion options belong inside the component or hidden intent; `from_source`
 maps source model values into form values, and `into_source` maps form values
-back into source values. MCP field descriptions infer from `///` rustdoc when
-no explicit `description = ...` is present; labels default from the field name,
-and `example = ...` may be repeated.
+back into source values. Use `try_into_source` when that reverse conversion
+returns `Result<Source, Error>` with `Error: Debug`. Use
+`value(koruma_newtype)` for
+struct-level `#[koruma(newtype)]` fields that should edit their inner value and
+reconstruct through `NewtypeTryFromInner`. MCP field descriptions infer from
+`///` rustdoc when no explicit `description = ...` is present; labels default
+from the field name, and `example = ...` may be repeated.
 
 Supporting struct attributes:
 
@@ -123,7 +129,8 @@ Behavior notes:
   fields; shapes that can synthesize a default value keep generated value-holder
   storage as `T`, while required shapes use `Option<T>` and fail conversion when
   missing. Generated `validate()` reports missing required shape values.
-  Fallible holder-to-model paths expose `holder.try_into_original()`;
+  Fallible holder-to-model paths, including `try_into_source` and
+  `value(koruma_newtype)` fields, expose `holder.try_into_original()`;
   infallible paths expose `holder.into_original()` and implement `From` when
   the derive can prove infallibility directly, such as optional fields, direct
   fields, or shape-backed fields with a declared field default. Shape-backed
@@ -193,7 +200,8 @@ Behavior notes:
   macro resolves the facade crate
   path, so renamed `gpui-form` dependencies work like the derive output.
 - `value(type = ..., from_source = ..., into_source = ...)` lets the generated
-  holder edit a type that differs from the original model field. The `type = ...`
+  holder edit a type that differs from the original model field. Use
+  `try_into_source = ...` for checked reverse conversion. The `type = ...`
   option is the form-side base value type; use `type = T`, not
   `type = Option<T>`, even when the source field is optional.
 - `gpui_form_collection::input::Input::<_>`,

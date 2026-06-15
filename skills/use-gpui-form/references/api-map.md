@@ -91,7 +91,9 @@ Common field attributes:
 #[gpui_form(component(<shape>, default = <expr>))]
 #[gpui_form(hidden(default = <expr>))]
 #[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
+#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, try_into_source = <expr>)))]
 #[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
+#[gpui_form(hidden(value(koruma_newtype)))]
 #[gpui_form(skip)]
 ```
 
@@ -104,7 +106,11 @@ Every field must choose exactly one intent: component, `hidden`, or `skip`.
 Use `hidden` for value-holder-only fields. `skip` cannot be combined with
 component or hidden intent on the same field. `value(type = ...)` expects the
 form-side base value type, so use `type = T`, not `type = Option<T>`, even when
-the source field is optional.
+the source field is optional. Use `try_into_source = ...` when the reverse
+conversion returns `Result<Source, Error>` with `Error: Debug`, and use
+`value(koruma_newtype)` for
+struct-level `#[koruma(newtype)]` fields that should edit and validate their
+inner value.
 
 Common struct attributes:
 
@@ -466,7 +472,10 @@ pub struct User {
 ```
 
 This is useful for dates, paths, numeric newtypes, and other domain-specific
-wrappers.
+wrappers. Replace `into_source` with `try_into_source` when reconstruction can
+fail. For Koruma newtypes, `value(koruma_newtype)` expands to the public
+`NewtypeValue` / `NewtypeTryFromInner` trait surface and works with private
+wrapper fields.
 
 ## Component Shape Patterns
 

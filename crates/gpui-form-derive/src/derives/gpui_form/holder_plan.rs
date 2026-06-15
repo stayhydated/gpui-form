@@ -169,6 +169,10 @@ impl HolderConversionPlan {
         let mut predicates = Vec::new();
         let mut has_maybe_fallible_field = false;
         let has_skipped_fields = fields.iter().any(FieldPlan::is_skipped);
+        let has_fallible_conversion = fields
+            .iter()
+            .filter_map(FieldPlan::shared)
+            .any(HolderFieldIr::form_to_source_is_fallible);
 
         for field in fields.iter().filter_map(FieldPlan::shared) {
             if field.default_expr().is_some() {
@@ -185,6 +189,8 @@ impl HolderConversionPlan {
 
         let fallibility = if has_skipped_fields {
             ConversionFallibility::Always
+        } else if has_fallible_conversion {
+            ConversionFallibility::Always
         } else if predicates.is_empty() {
             ConversionFallibility::Never
         } else {
@@ -192,7 +198,7 @@ impl HolderConversionPlan {
         };
         let mode = if has_skipped_fields {
             HolderConversionMode::SkippedFields
-        } else if has_maybe_fallible_field {
+        } else if has_maybe_fallible_field || has_fallible_conversion {
             HolderConversionMode::FallibleRequired
         } else {
             HolderConversionMode::Infallible
@@ -317,6 +323,7 @@ impl<'a> HolderDefaultPlan<'a> {
 pub struct HolderConversionFieldPlan {
     pub needs_from_conversion: bool,
     pub needs_into_conversion: bool,
+    pub into_conversion_is_fallible: bool,
 }
 
 impl HolderConversionFieldPlan {
@@ -324,6 +331,7 @@ impl HolderConversionFieldPlan {
         Self {
             needs_from_conversion: field.source_to_form_expr().is_some(),
             needs_into_conversion: field.form_to_source_expr().is_some(),
+            into_conversion_is_fallible: field.form_to_source_is_fallible(),
         }
     }
 }

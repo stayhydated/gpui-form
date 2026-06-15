@@ -11,6 +11,7 @@ use gpui_form::{
         tool_definitions_with_options,
     },
 };
+use koruma::NewtypeValue as _;
 use koruma_collection::{
     collection::{LenValidation, NonEmptyValidation},
     numeric::RangeValidation,
@@ -92,6 +93,27 @@ pub struct ConstrainedRequest {
     #[gpui_form(hidden)]
     #[koruma(RangeValidation::<_>::min(1).max(5).exclusive_max(true))]
     retries: u32,
+}
+
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Deserialize,
+    gpui_form::mcp::McpJsonSchema,
+    koruma::Koruma,
+    PartialEq,
+    Serialize,
+)]
+#[serde(transparent)]
+#[koruma(newtype)]
+pub struct RequestCode(#[koruma(LenValidation::<_>::min(2).max(8))] String);
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(mcp)]
+pub struct NewtypeConvertedRequest {
+    #[gpui_form(hidden(value(koruma_newtype)))]
+    code: RequestCode,
 }
 
 #[cfg(feature = "runtime")]
@@ -1618,6 +1640,51 @@ fn koruma_validation_runs_before_submit_handler() {
         result.content[0]
             .as_text()
             .is_some_and(|text| text.text.contains("validation failed"))
+    );
+}
+
+#[test]
+fn koruma_newtype_conversion_reports_structured_validation_before_submit_handler() {
+    let mut server = test_server();
+    let called = Arc::new(Mutex::new(false));
+    let called_by_handler = Arc::clone(&called);
+    form::<NewtypeConvertedRequest>(&mut server)
+        .model(move |request| {
+            *called_by_handler.lock().expect("handler flag lock") = true;
+            Ok::<ObjectResponse, String>(object_response(json!({
+                "code": request.code.into_inner()
+            })))
+        })
+        .expect("tool should register");
+
+    let result = server.call_tool(
+        &NewtypeConvertedRequest::descriptor().tool_name(),
+        Some(json!({ "code": "x" })),
+    );
+
+    assert_eq!(result.is_error, Some(true));
+    assert!(
+        !*called.lock().expect("handler flag lock"),
+        "invalid newtype input should fail before handler execution"
+    );
+    let error = result
+        .structured_content
+        .as_ref()
+        .expect("validation should be structured")
+        .get("error")
+        .expect("structured validation error");
+    assert_eq!(error["kind"], json!("validation"));
+    let details = error["details"]
+        .as_array()
+        .expect("validation details should be an array");
+    assert_eq!(details.len(), 1);
+    assert_eq!(details[0]["scope"], json!("field"));
+    assert_eq!(details[0]["field"], json!("code"));
+    assert_eq!(details[0]["validator"], json!("conversion"));
+    assert!(
+        details[0]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("Invalid value for field 'code'"))
     );
 }
 

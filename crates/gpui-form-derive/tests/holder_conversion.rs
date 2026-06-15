@@ -1,12 +1,43 @@
 use gpui_form_derive::GpuiForm;
 use koruma::ValidationError as _;
+use koruma::{NewtypeTryFromInner as _, NewtypeValue as _};
+use koruma_collection::collection::LenValidation;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct NonDefault(String);
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct SourceCode(String);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FallibleCode(String);
+
+#[derive(Clone, Copy)]
+pub struct FallibleCodeError;
+
+impl fmt::Debug for FallibleCodeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("expected at least two characters")
+    }
+}
+
+fn fallible_code_to_form(value: FallibleCode) -> String {
+    value.0
+}
+
+fn try_form_to_fallible_code(value: String) -> Result<FallibleCode, FallibleCodeError> {
+    if value.len() >= 2 {
+        Ok(FallibleCode(value))
+    } else {
+        Err(FallibleCodeError)
+    }
+}
+
+#[derive(Clone, Debug, Eq, koruma::Koruma, PartialEq)]
+#[koruma(newtype)]
+pub struct ValidatedCode(#[koruma(LenValidation::<_>::min(2).max(8))] String);
 
 pub struct State;
 
@@ -72,6 +103,22 @@ pub struct ConvertedDefaultDemo {
 pub struct DirectStorageDemo {
     #[gpui_form(component(AllowShape))]
     value: String,
+}
+
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+pub struct FallibleConvertedDemo {
+    #[gpui_form(hidden(value(
+        type = String,
+        from_source = fallible_code_to_form,
+        try_into_source = try_form_to_fallible_code,
+    )))]
+    value: FallibleCode,
+}
+
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+pub struct KorumaNewtypeConvertedDemo {
+    #[gpui_form(hidden(value(koruma_newtype)))]
+    value: ValidatedCode,
 }
 
 #[test]
@@ -147,5 +194,69 @@ fn direct_storage_shape_value_try_into_original_succeeds() {
         DirectStorageDemo {
             value: "ready".to_string()
         }
+    );
+}
+
+#[test]
+fn fallible_value_conversion_uses_try_into_original() {
+    let holder = FallibleConvertedDemoFormValueHolder::from(FallibleConvertedDemo {
+        value: FallibleCode("AB".to_string()),
+    });
+    assert_eq!(holder.value, "AB");
+
+    let model = holder
+        .try_into_original()
+        .expect("valid form value should convert");
+    assert_eq!(
+        model,
+        FallibleConvertedDemo {
+            value: FallibleCode("AB".to_string())
+        }
+    );
+
+    let err = FallibleConvertedDemoFormValueHolder {
+        value: "A".to_string(),
+    }
+    .try_into_original()
+    .expect_err("invalid form value should fail conversion");
+
+    assert_eq!(err.field_name, "value");
+    assert_eq!(err.validator_name(), "conversion");
+    assert_eq!(err.detail(), Some("expected at least two characters"));
+    assert_eq!(
+        err.to_string(),
+        "Invalid value for field 'value': expected at least two characters"
+    );
+}
+
+#[test]
+fn koruma_newtype_value_conversion_uses_inner_value_holder() {
+    let source_value =
+        ValidatedCode::try_from_inner("ZX-81".to_string()).expect("fixture should validate");
+    let holder = KorumaNewtypeConvertedDemoFormValueHolder::from(KorumaNewtypeConvertedDemo {
+        value: source_value,
+    });
+    assert_eq!(holder.value, "ZX-81");
+
+    let model = holder
+        .try_into_original()
+        .expect("valid inner value should reconstruct newtype");
+    assert_eq!(
+        model.value.into_inner(),
+        "ZX-81",
+        "newtype reconstruction should preserve the edited inner value"
+    );
+
+    let err = KorumaNewtypeConvertedDemoFormValueHolder {
+        value: "Z".to_string(),
+    }
+    .try_into_original()
+    .expect_err("invalid inner value should fail newtype validation");
+
+    assert_eq!(err.field_name, "value");
+    assert_eq!(err.validator_name(), "conversion");
+    assert!(
+        err.detail()
+            .is_some_and(|detail| detail.contains("LenValidation"))
     );
 }

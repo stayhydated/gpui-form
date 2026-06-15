@@ -21,8 +21,10 @@ mod kw {
     syn::custom_keyword!(from_source);
     syn::custom_keyword!(hidden);
     syn::custom_keyword!(into_source);
+    syn::custom_keyword!(koruma_newtype);
     syn::custom_keyword!(label);
     syn::custom_keyword!(skip);
+    syn::custom_keyword!(try_into_source);
     syn::custom_keyword!(value);
 }
 
@@ -654,7 +656,7 @@ fn parse_structured_field_options(
 fn parse_structured_value_options(input: ParseStream<'_>) -> syn::Result<RenderedValueIntent> {
     if input.is_empty() {
         return Err(input.error(
-            "expected `type = ...`, `from_source = ...`, or `into_source = ...` in `value(...)`",
+            "expected `type = ...`, `from_source = ...`, `into_source = ...`, `try_into_source = ...`, or `koruma_newtype` in `value(...)`",
         ));
     }
 
@@ -683,16 +685,35 @@ fn parse_structured_value_options(input: ParseStream<'_>) -> syn::Result<Rendere
         } else if input.peek(kw::into_source) {
             let key = input.parse::<kw::into_source>()?;
             input.parse::<Token![=]>()?;
-            if options.form_to_source.is_some() {
+            if options.form_to_source.is_some() || options.try_form_to_source.is_some() {
                 return Err(syn::Error::new_spanned(
                     key,
-                    "duplicate `into_source` option in `value(...)`; remove the duplicate `into_source` entry",
+                    "duplicate reverse conversion option in `value(...)`; use only one of `into_source` or `try_into_source`",
                 ));
             }
             options.form_to_source = Some(Spanned::new(input.parse()?, &key));
+        } else if input.peek(kw::try_into_source) {
+            let key = input.parse::<kw::try_into_source>()?;
+            input.parse::<Token![=]>()?;
+            if options.form_to_source.is_some() || options.try_form_to_source.is_some() {
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate reverse conversion option in `value(...)`; use only one of `into_source` or `try_into_source`",
+                ));
+            }
+            options.try_form_to_source = Some(Spanned::new(input.parse()?, &key));
+        } else if input.peek(kw::koruma_newtype) {
+            let key = input.parse::<kw::koruma_newtype>()?;
+            if options.koruma_newtype_span.is_some() {
+                return Err(syn::Error::new_spanned(
+                    key,
+                    "duplicate `koruma_newtype` option in `value(...)`; remove the duplicate entry",
+                ));
+            }
+            options.koruma_newtype_span = Some(key.span);
         } else {
             return Err(input.error(
-                "expected `type = ...`, `from_source = ...`, or `into_source = ...` in `value(...)`",
+                "expected `type = ...`, `from_source = ...`, `into_source = ...`, `try_into_source = ...`, or `koruma_newtype` in `value(...)`",
             ));
         }
 
@@ -715,41 +736,82 @@ struct ParsedFieldIntentOptions {
 struct ParsedValueOptions {
     r#type: Option<Spanned<TypeOverride>>,
     form_to_source: Option<Spanned<Expr>>,
+    try_form_to_source: Option<Spanned<Expr>>,
     source_to_form: Option<Spanned<Expr>>,
+    koruma_newtype_span: Option<Span>,
 }
 
 impl ParsedValueOptions {
     fn into_intent(self) -> syn::Result<RenderedValueIntent> {
-        match (self.r#type, self.source_to_form, self.form_to_source) {
-            (None, None, None) => Err(syn::Error::new(
+        if let Some(span) = self.koruma_newtype_span {
+            if self.r#type.is_some()
+                || self.source_to_form.is_some()
+                || self.form_to_source.is_some()
+                || self.try_form_to_source.is_some()
+            {
+                return Err(syn::Error::new(
+                    span,
+                    "`value(koruma_newtype)` cannot be combined with `type`, `from_source`, `into_source`, or `try_into_source`",
+                ));
+            }
+            return Ok(RenderedValueIntent::KorumaNewtype { span });
+        }
+
+        match (
+            self.r#type,
+            self.source_to_form,
+            self.form_to_source,
+            self.try_form_to_source,
+        ) {
+            (None, None, None, None) => Err(syn::Error::new(
                 Span::call_site(),
-                "expected `type = ...`, `from_source = ...`, or `into_source = ...` in `value(...)`",
+                "expected `type = ...`, `from_source = ...`, `into_source = ...`, `try_into_source = ...`, or `koruma_newtype` in `value(...)`",
             )),
-            (Some(form_type), Some(from_source), Some(into_source)) => {
+            (Some(form_type), Some(from_source), Some(into_source), None) => {
                 reject_option_form_type_override(&form_type.value.0, form_type.span)?;
                 Ok(RenderedValueIntent::Converted(Box::new(
                     ConvertedValueIntent {
                         form_type,
                         from_source,
                         into_source,
+                        into_source_is_fallible: false,
                     },
                 )))
             },
-            (Some(form_type), None, _) => Err(syn::Error::new(
+            (Some(form_type), Some(from_source), None, Some(into_source)) => {
+                reject_option_form_type_override(&form_type.value.0, form_type.span)?;
+                Ok(RenderedValueIntent::Converted(Box::new(
+                    ConvertedValueIntent {
+                        form_type,
+                        from_source,
+                        into_source,
+                        into_source_is_fallible: true,
+                    },
+                )))
+            },
+            (Some(_), Some(_), Some(into_source), Some(_)) => Err(syn::Error::new(
+                into_source.span,
+                "`value(...)` accepts only one reverse conversion; use `into_source = ...` for infallible conversion or `try_into_source = ...` for fallible conversion",
+            )),
+            (Some(form_type), None, _, _) => Err(syn::Error::new(
                 form_type.span,
                 "`value(type = ...)` requires an explicit `from_source = ...` conversion",
             )),
-            (Some(form_type), _, None) => Err(syn::Error::new(
+            (Some(form_type), _, None, None) => Err(syn::Error::new(
                 form_type.span,
-                "`value(type = ...)` requires an explicit `into_source = ...` conversion",
+                "`value(type = ...)` requires an explicit `into_source = ...` or `try_into_source = ...` conversion",
             )),
-            (None, Some(from_source), _) => Err(syn::Error::new(
+            (None, Some(from_source), _, _) => Err(syn::Error::new(
                 from_source.span,
                 "`from_source = ...` requires `type = ...` in the same `value(...)` option",
             )),
-            (None, _, Some(into_source)) => Err(syn::Error::new(
+            (None, _, Some(into_source), _) => Err(syn::Error::new(
                 into_source.span,
                 "`into_source = ...` requires `type = ...` in the same `value(...)` option",
+            )),
+            (None, _, _, Some(into_source)) => Err(syn::Error::new(
+                into_source.span,
+                "`try_into_source = ...` requires `type = ...` in the same `value(...)` option",
             )),
         }
     }
@@ -825,6 +887,48 @@ mod tests {
     }
 
     #[test]
+    fn raw_field_options_parse_fallible_value_conversion() {
+        let parsed = parse_options(quote! {
+            hidden(value(
+                type = String,
+                from_source = to_form,
+                try_into_source = try_to_source,
+            ))
+        })
+        .expect("fallible value conversion should parse");
+
+        let Some(GpuiFormFieldOption::Hidden { options, .. }) = parsed.first() else {
+            panic!("expected hidden option");
+        };
+        let RenderedValueIntent::Converted(converted) = &options.value else {
+            panic!("expected converted value intent");
+        };
+
+        assert!(converted.into_source_is_fallible);
+        assert_eq!(
+            converted.into_source.value.to_token_stream().to_string(),
+            "try_to_source"
+        );
+    }
+
+    #[test]
+    fn raw_field_options_parse_koruma_newtype_shortcut() {
+        let parsed = parse_options(quote! {
+            hidden(value(koruma_newtype))
+        })
+        .expect("koruma newtype shortcut should parse");
+
+        let Some(GpuiFormFieldOption::Hidden { options, .. }) = parsed.first() else {
+            panic!("expected hidden option");
+        };
+
+        assert!(matches!(
+            options.value,
+            RenderedValueIntent::KorumaNewtype { .. }
+        ));
+    }
+
+    #[test]
     fn raw_field_options_reject_unknown_option() {
         let error = parse_options(quote! { field_suffix = "input" })
             .expect_err("unknown options should fail");
@@ -843,9 +947,9 @@ mod tests {
         .expect_err("incomplete value conversion should fail");
 
         assert!(
-            error
-                .to_string()
-                .contains("requires an explicit `into_source = ...` conversion"),
+            error.to_string().contains(
+                "requires an explicit `into_source = ...` or `try_into_source = ...` conversion"
+            ),
             "unexpected error: {error}"
         );
     }

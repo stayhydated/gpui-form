@@ -85,12 +85,14 @@ pub struct ConvertedValueIntent {
     pub form_type: Spanned<TypeOverride>,
     pub from_source: Spanned<Expr>,
     pub into_source: Spanned<Expr>,
+    pub into_source_is_fallible: bool,
 }
 
 #[derive(Clone, Debug)]
 pub enum RenderedValueIntent {
     Identity,
     Converted(Box<ConvertedValueIntent>),
+    KorumaNewtype { span: Span },
 }
 
 impl RenderedValueIntent {
@@ -98,6 +100,7 @@ impl RenderedValueIntent {
         match self {
             Self::Identity => None,
             Self::Converted(converted) => Some(&converted.from_source),
+            Self::KorumaNewtype { .. } => None,
         }
     }
 
@@ -105,6 +108,14 @@ impl RenderedValueIntent {
         match self {
             Self::Identity => None,
             Self::Converted(converted) => Some(&converted.into_source),
+            Self::KorumaNewtype { .. } => None,
+        }
+    }
+
+    pub fn form_to_source_is_fallible(&self) -> bool {
+        match self {
+            Self::Identity | Self::KorumaNewtype { .. } => false,
+            Self::Converted(converted) => converted.into_source_is_fallible,
         }
     }
 }
@@ -290,6 +301,10 @@ impl HolderFieldIr {
             .form_to_source()
             .map(|into_source| into_source.span)
             .unwrap_or(self.context.option_span)
+    }
+
+    pub fn form_to_source_is_fallible(&self) -> bool {
+        self.value_mapping.form_to_source_is_fallible()
     }
 
     /// Returns true if this rendered field needs the `RequiredValidation`

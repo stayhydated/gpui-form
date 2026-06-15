@@ -10,7 +10,7 @@ error: duplicate `from_source` option in `value(...)`; remove the duplicate `fro
 16 |             from_source = std::convert::identity,
    |             ^^^^^^^^^^^
 
-error: duplicate `into_source` option in `value(...)`; remove the duplicate `into_source` entry
+error: duplicate reverse conversion option in `value(...)`; use only one of `into_source` or `try_into_source`
   --> tests/ui/gpui_form_duplicate_field_options.rs:31:13
    |
 31 |             into_source = std::convert::identity,

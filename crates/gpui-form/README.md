@@ -146,13 +146,15 @@ Shapes that can safely synthesize a default value, such as the built-in inputs,
 selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
 generated value-holder storage as `T`. Shapes that require a present value use
 `Option<T>` storage; generated `validate()` reports a missing value and
-conversion back to the source model fails when the value is missing. Those
-fallible holder-to-model paths expose `holder.try_into_original()`; infallible
-paths expose `holder.into_original()` and implement `From` when the derive can
-prove infallibility directly, such as optional fields, direct fields, or
-shape-backed fields with a declared field default. Shape-backed fields without
-a declared field default keep the checked `try_into_original()` API even when
-the reusable shape implements `GpuiFormComponentShapePolicy` with `DirectValueStorage`.
+conversion back to the source model fails when the value is missing. Fields
+that use `try_into_source = ...` or `value(koruma_newtype)` can also fail
+source reconstruction. Those fallible holder-to-model paths expose
+`holder.try_into_original()`; infallible paths expose `holder.into_original()`
+and implement `From` when the derive can prove infallibility directly, such as
+optional fields, direct fields, or shape-backed fields with a declared field
+default. Shape-backed fields without a declared field default keep the checked
+`try_into_original()` API even when the reusable shape implements
+`GpuiFormComponentShapePolicy` with `DirectValueStorage`.
 
 Common field-level helpers:
 
@@ -171,6 +173,9 @@ Common field-level helpers:
   require `into_original(skipped_value, ...)` for reconstruction.
 - `value(type = <form_type>, from_source = <expr>, into_source = <expr>)`
   lets the generated form edit a type that differs from the original field type.
+  Use `try_into_source = <expr>` instead of `into_source = <expr>` when the
+  form-to-source conversion returns `Result<Source, Error>` with
+  `Error: Debug`.
   `type = ...` is the form-side base value type, so write `type = T` rather
   than `type = Option<T>`; source field optionality controls holder storage.
   Put it inside the field intent:
@@ -178,6 +183,11 @@ Common field-level helpers:
   or `#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]`.
   Defaults are also intent-scoped, for example
   `#[gpui_form(component(<shape>, value(...), default = <expr>))]`.
+- `value(koruma_newtype)` edits the inner value of a struct-level
+  `#[koruma(newtype)]` field using `NewtypeValue::into_inner` and reconstructs
+  the source model with `NewtypeTryFromInner::try_from_inner`. This works for
+  private tuple or named newtype fields and keeps invalid inner values on the
+  checked `try_into_original()` / MCP validation path.
 - `gpui_form_collection::input::Input::<_>` and
   `gpui_form_collection::number_input::NumberInput::<_>` parse non-`String`
   form-side value types with `FromStr` in prototyping output, so value objects
@@ -199,8 +209,8 @@ Common field-level helpers:
   const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use intent-scoped
-  `value(type = ..., from_source = ..., into_source = ...)` to validate a
-  form-side type.
+  `value(type = ..., from_source = ..., into_source = ...)` or
+  `try_into_source = ...` to validate a form-side type.
 
 `gpui_form_component::infinite_select::InfiniteSelect::<_>` expects the
 field type to derive `gpui_form_component::InfiniteSelect`, which implements

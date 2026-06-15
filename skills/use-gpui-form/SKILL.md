@@ -45,9 +45,13 @@ helpers and component-specific derives explicitly:
    intent-scoped `default = ...` inside `component(...)` or `hidden(...)` for initial form values,
    `#[gpui_form(skip)]` for model fields that should not render as widgets, and
    `#[gpui_form(component(Shape, value(type = ..., from_source = ..., into_source = ...), default = ...))]`
-   when the UI edits a form-side type that differs from the model field. Do not
-   use `Option<T>` in `value(type = ...)`; write the form-side base type `T`
-   and let the source field optionality control holder storage. Do not combine
+   when the UI edits a form-side type that differs from the model field. Use
+   `try_into_source = ...` when the reverse conversion returns `Result` with a
+   debug-formatted error, and
+   `value(koruma_newtype)` when editing the inner value of a struct-level
+   `#[koruma(newtype)]` field. Do not use `Option<T>` in `value(type = ...)`;
+   write the form-side base type `T` and let the source field optionality control
+   holder storage. Do not combine
    `skip` with component or hidden intent on the same field. Text input
    prototyping parses non-`String` form-side types with `FromStr`.
 7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
@@ -151,7 +155,14 @@ Common patterns:
   session `errors`, and field-level `errors`; generated MCP validation uses
   gpui-form's field rule metadata first and falls back to Koruma's generic
   `ValidationIssues` output when no field-specific extractor is available.
-- Convert generated holders with `holder.try_into_original()` when conversion can fail or when a required shape-backed field has no declared default, `holder.into_original()` when it is statically infallible, or `holder.into_original(skipped_value, ...)` when the source model has skipped fields that the form cannot edit. For skipped-field debug UI, format `holder.present_fields()` outside the generated holder instead of expecting a JSON helper.
+- Convert generated holders with `holder.try_into_original()` when conversion
+  can fail, when a field uses `try_into_source` or `value(koruma_newtype)`, or
+  when a required shape-backed field has no declared default,
+  `holder.into_original()` when it is statically infallible, or
+  `holder.into_original(skipped_value, ...)` when the source model has skipped
+  fields that the form cannot edit. For skipped-field debug UI, format
+  `holder.present_fields()` outside the generated holder instead of expecting a
+  JSON helper.
 - For MCP submit integration, keep GPUI as a presentation surface over the same
   holder and submit handler. MCP tool calls should populate the generated value
   holder from structured JSON, run generated validation, and call an
