@@ -1,6 +1,7 @@
 use darling::{Error as DarlingError, FromMeta};
 use proc_macro2::Span;
 use quote::ToTokens as _;
+use strum::EnumString;
 use syn::{
     Expr, Ident, Lit, Meta, Token, Type,
     parse::{Parse, ParseStream, Parser},
@@ -65,13 +66,15 @@ pub struct McpIconOptions {
     pub theme: Option<McpIconThemeOption>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumString, Eq, PartialEq)]
+#[strum(serialize_all = "snake_case")]
 pub enum McpIconThemeOption {
     Light,
     Dark,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumString, Eq, PartialEq)]
+#[strum(serialize_all = "snake_case")]
 pub enum McpTaskSupportOption {
     Forbidden,
     Optional,
@@ -382,24 +385,15 @@ fn parse_mcp_icon_options(list: &syn::MetaList) -> darling::Result<McpIconOption
 }
 
 fn parse_mcp_icon_theme(value: String) -> darling::Result<McpIconThemeOption> {
-    match value.as_str() {
-        "light" => Ok(McpIconThemeOption::Light),
-        "dark" => Ok(McpIconThemeOption::Dark),
-        _ => Err(DarlingError::custom(
-            "`theme` must be either \"light\" or \"dark\"",
-        )),
-    }
+    value
+        .parse()
+        .map_err(|_| DarlingError::custom("`theme` must be either \"light\" or \"dark\""))
 }
 
 fn parse_mcp_task_support(value: String) -> darling::Result<McpTaskSupportOption> {
-    match value.as_str() {
-        "forbidden" => Ok(McpTaskSupportOption::Forbidden),
-        "optional" => Ok(McpTaskSupportOption::Optional),
-        "required" => Ok(McpTaskSupportOption::Required),
-        _ => Err(DarlingError::custom(
-            "`task_support` must be \"forbidden\", \"optional\", or \"required\"",
-        )),
-    }
+    value.parse().map_err(|_| {
+        DarlingError::custom("`task_support` must be \"forbidden\", \"optional\", or \"required\"")
+    })
 }
 
 fn assign_once<T>(

@@ -6,83 +6,42 @@ use crate::registry::{
     ValidationRuleId,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, thiserror::Error, PartialEq)]
 pub enum ResolveError {
-    InvalidIdentifier {
-        kind: &'static str,
-        value: String,
-    },
+    #[error("invalid {kind} `{value}` in gpui-form shape metadata")]
+    InvalidIdentifier { kind: &'static str, value: String },
+    #[error("invalid {kind} `{value}` in gpui-form shape metadata: {error}")]
     InvalidPath {
         kind: &'static str,
         value: String,
         error: String,
     },
+    #[error(
+        "invalid {kind} `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
+    )]
     InvalidFieldPath {
         field_name: String,
         kind: &'static str,
         value: String,
         error: String,
     },
+    #[error(
+        "invalid value type `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
+    )]
     InvalidType {
         field_name: String,
         value: String,
         error: String,
     },
+    #[error(
+        "invalid expression `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
+    )]
     InvalidExpression {
         field_name: String,
         value: String,
         error: String,
     },
 }
-
-impl std::fmt::Display for ResolveError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidIdentifier { kind, value } => {
-                write!(f, "invalid {kind} `{value}` in gpui-form shape metadata")
-            },
-            Self::InvalidPath { kind, value, error } => {
-                write!(
-                    f,
-                    "invalid {kind} `{value}` in gpui-form shape metadata: {error}"
-                )
-            },
-            Self::InvalidFieldPath {
-                field_name,
-                kind,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid {kind} `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
-                )
-            },
-            Self::InvalidType {
-                field_name,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid value type `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
-                )
-            },
-            Self::InvalidExpression {
-                field_name,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid expression `{value}` for field `{field_name}` in gpui-form shape metadata: {error}"
-                )
-            },
-        }
-    }
-}
-
-impl std::error::Error for ResolveError {}
 
 #[derive(Clone)]
 pub struct ResolvedComponentMetadata {
@@ -599,6 +558,10 @@ mod tests {
                 value: "crate::".to_string(),
                 error: "unexpected end of input, expected identifier".to_string(),
             }
+        );
+        assert_eq!(
+            error.to_string(),
+            "invalid component shape path `crate::` for field `country` in gpui-form shape metadata: unexpected end of input, expected identifier"
         );
     }
 

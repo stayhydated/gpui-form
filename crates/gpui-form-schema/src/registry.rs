@@ -3,6 +3,7 @@ use component_shape::{
     ComponentPrototyping as ShapeComponentPrototyping, ComponentShapeUse,
 };
 use heck::{ToKebabCase as _, ToPascalCase as _};
+use strum::IntoStaticStr;
 
 pub use component_shape::{
     RenderCapability, RustExpr, RustPath, RustSyntaxError, RustSyntaxKind, RustType,
@@ -131,7 +132,8 @@ impl HolderConversionMetadata {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
+#[strum(serialize_all = "snake_case", const_into_str)]
 pub enum FieldValuePresence {
     /// Source field is `Option<T>` and generated storage is optional.
     Optional,
@@ -142,6 +144,10 @@ pub enum FieldValuePresence {
 }
 
 impl FieldValuePresence {
+    pub const fn as_str(self) -> &'static str {
+        self.into_str()
+    }
+
     pub const fn optional(self) -> bool {
         matches!(self, Self::Optional)
     }
@@ -885,5 +891,12 @@ mod tests {
                 "{value:?} should be rejected"
             );
         }
+    }
+
+    #[test]
+    fn field_value_presence_names_are_stable_schema_metadata() {
+        assert_eq!(FieldValuePresence::Optional.as_str(), "optional");
+        assert_eq!(FieldValuePresence::RequiresValue.as_str(), "requires_value");
+        assert_eq!(FieldValuePresence::DirectStorage.as_str(), "direct_storage");
     }
 }

@@ -1325,6 +1325,7 @@ name = "component-shape"
 version = "0.1.0"
 dependencies = [
  "heck 0.5.0",
+ "strum 0.28.0",
  "syn 2.0.117",
  "thiserror 2.0.18",
 ]
@@ -1371,6 +1372,7 @@ dependencies = [
  "rmcp",
  "serde",
  "serde_json",
+ "strum 0.28.0",
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -3384,6 +3386,7 @@ name = "gpui-form-prototyping-core"
 version = "0.5.1"
 dependencies = [
  "component-shape-codegen",
+ "derive_more",
  "gpui-form-codegen",
  "gpui-form-schema",
  "heck 0.5.0",
@@ -3392,6 +3395,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -3410,7 +3414,9 @@ dependencies = [
  "gpui-form-core",
  "heck 0.5.0",
  "inventory",
+ "strum 0.28.0",
  "syn 2.0.117",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

@@ -2,6 +2,7 @@ use component_shape_codegen::doc_description;
 use darling::{Error as DarlingError, FromField};
 use gpui_form_codegen::components::ShapeOptions;
 use proc_macro2::Span;
+use strum::IntoStaticStr;
 use syn::{parse::Parser as _, punctuated::Punctuated};
 
 use crate::derives::gpui_form::attrs::{
@@ -55,7 +56,8 @@ struct ParsedComponentField {
     explicit_description: bool,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, IntoStaticStr, PartialEq)]
+#[strum(serialize_all = "snake_case", const_into_str)]
 enum FieldOptionKey {
     Component,
     Hidden,
@@ -64,11 +66,7 @@ enum FieldOptionKey {
 
 impl FieldOptionKey {
     const fn label(self) -> &'static str {
-        match self {
-            Self::Component => "component",
-            Self::Hidden => "hidden",
-            Self::Skip => "skip",
-        }
+        self.into_str()
     }
 }
 

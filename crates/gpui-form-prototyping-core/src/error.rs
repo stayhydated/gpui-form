@@ -1,32 +1,39 @@
-use std::fmt;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, thiserror::Error, PartialEq)]
 pub enum PrototypingError {
-    InvalidIdentifier {
-        kind: &'static str,
-        value: String,
-    },
+    #[error("invalid {kind} `{value}` in prototyping metadata")]
+    InvalidIdentifier { kind: &'static str, value: String },
+    #[error("invalid {kind} `{value}` in prototyping metadata: {error}")]
     InvalidPath {
         kind: &'static str,
         value: String,
         error: String,
     },
+    #[error("invalid {kind} `{value}` for field `{field_name}` in prototyping metadata: {error}")]
     InvalidFieldPath {
         field_name: String,
         kind: &'static str,
         value: String,
         error: String,
     },
+    #[error(
+        "invalid value type `{value}` for field `{field_name}` in prototyping metadata: {error}"
+    )]
     InvalidType {
         field_name: String,
         value: String,
         error: String,
     },
+    #[error(
+        "invalid default expression `{value}` for field `{field_name}` in prototyping metadata: {error}"
+    )]
     InvalidExpression {
         field_name: String,
         value: String,
         error: String,
     },
+    #[error(
+        "missing {capability} for field `{field_name}` on form `{struct_name}` in prototyping metadata"
+    )]
     MissingComponentCapability {
         struct_name: String,
         field_name: String,
@@ -34,63 +41,23 @@ pub enum PrototypingError {
     },
 }
 
-impl fmt::Display for PrototypingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidIdentifier { kind, value } => {
-                write!(f, "invalid {kind} `{value}` in prototyping metadata")
-            },
-            Self::InvalidPath { kind, value, error } => {
-                write!(
-                    f,
-                    "invalid {kind} `{value}` in prototyping metadata: {error}"
-                )
-            },
-            Self::InvalidFieldPath {
-                field_name,
-                kind,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid {kind} `{value}` for field `{field_name}` in prototyping metadata: {error}"
-                )
-            },
-            Self::InvalidType {
-                field_name,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid value type `{value}` for field `{field_name}` in prototyping metadata: {error}"
-                )
-            },
-            Self::InvalidExpression {
-                field_name,
-                value,
-                error,
-            } => {
-                write!(
-                    f,
-                    "invalid default expression `{value}` for field `{field_name}` in prototyping metadata: {error}"
-                )
-            },
-            Self::MissingComponentCapability {
-                struct_name,
-                field_name,
-                capability,
-            } => {
-                write!(
-                    f,
-                    "missing {capability} for field `{field_name}` on form `{struct_name}` in prototyping metadata"
-                )
-            },
-        }
+pub type PrototypingResult<T> = Result<T, PrototypingError>;
+
+#[cfg(test)]
+mod tests {
+    use super::PrototypingError;
+
+    #[test]
+    fn prototyping_error_messages_remain_stable() {
+        let error = PrototypingError::MissingComponentCapability {
+            struct_name: "Demo".to_string(),
+            field_name: "country".to_string(),
+            capability: "render component",
+        };
+
+        assert_eq!(
+            error.to_string(),
+            "missing render component for field `country` on form `Demo` in prototyping metadata"
+        );
     }
 }
-
-impl std::error::Error for PrototypingError {}
-
-pub type PrototypingResult<T> = Result<T, PrototypingError>;

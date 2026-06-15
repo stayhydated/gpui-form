@@ -16,7 +16,9 @@ component-shape = { workspace = true }
 gpui-form-core = { workspace = true }
 heck = { workspace = true }
 inventory = { workspace = true }
+strum = { features = [ "derive" ], workspace = true }
 syn = { features = [ "full", "parsing" ], workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

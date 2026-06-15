@@ -14,7 +14,7 @@ use crate::imports::{Alias, ImportItem, ImportSet};
 
 macro_rules! semantic_fragment {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default)]
+        #[derive(Clone, Debug, Default, derive_more::Display, derive_more::From)]
         pub struct $name(TokenStream);
 
         impl $name {
@@ -27,21 +27,9 @@ macro_rules! semantic_fragment {
             }
         }
 
-        impl From<TokenStream> for $name {
-            fn from(tokens: TokenStream) -> Self {
-                Self(tokens)
-            }
-        }
-
         impl quote::ToTokens for $name {
             fn to_tokens(&self, tokens: &mut TokenStream) {
                 tokens.extend(self.0.clone());
-            }
-        }
-
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", self.0)
             }
         }
     };

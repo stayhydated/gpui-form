@@ -751,7 +751,7 @@ fn form_field_descriptor_value(field: McpField) -> Value {
     );
     object.insert(
         "presence".to_string(),
-        Value::String(field_presence_name(field.presence()).to_string()),
+        Value::String(field.presence().as_str().to_string()),
     );
     object.insert("required".to_string(), Value::Bool(field.required()));
     object.insert("has_default".to_string(), Value::Bool(field.has_default()));
@@ -779,14 +779,6 @@ fn form_field_descriptor_value(field: McpField) -> Value {
     Value::Object(object)
 }
 
-fn field_presence_name(presence: FieldValuePresence) -> &'static str {
-    match presence {
-        FieldValuePresence::Optional => "optional",
-        FieldValuePresence::RequiresValue => "requires_value",
-        FieldValuePresence::DirectStorage => "direct_storage",
-    }
-}
-
 fn mcp_input_descriptor_value(input: McpInput) -> Value {
     match input.input_shape() {
         McpInputShape::Unsupported => serde_json::json!({
@@ -796,50 +788,27 @@ fn mcp_input_descriptor_value(input: McpInput) -> Value {
         McpInputShape::Scalar(kind) => serde_json::json!({
             "supported": true,
             "shape": "scalar",
-            "primitive": primitive_kind_name(kind),
+            "primitive": kind.as_str(),
         }),
         McpInputShape::List(kind) => serde_json::json!({
             "supported": true,
             "shape": "list",
-            "items": primitive_kind_name(kind),
+            "items": kind.as_str(),
         }),
         McpInputShape::Set(kind) => serde_json::json!({
             "supported": true,
             "shape": "set",
-            "items": primitive_kind_name(kind),
+            "items": kind.as_str(),
         }),
         McpInputShape::Range(kind) => serde_json::json!({
             "supported": true,
             "shape": "range",
-            "bound": range_bound_kind_name(kind),
+            "bound": kind.as_str(),
         }),
         McpInputShape::Object => serde_json::json!({
             "supported": true,
             "shape": "object",
         }),
-    }
-}
-
-fn primitive_kind_name(kind: McpPrimitiveKind) -> &'static str {
-    match kind {
-        McpPrimitiveKind::Any => "any",
-        McpPrimitiveKind::Boolean => "boolean",
-        McpPrimitiveKind::Integer => "integer",
-        McpPrimitiveKind::Number => "number",
-        McpPrimitiveKind::Decimal => "decimal",
-        McpPrimitiveKind::String => "string",
-        McpPrimitiveKind::Date => "date",
-        McpPrimitiveKind::DateTime => "date_time",
-    }
-}
-
-fn range_bound_kind_name(kind: McpRangeBoundKind) -> &'static str {
-    match kind {
-        McpRangeBoundKind::Integer => "integer",
-        McpRangeBoundKind::Number => "number",
-        McpRangeBoundKind::Decimal => "decimal",
-        McpRangeBoundKind::Date => "date",
-        McpRangeBoundKind::DateTime => "date_time",
     }
 }
 
