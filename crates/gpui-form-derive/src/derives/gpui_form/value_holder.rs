@@ -1357,11 +1357,16 @@ pub(super) fn generate_value_holder(
 
     let present_lifetime: syn::Lifetime = syn::parse_quote!('__gpui_form_present);
     let present_field_ident = format_ident!("{}PresentField", wrapped_ident);
+    let present_field_borrows = rendered_field_plans
+        .iter()
+        .any(|plan| plan.present.borrows_source_value);
     let mut present_field_generics = original_input.generics.clone();
-    present_field_generics.params.insert(
-        0,
-        syn::GenericParam::Lifetime(syn::parse_quote!('__gpui_form_present)),
-    );
+    if present_field_borrows {
+        present_field_generics.params.insert(
+            0,
+            syn::GenericParam::Lifetime(syn::parse_quote!('__gpui_form_present)),
+        );
+    }
     let (_, present_field_ty_generics, _) = present_field_generics.split_for_impl();
     let present_field_variants: Vec<TokenStream> = rendered_field_plans
         .iter()
@@ -1377,6 +1382,17 @@ pub(super) fn generate_value_holder(
         .iter()
         .map(|f| generate_present_field_entry(context, f, &present_field_ident, &present_lifetime))
         .collect::<ValueHolderResult<Vec<_>>>()?;
+    let present_fields_signature = if present_field_borrows {
+        quote! {
+            pub fn present_fields<'__gpui_form_present>(
+                &'__gpui_form_present self
+            ) -> Vec<#present_field_ident #present_field_ty_generics>
+        }
+    } else {
+        quote! {
+            pub fn present_fields(&self) -> Vec<#present_field_ident #present_field_ty_generics>
+        }
+    };
 
     let from_where_clause = holder_where_clause.clone();
     let skipped_params: Vec<TokenStream> = holder_plan
@@ -1411,9 +1427,7 @@ pub(super) fn generate_value_holder(
                 #present_field_enum
 
                 impl #holder_impl_generics #storage_ident #holder_ty_generics #holder_where_clause {
-                    pub fn present_fields<'__gpui_form_present>(
-                        &'__gpui_form_present self
-                    ) -> Vec<#present_field_ident #present_field_ty_generics> {
+                    #present_fields_signature {
                         let mut entries = Vec::new();
                         #(#present_field_entries)*
                         entries

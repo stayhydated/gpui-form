@@ -8,7 +8,7 @@ use quote::quote;
 use crate::error::{PrototypingError, PrototypingResult};
 use crate::implementations::{
     ComponentCreation, EventHandler, FieldCodegenOptions, FieldInitializer, GeneratedSubscription,
-    SubscriptionBinding, field_generator,
+    RenderChildRenderer, SubscriptionBinding, field_generator,
 };
 use crate::imports::{Alias, ImportItem, ImportSet};
 
@@ -118,6 +118,7 @@ pub struct FormShapeAdapter<'a> {
     pub shape_data: &'a GpuiFormShape,
     path_remapper: Option<Box<PathRemapper<'a>>>,
     validation_message_renderer: Option<Box<ValidationMessageRenderer<'a>>>,
+    render_child_renderer: Option<Box<RenderChildRenderer<'a>>>,
 }
 
 impl<'a> FormShapeAdapter<'a> {
@@ -126,6 +127,7 @@ impl<'a> FormShapeAdapter<'a> {
             shape_data,
             path_remapper: None,
             validation_message_renderer: None,
+            render_child_renderer: None,
         }
     }
 
@@ -152,10 +154,30 @@ impl<'a> FormShapeAdapter<'a> {
         self
     }
 
+    /// Render component-backed form rows with caller-owned metadata.
+    ///
+    /// The default shape generator requires component shapes to publish render
+    /// metadata. This hook lets integration generators bridge shapes whose
+    /// value-binding metadata lives in one crate while their concrete render
+    /// components live in another crate.
+    pub fn render_children_with(
+        mut self,
+        renderer: impl Fn(
+            &gpui_form_schema::resolved::ResolvedField<'_>,
+            &GpuiFormShape,
+            &FieldCodegenOptions<'_>,
+        ) -> Option<TokenStream>
+        + 'a,
+    ) -> Self {
+        self.render_child_renderer = Some(Box::new(renderer));
+        self
+    }
+
     fn field_options(&self) -> FieldCodegenOptions<'_> {
         FieldCodegenOptions {
             path_remapper: self.path_remapper.as_deref(),
             validation_message_renderer: self.validation_message_renderer.as_deref(),
+            render_child_renderer: self.render_child_renderer.as_deref(),
         }
     }
 

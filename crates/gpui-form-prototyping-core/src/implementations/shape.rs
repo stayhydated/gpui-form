@@ -108,6 +108,10 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let field_in_struct_name_ident = field.field_ident();
         let capabilities = component_capabilities(field, component)?;
 
+        if let Some(render_child) = options.render_child(field, component) {
+            return Ok(render_child);
+        }
+
         if !capabilities.render_component() {
             return Err(missing_component_capability(
                 component,

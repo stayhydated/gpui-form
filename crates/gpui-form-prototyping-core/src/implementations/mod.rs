@@ -19,6 +19,7 @@ pub fn field_generator() -> &'static dyn FieldCodeGenerator {
 pub struct FieldCodegenOptions<'a> {
     pub path_remapper: Option<&'a dyn Fn(&syn::Path) -> Option<syn::Path>>,
     pub validation_message_renderer: Option<&'a dyn Fn(TokenStream) -> TokenStream>,
+    pub render_child_renderer: Option<&'a RenderChildRenderer<'a>>,
 }
 
 impl FieldCodegenOptions<'_> {
@@ -34,6 +35,15 @@ impl FieldCodegenOptions<'_> {
             .unwrap_or_else(|| default_validation_message_tokens(value_tokens))
     }
 
+    pub fn render_child(
+        &self,
+        field: &ResolvedField<'_>,
+        component: &GpuiFormShape,
+    ) -> Option<TokenStream> {
+        self.render_child_renderer
+            .and_then(|renderer| renderer(field, component, self))
+    }
+
     pub fn remap_type(&self, ty: &syn::Type) -> syn::Type {
         let mut ty = ty.clone();
         PathRemapVisitor { options: self }.visit_type_mut(&mut ty);
@@ -46,6 +56,13 @@ impl FieldCodegenOptions<'_> {
         expr
     }
 }
+
+pub type RenderChildRenderer<'a> = dyn for<'field, 'options> Fn(
+        &ResolvedField<'field>,
+        &GpuiFormShape,
+        &FieldCodegenOptions<'options>,
+    ) -> Option<TokenStream>
+    + 'a;
 
 struct PathRemapVisitor<'a, 'b> {
     options: &'a FieldCodegenOptions<'b>,
