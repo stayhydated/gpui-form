@@ -357,6 +357,136 @@ fn dynamic_context_response(value: Value) -> Result<gpui_form::mcp::McpObject, S
     gpui_form::mcp::McpObject::from_value(value).map_err(|error| error.to_string())
 }
 
+#[derive(Clone, Debug)]
+pub struct TraitSubmitContext {
+    prefix: String,
+}
+
+#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
+pub struct TraitSubmitResponse {
+    title: String,
+    prefixed: String,
+}
+
+pub trait TraitBackedSubmitOutput {
+    fn trait_backed_output(self, context: TraitSubmitContext) -> TraitSubmitResponse;
+}
+
+pub trait TraitBackedSubmitter: TraitBackedSubmitOutput + Sized + Send + 'static {
+    type Context: Clone + Send + Sync + 'static;
+    type Response: Serialize + gpui_form::mcp::McpJsonSchema;
+    type Error: std::fmt::Display;
+
+    fn submit_with_context(
+        self,
+        context: Self::Context,
+    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static;
+}
+
+impl<T> TraitBackedSubmitter for T
+where
+    T: TraitBackedSubmitOutput + Send + 'static,
+{
+    type Context = TraitSubmitContext;
+    type Response = TraitSubmitResponse;
+    type Error = String;
+
+    fn submit_with_context(
+        self,
+        context: Self::Context,
+    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static
+    {
+        async move { Ok(self.trait_backed_output(context)) }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(mcp(
+    name = "submit_trait_backed_context_request",
+    title = "Submit trait-backed context request",
+    description = "Exercise context-backed MCP submit registration through a submitter trait.",
+    read_only = true,
+    destructive = false,
+    idempotent = true,
+    open_world = false,
+    submitter(TraitBackedSubmitter)
+))]
+pub struct TraitBackedContextRequest {
+    #[gpui_form(hidden)]
+    title: String,
+}
+
+impl TraitBackedSubmitOutput for TraitBackedContextRequest {
+    fn trait_backed_output(self, context: TraitSubmitContext) -> TraitSubmitResponse {
+        TraitSubmitResponse {
+            prefixed: format!("{}{}", context.prefix, self.title),
+            title: self.title,
+        }
+    }
+}
+
+pub struct TraitRawSubmitResponse {
+    title: String,
+    prefixed: String,
+}
+
+pub trait MappedTraitBackedSubmitter: Sized + Send + 'static {
+    type Context: Clone + Send + Sync + 'static;
+    type Response;
+    type Error: std::fmt::Display;
+
+    fn submit_with_context(
+        self,
+        context: Self::Context,
+    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static;
+}
+
+#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[gpui_form(mcp(
+    name = "submit_mapped_trait_backed_context_request",
+    title = "Submit mapped trait-backed context request",
+    description = "Exercise context-backed MCP submitter registration with mapped raw responses.",
+    read_only = true,
+    destructive = false,
+    idempotent = true,
+    open_world = false,
+    submitter(MappedTraitBackedSubmitter),
+    map_response(map_trait_raw_response)
+))]
+pub struct MappedTraitBackedContextRequest {
+    #[gpui_form(hidden)]
+    title: String,
+}
+
+impl MappedTraitBackedSubmitter for MappedTraitBackedContextRequest {
+    type Context = TraitSubmitContext;
+    type Response = TraitRawSubmitResponse;
+    type Error = String;
+
+    fn submit_with_context(
+        self,
+        context: Self::Context,
+    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static
+    {
+        async move {
+            Ok(TraitRawSubmitResponse {
+                prefixed: format!("{}{}", context.prefix, self.title),
+                title: self.title,
+            })
+        }
+    }
+}
+
+fn map_trait_raw_response(
+    response: TraitRawSubmitResponse,
+) -> Result<gpui_form::mcp::McpObject, String> {
+    gpui_form::mcp::McpObject::from_value(json!({
+        "title": response.title,
+        "prefixed": response.prefixed
+    }))
+    .map_err(|error| error.to_string())
+}
+
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_metadata_request",
@@ -1424,6 +1554,102 @@ fn context_submitters_register_from_derive_inventory() {
         Some(json!({
             "title": "Editable",
             "prefixed": "ctx:Editable"
+        }))
+    );
+}
+
+#[test]
+fn submitter_trait_context_submitters_register_from_derive_inventory() {
+    let context = TraitSubmitContext {
+        prefix: "trait:".to_string(),
+    };
+    let definitions =
+        context_submit_tool_definitions::<TraitSubmitContext>().expect("definitions should build");
+    let definition_names: Vec<_> = definitions
+        .iter()
+        .map(|definition| definition.name.to_string())
+        .collect();
+    let submit_name = TraitBackedContextRequest::descriptor().tool_name();
+    let editor_names = editor_tool_names(TraitBackedContextRequest::descriptor());
+    assert!(definition_names.contains(&submit_name));
+    assert!(definition_names.contains(&editor_names.submit));
+
+    let submit_definition = definitions
+        .iter()
+        .find(|definition| definition.name.as_ref() == submit_name)
+        .expect("trait-backed context submit definition should be present");
+    let output_schema = Value::Object(
+        submit_definition
+            .output_schema
+            .as_ref()
+            .expect("trait-backed context submit should publish an output schema")
+            .as_ref()
+            .clone(),
+    );
+    assert_eq!(
+        output_schema["properties"]["prefixed"]["type"],
+        json!("string")
+    );
+
+    let mut server = test_server();
+    register_context_submitters_with_editor_options(
+        &mut server,
+        context,
+        McpFormEditorOptions::default().with_session_limit(4),
+    )
+    .expect("trait-backed context submitters should register");
+
+    assert!(server.contains_tool(&submit_name));
+    assert!(server.contains_tool(&editor_names.submit));
+
+    let direct_submit = server.call_tool(&submit_name, Some(json!({ "title": "Direct" })));
+    assert_eq!(direct_submit.is_error, Some(false));
+    assert_eq!(
+        direct_submit.structured_content,
+        Some(json!({
+            "title": "Direct",
+            "prefixed": "trait:Direct"
+        }))
+    );
+}
+
+#[test]
+fn mapped_submitter_trait_context_submitters_register_from_derive_inventory() {
+    let context = TraitSubmitContext {
+        prefix: "mapped:".to_string(),
+    };
+    let definitions =
+        context_submit_tool_definitions::<TraitSubmitContext>().expect("definitions should build");
+    let submit_name = MappedTraitBackedContextRequest::descriptor().tool_name();
+    let submit_definition = definitions
+        .iter()
+        .find(|definition| definition.name.as_ref() == submit_name)
+        .expect("mapped trait-backed context submit definition should be present");
+    let output_schema = Value::Object(
+        submit_definition
+            .output_schema
+            .as_ref()
+            .expect("mapped trait-backed context submit should publish an output schema")
+            .as_ref()
+            .clone(),
+    );
+    assert_eq!(output_schema["type"], json!("object"));
+
+    let mut server = test_server();
+    register_context_submitters_with_editor_options(
+        &mut server,
+        context,
+        McpFormEditorOptions::default().with_session_limit(4),
+    )
+    .expect("mapped trait-backed context submitters should register");
+
+    let direct_submit = server.call_tool(&submit_name, Some(json!({ "title": "Raw" })));
+    assert_eq!(direct_submit.is_error, Some(false));
+    assert_eq!(
+        direct_submit.structured_content,
+        Some(json!({
+            "title": "Raw",
+            "prefixed": "mapped:Raw"
         }))
     );
 }

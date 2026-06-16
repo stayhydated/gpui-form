@@ -313,7 +313,14 @@ itself with `#[gpui_form(mcp(context(MyContext), ...))]`, optionally add
 `submit(path::to::async_fn)` so the derive emits that impl. Generated submit
 impls can also use `map_response(path::to::fn)` to convert a raw handler
 response into the published response type, and `error(MyError)` to override
-the default `String` error type. Then call
+the default `String` error type. Use `submitter(path::to::Trait)` instead of
+explicit `context(...)` and `submit(...)` options when a trait supplies
+associated `Context`, `Response`, and `Error` types plus
+`submit_with_context(self, context)`. Pair submitters with `map_response(...)`
+when the submitter returns a raw application response that should be converted
+into the published MCP response; the trait must be visible enough for the
+form's generated impl.
+Then call
 `gpui_form::mcp::register_context_submitters(&mut server, context)?` or
 `register_context_submitters_with_editor_options(...)`. The derive inventories
 those forms, so one registration call wires every matching context-backed

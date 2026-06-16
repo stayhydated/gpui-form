@@ -3,7 +3,7 @@ use proc_macro2::Span;
 use quote::ToTokens as _;
 use strum::EnumString;
 use syn::{
-    Expr, Ident, Lit, Meta, Token, Type,
+    Expr, Ident, Lit, Meta, Path, Token, Type,
     parse::{Parse, ParseStream, Parser},
     punctuated::Punctuated,
 };
@@ -84,11 +84,24 @@ pub enum McpTaskSupportOption {
 }
 
 #[derive(Clone, Debug)]
-pub struct McpContextSubmitOptions {
+pub enum McpContextSubmitOptions {
+    Explicit(McpExplicitContextSubmitOptions),
+    Submitter(McpSubmitterOptions),
+}
+
+#[derive(Clone, Debug)]
+pub struct McpExplicitContextSubmitOptions {
     pub context: Type,
     pub response: Option<Type>,
     pub error: Option<Type>,
     pub submit: Option<Expr>,
+    pub map_response: Option<Expr>,
+}
+
+#[derive(Clone, Debug)]
+pub struct McpSubmitterOptions {
+    pub submitter: Path,
+    pub response: Option<Type>,
     pub map_response: Option<Expr>,
 }
 
@@ -111,6 +124,7 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
     let mut error = None;
     let mut submit = None;
     let mut map_response = None;
+    let mut submitter = None;
 
     for item in items {
         let darling::ast::NestedMeta::Meta(meta) = item else {
@@ -230,6 +244,15 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
                     list.path.to_token_stream(),
                 )?;
             },
+            Meta::List(list) if list.path.is_ident("submitter") => {
+                assign_once(
+                    "submitter",
+                    &mut submitter,
+                    syn::parse2::<Path>(list.tokens.clone())
+                        .map_err(|error| DarlingError::custom(error.to_string()))?,
+                    list.path.to_token_stream(),
+                )?;
+            },
             Meta::NameValue(name_value) if name_value.path.is_ident("context") => {
                 assign_once(
                     "context",
@@ -262,6 +285,14 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
                     name_value.path.to_token_stream(),
                 )?;
             },
+            Meta::NameValue(name_value) if name_value.path.is_ident("submitter") => {
+                assign_once(
+                    "submitter",
+                    &mut submitter,
+                    parse_lit_str_path(meta, "submitter")?,
+                    name_value.path.to_token_stream(),
+                )?;
+            },
             Meta::NameValue(name_value) if name_value.path.is_ident("response") => {
                 assign_once(
                     "response",
@@ -281,7 +312,18 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
         }
     }
 
-    if context.is_none() {
+    if submitter.is_some() && (context.is_some() || error.is_some() || submit.is_some()) {
+        return Err(DarlingError::custom(
+            "`submitter(...)` cannot be combined with `context(...)`, `error(...)`, or `submit(...)`",
+        ));
+    }
+    if submitter.is_some() && response.is_some() && map_response.is_none() {
+        return Err(DarlingError::custom(
+            "`response(...)` requires `map_response(...)` when used with `submitter(...)`",
+        ));
+    }
+
+    if context.is_none() && submitter.is_none() {
         if response.is_some() {
             return Err(DarlingError::custom(
                 "`response(...)` requires `context(...)` in the same `gpui_form(mcp(...))` option",
@@ -303,7 +345,7 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
             ));
         }
     }
-    if submit.is_none() && map_response.is_some() {
+    if submitter.is_none() && submit.is_none() && map_response.is_some() {
         return Err(DarlingError::custom(
             "`map_response(...)` requires `submit(...)` in the same `gpui_form(mcp(...))` option",
         ));
@@ -314,13 +356,23 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
         ));
     }
 
-    options.context_submit = context.map(|context| McpContextSubmitOptions {
-        context,
-        response,
-        error,
-        submit,
-        map_response,
-    });
+    options.context_submit = if let Some(submitter) = submitter {
+        Some(McpContextSubmitOptions::Submitter(McpSubmitterOptions {
+            submitter,
+            response,
+            map_response,
+        }))
+    } else {
+        context.map(|context| {
+            McpContextSubmitOptions::Explicit(McpExplicitContextSubmitOptions {
+                context,
+                response,
+                error,
+                submit,
+                map_response,
+            })
+        })
+    };
 
     Ok(options)
 }
@@ -449,6 +501,26 @@ fn parse_lit_str_expr(meta: &Meta, field: &str) -> darling::Result<Expr> {
 
     value
         .parse::<Expr>()
+        .map_err(|error| DarlingError::custom(error.to_string()))
+}
+
+fn parse_lit_str_path(meta: &Meta, field: &str) -> darling::Result<Path> {
+    let Meta::NameValue(name_value) = meta else {
+        return Err(DarlingError::unsupported_format(field));
+    };
+    let Expr::Lit(expr_lit) = &name_value.value else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal path; prefer `{field}(path::to::Trait)`"
+        )));
+    };
+    let Lit::Str(value) = &expr_lit.lit else {
+        return Err(DarlingError::custom(format!(
+            "`{field} = ...` expects a string literal path; prefer `{field}(path::to::Trait)`"
+        )));
+    };
+
+    value
+        .parse::<Path>()
         .map_err(|error| DarlingError::custom(error.to_string()))
 }
 
@@ -1022,9 +1094,12 @@ mod tests {
         assert_eq!(parsed_list.icons[0].mime_type.as_deref(), Some("image/png"));
         assert_eq!(parsed_list.icons[0].sizes, vec!["48x48".to_string()]);
         assert_eq!(parsed_list.icons[0].theme, Some(McpIconThemeOption::Light));
-        let submit = parsed_list
+        let McpContextSubmitOptions::Explicit(submit) = parsed_list
             .context_submit
-            .expect("context submit options should parse");
+            .expect("context submit options should parse")
+        else {
+            panic!("context submit options should use the explicit form");
+        };
         assert_eq!(
             submit.context.to_token_stream().to_string(),
             "crate :: SubmitContext"
@@ -1065,9 +1140,12 @@ mod tests {
         let parsed_context_only =
             McpToolOptions::from_list(&[parse_quote!(context(crate::SubmitContext))])
                 .expect("context-only mcp list form should parse");
-        let context_only = parsed_context_only
+        let McpContextSubmitOptions::Explicit(context_only) = parsed_context_only
             .context_submit
-            .expect("context submit options should parse");
+            .expect("context submit options should parse")
+        else {
+            panic!("context submit options should use the explicit form");
+        };
         assert_eq!(
             context_only.context.to_token_stream().to_string(),
             "crate :: SubmitContext"
@@ -1076,6 +1154,51 @@ mod tests {
         assert!(context_only.error.is_none());
         assert!(context_only.submit.is_none());
         assert!(context_only.map_response.is_none());
+
+        let parsed_submitter =
+            McpToolOptions::from_list(&[parse_quote!(submitter(crate::traits::TmZmqMcpSubmit))])
+                .expect("submitter-backed mcp list form should parse");
+        let McpContextSubmitOptions::Submitter(submitter) = parsed_submitter
+            .context_submit
+            .expect("submitter options should parse")
+        else {
+            panic!("context submit options should use the submitter form");
+        };
+        assert_eq!(
+            submitter.submitter.to_token_stream().to_string(),
+            "crate :: traits :: TmZmqMcpSubmit"
+        );
+        assert!(submitter.response.is_none());
+        assert!(submitter.map_response.is_none());
+
+        let parsed_mapped_submitter = McpToolOptions::from_list(&[
+            parse_quote!(submitter(crate::traits::TmZmqMcpSubmit)),
+            parse_quote!(response(crate::SubmitResponse)),
+            parse_quote!(map_response(crate::map_response)),
+        ])
+        .expect("mapped submitter mcp list form should parse");
+        let McpContextSubmitOptions::Submitter(mapped_submitter) = parsed_mapped_submitter
+            .context_submit
+            .expect("mapped submitter options should parse")
+        else {
+            panic!("context submit options should use the submitter form");
+        };
+        assert_eq!(
+            mapped_submitter
+                .response
+                .expect("mapped submitter response should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: SubmitResponse"
+        );
+        assert_eq!(
+            mapped_submitter
+                .map_response
+                .expect("mapped submitter map_response should parse")
+                .to_token_stream()
+                .to_string(),
+            "crate :: map_response"
+        );
     }
 
     #[test]
@@ -1155,6 +1278,35 @@ mod tests {
             error
                 .to_string()
                 .contains("cannot be both read-only and destructive"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_rejects_submitter_with_explicit_context_submit_options() {
+        let error = McpToolOptions::from_list(&[
+            parse_quote!(submitter(crate::traits::TmZmqMcpSubmit)),
+            parse_quote!(context(crate::SubmitContext)),
+        ])
+        .expect_err("submitter and explicit context should conflict");
+
+        assert!(
+            error
+                .to_string()
+                .contains("`submitter(...)` cannot be combined"),
+            "unexpected error: {error}"
+        );
+
+        let error = McpToolOptions::from_list(&[
+            parse_quote!(submitter(crate::traits::TmZmqMcpSubmit)),
+            parse_quote!(response(crate::SubmitResponse)),
+        ])
+        .expect_err("submitter response without map_response should fail");
+
+        assert!(
+            error
+                .to_string()
+                .contains("`response(...)` requires `map_response(...)`"),
             "unexpected error: {error}"
         );
     }

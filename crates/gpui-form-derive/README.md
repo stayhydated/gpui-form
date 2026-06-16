@@ -114,7 +114,8 @@ Supporting struct attributes:
   `destructive`, `idempotent`, `open_world`, repeated `icon(...)`,
   `task_support = "forbidden" | "optional" | "required"`, `context(Type)`,
   and optional `response(Type)`, `error(Type)`, `submit(path)`, and
-  `map_response(path)` options
+  `map_response(path)` options, or `submitter(TraitPath)` with optional
+  `map_response(path)` for trait-backed context submission
 
 Behavior notes:
 
@@ -181,7 +182,12 @@ Behavior notes:
   published response, and `error(MyError)` when the generated impl should use a
   non-`String` error type. Add `response(MyResponse)` when the response should
   publish a precise schema; otherwise the registration uses
-  `gpui_form::mcp::McpObject`. Use
+  `gpui_form::mcp::McpObject`. Use `submitter(path::to::Trait)` instead of
+  explicit `context(...)` and `submit(...)` options when a visible trait
+  supplies associated `Context`, `Response`, and `Error` types plus
+  `submit_with_context(self, context)`. Pair submitters with
+  `map_response(path::to::fn)` when the submitter returns a raw application
+  response that should be converted into the published MCP response. Use
   `gpui_form::mcp::register_context_submitters(...)` or the
   `*_with_editor_options` variant to register all matching context-backed
   submit tools and their `*_edit_submit` tools from one shared context value.

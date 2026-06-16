@@ -216,7 +216,11 @@ form's struct-level `gpui_form(mcp(...))` options, optionally add
 `submit(path::to::async_fn)` so the derive emits that impl. Generated submit
 impls can also use `map_response(path::to::fn)` to convert a raw handler
 response into the published response type, and `error(MyError)` to override
-the default `String` error type. Then call
+the default `String` error type. Use `submitter(path::to::Trait)` instead
+when a visible trait supplies associated `Context`, `Response`, and `Error`
+types plus `submit_with_context(self, context)`. Pair submitters with
+`map_response(path::to::fn)` when the submitter returns a raw application
+response that should be converted into the published MCP response. Then call
 `gpui_form::mcp::register_context_submitters(&mut server, context)?` or
 `register_context_submitters_with_editor_options(...)`. The derive inventories
 those forms, so one registration call wires every matching context-backed
@@ -337,9 +341,11 @@ Use struct-level `#[gpui_form(mcp(...))]` with `name`, `title`, `description`,
 `read_only`, `destructive`, `idempotent`, `open_world`, repeated `icon(...)`,
 `task_support = "forbidden" | "optional" | "required"`, `context(Type)`, and
 optional `response(Type)`, `error(Type)`, `submit(path)`, and
+`map_response(path)`, or `submitter(TraitPath)` with optional
 `map_response(path)` when generated MCP tools need application-owned metadata,
 MCP tool annotation hints, MCP tool icons, execution task support,
-context-submit inventory, generated context submit impls, or precise response
+context-submit inventory, generated context submit impls, trait-backed context
+submitters, raw response mapping, or precise response
 schemas. Direct submit tools default to destructive open-world annotations
 unless overridden. If `description` is omitted, the derive uses the form type's
 Rust doc comment.

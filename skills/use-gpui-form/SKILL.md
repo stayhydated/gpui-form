@@ -73,6 +73,11 @@ helpers and component-specific derives explicitly:
    `gpui_form::mcp::McpObject` for dynamic object-shaped JSON. Use
    `map_response(path::to::fn)` when the async submit function returns a raw
    value that needs conversion, and `error(MyError)` for non-`String` errors.
+   Use `submitter(path::to::Trait)` instead when a visible trait supplies
+   associated `Context`, `Response`, and `Error` types plus
+   `submit_with_context(self, context)`. Pair submitters with
+   `map_response(path::to::fn)` when the submitter returns a raw application
+   response that should be converted into the published MCP response.
    Handlers can be synchronous or async and must return `Result<T, E>`.
    Do not add CLI, shell parsing, or GPUI button-callback execution for MCP.
    MCP input schemas use the field type's `McpToolValue` schema. Component-backed
@@ -211,7 +216,10 @@ Common patterns:
   For context-backed fleets of form submit tools, prefer struct-level
   `context(MyContext)` MCP options plus `McpContextSubmit<MyContext>`
   implementations or generated impls from `submit(path::to::async_fn)`,
-  adding `response(MyResponse)` only when precise response schemas matter, then call
+  or `submitter(path::to::Trait)` when one visible trait should supply the
+  context, response, error, and submit method, adding `map_response(path)` when
+  that trait returns a raw response and `response(MyResponse)` only when precise
+  response schemas matter, then call
   `gpui_form::mcp::register_context_submitters(&mut server, context)?` once.
   Use `register_context_submitters_strict(...)` when zero matching context
   registrations should be a setup error.
@@ -229,7 +237,11 @@ Common patterns:
   when generated MCP tools need application-owned names or descriptions. Add
   `context(Type)` there when the form should emit context-submit inventory,
   `submit(path)` when the derive should generate `McpContextSubmit`, and
-  `response(Type)` only to override the default `McpObject` response.
+  `response(Type)` only to override the default `McpObject` response. Use
+  `submitter(TraitPath)` instead of those context-submit wiring options when a
+  visible trait supplies the associated context, response, error, and submit
+  method, and pair it with `map_response(path)` when the trait returns a raw
+  application response.
   Direct submit tools default to destructive open-world MCP annotations unless
   overridden. Add `icon(src = "...", mime_type = "...", size = "...", theme = "light" | "dark")`
   entries for MCP tool icons, and
