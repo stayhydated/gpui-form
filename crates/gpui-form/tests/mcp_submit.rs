@@ -65,7 +65,7 @@ struct ObjectResponse(Value);
 
 impl gpui_form::mcp::McpJsonSchema for ObjectResponse {
     fn json_schema() -> gpui_form::mcp::McpSchema {
-        gpui_form::mcp::McpSchema::new(json!({ "type": "object" }))
+        gpui_form::mcp::McpSchema::object()
     }
 }
 
@@ -167,7 +167,7 @@ pub struct SlashSeparatedTags(Vec<String>);
 
 impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
     fn tool_value_schema() -> gpui_form::mcp::McpSchema {
-        gpui_form::mcp::McpSchema::new(json!({ "type": "string" }))
+        gpui_form::mcp::McpSchema::string()
     }
 
     fn from_tool_value(field: &str, value: Value) -> Result<Self, McpToolError> {
