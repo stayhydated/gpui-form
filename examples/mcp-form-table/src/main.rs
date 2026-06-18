@@ -51,7 +51,7 @@ pub struct TicketForm {
     )
 )]
 struct TicketRow {
-    #[gpui_table(filter(gpui_table::runtime::shape::TextFilter))]
+    #[gpui_table(filter(gpui_table_component::TextFilter))]
     title: String,
 }
 
