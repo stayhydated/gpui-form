@@ -434,7 +434,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"birth_date\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"Timestamp\"),::gpui_form::schema::registry::FieldValuePresence::Optional)"
+                "FieldVariant::component_for_field(\"birth_date\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"Timestamp\"),::gpui_form::schema::registry::FieldValuePresence::Optional)"
             ),
             "FieldVariant should use override type for metadata"
         );
@@ -499,7 +499,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"amount\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"rust_decimal::Decimal\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"f64\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
+                "FieldVariant::component_for_field(\"amount\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"rust_decimal::Decimal\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"f64\"),if<<crate::NumericShape<rust_decimal::Decimal>as::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicyas::gpui_form::runtime::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE"
             ),
             "FieldVariant should keep the fully-qualified override type in metadata"
         );
@@ -612,8 +612,9 @@ mod gpui_form_tests {
             "Skipped-field value holders should generate a typed present-field enum"
         );
         assert!(
-            compact.contains("pubfnpresent_fields<'__gpui_form_present>(&'__gpui_form_presentself)->Vec<TestFormFormValueHolderPresentField<'__gpui_form_present>>"),
-            "Skipped-field value holders should expose typed present_fields() snapshots"
+            compact
+                .contains("pubfnpresent_fields(&self)->Vec<TestFormFormValueHolderPresentField>"),
+            "Skipped-field value holders should expose typed present_fields() snapshots: {compact}"
         );
         assert!(
             compact.contains("entries.push(TestFormFormValueHolderPresentField::BirthDate((|dt|to_model(dt))(value)));"),
@@ -671,7 +672,7 @@ mod gpui_form_tests {
             "structured default options should be emitted for inventory and value-holder defaults: {compact}"
         );
         assert!(
-            compact.contains("FieldVariant::hidden(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"u64\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
+            compact.contains("FieldVariant::hidden_for_field(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"u64\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
                 && compact.contains("with_conversions(::gpui_form::schema::registry::ConversionMetadata::new(Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"|id|id.to_string()\")),Some(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"|id|id.parse().unwrap()\"))))")
                 && compact.contains(".with_default(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"1_u64\"))"),
             "hidden fields should be emitted into inventory with source/form types, conversions, direct storage, and defaults: {compact}"
@@ -708,18 +709,18 @@ mod gpui_form_tests {
         let compact = compact_tokens(&expanded.to_string());
 
         assert!(
-            compact.contains("FieldVariant::hidden(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
+            compact.contains("FieldVariant::hidden_for_field(\"account_id\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"HiddenId\"),::gpui_form::schema::registry::FieldValuePresence::DirectStorage)")
                 && compact.contains(".with_validations(&[::gpui_form::schema::registry::ValidationRuleId::Newtype])")
                 && compact.contains(".with_default(::gpui_form::schema::registry::RustExpr::from_macro_tokens_unchecked(\"HiddenId::new()\"))"),
             "hidden fields should publish validation IDs and defaults in inventory: {compact}"
         );
         assert!(
-            compact.contains("FieldVariant::component(\"visible\""),
+            compact.contains("FieldVariant::component_for_field(\"visible\""),
             "component field inventory should remain emitted: {compact}"
         );
         assert!(
-            !compact.contains("FieldVariant::hidden(\"skipped_secret\"")
-                && !compact.contains("FieldVariant::component(\"skipped_secret\""),
+            !compact.contains("FieldVariant::hidden_for_field(\"skipped_secret\")")
+                && !compact.contains("FieldVariant::component_for_field(\"skipped_secret\")"),
             "skipped fields should stay out of field inventory: {compact}"
         );
         assert!(
@@ -829,7 +830,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"bio\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy"
+                "FieldVariant::component_for_field(\"bio\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::ui::BioInputas::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy"
             ),
             "FieldVariant metadata should come from the declared component shape"
         );
@@ -1034,7 +1035,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(
-                "FieldVariant::component(\"account_no\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"crate::types::AccountCode\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::Inputas::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy"
+                "FieldVariant::component_for_field(\"account_no\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"crate::types::AccountCode\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"String\"),if<<crate::Inputas::gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy"
             ),
             "FieldVariant should store the form-side value type: {compact}"
         );

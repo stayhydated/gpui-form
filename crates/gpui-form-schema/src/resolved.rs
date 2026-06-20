@@ -2,8 +2,8 @@ use heck::{ToKebabCase as _, ToPascalCase as _, ToSnakeCase as _};
 use syn::{Expr, Ident, Path, Type};
 
 use crate::registry::{
-    ComponentCapabilities, FieldValuePresence, FieldVariant, GpuiFormShape, RustSyntaxKind,
-    ValidationRuleId,
+    ComponentCapabilities, ComponentFieldName, FieldValuePresence, FieldVariant, GpuiFormShape,
+    RustSyntaxKind, ValidationRuleId,
 };
 
 #[derive(Clone, Debug, Eq, thiserror::Error, PartialEq)]
@@ -56,7 +56,7 @@ impl ResolvedComponentMetadata {
         };
         Ok(Some(Self {
             shape_path: parse_field_path(
-                field.field_name(),
+                field.field_name().as_str(),
                 "component shape path",
                 component.shape_path(),
             )?,
@@ -200,7 +200,7 @@ impl HandlerIdent {
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct FieldName {
-    source: &'static str,
+    source: ComponentFieldName<'static>,
     ident: FieldIdent,
     pascal_ident: FieldIdent,
     component_helper_ident: ComponentHelperIdent,
@@ -211,8 +211,9 @@ pub struct FieldName {
 impl FieldName {
     fn new(field: &FieldVariant) -> Result<Self, ResolveError> {
         let source = field.field_name();
-        let ident = FieldIdent::new("field name", source)?;
-        let pascal_ident = FieldIdent::new("field pascal ident", &source.to_pascal_case())?;
+        let ident = FieldIdent::new("field name", source.as_str())?;
+        let pascal_ident =
+            FieldIdent::new("field pascal ident", &source.as_str().to_pascal_case())?;
         let component_helper_name = field.field_name_with_component_suffix();
         let component_helper_ident = ComponentHelperIdent::new(&component_helper_name)?;
         let kebab_id = KebabId::new(component_helper_name.to_kebab_case());
@@ -228,7 +229,7 @@ impl FieldName {
         })
     }
 
-    pub const fn source(&self) -> &'static str {
+    pub const fn source(&self) -> ComponentFieldName<'static> {
         self.source
     }
 
@@ -270,18 +271,19 @@ pub struct ResolvedField<'a> {
 impl<'a> ResolvedField<'a> {
     pub fn new(field: &'a FieldVariant) -> Result<Self, ResolveError> {
         let name = FieldName::new(field)?;
-        let value_type = parse_type(field.field_name(), field.value_type())?;
-        let source_value_type = parse_type(field.field_name(), field.source_value_type())?;
+        let field_name = field.field_name();
+        let value_type = parse_type(field_name.as_str(), field.value_type())?;
+        let source_value_type = parse_type(field_name.as_str(), field.source_value_type())?;
         let default_expr = match field.default_expr() {
-            Some(expr) => Some(parse_expr(field.field_name(), expr)?),
+            Some(expr) => Some(parse_expr(field_name.as_str(), expr)?),
             None => None,
         };
         let from_expr = match field.from_expr() {
-            Some(expr) => Some(parse_expr(field.field_name(), expr)?),
+            Some(expr) => Some(parse_expr(field_name.as_str(), expr)?),
             None => None,
         };
         let into_expr = match field.into_expr() {
-            Some(expr) => Some(parse_expr(field.field_name(), expr)?),
+            Some(expr) => Some(parse_expr(field_name.as_str(), expr)?),
             None => None,
         };
         let component = ResolvedComponentMetadata::new(field)?;
@@ -304,7 +306,7 @@ impl<'a> ResolvedField<'a> {
         self.raw
     }
 
-    pub fn field_name(&self) -> &'a str {
+    pub fn field_name(&self) -> ComponentFieldName<'static> {
         self.name.source()
     }
 
@@ -526,7 +528,8 @@ fn parse_expr(field_name: &str, value: crate::registry::RustExpr) -> Result<Expr
 mod tests {
     use super::*;
     use crate::registry::{
-        FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant, RustPath, RustType,
+        ComponentFieldName, FieldComponentVariant, FieldValuePresence, FieldValueSpec,
+        FieldVariant, RustPath, RustType,
     };
 
     const fn value_spec(
@@ -540,7 +543,7 @@ mod tests {
     #[test]
     fn component_shape_path_errors_include_field_context() {
         const FIELD: FieldVariant = FieldVariant::component(
-            "country",
+            ComponentFieldName::new("country"),
             value_spec("String", FieldValuePresence::DirectStorage),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::")),
         );
@@ -568,7 +571,7 @@ mod tests {
     #[test]
     fn resolved_field_exposes_component_and_storage_facts_without_raw_helpers() {
         const FIELD: FieldVariant = FieldVariant::component(
-            "country",
+            ComponentFieldName::new("country"),
             value_spec("String", FieldValuePresence::Optional),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::CountryShape",

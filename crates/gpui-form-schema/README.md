@@ -11,7 +11,7 @@ prototyping flows around generated form metadata.
 - `registry::GpuiFormShape`
 - `registry::{FieldValueSpec, FieldVariant}`
 - `registry::{ComponentCapabilities, FieldComponentVariant, FieldValuePresence}`
-- `registry::{RustType, RustPath, RustExpr, ComponentSuffix}`
+- `registry::{ComponentFieldName, RustType, RustPath, RustExpr, ComponentSuffix}`
 - `registry::inventory`
 - `resolved::{ResolvedComponentMetadata, ResolvedGpuiFormShape, ResolvedField}`
 
@@ -37,13 +37,15 @@ suffix. Generated component entity fields should use the source field name.
 Component metadata groups render, value-binding, and storage behavior as
 `ComponentCapabilities`.
 
-Rust fragments in registry metadata use typed string wrappers so generators do
-not accidentally pass a type where a path, expression, or component suffix is
-expected. `RustType::new`, `RustPath::new`, and `RustExpr::new` validate the
-fragment with `syn`; macro-generated inventory uses explicit
+Source field names and Rust fragments in registry metadata use typed string
+wrappers so generators do not accidentally pass field identifiers, types,
+paths, expressions, or component suffixes interchangeably. `RustType::new`,
+`RustPath::new`, and `RustExpr::new` validate the fragment with `syn`;
+macro-generated inventory uses explicit
 `from_macro_tokens_unchecked` const constructors because the derive layer
-stringifies syntax it already parsed.
-Use the wrapper `.parse()` methods when tooling needs the `syn` representation.
+stringifies syntax it already parsed. Use `ComponentFieldName::as_str()` when
+tooling needs identifier text and the Rust wrapper `.parse()` methods when
+tooling needs the `syn` representation.
 Generators that consume complete form metadata should prefer
 `ResolvedGpuiFormShape`, which validates generated names, parses Rust syntax
 once at the inventory boundary, and exposes typed `ResolvedField` /

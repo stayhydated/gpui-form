@@ -6,8 +6,8 @@ use heck::{ToKebabCase as _, ToPascalCase as _};
 use strum::IntoStaticStr;
 
 pub use component_shape::{
-    RenderCapability, RustExpr, RustPath, RustSyntaxError, RustSyntaxKind, RustType,
-    ValueBindingCapability,
+    ComponentFieldName, RenderCapability, RustExpr, RustPath, RustSyntaxError, RustSyntaxKind,
+    RustType, ValueBindingCapability,
 };
 pub use gpui_form_core::component_suffix::{
     ComponentSuffix, ComponentSuffixError, is_valid_component_suffix, validate_component_suffix,
@@ -269,7 +269,7 @@ pub struct FieldComponentVariant {
 impl FieldComponentVariant {
     pub const fn new(shape_path: RustPath) -> Self {
         Self {
-            shape_use: ComponentShapeUse::new("", shape_path),
+            shape_use: ComponentShapeUse::new(ComponentFieldName::new(""), shape_path),
             storage: StorageCapability::ShapePolicy,
         }
     }
@@ -321,7 +321,11 @@ impl FieldComponentVariant {
         self
     }
 
-    const fn with_field_metadata(mut self, field_name: &'static str, field_type: RustType) -> Self {
+    const fn with_field_metadata(
+        mut self,
+        field_name: ComponentFieldName<'static>,
+        field_type: RustType,
+    ) -> Self {
         self.shape_use = ComponentShapeUse::new(field_name, self.shape_use.shape_path())
             .with_field_type(field_type)
             .with_capabilities(self.shape_use.capabilities())
@@ -431,7 +435,7 @@ impl FieldValueSpec {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FieldVariant {
-    field_name: &'static str,
+    field_name: ComponentFieldName<'static>,
     label: Option<&'static str>,
     description: Option<&'static str>,
     examples: &'static [&'static str],
@@ -457,12 +461,16 @@ pub struct FieldVariant {
 }
 
 impl FieldVariant {
-    pub const fn hidden(field_name: &'static str, value: FieldValueSpec) -> Self {
+    pub const fn hidden(field_name: ComponentFieldName<'static>, value: FieldValueSpec) -> Self {
         Self::from_parts(field_name, value, None)
     }
 
+    pub const fn hidden_for_field(field_name: &'static str, value: FieldValueSpec) -> Self {
+        Self::hidden(ComponentFieldName::new(field_name), value)
+    }
+
     pub const fn component(
-        field_name: &'static str,
+        field_name: ComponentFieldName<'static>,
         value: FieldValueSpec,
         component: FieldComponentVariant,
     ) -> Self {
@@ -472,8 +480,16 @@ impl FieldVariant {
         Self::from_parts(field_name, value, Some(component))
     }
 
-    const fn from_parts(
+    pub const fn component_for_field(
         field_name: &'static str,
+        value: FieldValueSpec,
+        component: FieldComponentVariant,
+    ) -> Self {
+        Self::component(ComponentFieldName::new(field_name), value, component)
+    }
+
+    const fn from_parts(
+        field_name: ComponentFieldName<'static>,
         value: FieldValueSpec,
         component: Option<FieldComponentVariant>,
     ) -> Self {
@@ -493,7 +509,7 @@ impl FieldVariant {
         }
     }
 
-    pub const fn field_name(&self) -> &'static str {
+    pub const fn field_name(&self) -> ComponentFieldName<'static> {
         self.field_name
     }
 
@@ -633,14 +649,17 @@ impl FieldVariant {
     pub fn component_suffix(&self) -> String {
         self.prototyping_field_suffix()
             .and_then(|suffix| {
-                component_shape::component_suffix_from_suffix(self.field_name, suffix.as_str())
+                component_shape::component_suffix_from_suffix(
+                    self.field_name.as_str(),
+                    suffix.as_str(),
+                )
             })
             .filter(|suffix| !suffix.is_empty())
             .unwrap_or_else(|| "shape".to_string())
     }
 
     pub fn field_name_pascal(&self) -> String {
-        self.field_name.to_pascal_case()
+        self.field_name.as_str().to_pascal_case()
     }
 
     pub fn field_name_with_component_suffix(&self) -> String {
@@ -660,9 +679,10 @@ impl FieldVariant {
 #[cfg(test)]
 mod tests {
     use super::{
-        ComponentSuffix, FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant,
-        GpuiFormShape, HolderConversionMetadata, HolderConversionShape, RustExpr, RustPath,
-        RustSyntaxKind, RustType, is_valid_component_suffix, validate_component_suffix,
+        ComponentFieldName, ComponentSuffix, FieldComponentVariant, FieldValuePresence,
+        FieldValueSpec, FieldVariant, GpuiFormShape, HolderConversionMetadata,
+        HolderConversionShape, RustExpr, RustPath, RustSyntaxKind, RustType,
+        is_valid_component_suffix, validate_component_suffix,
     };
 
     const fn value_spec(
@@ -679,7 +699,7 @@ mod tests {
         shape_path: &'static str,
     ) -> FieldVariant {
         FieldVariant::component(
-            field_name,
+            ComponentFieldName::new(field_name),
             value_spec(value_type, FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(shape_path)),
         )
@@ -726,7 +746,7 @@ mod tests {
     #[test]
     fn prototyping_suffix_drives_component_suffix() {
         let field = FieldVariant::component(
-            "country",
+            ComponentFieldName::new("country"),
             value_spec("Country", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::fields::CountrySelectorState",
@@ -740,7 +760,7 @@ mod tests {
     #[test]
     fn prototyping_suffix_removes_duplicate_field_prefix() {
         let field = FieldVariant::component(
-            "email",
+            ComponentFieldName::new("email"),
             value_spec("String", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::fields::TextInputShape",
@@ -754,7 +774,7 @@ mod tests {
     #[test]
     fn prototyping_suffix_exact_duplicate_uses_shape_fallback() {
         let field = FieldVariant::component(
-            "tags",
+            ComponentFieldName::new("tags"),
             value_spec("Vec<String>", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::fields::TagsInputShape",
@@ -767,9 +787,12 @@ mod tests {
 
     #[test]
     fn optional_presence_uses_value_holder_option() {
-        let field =
-            FieldVariant::hidden("email", value_spec("String", FieldValuePresence::Optional));
+        let field = FieldVariant::hidden(
+            ComponentFieldName::new("email"),
+            value_spec("String", FieldValuePresence::Optional),
+        );
 
+        assert_eq!(field.field_name().as_str(), "email");
         assert!(field.optional());
         assert!(!field.requires_value());
         assert!(field.value_holder_uses_option());
@@ -806,7 +829,7 @@ mod tests {
         .with_value_binding(true)
         .with_prototyping_field_suffix(Some(ComponentSuffix::new("input")));
         let field = FieldVariant::component(
-            "email",
+            ComponentFieldName::new("email"),
             value_spec("String", FieldValuePresence::DirectStorage),
             component,
         );
@@ -823,7 +846,7 @@ mod tests {
     #[test]
     fn component_variant_stores_neutral_shape_use_metadata() {
         let field = FieldVariant::component(
-            "email",
+            ComponentFieldName::new("email"),
             value_spec("String", FieldValuePresence::DirectStorage),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::fields::EmailInputShape",
@@ -836,7 +859,7 @@ mod tests {
             .expect("component metadata should be attached")
             .shape_use;
 
-        assert_eq!(shape_use.field_name(), "email");
+        assert_eq!(shape_use.field_name().as_str(), "email");
         assert_eq!(shape_use.field_type().map(RustType::as_str), Some("String"));
         assert_eq!(
             shape_use.shape_path().as_str(),

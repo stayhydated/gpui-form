@@ -265,8 +265,9 @@ mod tests {
     use super::ShapeCodeGenerator;
     use crate::implementations::{FieldCodeGenerator as _, FieldCodegenOptions};
     use gpui_form_schema::registry::{
-        ComponentSuffix, ConversionMetadata, FieldComponentVariant, FieldValuePresence,
-        FieldValueSpec, FieldVariant, GpuiFormShape, RustExpr, RustPath, RustType,
+        ComponentFieldName, ComponentSuffix, ConversionMetadata, FieldComponentVariant,
+        FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape, RustExpr, RustPath,
+        RustType,
     };
     use quote::quote;
 
@@ -285,7 +286,7 @@ mod tests {
         shape_path: &'static str,
     ) -> FieldVariant {
         FieldVariant::component(
-            field_name,
+            ComponentFieldName::new(field_name),
             value_spec(value_type, value_presence),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(shape_path)),
         )
@@ -383,7 +384,7 @@ mod tests {
     #[test]
     fn shape_generator_emits_component_call_when_component_known() {
         const FIELDS_WITH_COMPONENT: [FieldVariant; 1] = [FieldVariant::component(
-            "tags",
+            ComponentFieldName::new("tags"),
             value_spec("Vec<String>", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::shapes::TagsInputShape",
@@ -416,7 +417,7 @@ mod tests {
     #[test]
     fn shape_generator_wires_shape_value_binding() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "country",
+            ComponentFieldName::new("country"),
             value_spec("CountryCode", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::shapes::CountryShape",
@@ -462,7 +463,7 @@ mod tests {
     #[test]
     fn shape_generator_clear_resets_direct_value_storage() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "code",
+            ComponentFieldName::new("code"),
             value_spec("String", FieldValuePresence::DirectStorage),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::shapes::OtpInput<String>",
@@ -489,7 +490,7 @@ mod tests {
     #[test]
     fn shape_generator_clear_resets_direct_value_storage_to_declared_default() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "code",
+            ComponentFieldName::new("code"),
             value_spec("String", FieldValuePresence::DirectStorage).with_default(
                 RustExpr::from_macro_tokens_unchecked("String::from(\"123456\")"),
             ),
@@ -518,7 +519,7 @@ mod tests {
     #[test]
     fn shape_generator_clear_converts_literal_declared_default() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "code",
+            ComponentFieldName::new("code"),
             value_spec("String", FieldValuePresence::DirectStorage)
                 .with_default(RustExpr::from_macro_tokens_unchecked("\"123456\"")),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
@@ -546,7 +547,7 @@ mod tests {
     #[test]
     fn shape_generator_clear_converts_source_default_to_form_value() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "birth_date",
+            ComponentFieldName::new("birth_date"),
             FieldValueSpec::new(
                 RustType::from_macro_tokens_unchecked("chrono::NaiveDate"),
                 RustType::from_macro_tokens_unchecked("Timestamp"),
@@ -584,7 +585,7 @@ mod tests {
     #[test]
     fn shape_generator_uses_declared_suffix_for_component_names() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "country",
+            ComponentFieldName::new("country"),
             value_spec("CountryCode", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::shapes::CountrySelectShape",
@@ -632,7 +633,7 @@ mod tests {
     #[test]
     fn shape_generator_renders_generic_component_type() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "tags",
+            ComponentFieldName::new("tags"),
             value_spec("Vec<Tag>", FieldValuePresence::RequiresValue),
             FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
                 "crate::shapes::TagsComboboxShape",
@@ -666,7 +667,7 @@ mod tests {
     #[test]
     fn shape_generator_remaps_component_shape_paths() {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
-            "upload",
+            ComponentFieldName::new("upload"),
             value_spec(
                 "crate::components::UploadValue",
                 FieldValuePresence::RequiresValue,

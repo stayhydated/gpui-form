@@ -589,8 +589,9 @@ mod tests {
     use super::FormShapeAdapter;
     use crate::error::PrototypingError;
     use gpui_form_schema::registry::{
-        FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape,
-        HolderConversionMetadata, HolderConversionShape, RustPath, RustType,
+        ComponentFieldName, FieldComponentVariant, FieldValuePresence, FieldValueSpec,
+        FieldVariant, GpuiFormShape, HolderConversionMetadata, HolderConversionShape, RustPath,
+        RustType,
     };
 
     const fn value_spec(
@@ -610,7 +611,10 @@ mod tests {
         value_type: &'static str,
         value_presence: FieldValuePresence,
     ) -> FieldVariant {
-        FieldVariant::hidden(field_name, value_spec(value_type, value_presence))
+        FieldVariant::hidden(
+            ComponentFieldName::new(field_name),
+            value_spec(value_type, value_presence),
+        )
     }
 
     const fn component_field(
@@ -619,7 +623,7 @@ mod tests {
         component: FieldComponentVariant,
     ) -> FieldVariant {
         FieldVariant::component(
-            field_name,
+            ComponentFieldName::new(field_name),
             value_spec(value_type, FieldValuePresence::DirectStorage),
             component,
         )

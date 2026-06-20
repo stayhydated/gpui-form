@@ -395,7 +395,7 @@ pub fn generate_label_tokens(
     #[cfg(not(feature = "fluent"))]
     {
         use heck::ToTitleCase;
-        let title = field.field_name().to_title_case();
+        let title = field.field_name().as_str().to_title_case();
         quote! { #title }
     }
 }
@@ -419,7 +419,7 @@ pub fn generate_description_fn_tokens(
     #[cfg(not(feature = "fluent"))]
     let description_tokens = {
         use heck::ToTitleCase;
-        let title = field.field_name().to_title_case();
+        let title = field.field_name().as_str().to_title_case();
         quote! { #title }
     };
 
@@ -508,8 +508,8 @@ pub fn generate_description_fn_tokens(
 mod tests {
     use super::{FieldCodegenOptions, ResolvedField, generate_description_fn_tokens};
     use gpui_form_schema::registry::{
-        FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape, RustPath, RustType,
-        ValidationRuleId,
+        ComponentFieldName, FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape,
+        RustPath, RustType, ValidationRuleId,
     };
 
     fn compact(input: &str) -> String {
@@ -534,7 +534,7 @@ mod tests {
     ) -> FieldVariant {
         let value_type = RustType::from_macro_tokens_unchecked(value_type);
         FieldVariant::hidden(
-            field_name,
+            ComponentFieldName::new(field_name),
             FieldValueSpec::new(value_type, value_type, value_presence)
                 .with_validations(validations),
         )

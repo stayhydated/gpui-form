@@ -422,12 +422,11 @@ pub fn expand_gpui_form(
                 .with_validations(#validation_rules_tokens)
                 #default_expr_tokens
             };
-
                 let field_variant_constructor_tokens = match field.component() {
                     Some(component_def) => {
                         let component_variant_tokens = component_def.component_variant_tokens();
                         quote! {
-                            #facade_crate::schema::registry::FieldVariant::component(
+                            #facade_crate::schema::registry::FieldVariant::component_for_field(
                                 #field_name_str,
                             #value_spec_tokens,
                             #component_variant_tokens
@@ -436,7 +435,7 @@ pub fn expand_gpui_form(
                 },
                 None => {
                     quote! {
-                        #facade_crate::schema::registry::FieldVariant::hidden(
+                        #facade_crate::schema::registry::FieldVariant::hidden_for_field(
                             #field_name_str,
                             #value_spec_tokens
                         )
