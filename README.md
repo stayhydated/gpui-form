@@ -192,6 +192,10 @@ Common field-level helpers:
   value types with `FromStr` in prototyping output, so value objects can use
   `value(type = ..., from_source = ..., into_source = ...)` while the source
   model keeps its storage type.
+- `gpui_form_collection::input::ParsedInput::<_, Config>` keeps the same input
+  widget but lets applications provide a typed parser, formatter, placeholder,
+  empty-as-clear policy, and optional widget-level validation when `FromStr`
+  and `ToString` are not the right UI contract.
 - `gpui_form_collection::number_input::NumberInput::<_>` uses `FromStr` for
   non-`String` form-side values when parsing edits.
 - `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr` for

@@ -27,6 +27,9 @@ the attribute and are normalized back into base shape type paths by the derive.
 Currently provided components:
 
 - `input::Input<T>` for `gpui_component::input::Input`
+- `input::ParsedInput<T, C>` for `gpui_component::input::Input` with an
+  application-owned parser, formatter, placeholder, empty-as-clear policy, and
+  optional widget validation
 - `select::Select<T, D = Vec<T>>` for enum-backed
   `gpui_component::select::Select`
 - `combobox::Combobox<T, D = Vec<T>>` for enum-backed
@@ -40,6 +43,34 @@ Currently provided components:
 - `date_picker::DateRangePicker` for range-mode
   `gpui_component::date_picker::DatePicker`
 - `otp_input::OtpInput<T>` for `gpui_component::input::OtpInput`
+
+Use `ParsedInput<T, C>` when `Input<T>`'s `FromStr + ToString` behavior is too
+plain for a value object:
+
+```rs
+pub struct AccountCode(String);
+pub struct AccountCodeInputConfig;
+
+impl gpui_form_collection::input::ParsedInputConfig<AccountCode> for AccountCodeInputConfig {
+    type Error = AccountCodeParseError;
+
+    const PLACEHOLDER: Option<&'static str> = Some("Account code");
+
+    fn parse(value: &str) -> Result<AccountCode, Self::Error> {
+        AccountCode::new(value.trim())
+    }
+
+    fn format(value: &AccountCode) -> String {
+        value.0.clone()
+    }
+}
+
+#[derive(Clone, Debug, GpuiForm)]
+pub struct Account {
+    #[gpui_form(component(gpui_form_collection::input::ParsedInput::<_, AccountCodeInputConfig>))]
+    pub code: AccountCode,
+}
+```
 
 `Select<T, D>` requires enum values that implement
 `gpui_component::select::SelectItem`; derive that trait with

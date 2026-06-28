@@ -194,6 +194,10 @@ Common field-level helpers:
   can use `value(type = ..., from_source = ..., into_source = ...)` while the
   source model keeps its storage type. `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr`
   for non-`String` form-side value types.
+- `gpui_form_collection::input::ParsedInput::<_, Config>` keeps the same input
+  widget but lets applications provide a typed parser, formatter, placeholder,
+  empty-as-clear policy, and optional widget-level validation when `FromStr`
+  and `ToString` are not the right UI contract.
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`, `Select::<_>::searchable(true)`, or
   `Select::<_>::from(SelectArgs::builder().searchable(true).build())`. The

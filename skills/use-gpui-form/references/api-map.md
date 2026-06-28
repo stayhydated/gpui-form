@@ -124,6 +124,9 @@ Common struct attributes:
 
 - Use `gpui_form_collection::input::Input::<_>` for text-like and
   `FromStr`-parsable values.
+- Use `gpui_form_collection::input::ParsedInput::<_, Config>` when a text-like
+  value needs an application-owned parser, formatter, placeholder,
+  empty-as-clear policy, or widget-level validation.
 - Use `gpui_form_collection::checkbox::Checkbox` or
   `gpui_form_collection::switch::Switch` for `bool` fields.
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like

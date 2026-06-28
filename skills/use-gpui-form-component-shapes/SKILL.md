@@ -33,6 +33,10 @@ First decide whether the form can use an existing shape:
 
 - Existing collection shape: prefer `gpui_form_collection::*` shapes when they
   already model the widget and value type.
+- Parsed text input: prefer
+  `gpui_form_collection::input::ParsedInput::<_, Config>` when the widget is a
+  standard input but the value type needs custom parser/formatter,
+  empty-as-clear, placeholder, or widget-validation behavior.
 - Existing component shape: use the shape directly in
   `#[gpui_form(component(...))]`.
 - New custom shape: create or select the shape with the component-shape GPUI
