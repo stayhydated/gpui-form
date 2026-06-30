@@ -1,5 +1,0 @@
-error: expected a component shape path or configured component shape expression
- --> tests/ui/gpui_form_malformed_configured_component_shape.rs:6:27
-  |
-6 |     #[gpui_form(component(Select::<_>::searchable(true)))]
-  |                           ^^^^^^

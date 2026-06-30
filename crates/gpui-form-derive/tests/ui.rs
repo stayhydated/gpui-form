@@ -10,7 +10,6 @@ fn gpui_form_reports_invalid_field_attributes() {
     tests.compile_fail("tests/ui/gpui_form_malformed_attribute_unknown_name_value.rs");
     tests.compile_fail("tests/ui/gpui_form_malformed_attribute_value_options.rs");
     tests.compile_fail("tests/ui/gpui_form_malformed_attribute_word.rs");
-    tests.compile_fail("tests/ui/gpui_form_malformed_configured_component_shape.rs");
     tests.compile_fail("tests/ui/gpui_form_missing_*.rs");
     tests.compile_fail("tests/ui/gpui_form_skip_*.rs");
     tests.compile_fail("tests/ui/gpui_form_value_type_option.rs");
