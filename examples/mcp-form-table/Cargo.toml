@@ -11,7 +11,7 @@ gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form = { features = [ "mcp" ], workspace = true }
 gpui-table = { features = [ "mcp" ], path = "../../../gpui-table/crates/gpui-table" }
-gpui-table-component = { path = "../../../gpui-table/crates/gpui-table-component" }
+gpui-table-component = { features = [ "mcp" ], path = "../../../gpui-table/crates/gpui-table-component" }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
 

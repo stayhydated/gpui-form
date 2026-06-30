@@ -272,15 +272,18 @@ mod gpui_form_tests {
 
     #[test]
     fn test_validator_attr_to_tokens_normalizes_direct_chain() {
-        let validator: ValidatorAttr =
-            syn::parse_quote!(koruma_collection::numeric::RangeValidation::<_>::min(18).max(167));
+        let validator: ValidatorAttr = syn::parse_quote!(
+            koruma_collection::numeric::RangeValidation::<_>
+                .min(18)
+                .max(167)
+        );
 
         let tokens = koruma::validator_attr_to_tokens(&validator);
         let compact = compact_tokens(&tokens.to_string());
 
         assert_eq!(
             compact,
-            compact_tokens("koruma_collection::numeric::RangeValidation::<_>::min(18).max(167)")
+            compact_tokens("koruma_collection::numeric::RangeValidation::<_>.min(18).max(167)")
         );
     }
 
@@ -291,7 +294,7 @@ mod gpui_form_tests {
             #[gpui_form(koruma)]
             struct TestForm {
                 #[gpui_form(component(crate::NumericShape))]
-                #[koruma(koruma_collection::numeric::RangeValidation::<_>::min(18).max(167))]
+                #[koruma(koruma_collection::numeric::RangeValidation::<_>.min(18).max(167))]
                 age: u32,
             }
         };
@@ -309,7 +312,7 @@ mod gpui_form_tests {
 
         assert!(
             compact.contains(&compact_tokens(
-                "koruma_collection::numeric::RangeValidation::<_>::min(18).max(167)"
+                "koruma_collection::numeric::RangeValidation::<_>.min(18).max(167)"
             )),
             "Generated value holder should preserve direct-chain koruma validators: {compact}"
         );

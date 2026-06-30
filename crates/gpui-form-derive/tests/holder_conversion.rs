@@ -37,7 +37,7 @@ fn try_form_to_fallible_code(value: String) -> Result<FallibleCode, FallibleCode
 
 #[derive(Clone, Debug, Eq, koruma::Koruma, PartialEq)]
 #[koruma(newtype)]
-pub struct ValidatedCode(#[koruma(LenValidation::<_>::min(2).max(8))] String);
+pub struct ValidatedCode(#[koruma(LenValidation::<_>.min(2).max(8))] String);
 
 pub struct State;
 

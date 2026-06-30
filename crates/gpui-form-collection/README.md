@@ -76,10 +76,10 @@ pub struct Account {
 `gpui_component::select::SelectItem`; derive that trait with
 `#[derive(SelectItem)]` from `gpui-form-collection-derive`. The provided shape
 uses the default `Vec<T>` delegate. Use
-`#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
+`#[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]`
 when a field should construct the select with search enabled. For a completed
 configuration value, use
-`Select::<_>::from(SelectArgs::builder().searchable(true).build())`.
+`Select::<_>.from(SelectArgs::builder().searchable(true).build())`.
 
 Collection components are declared with `component-shape-gpui` and add value
 adapters where the component can synchronize form state generically. `GpuiForm`

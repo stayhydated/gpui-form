@@ -69,9 +69,11 @@ where
 #[derive(gpui_form::GpuiForm)]
 #[gpui_form(no_inventory)]
 struct ConfiguredComponentForm {
-    #[gpui_form(component(Select::<_>::searchable(true)))]
+    #[gpui_form(component(Select::<_>.searchable(true)))]
     country: String,
-    #[gpui_form(component(Select::<_>::from(
+    #[gpui_form(component(Select::<_>.searchable(false)))]
+    city: String,
+    #[gpui_form(component(Select::<_>.from(
         SelectArgs::builder().searchable(true).build()
     )))]
     region: String,

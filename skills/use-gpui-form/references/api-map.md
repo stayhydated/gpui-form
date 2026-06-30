@@ -56,8 +56,8 @@ shape macros or direct runtime value-binding impls.
 ```rust
 #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
 #[gpui_form(component(gpui_form_collection::select::Select::<_>))]
-#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]
-#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(
+#[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]
+#[gpui_form(component(gpui_form_collection::select::Select::<_>.from(
     SelectArgs::builder().searchable(true).build()
 )))]
 #[gpui_form(component(gpui_form_collection::combobox::Combobox::<Item>))]
@@ -73,6 +73,7 @@ shape macros or direct runtime value-binding impls.
 #[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]
 #[gpui_form(component(gpui_form_collection::switch::Switch))]
 #[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
 #[gpui_form(component(my::Shape))]
 ```
 
@@ -97,8 +98,8 @@ Common field attributes:
 #[gpui_form(skip)]
 ```
 
-Configured shape expressions, such as `Select::<_>::searchable(true)` or
-`Select::<_>::from(SelectArgs::builder().searchable(true).build())`, may be
+Configured shape expressions, such as `Select::<_>.searchable(true)` or
+`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, may be
 used anywhere `<shape>` appears when the expression returns a
 `GpuiComponentShapeBuilder` for the same base shape.
 
@@ -131,7 +132,7 @@ Common struct attributes:
   `gpui_form_collection::switch::Switch` for `bool` fields.
 - Use `gpui_form_collection::select::Select::<_>` for a single enum-like
   choice; derive `SelectItem`. Use a configured shape expression such as
-  `Select::<_>::searchable(true)` when the field needs custom construction.
+  `Select::<_>.searchable(true)` when the field needs custom construction.
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
   `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
@@ -151,8 +152,10 @@ Common struct attributes:
   selection; enable `gpui-form-component`'s `component-shape` feature.
 - Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
-  nested/cascading enum trees; derive `InfiniteSelect`. Use a custom
-  `GpuiComponentShape` wrapper when search or depth limits are needed.
+  nested/cascading enum trees; derive `InfiniteSelect`. Use
+  `InfiniteSelect::<_>.searchable(true)` when search should be enabled.
+  Use a custom `GpuiComponentShape` wrapper when deeper runtime options are
+  needed.
 - Define a custom component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.

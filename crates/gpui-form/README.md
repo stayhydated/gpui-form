@@ -107,8 +107,8 @@ the component shape with the direct shape argument:
 - `#[gpui_form(component(my::Shape))]`
 - `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
 - `#[gpui_form(component(gpui_form_collection::select::Select::<_>))]`
-- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
-- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(SelectArgs::builder().searchable(true).build())))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>.from(SelectArgs::builder().searchable(true).build())))]`
 - `#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Country>))]`
 - `#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]`
 - `#[gpui_form(component(gpui_form_collection::switch::Switch))]`
@@ -122,7 +122,7 @@ the component shape with the direct shape argument:
 - `#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]`
 - `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
-- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -131,9 +131,9 @@ by depending on `gpui-form-component-derive` directly.
 
 The `component(...)` value starts with a Rust shape path. Plain paths delegate
 runtime construction to `GpuiComponentShape::new`; configured expressions such
-as `Select::<_>::searchable(true)`,
-`Select::<_>::from(SelectArgs::builder().searchable(true).build())`, or
-`InfiniteSelect::<_>::searchable(true)` use the expression as a
+as `Select::<_>.searchable(true)`,
+`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
+`InfiniteSelect::<_>.searchable(true)` use the expression as a
 `GpuiComponentShapeBuilder` for the same base shape. The shape type must be
 declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
@@ -199,8 +199,8 @@ Common field-level helpers:
   empty-as-clear policy, and optional widget-level validation when `FromStr`
   and `ToString` are not the right UI contract.
 - Generic component expressions use Rust expression turbofish syntax, such as
-  `Input::<_>`, `Select::<_>::searchable(true)`, or
-  `Select::<_>::from(SelectArgs::builder().searchable(true).build())`. The
+  `Input::<_>`, `Select::<_>.searchable(true)`,
+  or `Select::<_>.from(SelectArgs::builder().searchable(true).build())`. The
   derive normalizes the base shape path and resolves `_` to the field's
   form-side type.
 - generated `FormFields` members and `FormComponents` constructors use the
@@ -226,8 +226,8 @@ Use `gpui-form-component` with its `derive` feature or import
 `gpui-form-component-derive` explicitly.
 Enable `gpui-form-component`'s `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
-Use `InfiniteSelect::<_>::searchable(true)` when the cascading selects should
-enable search.
+Use `InfiniteSelect::<_>.searchable(true)` when the cascading selects should
+enable search; use plain `InfiniteSelect::<_>` for default options.
 
 Common struct-level helpers:
 
@@ -628,7 +628,7 @@ pub struct Signup {
     pub username: String,
 
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(RangeValidation::<_>::min(18).max(120))]
+    #[koruma(RangeValidation::<_>.min(18).max(120))]
     pub age: Option<u32>,
 }
 ```

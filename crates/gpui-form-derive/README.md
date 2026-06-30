@@ -43,8 +43,8 @@ Supported component forms:
 - `#[gpui_form(component(my::Shape))]`
 - `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
 - `#[gpui_form(component(gpui_form_collection::select::Select::<_>))]`
-- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]`
-- `#[gpui_form(component(gpui_form_collection::select::Select::<_>::from(SelectArgs::builder().searchable(true).build())))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]`
+- `#[gpui_form(component(gpui_form_collection::select::Select::<_>.from(SelectArgs::builder().searchable(true).build())))]`
 - `#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Country>))]`
 - `#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]`
 - `#[gpui_form(component(gpui_form_collection::switch::Switch))]`
@@ -58,6 +58,7 @@ Supported component forms:
 - `#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]`
 - `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]`
 
 The `gpui_form_component` shape examples require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -66,8 +67,9 @@ feature or by depending on `gpui-form-component-derive` directly.
 
 The `component(...)` value starts with a Rust shape path. Plain paths delegate
 runtime construction to `GpuiComponentShape::new`; configured expressions such
-as `Select::<_>::searchable(true)` or
-`Select::<_>::from(SelectArgs::builder().searchable(true).build())` use the
+as `Select::<_>.searchable(true)`,
+`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
+`InfiniteSelect::<_>.searchable(true)` use the
 expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
 type must be declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
@@ -216,8 +218,8 @@ Behavior notes:
   form-side non-`String` values with `FromStr` instead of assigning raw
   `String`s
 - generic component expressions use `::<_>` in the attribute, such as
-  `Input::<_>`, `Select::<_>::searchable(true)`, or
-  `Select::<_>::from(SelectArgs::builder().searchable(true).build())`; the
+  `Input::<_>`, `Select::<_>.searchable(true)`,
+  or `Select::<_>.from(SelectArgs::builder().searchable(true).build())`; the
   derive normalizes the base shape path and resolves `_` to the field's
   form-side type
 - generated `FormFields` members and `FormComponents` constructors use the

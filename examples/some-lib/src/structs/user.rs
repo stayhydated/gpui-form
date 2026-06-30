@@ -36,8 +36,8 @@ pub struct User {
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     #[koruma(
         NonEmptyValidation::<_>,
-        PrefixValidation::<_>::prefix("Xx"),
-        SuffixValidation::<_>::suffix("xX")
+        PrefixValidation::<_>.prefix("Xx"),
+        SuffixValidation::<_>.suffix("xX")
     )]
     pub username: String,
 
@@ -49,7 +49,7 @@ pub struct User {
     pub email: String,
 
     #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-    #[koruma(RangeValidation::<_>::min(18).max(167))]
+    #[koruma(RangeValidation::<_>.min(18).max(167))]
     pub age: Option<u32>,
 
     #[gpui_form(component(
@@ -87,7 +87,7 @@ pub struct User {
     #[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]
     pub enable_notifications: bool,
 
-    #[gpui_form(component(gpui_form_collection::select::Select::<_>::searchable(true)))]
+    #[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]
     pub preferred: PreferredLanguage,
 
     #[gpui_form(component(

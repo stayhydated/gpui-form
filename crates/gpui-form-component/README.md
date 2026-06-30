@@ -108,7 +108,7 @@ pub location: Country,
 Enable search on each cascading select with the field-level builder expression:
 
 ```rs
-#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>::searchable(true)))]
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
 pub location: Country,
 ```
 
@@ -229,12 +229,12 @@ prompt to one selected path.
 ```rs
 use gpui_form_component::file_picker::{FilePicker, FilePickerOptions};
 
-#[gpui_form(component(FilePicker::from(
+#[gpui_form(component(FilePicker.from(
     FilePickerOptions::builder().multiple(false).build()
 )))]
 pub upload_file: Vec<std::path::PathBuf>;
 
-#[gpui_form(component(FilePicker::from(
+#[gpui_form(component(FilePicker.from(
     FilePickerOptions::builder().multiple(true).build()
 )))]
 pub upload_files: Vec<std::path::PathBuf>;

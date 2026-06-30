@@ -7,7 +7,7 @@ use syn::Ident;
 
 /// Convert a ValidatorAttr to a TokenStream for generating koruma attribute.
 /// This produces normalized direct-validator tokens like
-/// `ValidatorPath::<Type>::arg1(val1).arg2(val2)`.
+/// `ValidatorPath::<Type>.arg1(val1).arg2(val2)`.
 pub fn validator_attr_to_tokens(validator: &ValidatorAttr) -> TokenStream {
     let path = validator.path();
 
@@ -33,7 +33,7 @@ pub fn validator_attr_to_tokens(validator: &ValidatorAttr) -> TokenStream {
         quote! { .#method_name(#(#args),*) }
     });
 
-    quote! { #path #type_params ::#method_name(#(#args),*) #(#builder_calls)* }
+    quote! { #path #type_params .#method_name(#(#args),*) #(#builder_calls)* }
 }
 
 pub fn validator_use_to_tokens(validator_use: &ParsedValidatorUse) -> TokenStream {

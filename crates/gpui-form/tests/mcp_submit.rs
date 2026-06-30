@@ -88,10 +88,10 @@ pub struct ValidatedRequest {
 #[gpui_form(mcp)]
 pub struct ConstrainedRequest {
     #[gpui_form(hidden)]
-    #[koruma(LenValidation::<_>::min(2).max(8))]
+    #[koruma(LenValidation::<_>.min(2).max(8))]
     title: String,
     #[gpui_form(hidden)]
-    #[koruma(RangeValidation::<_>::min(1).max(5).exclusive_max(true))]
+    #[koruma(RangeValidation::<_>.min(1).max(5).exclusive_max(true))]
     retries: u32,
 }
 
@@ -107,7 +107,7 @@ pub struct ConstrainedRequest {
 )]
 #[serde(transparent)]
 #[koruma(newtype)]
-pub struct RequestCode(#[koruma(LenValidation::<_>::min(2).max(8))] String);
+pub struct RequestCode(#[koruma(LenValidation::<_>.min(2).max(8))] String);
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]

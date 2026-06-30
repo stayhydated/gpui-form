@@ -139,7 +139,7 @@ pub struct UserProfile {
     pub age: Option<u32>,
 
     #[gpui_form(
-        component(gpui_form_collection::select::Select::<_>::searchable(true)),
+        component(gpui_form_collection::select::Select::<_>.searchable(true)),
         default = Country::France
     )]
     pub country: Country,
@@ -152,10 +152,10 @@ Common patterns:
   use `gpui_form_collection::input::ParsedInput::<_, Config>` and implement
   `ParsedInputConfig<T>` with the parser, formatter, placeholder,
   empty-as-clear policy, and optional widget validation.
-- For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices. `SelectItem` uses variant-name fallback labels by default and only needs `Display` with `#[select_item(display)]`. Use `Select::<_>::searchable(true)` when the field should construct the built-in select with search enabled; use `Select::<_>::from(SelectArgs::builder().searchable(true).build())` when passing a completed Bon-built select configuration.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly. Use `InfiniteSelect::<_>::searchable(true)` when the cascading selects should construct with search enabled.
+- For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices. `SelectItem` uses variant-name fallback labels by default and only needs `Display` with `#[select_item(display)]`. Use `Select::<_>.searchable(true)` when the field should construct the built-in select with search enabled; use `Select::<_>.from(SelectArgs::builder().searchable(true).build())` when passing a completed Bon-built select configuration.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly. Use `InfiniteSelect::<_>.searchable(true)` when the cascading selects should construct with search enabled.
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes can back optional fields; for a required model field that should start empty, omit `default = ...` and use the fallible holder-to-model path. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
-- For Koruma validation, add `#[gpui_form(koruma)]` or `#[gpui_form(koruma(fluent))]` to the form struct and write field validators with Koruma's direct syntax, such as `#[koruma(NonEmptyValidation::<_>)]` or `#[koruma(RangeValidation::<_>::min(18).max(120))]`. Use Koruma target selectors such as `full(...)` when a validator must receive the full optional value.
+- For Koruma validation, add `#[gpui_form(koruma)]` or `#[gpui_form(koruma(fluent))]` to the form struct and write field validators with Koruma's direct syntax, such as `#[koruma(NonEmptyValidation::<_>)]` or `#[koruma(RangeValidation::<_>.min(18).max(120))]`. Use Koruma target selectors such as `full(...)` when a validator must receive the full optional value.
 - Koruma-backed MCP forms publish validation rule metadata in generated field
   schemas through `x-gpuiFormValidation`. Literal `LenValidation`,
   `RangeValidation`, and `NonEmptyValidation` arguments become JSON Schema

@@ -148,14 +148,14 @@ Then configure individual form fields:
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
 pub struct SearchForm {
-    #[gpui_form(component(MySelect::searchable(true)))]
+    #[gpui_form(component(MySelect.searchable(true)))]
     pub assignee: Option<String>,
 }
 ```
 
 The field still uses the same base shape for value compatibility, storage
 policy, render metadata, and prototyping metadata; only state construction
-changes.
+changes. Form attributes use dot-chain shape configuration.
 
 ## Prototyping Alignment
 

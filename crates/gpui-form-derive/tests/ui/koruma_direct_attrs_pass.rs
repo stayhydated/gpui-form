@@ -41,7 +41,7 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for InputShape {
 #[gpui_form(koruma)]
 struct Demo {
     #[gpui_form(component(crate::NumericShape))]
-    #[koruma(koruma_collection::numeric::RangeValidation::<_>::min(18).max(167))]
+    #[koruma(koruma_collection::numeric::RangeValidation::<_>.min(18).max(167))]
     age: u32,
 
     #[gpui_form(component(crate::NumericShape))]

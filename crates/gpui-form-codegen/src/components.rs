@@ -282,9 +282,9 @@ mod tests {
     #[test]
     fn configured_component_shape_uses_builder_constructor_tokens() {
         let options = ShapeOptions::from_constructor_expr(syn::parse_quote! {
-            crate::select::Select::<_>::searchable(true)
+            crate::select::Select::<_>.searchable(true)
         })
-        .expect("configured component shape should parse");
+        .expect("dot-chain configured component shape should parse");
         let field_type: syn::Type = syn::parse_quote!(String);
 
         let shape = options.resolve("country".to_string(), field_type);
@@ -298,6 +298,19 @@ mod tests {
                 .filter(|ch| !ch.is_whitespace())
                 .collect::<String>(),
             "::gpui_form::runtime::shape::build_component_shape::<crate::select::Select<String>,_>(crate::select::Select::<String>::searchable(true),window,cx,)"
+        );
+    }
+
+    #[test]
+    fn configured_component_shape_rejects_associated_constructor_tokens() {
+        let error = ShapeOptions::from_constructor_expr(syn::parse_quote! {
+            crate::select::Select::<_>::searchable(true)
+        })
+        .expect_err("associated constructor syntax should not parse");
+
+        assert_eq!(
+            error.to_string(),
+            "expected a component shape path or configured component shape expression"
         );
     }
 }
