@@ -11,8 +11,8 @@ Use it to decide:
 3. which narrow validation command proves the edit.
 
 For most application-facing form work, start in `crates/gpui-form`. Use
-`crates/gpui-form-prototyping-core` when generating GPUI scaffolding from
-`GpuiFormShape` inventory data.
+`crates/gpui-form-prototyping-core` for GPUI scaffolding from `GpuiFormShape`
+inventory data. Check `just --list` before broad validation.
 
 ## Project Summary
 
@@ -40,12 +40,10 @@ Before editing:
    workflow, or supported example.
 5. Run the smallest command that proves the edited behavior or docs surface.
 
-There is no mdBook/book surface in this workspace. Do not route documentation
-updates to a book unless one is added.
-
-Do not add separate architecture markdown files. Internal design notes belong
-next to the relevant module as rustdocs/source comments, in focused tests, or
-in this guide when they affect agent routing.
+Route public documentation to the README, example, skill, and rustdoc surfaces
+named below. Keep implementation rationale next to the relevant module as
+rustdocs/source comments, in focused tests or snapshots, or in this guide when
+it affects agent routing.
 
 ## Documentation Sync
 
@@ -69,6 +67,9 @@ Keep these specific surfaces aligned:
   `examples/README.md`, and `examples/prototyping` for inventory/codegen
   workflows
 - `examples/README.md` as the canonical index for runnable workspace examples
+- package-local `i18n.toml`, `i18n/` Fluent resources, `src/i18n.rs`, and
+  matching README/example text for localization changes in `examples/some-lib`,
+  `crates/gpui-form-component`, or `crates/gpui-form-component-story`
 
 ## Workspace Map
 
@@ -166,10 +167,8 @@ Keep these specific surfaces aligned:
 
 When editing Rust crates:
 
-- Use `cargo` for build, test, and run tasks.
-- Keep shared package metadata and dependency versions in the workspace root
-  `Cargo.toml`.
-- Prefer `workspace = true` for shared dependencies in workspace crates.
+- Use `cargo` for focused build, test, and run tasks. Use `justfile` recipes
+  for workspace-wide format, clippy, check, test, and dry-run publish tasks.
 - Treat `crates/gpui-form` as the public facade boundary unless intentionally
   changing lower-level crate APIs.
 
@@ -190,6 +189,8 @@ When editing prototyping or generated outputs:
   generated output.
 - Keep `examples/prototyping`, `examples/prototyping/output`, and
   `examples/some-lib-forms/src/forms` aligned.
+- Keep `crates/gpui-form-prototyping-core/src/implementations/snapshots`
+  aligned when generator token output changes.
 
 When writing tests:
 
@@ -199,18 +200,24 @@ When writing tests:
 
 ## Validation
 
-Validation is the default after code or workflow changes. Run the narrowest
-command that proves the edited behavior or docs surface:
+Run the narrowest command that proves the edit. CI also runs fmt, clippy,
+workspace tests, docs, package-content listing, cargo-machete, and an es-fluent
+FTL check.
 
-- `cargo check -p <package>` for a focused compile check
-- `cargo test -p <package>` for focused behavior changes
+- `cargo check -p gpui-form` for facade compile checks, or the same `-p` form
+  for the package that owns a focused edit
+- `cargo test -p gpui-form` for facade behavior changes, or the same `-p` form
+  for the package that owns a focused edit
 - `cargo test -p gpui-form-derive --test ui` for derive UI diagnostics
+- `cargo test -p gpui-form-prototyping-core` for prototyping generator or
+  snapshot changes
 - `cargo run -p prototyping` after generator/inventory output changes
-- `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps`
-  after rustdoc or public API documentation changes
-- `just check`, `just test`, or the matching `justfile` recipe when a change
-  spans multiple surfaces
+- `cargo doc --workspace --all-features --no-deps --locked` when matching the CI
+  docs job
+- `cargo package --workspace --list` when matching the CI package job
+- `just fmt`, `just clippy`, `just check`, `just test`, or the matching
+  `justfile` recipe when a change spans each recipe's scope
 
 If validation cannot be run, state why and what remains unvalidated. Do not
-claim a change works unless it was validated, generated from source-of-truth
-metadata, or the remaining risk is explicitly documented.
+claim a change works or was validated unless a proving command was run; for
+generated output, also state whether it was regenerated from source metadata.

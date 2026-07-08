@@ -202,8 +202,12 @@ pub fn from(input: TokenStream) -> TokenStream {
                     darling::ast::Style::Struct => {
                         if variant.fields.fields.len() == 1 {
                             let field = &variant.fields.fields[0];
-                            let field_name =
-                                field.ident.clone().expect("struct field must have a name");
+                            let Some(field_name) = field.ident.clone() else {
+                                return Err(syn::Error::new_spanned(
+                                    field,
+                                    "InfiniteSelect only supports named struct variant fields",
+                                ));
+                            };
                             (Some(field.ty.clone()), Some(field_name))
                         } else if variant.fields.fields.is_empty() {
                             (None, None)
@@ -856,7 +860,7 @@ pub fn from(input: TokenStream) -> TokenStream {
 #[cfg(test)]
 mod tests {
     use super::{FluentKvOptions, VariantArgs};
-    use darling::FromVariant;
+    use darling::FromVariant as _;
 
     #[test]
     fn fluent_kv_options_merge_across_attributes() {

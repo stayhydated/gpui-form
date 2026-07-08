@@ -4,7 +4,7 @@ use quote::ToTokens as _;
 use strum::EnumString;
 use syn::{
     Expr, Ident, Lit, Meta, Path, Token, Type,
-    parse::{Parse, ParseStream, Parser},
+    parse::{Parse, ParseStream, Parser as _},
     punctuated::Punctuated,
 };
 
@@ -85,8 +85,8 @@ pub enum McpTaskSupportOption {
 
 #[derive(Clone, Debug)]
 pub enum McpContextSubmitOptions {
-    Explicit(McpExplicitContextSubmitOptions),
-    Submitter(McpSubmitterOptions),
+    Explicit(Box<McpExplicitContextSubmitOptions>),
+    Submitter(Box<McpSubmitterOptions>),
 }
 
 #[derive(Clone, Debug)]
@@ -357,20 +357,22 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
     }
 
     options.context_submit = if let Some(submitter) = submitter {
-        Some(McpContextSubmitOptions::Submitter(McpSubmitterOptions {
-            submitter,
-            response,
-            map_response,
-        }))
+        Some(McpContextSubmitOptions::Submitter(Box::new(
+            McpSubmitterOptions {
+                submitter,
+                response,
+                map_response,
+            },
+        )))
     } else {
         context.map(|context| {
-            McpContextSubmitOptions::Explicit(McpExplicitContextSubmitOptions {
+            McpContextSubmitOptions::Explicit(Box::new(McpExplicitContextSubmitOptions {
                 context,
                 response,
                 error,
                 submit,
                 map_response,
-            })
+            }))
         })
     };
 

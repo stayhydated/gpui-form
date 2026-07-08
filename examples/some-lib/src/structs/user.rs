@@ -11,7 +11,7 @@ use koruma_collection::{
 };
 use strum::EnumIter;
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, PartialEq, SelectItem)]
+#[derive(Clone, Debug, Default, EnumIter, EsFluent, Eq, PartialEq, SelectItem)]
 #[select_item(fluent)]
 pub enum PreferredLanguage {
     #[default]
@@ -20,7 +20,7 @@ pub enum PreferredLanguage {
     Chinese,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, PartialEq, SelectItem)]
+#[derive(Clone, Debug, Default, EnumIter, EsFluent, Eq, PartialEq, SelectItem)]
 #[select_item(fluent)]
 pub enum EnumCountry {
     #[default]
@@ -136,12 +136,17 @@ fn to_form_datetime(value: Timestamp) -> chrono::NaiveDate {
     chrono::DateTime::<chrono::Utc>::from_timestamp_micros(
         value.__timestamp_micros_since_unix_epoch__,
     )
-    .unwrap_or_else(|| chrono::DateTime::<chrono::Utc>::from_timestamp_micros(0).unwrap())
+    .unwrap_or_else(|| {
+        chrono::DateTime::<chrono::Utc>::from_timestamp_micros(0)
+            .expect("Unix epoch timestamp is valid")
+    })
     .date_naive()
 }
 
 fn to_model_timestamp(value: chrono::NaiveDate) -> Timestamp {
-    let naive_datetime = value.and_hms_opt(0, 0, 0).unwrap();
+    let naive_datetime = value
+        .and_hms_opt(0, 0, 0)
+        .expect("midnight is a valid time");
     let datetime =
         chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(naive_datetime, chrono::Utc);
     Timestamp::from_micros_since_unix_epoch(datetime.timestamp_micros())

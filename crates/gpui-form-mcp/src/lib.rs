@@ -208,7 +208,7 @@ impl Default for McpFormEditorOptions {
 /// Use this when a handler returns object-shaped JSON but does not need a
 /// dedicated response struct. It serializes transparently as the wrapped object
 /// and publishes a generic object output schema.
-#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(transparent)]
 pub struct McpObject(Map<String, Value>);
 
@@ -1380,9 +1380,7 @@ pub trait McpSubmitArgument: Sized + 'static {
         let descriptor = Self::Form::descriptor();
         let mut definitions = vec![submit_tool_definition_for_response::<Self::Form, Response>()?];
         definitions.extend(editor_tool_definitions::<Self::Form>()?);
-        definitions.push(
-            session_submit_tool_definition::<Self::Form, Response>(descriptor)?.into_definition(),
-        );
+        definitions.push(session_submit_tool_definition::<Response>(descriptor)?.into_definition());
         Ok(definitions)
     }
 }
@@ -2179,9 +2177,8 @@ where
     let mut definitions =
         vec![McpFormInput::<Form>::tool_definition_for_response::<Response>()?.into_definition()];
     definitions.extend(editor_tool_definitions::<Form>()?);
-    definitions.push(
-        session_submit_tool_definition::<Form, Response>(Form::descriptor())?.into_definition(),
-    );
+    definitions
+        .push(session_submit_tool_definition::<Response>(Form::descriptor())?.into_definition());
     ensure_tool_definitions_available(server, &definitions)
 }
 
@@ -2325,10 +2322,8 @@ impl<Holder> EditSessions<Holder> {
         let expired = self
             .sessions
             .iter()
-            .filter_map(|(session_id, session)| {
-                (now.duration_since(session.last_accessed_at) >= timeout)
-                    .then(|| session_id.clone())
-            })
+            .filter(|&(_, session)| now.duration_since(session.last_accessed_at) >= timeout)
+            .map(|(session_id, _)| session_id.clone())
             .collect::<Vec<_>>();
         for session_id in &expired {
             self.sessions.remove(session_id);
@@ -2396,7 +2391,7 @@ where
     Call: Fn(Form::ValueHolder) -> ToolCallResult + Send + Sync + 'static,
 {
     let definitions = editor_typed_tool_definitions::<Form>(descriptor)?;
-    let session_submit = session_submit_tool_definition::<Form, Response>(descriptor)?;
+    let session_submit = session_submit_tool_definition::<Response>(descriptor)?;
     let sessions = Arc::new(Mutex::new(EditSessions::new(options)));
     insert_editor_tools_with_sessions::<Form>(server, definitions, Arc::clone(&sessions))?;
     server.add_typed_tool(session_submit, move |input| {
@@ -2417,7 +2412,7 @@ where
     Call: Fn(Form::ValueHolder) -> ToolFuture + Send + Sync + 'static,
 {
     let definitions = editor_typed_tool_definitions::<Form>(descriptor)?;
-    let session_submit = session_submit_tool_definition::<Form, Response>(descriptor)?;
+    let session_submit = session_submit_tool_definition::<Response>(descriptor)?;
     let sessions = Arc::new(Mutex::new(EditSessions::new(options)));
     insert_editor_tools_with_sessions::<Form>(server, definitions, Arc::clone(&sessions))?;
     server.add_typed_tool_async(session_submit, move |input| {
@@ -2683,11 +2678,10 @@ fn session_mutation_annotations(destructive: bool) -> McpToolAnnotations {
         .open_world(false)
 }
 
-fn session_submit_tool_definition<Form, Response>(
+fn session_submit_tool_definition<Response>(
     descriptor: McpFormDescriptor,
 ) -> Result<McpTypedTool<McpFormEditSubmitInput>, McpToolError>
 where
-    Form: McpForm,
     Response: McpJsonSchema,
 {
     let tool_names = editor_tool_names(descriptor);

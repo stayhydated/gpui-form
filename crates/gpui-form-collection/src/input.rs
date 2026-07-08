@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn parsed_input_config_can_request_widget_validation() {
-        assert!(StrictNumberInputConfig::VALIDATE_INPUT);
+        const { assert!(StrictNumberInputConfig::VALIDATE_INPUT) };
         assert!(StrictNumberInputConfig::is_valid_input("42"));
         assert!(StrictNumberInputConfig::is_valid_input(""));
         assert!(!StrictNumberInputConfig::is_valid_input(" 42 "));

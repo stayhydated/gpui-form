@@ -187,9 +187,7 @@ impl HolderConversionPlan {
             }
         }
 
-        let fallibility = if has_skipped_fields {
-            ConversionFallibility::Always
-        } else if has_fallible_conversion {
+        let fallibility = if has_skipped_fields || has_fallible_conversion {
             ConversionFallibility::Always
         } else if predicates.is_empty() {
             ConversionFallibility::Never

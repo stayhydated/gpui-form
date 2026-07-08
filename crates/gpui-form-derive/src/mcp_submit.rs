@@ -1,7 +1,7 @@
 use gpui_form_codegen::resolve_crate_path;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::spanned::Spanned;
+use syn::spanned::Spanned as _;
 use syn::{
     AngleBracketedGenericArguments, FnArg, GenericArgument, ItemFn, PatType, PathArguments,
     ReturnType, Type, TypePath,

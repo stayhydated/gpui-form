@@ -36,9 +36,6 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.10
 
-      - name: Setup mold
-        uses: rui314/setup-mold@v1
-
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
 
@@ -72,14 +69,45 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.10
 
-      - name: Setup mold
-        uses: rui314/setup-mold@v1
-
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
 
       - name: Lint code
         run: cargo clippy --workspace --all-features --exclude some-lib-forms
+
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Install Linux dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Build documentation
+        run: cargo doc --workspace --all-features --no-deps --locked
+
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Install Linux dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Check package contents
+        run: cargo package --workspace --list
 
   machete:
     runs-on: ubuntu-latest

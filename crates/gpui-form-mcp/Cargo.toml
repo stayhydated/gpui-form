@@ -23,7 +23,6 @@ gpui-form-schema = { workspace = true }
 inventory = { workspace = true }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
 
 [dev-dependencies]
 chrono = { workspace = true }

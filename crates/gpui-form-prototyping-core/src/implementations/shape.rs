@@ -315,39 +315,39 @@ mod tests {
             return prettyplease::unparse(&file);
         }
 
-        if let Ok(stmt) = syn::parse2::<syn::Stmt>(tokens.clone()) {
-            if let Some(pretty) = pretty_file(quote! {
+        if let Ok(stmt) = syn::parse2::<syn::Stmt>(tokens.clone())
+            && let Some(pretty) = pretty_file(quote! {
                 fn __snapshot() {
                     #stmt
                 }
-            }) {
-                return pretty;
-            }
+            })
+        {
+            return pretty;
         }
 
         let raw = tokens.to_string();
         let trimmed = raw.trim();
 
-        if trimmed.ends_with(',') {
-            if let Some(pretty) = pretty_file(quote! {
+        if trimmed.ends_with(',')
+            && let Some(pretty) = pretty_file(quote! {
                 fn __snapshot() {
                     let _ = __Snapshot {
                         #tokens
                     };
                 }
-            }) {
-                return pretty;
-            }
+            })
+        {
+            return pretty;
         }
 
-        if trimmed.starts_with('.') {
-            if let Some(pretty) = pretty_file(quote! {
+        if trimmed.starts_with('.')
+            && let Some(pretty) = pretty_file(quote! {
                 fn __snapshot() {
                     __snapshot #tokens;
                 }
-            }) {
-                return pretty;
-            }
+            })
+        {
+            return pretty;
         }
 
         raw

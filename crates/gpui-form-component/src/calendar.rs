@@ -364,15 +364,11 @@ impl Calendar {
 
                         if start.is_none() && end.is_none() {
                             view.set_date(Date::Range(Some(date), None), window, cx);
-                        } else if start.is_some() && end.is_none() {
-                            if date < start.unwrap() {
+                        } else if let (Some(start), None) = (start, end) {
+                            if date < start {
                                 view.set_date(Date::Range(Some(date), None), window, cx);
                             } else {
-                                view.set_date(
-                                    Date::Range(Some(start.unwrap()), Some(date)),
-                                    window,
-                                    cx,
-                                );
+                                view.set_date(Date::Range(Some(start), Some(date)), window, cx);
                             }
                         } else {
                             view.set_date(Date::Range(Some(date), None), window, cx);

@@ -2,7 +2,7 @@ use component_shape_codegen::{McpToolMetadataParts, mcp_tool_metadata_tokens};
 use gpui_form_codegen::metadata::rust_type_tokens;
 use koruma_derive_core::{ParsedValidatorUse, ValidatorTargetSelector, ValidatorTypeArg};
 use proc_macro2::{Span, TokenStream};
-use quote::{ToTokens, format_ident, quote};
+use quote::{ToTokens as _, format_ident, quote};
 use syn::{DeriveInput, Expr, Lit, LitStr, Path, Type, UnOp, spanned::Spanned as _};
 
 use crate::derives::gpui_form::attrs::{

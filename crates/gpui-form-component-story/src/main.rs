@@ -66,7 +66,7 @@ fn main() {
             .update_global::<Box<dyn LocaleStore>, _>(|locale_store, cx| {
                 locale_store.set_current_locale(Languages::default().into(), cx)
             })
-            .unwrap();
+            .expect("default component story locale should be available");
         app_cx.activate(true);
 
         gpui_storybook::create_new_window(

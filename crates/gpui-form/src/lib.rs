@@ -1,3 +1,5 @@
+//! Facade crate for deriving and using generated `gpui-form` forms.
+
 #[cfg(feature = "derive")]
 pub use gpui_form_derive::GpuiForm;
 #[cfg(all(feature = "derive", feature = "mcp"))]

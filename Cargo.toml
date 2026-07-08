@@ -42,13 +42,13 @@ component-shape-mcp = { path = "../component-shape/crates/component-shape-mcp" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
-es-fluent = { path = "../es-fluent/crates/es-fluent", version = "0.16" }
-es-fluent-build = { path = "../es-fluent/crates/es-fluent-build", version = "0.16" }
-es-fluent-lang = { path = "../es-fluent/crates/es-fluent-lang", version = "0.16" }
-es-fluent-manager-embedded = { path = "../es-fluent/crates/es-fluent-manager-embedded", version = "0.16" }
-gpui = { path = "../zed/crates/gpui" }
+es-fluent = "0.18"
+es-fluent-build = "0.18"
+es-fluent-lang = "0.18"
+es-fluent-manager-embedded = "0.18"
+gpui = { git = "https://github.com/zed-industries/zed", rev = "c545fb67d0ce13e335bff76f7c08986000333f2c" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-es-fluent = { path = "../gpui-es-fluent/crates/gpui-es-fluent", version = "0.1" }
+gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
 gpui-form = { path = "crates/gpui-form", version = "0.5.1" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.5.1" }
 gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.5.1" }
@@ -69,7 +69,7 @@ gpui_platform = { features = [
   "x11",
   "wayland",
   "runtime_shaders",
-], path = "../zed/crates/gpui_platform" }
+], git = "https://github.com/zed-industries/zed", rev = "c545fb67d0ce13e335bff76f7c08986000333f2c" }
 heck = "0.5.0"
 icu_calendar = "2.2.0"
 icu_datetime = "2.2.0"
@@ -92,15 +92,15 @@ serde = "1.0"
 serde_json = "1.0"
 strum = "0.28"
 syn = "2.0"
-syn-cfg-attr = "0.1"
+syn-cfg-attr = "0.2"
 thiserror = "2.0"
 tokio = "1.49"
 tracing-subscriber = "0.3"
 unic-langid = "0.9"
 unicode-segmentation = "1.12"
 
-[patch."https://github.com/zed-industries/zed"]
-gpui = { path = "../zed/crates/gpui" }
+[replace]
+"https://github.com/zed-industries/zed#gpui@0.2.2" = { git = "https://github.com/zed-industries/zed", rev = "c545fb67d0ce13e335bff76f7c08986000333f2c" }
 
 [profile.dev]
 codegen-units = 16
@@ -113,13 +113,22 @@ opt-level = 3
 
 [profile.release]
 codegen-units = 1
-lto = true
+lto = "thin"
 opt-level = 3
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "deny" }
+future_incompatible = "deny"
+nonstandard_style = "deny"
+unexpected_cfgs = { level = "deny", check-cfg = ["cfg(coverage)"] }
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+
+[workspace.lints.rustdoc]
+bare_urls = "deny"
+broken_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
 dbg_macro = "deny"
 derive_partial_eq_without_eq = "warn"
 err_expect = "warn"
