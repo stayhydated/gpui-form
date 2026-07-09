@@ -78,13 +78,12 @@ insta = "1.46"
 inventory = "0.3"
 itertools = "0.14"
 jiff = "0.2.23"
-koruma = { path = "../koruma/crates/koruma" }
-koruma-collection = { path = "../koruma/crates/koruma-collection" }
-koruma-derive-core = { path = "../koruma/crates/koruma-derive-core" }
+koruma = "0.10"
+koruma-collection = "0.10"
+koruma-derive-core = "0.10"
 log = "0.4"
 prettyplease = "0.2"
 proc-macro-crate = "3.2"
-proc-macro-error2 = "2.0"
 proc-macro2 = "1.0"
 quote = "1.0"
 rust_decimal = "1.40"

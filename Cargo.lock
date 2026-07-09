@@ -1232,9 +1232,19 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "gpui_util 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "indexmap",
+ "rustc-hash 2.1.2",
+]
+
+[[package]]
+name = "collections"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
- "gpui_util",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "indexmap",
  "rustc-hash 2.1.2",
 ]
@@ -1289,7 +1299,6 @@ dependencies = [
  "component-shape",
  "component-shape-codegen",
  "proc-macro-crate 3.5.0",
- "proc-macro-error2",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -1720,6 +1729,16 @@ dependencies = [
  "rustc_version",
  "syn 2.0.117",
  "unicode-xid",
+]
+
+[[package]]
+name = "derive_refineable"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -2765,11 +2784,10 @@ dependencies = [
 
 [[package]]
 name = "getset"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cf0fc11e47561d47397154977bc219f4cf809b2974facc3ccb3b89e2436f912"
+checksum = "6cf442baaabe4213ce7d1239afc26c039180b6456da2cededa316ae2c8a77a77"
 dependencies = [
- "proc-macro-error2",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -2980,6 +2998,88 @@ dependencies = [
 [[package]]
 name = "gpui"
 version = "0.2.2"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "accesskit",
+ "anyhow",
+ "async-channel",
+ "async-task",
+ "bindgen",
+ "bitflags 2.12.1",
+ "block",
+ "cbindgen",
+ "chrono",
+ "cocoa 0.26.0",
+ "cocoa-foundation 0.2.0",
+ "collections 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "core-foundation 0.10.0",
+ "core-foundation-sys",
+ "core-graphics 0.24.0",
+ "core-text",
+ "core-video",
+ "ctor",
+ "derive_more",
+ "embed-resource",
+ "etagere",
+ "foreign-types",
+ "futures",
+ "futures-concurrency",
+ "getrandom 0.3.4",
+ "gpui_macros 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "gpui_shared_string 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "gpui_util 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "heapless",
+ "http_client 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "image",
+ "inventory",
+ "itertools 0.14.0",
+ "log",
+ "lyon",
+ "mach2",
+ "media 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "metal",
+ "num_cpus",
+ "objc",
+ "parking",
+ "parking_lot",
+ "pathfinder_geometry",
+ "pin-project",
+ "pollster 0.4.0",
+ "postage",
+ "profiling",
+ "rand 0.9.4",
+ "raw-window-handle",
+ "refineable 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "regex",
+ "resvg",
+ "scheduler 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "schemars",
+ "seahash",
+ "serde",
+ "serde_json",
+ "slotmap",
+ "smallvec",
+ "spin 0.10.0",
+ "stacksafe",
+ "strum 0.27.2",
+ "sum_tree 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "taffy",
+ "thiserror 2.0.18",
+ "ttf-parser",
+ "url",
+ "usvg",
+ "util_macros 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "uuid",
+ "waker-fn",
+ "web-time",
+ "windows 0.61.3",
+ "zed-font-kit",
+ "zed-scap",
+]
+
+[[package]]
+name = "gpui"
+version = "0.2.2"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
  "accesskit",
@@ -2993,7 +3093,7 @@ dependencies = [
  "chrono",
  "cocoa 0.26.0",
  "cocoa-foundation 0.2.0",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "core-foundation 0.10.0",
  "core-foundation-sys",
  "core-graphics 0.24.0",
@@ -3008,17 +3108,17 @@ dependencies = [
  "futures-concurrency",
  "getrandom 0.3.4",
  "gpui_macros 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
- "gpui_shared_string",
- "gpui_util",
+ "gpui_shared_string 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "heapless",
- "http_client",
+ "http_client 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "image",
  "inventory",
  "itertools 0.14.0",
  "log",
  "lyon",
  "mach2",
- "media",
+ "media 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "metal",
  "num_cpus",
  "objc",
@@ -3031,10 +3131,10 @@ dependencies = [
  "profiling",
  "rand 0.9.4",
  "raw-window-handle",
- "refineable",
+ "refineable 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "regex",
  "resvg",
- "scheduler",
+ "scheduler 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "schemars",
  "seahash",
  "serde",
@@ -3044,13 +3144,13 @@ dependencies = [
  "spin 0.10.0",
  "stacksafe",
  "strum 0.27.2",
- "sum_tree",
+ "sum_tree 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "taffy",
  "thiserror 2.0.18",
  "ttf-parser",
  "url",
  "usvg",
- "util_macros",
+ "util_macros 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "uuid",
  "waker-fn",
  "web-time",
@@ -3201,7 +3301,6 @@ dependencies = [
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "gpui-component",
  "gpui-form-codegen",
- "proc-macro-error2",
  "quote",
  "syn 2.0.117",
  "trybuild",
@@ -3237,7 +3336,6 @@ version = "0.5.1"
 dependencies = [
  "darling",
  "gpui-form-codegen",
- "proc-macro-error2",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -3289,7 +3387,6 @@ dependencies = [
  "koruma-collection",
  "koruma-derive-core",
  "prettyplease",
- "proc-macro-error2",
  "proc-macro2",
  "quote",
  "serde",
@@ -3354,7 +3451,7 @@ dependencies = [
 name = "gpui-storybook"
 version = "0.5.0"
 dependencies = [
- "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
+ "gpui 0.2.2 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
  "gpui-storybook-core",
  "gpui-storybook-macros",
  "gpui-storybook-toml",
@@ -3366,7 +3463,7 @@ dependencies = [
 name = "gpui-storybook-components"
 version = "0.5.0"
 dependencies = [
- "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
+ "gpui 0.2.2 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
  "gpui-component",
 ]
 
@@ -3378,7 +3475,7 @@ dependencies = [
  "derive_more",
  "es-fluent",
  "es-fluent-build",
- "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
+ "gpui 0.2.2 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
  "gpui-component",
  "gpui-component-assets",
  "gpui-es-fluent",
@@ -3526,13 +3623,13 @@ dependencies = [
  "bytemuck",
  "calloop",
  "calloop-wayland-source",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "filedescriptor",
  "futures",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
- "gpui_util",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "gpui_wgpu",
- "http_client",
+ "http_client 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "image",
  "itertools 0.14.0",
  "libc",
@@ -3575,7 +3672,7 @@ dependencies = [
  "block",
  "cbindgen",
  "cocoa 0.26.0",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "core-foundation 0.10.0",
  "core-foundation-sys",
  "core-graphics 0.24.0",
@@ -3588,13 +3685,13 @@ dependencies = [
  "foreign-types",
  "futures",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
- "gpui_util",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "image",
  "itertools 0.14.0",
  "libc",
  "log",
  "mach2",
- "media",
+ "media 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "metal",
  "objc",
  "objc2 0.6.4",
@@ -3608,6 +3705,17 @@ dependencies = [
  "strum 0.27.2",
  "uuid",
  "zed-font-kit",
+]
+
+[[package]]
+name = "gpui_macros"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -3648,11 +3756,31 @@ dependencies = [
 [[package]]
 name = "gpui_shared_string"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "schemars",
+ "serde",
+ "smol_str",
+]
+
+[[package]]
+name = "gpui_shared_string"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
  "schemars",
  "serde",
  "smol_str",
+]
+
+[[package]]
+name = "gpui_util"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "anyhow",
+ "log",
+ "which",
 ]
 
 [[package]]
@@ -3675,7 +3803,7 @@ dependencies = [
  "futures",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "gpui_wgpu",
- "http_client",
+ "http_client 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "js-sys",
  "log",
  "parking_lot",
@@ -3696,11 +3824,11 @@ source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f
 dependencies = [
  "anyhow",
  "bytemuck",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "cosmic-text",
  "etagere",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
- "gpui_util",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "itertools 0.14.0",
  "js-sys",
  "log",
@@ -3726,12 +3854,12 @@ dependencies = [
  "accesskit",
  "accesskit_windows",
  "anyhow",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "dunce",
  "etagere",
  "futures",
  "gpui 0.2.2 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
- "gpui_util",
+ "gpui_util 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "image",
  "itertools 0.14.0",
  "log",
@@ -4010,6 +4138,26 @@ dependencies = [
  "http",
  "http-body",
  "pin-project-lite",
+]
+
+[[package]]
+name = "http_client"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "anyhow",
+ "async-compression",
+ "bytes",
+ "derive_more",
+ "futures",
+ "http",
+ "http-body",
+ "log",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "url",
 ]
 
 [[package]]
@@ -4920,6 +5068,8 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "koruma"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "795782a96e661e711b4f5a3d5bcf8068a68bd2ce65582a44ec9dd3d647aab658"
 dependencies = [
  "koruma-core",
  "koruma-derive",
@@ -4928,6 +5078,8 @@ dependencies = [
 [[package]]
 name = "koruma-collection"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55af993278c28c3d4cab1450e402440225f8361120574a6a095598fd49706a6a"
 dependencies = [
  "email_address",
  "es-fluent",
@@ -4941,6 +5093,8 @@ dependencies = [
 [[package]]
 name = "koruma-core"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "268f7d209f7793d0b6c0a15942a8bc82db1097f1a4d8a6a76855b9dc2d2314bd"
 dependencies = [
  "es-fluent",
 ]
@@ -4948,11 +5102,12 @@ dependencies = [
 [[package]]
 name = "koruma-derive"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0081cf85d494d3b7f032a98253508f3b5ef7c411a10751eaa05b59d7c5ae49b1"
 dependencies = [
  "heck 0.5.0",
  "koruma-derive-core",
  "proc-macro-crate 3.5.0",
- "proc-macro-error2",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -4961,6 +5116,8 @@ dependencies = [
 [[package]]
 name = "koruma-derive-core"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd6c192750e685e967be6c3d08b0b7eb9b96b4f3bc3f067c176794c197e321c1"
 dependencies = [
  "attribute-dsl",
  "heck 0.5.0",
@@ -5327,6 +5484,21 @@ checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
 dependencies = [
  "cfg-if",
  "digest 0.10.7",
+]
+
+[[package]]
+name = "media"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "anyhow",
+ "bindgen",
+ "core-foundation 0.10.0",
+ "core-video",
+ "ctor",
+ "foreign-types",
+ "metal",
+ "objc",
 ]
 
 [[package]]
@@ -6114,9 +6286,19 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "perf"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "collections 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "perf"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "serde",
  "serde_json",
 ]
@@ -6880,9 +7062,17 @@ dependencies = [
 [[package]]
 name = "refineable"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "derive_refineable 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+]
+
+[[package]]
+name = "refineable"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
- "derive_refineable",
+ "derive_refineable 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
 ]
 
 [[package]]
@@ -7299,6 +7489,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91c1b7e4904c873ef0710c1f407dde2e6287de2bebc1bbbf7d430bb7cbffd939"
 dependencies = [
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "scheduler"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "async-task",
+ "backtrace",
+ "chrono",
+ "flume",
+ "futures",
+ "parking_lot",
+ "rand 0.9.4",
+ "web-time",
 ]
 
 [[package]]
@@ -7949,13 +8154,25 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sum_tree"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "heapless",
+ "log",
+ "rayon",
+ "tracing",
+ "ztracing 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+]
+
+[[package]]
+name = "sum_tree"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
  "heapless",
  "log",
  "rayon",
  "tracing",
- "ztracing",
+ "ztracing 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
 ]
 
 [[package]]
@@ -8935,9 +9152,19 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "util_macros"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "perf 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "util_macros"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
- "perf",
+ "perf 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "quote",
  "syn 2.0.117",
 ]
@@ -10658,11 +10885,22 @@ dependencies = [
 [[package]]
 name = "zlog"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "collections 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "log",
+]
+
+[[package]]
+name = "zlog"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
  "anyhow",
  "chrono",
- "collections",
+ "collections 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
  "log",
 ]
 
@@ -10675,13 +10913,29 @@ checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
 [[package]]
 name = "ztracing"
 version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
+dependencies = [
+ "tracing",
+ "tracing-subscriber",
+ "zlog 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+ "ztracing_macro 0.1.0 (git+https://github.com/stayhydated/zed?branch=linux-headless-renderer)",
+]
+
+[[package]]
+name = "ztracing"
+version = "0.1.0"
 source = "git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c#c545fb67d0ce13e335bff76f7c08986000333f2c"
 dependencies = [
  "tracing",
  "tracing-subscriber",
- "zlog",
- "ztracing_macro",
+ "zlog 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
+ "ztracing_macro 0.1.0 (git+https://github.com/zed-industries/zed?rev=c545fb67d0ce13e335bff76f7c08986000333f2c)",
 ]
+
+[[package]]
+name = "ztracing_macro"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#ad92d4fbd9e60d6b9ec9268b567472694bd3caa7"
 
 [[package]]
 name = "ztracing_macro"

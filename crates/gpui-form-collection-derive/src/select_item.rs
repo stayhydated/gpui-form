@@ -14,7 +14,10 @@ struct SelectItemArgs {
 }
 
 pub fn from(input: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(input as DeriveInput);
+    let input = match syn::parse::<DeriveInput>(input) {
+        Ok(input) => input,
+        Err(error) => return error.to_compile_error().into(),
+    };
 
     let args = match SelectItemArgs::from_derive_input(&input) {
         Ok(args) => args,
