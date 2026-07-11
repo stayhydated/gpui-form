@@ -11,7 +11,7 @@ use koruma_collection::{
 };
 use strum::EnumIter;
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, Eq, PartialEq, SelectItem)]
+#[derive(Clone, Debug, Default, EnumIter, Eq, EsFluent, PartialEq, SelectItem)]
 #[select_item(fluent)]
 pub enum PreferredLanguage {
     #[default]
@@ -20,7 +20,7 @@ pub enum PreferredLanguage {
     Chinese,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, Eq, PartialEq, SelectItem)]
+#[derive(Clone, Debug, Default, EnumIter, Eq, EsFluent, PartialEq, SelectItem)]
 #[select_item(fluent)]
 pub enum EnumCountry {
     #[default]

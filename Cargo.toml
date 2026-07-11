@@ -35,10 +35,10 @@ version = "0.5.1"
 anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
-component-shape = { path = "../component-shape/crates/component-shape" }
-component-shape-codegen = { path = "../component-shape/crates/component-shape-codegen" }
-component-shape-gpui = { path = "../component-shape/crates/component-shape-gpui" }
-component-shape-mcp = { path = "../component-shape/crates/component-shape-mcp" }
+component-shape = { git = "https://github.com/stayhydated/component-shape" }
+component-shape-codegen = { git = "https://github.com/stayhydated/component-shape" }
+component-shape-gpui = { git = "https://github.com/stayhydated/component-shape" }
+component-shape-mcp = { git = "https://github.com/stayhydated/component-shape" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
@@ -62,8 +62,8 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
-gpui-storybook = { path = "../gpui-storybook/crates/gpui-storybook", version = "0.5.0" }
-gpui-storybook-core = { path = "../gpui-storybook/crates/gpui-storybook-core", version = "0.5.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook" }
+gpui-storybook-core = { git = "https://github.com/stayhydated/gpui-storybook" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",
@@ -71,32 +71,32 @@ gpui_platform = { branch = "linux-headless-renderer", features = [
   "runtime_shaders",
 ], git = "https://github.com/stayhydated/zed" }
 heck = "0.5.0"
-icu_calendar = "2.2.0"
+icu_calendar = "2.2.1"
 icu_datetime = "2.2.0"
 icu_locale_core = "2.2.0"
-insta = "1.46"
+insta = "1.48"
 inventory = "0.3"
 itertools = "0.14"
-jiff = "0.2.23"
+jiff = "0.2.32"
 koruma = "0.10"
 koruma-collection = "0.10"
 koruma-derive-core = "0.10"
 log = "0.4"
 prettyplease = "0.2"
-proc-macro-crate = "3.2"
+proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
-rust_decimal = "1.40"
+rust_decimal = "1.42"
 serde = "1.0"
 serde_json = "1.0"
 strum = "0.28"
 syn = "2.0"
 syn-cfg-attr = "0.2"
 thiserror = "2.0"
-tokio = "1.49"
+tokio = "1.52"
 tracing-subscriber = "0.3"
 unic-langid = "0.9"
-unicode-segmentation = "1.12"
+unicode-segmentation = "1.13"
 
 [patch."https://github.com/zed-industries/zed"]
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "=0.2.2" }
@@ -119,7 +119,7 @@ opt-level = 3
 [workspace.lints.rust]
 future_incompatible = "deny"
 nonstandard_style = "deny"
-unexpected_cfgs = { level = "deny", check-cfg = ["cfg(coverage)"] }
+unexpected_cfgs = { check-cfg = [ "cfg(coverage)" ], level = "deny" }
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
 
