@@ -22,17 +22,16 @@ use serde_json::{Map, Value};
 pub use component_shape_mcp::{
     ComponentShapeFor, ComponentShapeMetadata, ContentBlock, MCP_PROTOCOL_VERSION,
     MCP_VALIDATION_PARAMS_NONE, McpAny, McpArguments, McpIconTheme, McpInput, McpInputShape,
-    McpJsonSchema, McpPrimitiveKind, McpPromptArgument, McpPromptMessage, McpPromptMessageContent,
-    McpPromptMessageRole, McpPromptResult, McpRange, McpRangeBoundKind, McpResourceContents,
-    McpResourceResult, McpSchema, McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder,
-    McpToolAnnotations, McpToolArguments, McpToolCall, McpToolError, McpToolIcon, McpToolInput,
-    McpToolMetadata, McpToolTaskSupport, McpToolValue, McpTypedTool, McpValidationIssue,
-    McpValidationParam, McpValidationRule, McpValidationScope, McpValidationTarget,
-    McpValidationTypeArgMode, PromptDefinition, RawResourceDefinition,
-    RawResourceTemplateDefinition, ResourceDefinition, ResourceTemplateDefinition,
-    ServeStdioResult, ToolCallResult, ToolDefinition, object_schema, rmcp, serde, serde_json,
-    validation_issues_error,
+    McpJsonSchema, McpPrimitiveKind, McpPromptArgument, McpPromptMessage, McpPromptResult,
+    McpRange, McpRangeBoundKind, McpResourceContents, McpResourceResult, McpRole, McpSchema,
+    McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder, McpToolAnnotations,
+    McpToolArguments, McpToolCall, McpToolError, McpToolIcon, McpToolInput, McpToolMetadata,
+    McpToolTaskSupport, McpToolValue, McpTypedTool, McpValidationIssue, McpValidationParam,
+    McpValidationRule, McpValidationScope, McpValidationTarget, McpValidationTypeArgMode,
+    PromptDefinition, ResourceDefinition, ResourceTemplateDefinition, ServeStdioResult,
+    ToolCallResult, ToolDefinition, object_schema, serde, serde_json, validation_issues_error,
 };
+pub use rmcp;
 
 pub type FieldToolValueSchemaFn = McpSchemaFn;
 type ToolFuture = Pin<Box<dyn Future<Output = ToolCallResult> + Send + 'static>>;

@@ -21,6 +21,7 @@ rust_decimal = [ "component-shape-mcp/rust_decimal" ]
 component-shape-mcp = { workspace = true }
 gpui-form-schema = { workspace = true }
 inventory = { workspace = true }
+rmcp = { workspace = true }
 serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
 
