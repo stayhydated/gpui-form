@@ -94,3 +94,21 @@ component_shape! {
 }
 
 impl_form_component_shape!(Switch, gpui_form_runtime::shape::DirectValueStorage);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn switch_events_map_to_form_values() {
+        let state = SwitchState::default();
+        assert!(!state.checked());
+        assert_eq!(
+            <Switch as GpuiComponentValueBinding<bool>>::value_change(
+                &state,
+                &SwitchEvent::Change(true),
+            ),
+            ValueChange::Set(true)
+        );
+    }
+}

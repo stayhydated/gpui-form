@@ -679,9 +679,10 @@ impl FieldVariant {
 #[cfg(test)]
 mod tests {
     use super::{
-        ComponentFieldName, ComponentSuffix, FieldComponentVariant, FieldValuePresence,
-        FieldValueSpec, FieldVariant, GpuiFormShape, HolderConversionMetadata,
-        HolderConversionShape, RustExpr, RustPath, RustSyntaxKind, RustType,
+        ComponentCapabilities, ComponentFieldName, ComponentSuffix, ConversionMetadata,
+        FieldComponentVariant, FieldValuePresence, FieldValueSpec, FieldVariant, GpuiFormShape,
+        HolderConversionMetadata, HolderConversionShape, RenderCapability, RustExpr, RustPath,
+        RustSyntaxKind, RustType, StorageCapability, ValidationRuleId, ValueBindingCapability,
         is_valid_component_suffix, validate_component_suffix,
     };
 
@@ -921,5 +922,171 @@ mod tests {
         assert_eq!(FieldValuePresence::Optional.as_str(), "optional");
         assert_eq!(FieldValuePresence::RequiresValue.as_str(), "requires_value");
         assert_eq!(FieldValuePresence::DirectStorage.as_str(), "direct_storage");
+    }
+
+    #[test]
+    fn form_shape_reports_validation_and_conversion_capabilities() {
+        let validated_field = FieldVariant::hidden_for_field(
+            "email",
+            value_spec("String", FieldValuePresence::RequiresValue)
+                .with_validations(&[ValidationRuleId::Required]),
+        );
+        let shape = GpuiFormShape::new(
+            "Profile",
+            Box::leak(vec![validated_field].into_boxed_slice()),
+            RustPath::from_macro_tokens_unchecked("crate::profile"),
+            true,
+        );
+        assert_eq!(shape.struct_name, "Profile");
+        assert_eq!(shape.source_module_path.as_str(), "crate::profile");
+        assert!(shape.has_validations());
+        assert!(shape.has_koruma());
+        assert!(!shape.has_skipped_fields());
+        assert_eq!(
+            shape.holder_conversion_shape(),
+            HolderConversionShape::Infallible
+        );
+        assert!(!shape.holder_conversion().runtime_can_fail());
+
+        let no_koruma = GpuiFormShape::new(
+            "Profile",
+            shape.fields,
+            RustPath::from_macro_tokens_unchecked("crate::profile"),
+            false,
+        );
+        assert!(!no_koruma.has_validations());
+        assert!(!no_koruma.has_koruma());
+    }
+
+    #[test]
+    fn holder_conversion_shapes_distinguish_generated_apis() {
+        assert!(!HolderConversionShape::Infallible.uses_fallible_api());
+        assert!(HolderConversionShape::FallibleRequired.uses_fallible_api());
+        assert!(!HolderConversionShape::FallibleRequired.needs_skipped_fields());
+        assert!(HolderConversionShape::NeedsSkippedFields.needs_skipped_fields());
+
+        let fallible = HolderConversionMetadata::new(HolderConversionShape::FallibleRequired, true);
+        assert_eq!(fallible.shape(), HolderConversionShape::FallibleRequired);
+        assert!(fallible.uses_fallible_api());
+        assert!(fallible.runtime_can_fail());
+    }
+
+    #[test]
+    fn field_presence_and_validation_ids_publish_stable_contracts() {
+        assert!(FieldValuePresence::Optional.optional());
+        assert!(!FieldValuePresence::DirectStorage.optional());
+        assert!(FieldValuePresence::RequiresValue.requires_value());
+        assert!(!FieldValuePresence::DirectStorage.requires_value());
+        assert!(FieldValuePresence::RequiresValue.value_holder_uses_option());
+        assert!(!FieldValuePresence::DirectStorage.value_holder_uses_option());
+        assert_eq!(
+            FieldValuePresence::Optional.component_storage_capability(),
+            StorageCapability::OptionalValue
+        );
+        assert_eq!(
+            FieldValuePresence::RequiresValue.component_storage_capability(),
+            StorageCapability::RequiredValue
+        );
+        assert_eq!(
+            FieldValuePresence::DirectStorage.component_storage_capability(),
+            StorageCapability::DirectValue
+        );
+
+        assert_eq!(ValidationRuleId::Required.as_str(), "RequiredValidation");
+        assert_eq!(ValidationRuleId::Newtype.as_str(), "NewtypeValidation");
+        assert_eq!(ValidationRuleId::Nested.as_str(), "NestedValidation");
+        assert_eq!(ValidationRuleId::custom("Email").as_str(), "Email");
+    }
+
+    #[test]
+    fn component_capability_builders_round_trip_all_axes() {
+        let capabilities = ComponentCapabilities::default()
+            .with_render(RenderCapability::Component)
+            .with_value_binding(ValueBindingCapability::Inherited)
+            .with_storage(StorageCapability::DirectValue);
+        assert_eq!(capabilities.render(), RenderCapability::Component);
+        assert_eq!(
+            capabilities.value_binding(),
+            ValueBindingCapability::Inherited
+        );
+        assert_eq!(capabilities.storage(), StorageCapability::DirectValue);
+        assert!(capabilities.render_component());
+        assert!(capabilities.value_binding_enabled());
+
+        let disabled =
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::TextInput"))
+                .with_render_component(false)
+                .with_value_binding(false);
+        assert!(!disabled.render_component());
+        assert!(!disabled.value_binding());
+    }
+
+    #[test]
+    fn field_value_and_component_metadata_round_trip() {
+        let from = RustExpr::from_macro_tokens_unchecked("to_form");
+        let into = RustExpr::from_macro_tokens_unchecked("to_model");
+        let default = RustExpr::from_macro_tokens_unchecked("String::new()");
+        let conversions = ConversionMetadata::new(Some(from), Some(into));
+        assert_eq!(conversions.from_expr(), Some(from));
+        assert_eq!(conversions.into_expr(), Some(into));
+        assert_eq!(ConversionMetadata::identity().from_expr(), None);
+
+        let value = FieldValueSpec::new(
+            RustType::from_macro_tokens_unchecked("FormEmail"),
+            RustType::from_macro_tokens_unchecked("Email"),
+            FieldValuePresence::Optional,
+        )
+        .with_conversions(conversions)
+        .with_default(default)
+        .with_validations(&[ValidationRuleId::Required]);
+        let field = FieldVariant::component_for_field(
+            "email_address",
+            value,
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked("crate::EmailInput"))
+                .with_capabilities(
+                    ComponentCapabilities::new()
+                        .with_render(RenderCapability::Component)
+                        .with_value_binding(ValueBindingCapability::Inherited),
+                )
+                .with_prototyping_field_suffix(Some(ComponentSuffix::new("input"))),
+        )
+        .with_label("Email")
+        .with_description("Primary email")
+        .with_examples(&["person@example.com"]);
+
+        assert_eq!(field.explicit_label(), Some("Email"));
+        assert_eq!(field.description(), Some("Primary email"));
+        assert_eq!(field.examples(), &["person@example.com"]);
+        assert_eq!(field.value_type().as_str(), "FormEmail");
+        assert_eq!(field.source_value_type().as_str(), "Email");
+        assert_eq!(field.value_presence(), FieldValuePresence::Optional);
+        assert_eq!(field.default_expr(), Some(default));
+        assert_eq!(field.from_expr(), Some(from));
+        assert_eq!(field.into_expr(), Some(into));
+        assert!(field.is_component());
+        assert!(field.subscribable());
+        assert_eq!(field.field_name_pascal(), "EmailAddress");
+        assert_eq!(field.validation_rules(), &[ValidationRuleId::Required]);
+
+        let component = field.component_variant().unwrap();
+        assert_eq!(component.shape_path().as_str(), "crate::EmailInput");
+        assert_eq!(component.storage, StorageCapability::OptionalValue);
+        assert_eq!(
+            component
+                .prototyping_field_suffix()
+                .map(ComponentSuffix::as_str),
+            Some("input")
+        );
+
+        let hidden = FieldVariant::hidden_for_field(
+            "internal",
+            value_spec("String", FieldValuePresence::DirectStorage),
+        );
+        assert!(!hidden.is_component());
+        assert_eq!(hidden.shape_path(), None);
+        assert!(!hidden.render_component());
+        assert!(!hidden.value_binding());
+        assert_eq!(hidden.prototyping_field_suffix(), None);
+        assert!(!hidden.subscribable());
     }
 }

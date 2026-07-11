@@ -94,3 +94,21 @@ component_shape! {
 }
 
 impl_form_component_shape!(Checkbox, gpui_form_runtime::shape::DirectValueStorage);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn checkbox_events_map_to_form_values() {
+        let state = CheckboxState::default();
+        assert!(!state.checked());
+        assert_eq!(
+            <Checkbox as GpuiComponentValueBinding<bool>>::value_change(
+                &state,
+                &CheckboxEvent::Change(true),
+            ),
+            ValueChange::Set(true)
+        );
+    }
+}

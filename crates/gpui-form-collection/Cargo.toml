@@ -21,5 +21,8 @@ gpui-component = { workspace = true }
 gpui-form-runtime = { workspace = true }
 strum = { workspace = true }
 
+[dev-dependencies]
+gpui = { features = [ "test-support" ], workspace = true }
+
 [lints]
 workspace = true

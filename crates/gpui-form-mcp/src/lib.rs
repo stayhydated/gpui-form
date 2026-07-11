@@ -4104,10 +4104,12 @@ fn push_tool_definition(
 #[cfg(test)]
 mod tests {
     use super::{
-        McpField, McpForm as _, McpFormDescriptor, McpFormInput, McpInput, McpServer,
+        McpField, McpForm as _, McpFormDescriptor, McpFormEditorOptions, McpFormInput,
+        McpFormRegistrationOptions, McpInput, McpJsonSchema as _, McpObject, McpServer,
         McpToolInput as _, form, tool_name,
     };
     use gpui_form_schema::registry::{FieldValuePresence, RustPath, RustType};
+    use std::time::Duration;
 
     struct StringComponentShape;
 
@@ -4125,6 +4127,186 @@ mod tests {
             "example_forms_contact_request"
         );
         assert_eq!(tool_name("123", ""), "form_123");
+    }
+
+    #[test]
+    fn registration_profiles_select_the_intended_tool_families() {
+        let all = McpFormRegistrationOptions::default();
+        assert_eq!(all, McpFormRegistrationOptions::all());
+        assert!(all.registers_tools());
+
+        let submit = McpFormRegistrationOptions::submit_only();
+        assert!(submit.submit_handlers);
+        assert!(!submit.editors);
+        assert!(!submit.edit_submit);
+        assert!(submit.registers_tools());
+
+        let editor = McpFormRegistrationOptions::editor_only();
+        assert!(!editor.submit_handlers);
+        assert!(editor.editors);
+        assert!(!editor.edit_submit);
+        assert!(editor.registers_tools());
+
+        let metadata = McpFormRegistrationOptions::metadata_only();
+        assert!(!metadata.registers_tools());
+    }
+
+    #[test]
+    fn editor_options_bound_sessions_and_allow_explicit_unbounded_modes() {
+        let defaults = McpFormEditorOptions::default();
+        assert_eq!(
+            defaults.session_limit(),
+            Some(super::DEFAULT_EDITOR_SESSION_LIMIT)
+        );
+        assert_eq!(
+            defaults.session_idle_timeout(),
+            Some(super::DEFAULT_EDITOR_SESSION_IDLE_TIMEOUT)
+        );
+
+        let bounded = McpFormEditorOptions::new()
+            .with_session_limit(0)
+            .with_session_idle_timeout(Duration::ZERO);
+        assert_eq!(bounded.session_limit(), Some(1));
+        assert_eq!(bounded.session_idle_timeout(), Some(Duration::ZERO));
+
+        let unbounded = bounded
+            .without_session_limit()
+            .without_session_idle_timeout();
+        assert_eq!(unbounded.session_limit(), None);
+        assert_eq!(unbounded.session_idle_timeout(), None);
+    }
+
+    #[test]
+    fn dynamic_object_responses_round_trip_json_objects() {
+        let object = serde_json::Map::from_iter([("ok".to_owned(), serde_json::json!(true))]);
+        let response = McpObject::new(object.clone());
+        assert_eq!(response.as_map(), &object);
+        assert_eq!(response.clone().into_map(), object);
+        assert_eq!(response.into_value(), serde_json::json!({ "ok": true }));
+
+        let converted = McpObject::try_from(serde_json::json!({ "value": 7 })).unwrap();
+        let value: serde_json::Value = converted.into();
+        assert_eq!(value, serde_json::json!({ "value": 7 }));
+        assert!(McpObject::try_from(serde_json::json!([1, 2])).is_err());
+        assert_eq!(McpObject::empty(), McpObject::default());
+        assert_eq!(McpObject::json_schema()["type"], "object");
+    }
+
+    #[test]
+    fn fields_publish_defaults_labels_and_requiredness() {
+        let field = McpField::typed::<String>(
+            "display_name",
+            RustType::from_macro_tokens_unchecked("String"),
+            FieldValuePresence::DirectStorage,
+        )
+        .with_label("Public name")
+        .with_description("Name shown to other users")
+        .with_examples(&["Ada"])
+        .with_default(true);
+
+        assert_eq!(field.name(), "display_name");
+        assert_eq!(field.value_type().as_str(), "String");
+        assert_eq!(field.presence(), FieldValuePresence::DirectStorage);
+        assert!(field.has_default());
+        assert!(!field.component_backed());
+        assert!(!field.mcp_input().supported());
+        assert_eq!(field.explicit_label(), Some("Public name"));
+        assert_eq!(field.label(), "Public name");
+        assert_eq!(field.description(), Some("Name shown to other users"));
+        assert_eq!(field.examples(), &["Ada"]);
+        assert!(field.validation_rules().is_empty());
+        assert!(!field.required());
+        assert_eq!((field.tool_value_schema())()["type"], "string");
+
+        let inferred = McpField::typed::<String>(
+            "billing_address-line",
+            RustType::from_macro_tokens_unchecked("String"),
+            FieldValuePresence::RequiresValue,
+        );
+        assert_eq!(inferred.label(), "Billing address line");
+        assert!(inferred.required());
+    }
+
+    #[test]
+    fn editor_schema_helpers_publish_typed_protocol_contracts() {
+        let descriptor = Booking::descriptor();
+        let fields = descriptor.fields();
+
+        let open = super::open_editor_input_schema(fields);
+        assert_eq!(open["type"], "object");
+        assert_eq!(open["properties"]["values"]["type"], "object");
+
+        let patch = super::patch_editor_input_schema(fields);
+        assert_eq!(patch["required"], serde_json::json!(["session_id"]));
+        assert_eq!(patch["properties"]["replace"]["default"], false);
+        assert_eq!(
+            patch["properties"]["clear"]["items"]["enum"],
+            serde_json::json!(["available_on"])
+        );
+
+        let snapshot = super::edit_session_snapshot_output_schema(fields);
+        assert_eq!(snapshot["properties"]["revision"]["minimum"], 0);
+        assert_eq!(
+            snapshot["properties"]["fields"]["items"]["oneOf"][0]["properties"]["name"]["enum"],
+            serde_json::json!(["available_on"])
+        );
+
+        let list = super::edit_session_list_output_schema(fields);
+        assert_eq!(list["properties"]["session_count"]["minimum"], 0);
+        assert_eq!(list["properties"]["sessions"]["type"], "array");
+
+        let cleanup = super::edit_session_cleanup_schema();
+        assert_eq!(cleanup["properties"]["expired_count"]["minimum"], 0);
+        assert_eq!(
+            cleanup["properties"]["evicted_session_ids"]["type"],
+            "array"
+        );
+
+        let close = super::close_editor_output_schema();
+        assert_eq!(
+            close["required"],
+            serde_json::json!(["session_id", "closed"])
+        );
+
+        let close_all = super::close_all_editor_output_schema(descriptor);
+        assert_eq!(close_all["properties"]["form"]["const"], "reserve_booking");
+        assert_eq!(close_all["properties"]["form_name"]["const"], "Booking");
+
+        let empty_fields = super::edit_session_fields_output_schema(&[]);
+        assert_eq!(empty_fields["type"], "array");
+        assert_eq!(empty_fields["items"]["type"], "object");
+
+        let issue = super::validation_issue_schema();
+        assert_eq!(
+            issue["properties"]["scope"]["enum"],
+            serde_json::json!(["form", "field", "element"])
+        );
+        assert_eq!(issue["required"], serde_json::json!(["scope", "message"]));
+
+        let parameter = super::validation_param_schema();
+        assert_eq!(parameter["required"], serde_json::json!(["name"]));
+        assert_eq!(super::expected_revision_schema()["minimum"], 0);
+        assert_eq!(super::session_limit_schema()["anyOf"][0]["minimum"], 1);
+        assert_eq!(
+            super::session_idle_timeout_schema()["anyOf"][0]["minimum"],
+            0
+        );
+    }
+
+    #[test]
+    fn metadata_only_registration_reports_do_not_mutate_servers() {
+        let definitions =
+            super::tool_definitions_with_options(McpFormRegistrationOptions::metadata_only())
+                .unwrap();
+        let mut server = McpServer::new("metadata-only".to_owned(), "1.0.0");
+        let report =
+            super::register_with_options(&mut server, McpFormRegistrationOptions::metadata_only())
+                .unwrap();
+
+        assert_eq!(report.tool_definitions.len(), definitions.len());
+        assert!(report.registered_tool_names.is_empty());
+        assert_eq!(report.context_registration_count, 0);
+        assert_eq!(server.tool_count(), 0);
     }
 
     #[test]

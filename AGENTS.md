@@ -168,7 +168,8 @@ Keep these specific surfaces aligned:
 When editing Rust crates:
 
 - Use `cargo` for focused build, test, and run tasks. Use `justfile` recipes
-  for workspace-wide format, clippy, check, test, and dry-run publish tasks.
+  for workspace-wide format, clippy, check, test, coverage, and dry-run publish
+  tasks.
 - Treat `crates/gpui-form` as the public facade boundary unless intentionally
   changing lower-level crate APIs.
 
@@ -215,8 +216,14 @@ FTL check.
 - `cargo doc --workspace --all-features --no-deps --locked` when matching the CI
   docs job
 - `cargo package --workspace --list` when matching the CI package job
-- `just fmt`, `just clippy`, `just check`, `just test`, or the matching
-  `justfile` recipe when a change spans each recipe's scope
+- `just cov` for LLVM source coverage across publishable library crates; the
+  recipe also exercises the headless example and MCP integration packages,
+  excluding only the GUI applications and prototyping generator
+- `just fmt`, `just clippy`, `just check`, `just test`, `just cov`, or the
+  matching `justfile` recipe when a change spans each recipe's scope
+
+CI generates a Cobertura report with `cargo-llvm-cov` and publishes it to
+Codecov using the same crate scope as `just cov`.
 
 If validation cannot be run, state why and what remains unvalidated. Do not
 claim a change works or was validated unless a proving command was run; for

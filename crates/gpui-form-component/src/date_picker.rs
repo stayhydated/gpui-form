@@ -971,4 +971,29 @@ mod tests {
 
         assert_eq!(formatted.to_string(), "Jan 15, 2025 - Jan 20, 2025");
     }
+
+    #[test]
+    fn formats_partial_ranges_and_all_display_widths() {
+        let value = date(2025, 1, 15);
+        assert_eq!(
+            format_display_range(
+                Some(value),
+                None,
+                &locale!("en-US"),
+                DateDisplayStyle::Short,
+            )
+            .unwrap()
+            .to_string(),
+            "1/15/25 - ..."
+        );
+        assert_eq!(
+            format_display_range(None, Some(value), &locale!("en-US"), DateDisplayStyle::Long,)
+                .unwrap()
+                .to_string(),
+            "... - January 15, 2025"
+        );
+        assert!(
+            format_display_range(None, None, &locale!("en-US"), DateDisplayStyle::Medium).is_none()
+        );
+    }
 }

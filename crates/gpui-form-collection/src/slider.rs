@@ -3,6 +3,21 @@ use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{Context, Window};
 use gpui_component::slider::{SliderEvent, SliderState, SliderValue};
 
+fn slider_value_change(event: &SliderEvent) -> ValueChange<SliderValue> {
+    match event {
+        SliderEvent::Change(value) | SliderEvent::Release(value) => ValueChange::Set(*value),
+    }
+}
+
+fn scalar_slider_value_change(event: &SliderEvent) -> ValueChange<f32> {
+    match event {
+        SliderEvent::Change(value) | SliderEvent::Release(value) => match value {
+            SliderValue::Single(value) => ValueChange::Set(*value),
+            SliderValue::Range(start, _) => ValueChange::Set(*start),
+        },
+    }
+}
+
 component_shape! {
     /// Form component for a `gpui_component::slider::Slider` backed by `SliderState`.
     pub struct Slider {
@@ -32,11 +47,7 @@ component_shape! {
                 _state: &Self::State,
                 event: &Self::Event,
             ) -> ValueChange<SliderValue> {
-                match event {
-                    SliderEvent::Change(value) | SliderEvent::Release(value) => {
-                        ValueChange::Set(*value)
-                    },
-                }
+                slider_value_change(event)
             }
         }
 
@@ -54,15 +65,32 @@ component_shape! {
             }
 
             fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<f32> {
-                match event {
-                    SliderEvent::Change(value) | SliderEvent::Release(value) => match value {
-                        SliderValue::Single(value) => ValueChange::Set(*value),
-                        SliderValue::Range(start, _) => ValueChange::Set(*start),
-                    },
-                }
+                scalar_slider_value_change(event)
             }
         }
     }
 }
 
 impl_form_component_shape!(Slider, gpui_form_runtime::shape::DirectValueStorage);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slider_events_preserve_ranges_and_extract_scalar_values() {
+        let range = SliderValue::Range(2.0, 8.0);
+        assert_eq!(
+            slider_value_change(&SliderEvent::Change(range)),
+            ValueChange::Set(range)
+        );
+        assert_eq!(
+            scalar_slider_value_change(&SliderEvent::Change(range)),
+            ValueChange::Set(2.0)
+        );
+        assert_eq!(
+            scalar_slider_value_change(&SliderEvent::Release(SliderValue::Single(4.0))),
+            ValueChange::Set(4.0)
+        );
+    }
+}

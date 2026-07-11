@@ -262,7 +262,11 @@ impl<T> InfallibleValueStorage<T> for DirectValueStorage {
 
 #[cfg(test)]
 mod tests {
-    use super::{ComponentPrototyping, is_valid_component_field_suffix};
+    use super::{
+        ComponentPrototyping, ComponentValueStoragePolicy as _, DefaultValueStorage,
+        DirectValueStorage, InfallibleValueStorage, RequiredValueStorage, ValueStorage,
+        is_valid_component_field_suffix,
+    };
 
     #[test]
     fn component_field_suffix_validator_accepts_identifier_suffixes() {
@@ -283,5 +287,116 @@ mod tests {
     #[should_panic(expected = "component suffix must be a non-empty ASCII identifier suffix")]
     fn component_prototyping_rejects_invalid_field_suffixes() {
         let _ = ComponentPrototyping::new().field_suffix("input-field");
+    }
+
+    #[test]
+    fn required_storage_preserves_presence_and_default_semantics() {
+        assert!(std::hint::black_box(RequiredValueStorage::REQUIRES_VALUE));
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<i32>>::present(7),
+            Some(7)
+        );
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<i32>>::present_unless_default(7, 7),
+            None
+        );
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<i32>>::present_unless_default(8, 7),
+            Some(8)
+        );
+        assert_eq!(
+            <RequiredValueStorage as DefaultValueStorage<i32>>::default_storage(),
+            None
+        );
+        assert!(<RequiredValueStorage as ValueStorage<i32>>::is_present(
+            &Some(1)
+        ));
+        assert!(!<RequiredValueStorage as ValueStorage<i32>>::is_present(
+            &None
+        ));
+    }
+
+    #[test]
+    fn required_storage_maps_present_and_missing_values() {
+        let present = <RequiredValueStorage as ValueStorage<i32>>::map_into_value(
+            Some(4),
+            |value| value * 2,
+            || 99,
+        );
+        let missing = <RequiredValueStorage as ValueStorage<i32>>::map_into_value(
+            None,
+            |value| value * 2,
+            || 99,
+        );
+        assert_eq!((present, missing), (8, 99));
+
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<i32>>::try_map_into_value(
+                Some(4),
+                |value| value * 2,
+                "missing"
+            ),
+            Ok(8)
+        );
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<i32>>::try_map_into_value(
+                None,
+                |value| value * 2,
+                "missing"
+            ),
+            Err("missing")
+        );
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<String>>::map_present_cloned(
+                &Some("form".to_owned()),
+                |value| value.len()
+            ),
+            Some(4)
+        );
+        assert_eq!(
+            <RequiredValueStorage as ValueStorage<String>>::map_present_cloned(&None, |value| {
+                value.len()
+            }),
+            None
+        );
+    }
+
+    #[test]
+    fn direct_storage_always_maps_a_present_value() {
+        assert!(!std::hint::black_box(DirectValueStorage::REQUIRES_VALUE));
+        assert_eq!(<DirectValueStorage as ValueStorage<i32>>::present(7), 7);
+        assert_eq!(
+            <DirectValueStorage as ValueStorage<i32>>::present_unless_default(7, 7),
+            7
+        );
+        assert_eq!(
+            <DirectValueStorage as DefaultValueStorage<i32>>::default_storage(),
+            0
+        );
+        assert!(<DirectValueStorage as ValueStorage<i32>>::is_present(&7));
+        assert_eq!(
+            <DirectValueStorage as ValueStorage<i32>>::map_into_value(4, |value| value * 2, || 99),
+            8
+        );
+        assert_eq!(
+            <DirectValueStorage as ValueStorage<i32>>::try_map_into_value(
+                4,
+                |value| value * 2,
+                "missing"
+            ),
+            Ok(8)
+        );
+        assert_eq!(
+            <DirectValueStorage as ValueStorage<String>>::map_present_cloned(
+                &"form".to_owned(),
+                |value| value.len()
+            ),
+            Some(4)
+        );
+        assert_eq!(
+            <DirectValueStorage as InfallibleValueStorage<i32>>::map_into_value(4, |value| value
+                * 2),
+            8
+        );
     }
 }

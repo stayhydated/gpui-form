@@ -586,13 +586,21 @@ pub trait FormLayout {
 
 #[cfg(test)]
 mod tests {
-    use super::FormShapeAdapter;
+    use super::{
+        ComponentCreationPlan, ConditionalFragment, EventHandlerPlan, FieldInitializerPlan,
+        FormLayout, FormShapeAdapter, ImportPlan, PostSubscriptionInitPlan, RenderFieldPlan,
+        SubscriptionPlan, ValidationPlan,
+    };
     use crate::error::PrototypingError;
+    use crate::implementations::{
+        ComponentCreation, EventHandler, FieldInitializer, SubscriptionBinding,
+    };
     use gpui_form_schema::registry::{
         ComponentFieldName, FieldComponentVariant, FieldValuePresence, FieldValueSpec,
         FieldVariant, GpuiFormShape, HolderConversionMetadata, HolderConversionShape, RustPath,
         RustType,
     };
+    use quote::{ToTokens as _, quote};
 
     const fn value_spec(
         value_type: &'static str,
@@ -627,6 +635,143 @@ mod tests {
             value_spec(value_type, FieldValuePresence::DirectStorage),
             component,
         )
+    }
+
+    #[test]
+    fn semantic_fragments_and_plans_preserve_their_generated_tokens() {
+        macro_rules! assert_fragment {
+            ($ty:ty, $tokens:expr) => {{
+                let empty = <$ty>::default();
+                assert!(empty.is_empty());
+                assert!(empty.to_token_stream().is_empty());
+
+                let fragment = <$ty>::from($tokens);
+                assert!(!fragment.is_empty());
+                assert_eq!(fragment.to_token_stream().to_string(), "generated");
+                assert_eq!(quote!(#fragment).to_string(), "generated");
+            }};
+        }
+
+        assert_fragment!(ImportPlan, quote!(generated));
+        assert_fragment!(RenderFieldPlan, quote!(generated));
+        assert_fragment!(PostSubscriptionInitPlan, quote!(generated));
+        assert_fragment!(ValidationPlan, quote!(generated));
+        assert_fragment!(ConditionalFragment, quote!(generated));
+
+        let creation = ComponentCreation::new(
+            syn::parse_quote!(name_input),
+            syn::parse_quote!(DemoFormFields),
+        );
+        let creations = ComponentCreationPlan::new(vec![creation.clone()]);
+        assert!(!creations.is_empty());
+        assert_eq!(creations.items(), &[creation]);
+        assert!(creations.to_token_stream().to_string().contains("cx . new"));
+        assert!(ComponentCreationPlan::default().is_empty());
+
+        let initializer = FieldInitializer::new(syn::parse_quote!(name_input));
+        let initializers = FieldInitializerPlan::new(vec![initializer.clone()]);
+        assert!(!initializers.is_empty());
+        assert_eq!(initializers.items(), &[initializer]);
+        assert_eq!(initializers.to_token_stream().to_string(), "name_input ,");
+        assert!(FieldInitializerPlan::default().is_empty());
+
+        let binding = SubscriptionBinding::new(
+            syn::parse_quote!(name_input),
+            syn::parse_quote!(on_name_change),
+        );
+        let subscriptions = SubscriptionPlan::new(vec![binding.clone()]);
+        assert!(!subscriptions.is_empty());
+        assert_eq!(subscriptions.items(), &[binding]);
+        assert!(
+            subscriptions
+                .to_token_stream()
+                .to_string()
+                .contains("let mut _subscriptions")
+        );
+        assert!(SubscriptionPlan::default().to_token_stream().is_empty());
+
+        let handler = EventHandler::new(
+            syn::parse_quote!(on_name_change),
+            quote!(
+                fn on_name_change() {}
+            ),
+        );
+        let handlers = EventHandlerPlan::new(vec![handler]);
+        assert!(!handlers.is_empty());
+        assert_eq!(handlers.items().len(), 1);
+        assert!(
+            handlers
+                .to_token_stream()
+                .to_string()
+                .contains("on_name_change")
+        );
+        assert!(EventHandlerPlan::default().is_empty());
+    }
+
+    #[test]
+    fn adapter_hooks_and_layout_generation_work_for_empty_forms() {
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "EmptyDemo",
+            &[],
+            RustPath::from_macro_tokens_unchecked("some_lib::empty_demo"),
+            false,
+        );
+
+        struct MinimalLayout;
+
+        impl FormLayout for MinimalLayout {
+            fn generate_file(&self, parts: &super::FormParts) -> syn::File {
+                let form_ident = &parts.form_ident;
+                syn::parse2(quote!(pub struct #form_ident;)).unwrap()
+            }
+        }
+
+        let adapter = FormShapeAdapter::new(&SHAPE)
+            .remap_paths(|path| {
+                (path == &syn::parse_quote!(some_lib::empty_demo))
+                    .then(|| syn::parse_quote!(consumer::empty_demo))
+            })
+            .render_validation_messages_with(|value| quote!(format!("{}", #value)))
+            .render_children_with(|_, _, _| Some(quote!(custom_child)));
+
+        let options = adapter.field_options();
+        assert!(options.path_remapper.is_some());
+        assert!(options.validation_message_renderer.is_some());
+        assert!(options.render_child_renderer.is_some());
+        assert_eq!(
+            adapter
+                .remap_path(&syn::parse_quote!(some_lib::empty_demo))
+                .to_token_stream()
+                .to_string(),
+            "consumer :: empty_demo"
+        );
+        assert_eq!(
+            adapter
+                .remap_path(&syn::parse_quote!(other::path))
+                .to_token_stream()
+                .to_string(),
+            "other :: path"
+        );
+
+        let imports = adapter.required_imports().unwrap().to_token_stream();
+        assert!(imports.to_string().contains("InteractiveElement"));
+        assert!(!imports.to_string().contains("Subscription"));
+
+        let parts = adapter.parts().unwrap();
+        assert!(parts.is_empty);
+        assert!(parts.component_creations.is_empty());
+        assert!(parts.field_initializers.is_empty());
+        assert!(parts.subscription_calls.is_empty());
+        assert!(parts.event_handlers.is_empty());
+        assert!(parts.current_data_field.is_empty());
+        assert!(parts.replace_current_data_fn.is_empty());
+        assert_eq!(
+            parts.source_module_path.to_token_stream().to_string(),
+            "consumer :: empty_demo"
+        );
+
+        let generated = adapter.generate_file(&MinimalLayout).unwrap();
+        assert!(prettyplease::unparse(&generated).contains("pub struct EmptyDemoForm;"));
     }
 
     #[test]

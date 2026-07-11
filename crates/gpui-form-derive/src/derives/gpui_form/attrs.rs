@@ -1312,4 +1312,135 @@ mod tests {
             "unexpected error: {error}"
         );
     }
+
+    #[test]
+    fn mcp_tool_options_accept_string_path_syntax_for_typed_context_handlers() {
+        let parsed = McpToolOptions::from_list(&[
+            parse_quote!(context = "crate::SubmitContext"),
+            parse_quote!(response = "crate::SubmitResponse"),
+            parse_quote!(error = "crate::SubmitError"),
+            parse_quote!(submit = "crate::submit_request"),
+            parse_quote!(map_response = "crate::map_response"),
+            parse_quote!(icon(src = "icon.svg", sizes = "32x32", theme = "dark")),
+            parse_quote!(task_support = "required"),
+        ])
+        .expect("string path syntax should parse");
+
+        let McpContextSubmitOptions::Explicit(context) = parsed.context_submit.unwrap() else {
+            panic!("expected explicit context options");
+        };
+        assert_eq!(
+            context.context.to_token_stream().to_string(),
+            "crate :: SubmitContext"
+        );
+        assert_eq!(
+            context.response.unwrap().to_token_stream().to_string(),
+            "crate :: SubmitResponse"
+        );
+        assert_eq!(
+            context.error.unwrap().to_token_stream().to_string(),
+            "crate :: SubmitError"
+        );
+        assert_eq!(
+            context.submit.unwrap().to_token_stream().to_string(),
+            "crate :: submit_request"
+        );
+        assert_eq!(
+            context.map_response.unwrap().to_token_stream().to_string(),
+            "crate :: map_response"
+        );
+        assert_eq!(parsed.icons[0].theme, Some(McpIconThemeOption::Dark));
+        assert_eq!(parsed.task_support, Some(McpTaskSupportOption::Required));
+
+        let submitter = McpToolOptions::from_list(&[
+            parse_quote!(submitter = "crate::Submitter"),
+            parse_quote!(response = "crate::SubmitResponse"),
+            parse_quote!(map_response = "crate::map_response"),
+            parse_quote!(task_support = "forbidden"),
+        ])
+        .expect("string submitter syntax should parse");
+        let McpContextSubmitOptions::Submitter(submitter) = submitter.context_submit.unwrap()
+        else {
+            panic!("expected submitter context options");
+        };
+        assert_eq!(
+            submitter.submitter.to_token_stream().to_string(),
+            "crate :: Submitter"
+        );
+    }
+
+    #[test]
+    fn mcp_tool_options_reject_duplicates_and_orphan_context_options() {
+        let duplicate = McpToolOptions::from_list(&[
+            parse_quote!(name = "first"),
+            parse_quote!(name = "second"),
+        ])
+        .expect_err("duplicate metadata should fail");
+        assert!(duplicate.to_string().contains("Duplicate field: `name`"));
+
+        for (items, expected) in [
+            (
+                vec![parse_quote!(response(crate::Response))],
+                "`response(...)` requires `context(...)`",
+            ),
+            (
+                vec![parse_quote!(error(crate::Error))],
+                "`error(...)` requires `context(...)`",
+            ),
+            (
+                vec![parse_quote!(submit(crate::submit))],
+                "`submit(...)` requires `context(...)`",
+            ),
+            (
+                vec![parse_quote!(map_response(crate::map))],
+                "`map_response(...)` requires `context(...)`",
+            ),
+            (
+                vec![
+                    parse_quote!(context(crate::Context)),
+                    parse_quote!(map_response(crate::map)),
+                ],
+                "`map_response(...)` requires `submit(...)`",
+            ),
+            (
+                vec![
+                    parse_quote!(context(crate::Context)),
+                    parse_quote!(error(crate::Error)),
+                ],
+                "`error(...)` requires `submit(...)`",
+            ),
+        ] {
+            let error = McpToolOptions::from_list(&items).expect_err("orphan option should fail");
+            assert!(
+                error.to_string().contains(expected),
+                "expected {expected:?}, got {error}"
+            );
+        }
+    }
+
+    #[test]
+    fn mcp_icon_options_reject_invalid_metadata_and_unknown_fields() {
+        for (meta, expected) in [
+            (parse_quote!(icon(src = "icon", theme = "auto")), "theme"),
+            (
+                parse_quote!(icon(src = "icon", unknown = "value")),
+                "Unknown field",
+            ),
+            (parse_quote!(icon(src = "")), "icon src cannot be empty"),
+            (
+                parse_quote!(icon(src = "icon", mime_type = " ")),
+                "icon mime_type cannot be empty",
+            ),
+            (
+                parse_quote!(icon(src = "icon", size = " ")),
+                "icon size cannot be empty",
+            ),
+        ] {
+            let error = McpToolOptions::from_list(&[meta]).expect_err("invalid icon should fail");
+            assert!(
+                error.to_string().contains(expected),
+                "expected {expected:?}, got {error}"
+            );
+        }
+    }
 }

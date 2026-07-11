@@ -9,6 +9,7 @@
 pub use gpui_form_component_derive::InfiniteSelect;
 
 mod calendar;
+mod calendar_navigation;
 
 /// Runtime helpers for the localized date picker component.
 pub mod date_picker;

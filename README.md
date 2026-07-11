@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml/badge.svg)](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg)](https://codecov.io/github/stayhydated/gpui-form)
 [![Docs](https://docs.rs/gpui-form/badge.svg)](https://docs.rs/gpui-form/)
 [![Crates.io](https://img.shields.io/crates/v/gpui-form.svg)](https://crates.io/crates/gpui-form)
 

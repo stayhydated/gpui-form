@@ -117,3 +117,43 @@ jobs:
 
       - name: Machete
         uses: bnjbvr/cargo-machete@main
+
+  rust-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rust-analyzer, rust-src
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+
+      - name: Install Linux dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-llvm-cov
+        shell: bash
+        run: cargo binstall cargo-llvm-cov --locked --no-confirm
+
+      - name: Run coverage
+        shell: bash
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov --workspace --all-features --cobertura --output-path=target/cobertura.xml --exclude gpui-form-component-story --exclude some-lib-forms --exclude prototyping
+
+      - name: Codecov publish
+        uses: codecov/codecov-action@v7
+        with:
+          files: target/cobertura.xml
+          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Codecov housekeeping
+        shell: bash
+        run: |
+          rm -f codecov codecov.SHA256SUM codecov.SHA256SUM.sig

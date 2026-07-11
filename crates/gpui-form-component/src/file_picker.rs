@@ -602,27 +602,62 @@ fn prompt_for_selection(
     window: &mut Window,
     cx: &mut App,
 ) {
-    let directories =
-        mode.allows_directories() && (!mode.allows_files() || cx.can_select_mixed_files_and_dirs());
-    let paths = cx.prompt_for_paths(PathPromptOptions {
-        files: mode.allows_files(),
-        directories,
-        multiple,
-        prompt,
-    });
+    let options = path_prompt_options(mode, multiple, prompt, cx.can_select_mixed_files_and_dirs());
+    let paths = cx.prompt_for_paths(options);
 
     window
         .spawn(cx, async move |cx| {
-            let result = paths.await;
+            let outcome = classify_prompt_result(paths.await);
 
-            _ = state.update_in(cx, |this, window, cx| match result {
-                Ok(Ok(Some(paths))) => this.replace_paths(paths, true, window, cx),
-                Ok(Ok(None)) => this.emit_cancel(cx),
-                Ok(Err(error)) => this.emit_error(error.to_string(), cx),
-                Err(_) => this.emit_error(FilePickerText::DialogDropped.default_text(), cx),
+            _ = state.update_in(cx, |this, window, cx| match outcome {
+                FilePickerPromptOutcome::Selected(paths) => {
+                    this.replace_paths(paths, true, window, cx);
+                },
+                FilePickerPromptOutcome::Cancelled => this.emit_cancel(cx),
+                FilePickerPromptOutcome::Failed(message) => this.emit_error(message, cx),
+                FilePickerPromptOutcome::Dropped => {
+                    this.emit_error(FilePickerText::DialogDropped.default_text(), cx);
+                },
             });
         })
         .detach();
+}
+
+fn path_prompt_options(
+    mode: FilePickerMode,
+    multiple: bool,
+    prompt: Option<SharedString>,
+    mixed_selection_supported: bool,
+) -> PathPromptOptions {
+    PathPromptOptions {
+        files: mode.allows_files(),
+        directories: mode.allows_directories()
+            && (!mode.allows_files() || mixed_selection_supported),
+        multiple,
+        prompt,
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+enum FilePickerPromptOutcome {
+    Selected(Vec<PathBuf>),
+    Cancelled,
+    Failed(String),
+    Dropped,
+}
+
+fn classify_prompt_result<E, D>(
+    result: Result<Result<Option<Vec<PathBuf>>, E>, D>,
+) -> FilePickerPromptOutcome
+where
+    E: std::fmt::Display,
+{
+    match result {
+        Ok(Ok(Some(paths))) => FilePickerPromptOutcome::Selected(paths),
+        Ok(Ok(None)) => FilePickerPromptOutcome::Cancelled,
+        Ok(Err(error)) => FilePickerPromptOutcome::Failed(error.to_string()),
+        Err(_) => FilePickerPromptOutcome::Dropped,
+    }
 }
 
 fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
@@ -635,10 +670,64 @@ fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
     }
 }
 
+#[cfg(test)]
+mod prompt_tests {
+    use std::{io, path::PathBuf};
+
+    use super::{
+        FilePickerMode, FilePickerPromptOutcome, classify_prompt_result, path_prompt_options,
+    };
+
+    #[test]
+    fn classifies_every_native_dialog_completion() {
+        let paths = vec![PathBuf::from("one.txt"), PathBuf::from("two.txt")];
+        assert_eq!(
+            classify_prompt_result::<io::Error, ()>(Ok(Ok(Some(paths.clone())))),
+            FilePickerPromptOutcome::Selected(paths)
+        );
+        assert_eq!(
+            classify_prompt_result::<io::Error, ()>(Ok(Ok(None))),
+            FilePickerPromptOutcome::Cancelled
+        );
+        assert_eq!(
+            classify_prompt_result::<io::Error, ()>(Ok(Err(io::Error::other("denied")))),
+            FilePickerPromptOutcome::Failed("denied".to_string())
+        );
+        assert_eq!(
+            classify_prompt_result::<io::Error, ()>(Err(())),
+            FilePickerPromptOutcome::Dropped
+        );
+    }
+
+    #[test]
+    fn prompt_options_respect_mode_and_platform_mixed_selection_support() {
+        let files = path_prompt_options(FilePickerMode::File, true, Some("Pick".into()), false);
+        assert!(files.files);
+        assert!(!files.directories);
+        assert!(files.multiple);
+        assert_eq!(files.prompt.as_deref(), Some("Pick"));
+
+        let directories = path_prompt_options(FilePickerMode::Directory, false, None, false);
+        assert!(!directories.files);
+        assert!(directories.directories);
+        assert!(!directories.multiple);
+
+        let unsupported_mixed =
+            path_prompt_options(FilePickerMode::FileOrDirectory, false, None, false);
+        assert!(unsupported_mixed.files);
+        assert!(!unsupported_mixed.directories);
+
+        let supported_mixed =
+            path_prompt_options(FilePickerMode::FileOrDirectory, false, None, true);
+        assert!(supported_mixed.files);
+        assert!(supported_mixed.directories);
+    }
+}
+
 #[cfg(all(test, feature = "component-shape"))]
 mod tests {
     use super::{
-        FilePicker, FilePickerEvent, FilePickerMode, FilePickerOptions,
+        FilePicker, FilePickerEvent, FilePickerMode, FilePickerOptions, display_paths,
         file_picker_form_value_change,
     };
     use gpui_form_runtime::shape::ValueChange;
@@ -667,5 +756,39 @@ mod tests {
         assert_eq!(options.mode(), FilePickerMode::Directory);
         assert!(options.multiple());
         accepts_file_picker_builder(options);
+    }
+
+    #[test]
+    fn file_picker_modes_and_events_preserve_selection_contracts() {
+        assert!(FilePickerMode::File.allows_files());
+        assert!(!FilePickerMode::File.allows_directories());
+        assert!(!FilePickerMode::Directory.allows_files());
+        assert!(FilePickerMode::Directory.allows_directories());
+        assert!(FilePickerMode::FileOrDirectory.allows_files());
+        assert!(FilePickerMode::FileOrDirectory.allows_directories());
+
+        let paths = vec!["one.txt".into(), "two.txt".into()];
+        assert!(matches!(
+            file_picker_form_value_change(&FilePickerEvent::Change(paths.clone())),
+            ValueChange::Set(value) if value == paths
+        ));
+        assert!(matches!(
+            file_picker_form_value_change(&FilePickerEvent::Cancel),
+            ValueChange::Unchanged
+        ));
+        assert!(matches!(
+            file_picker_form_value_change(&FilePickerEvent::Error("failed".into())),
+            ValueChange::Unchanged
+        ));
+
+        assert_eq!(display_paths(&[], "Choose".into()).as_ref(), "Choose");
+        assert_eq!(
+            display_paths(&["one.txt".into()], "Choose".into()).as_ref(),
+            "one.txt"
+        );
+        assert_eq!(
+            display_paths(&paths, "Choose".into()).as_ref(),
+            "2 paths selected"
+        );
     }
 }

@@ -16,6 +16,18 @@ pub enum NumberInputEvent {
     Change(String),
 }
 
+fn number_input_value_change<T>(event: &NumberInputEvent) -> ValueChange<T>
+where
+    T: FromStr,
+{
+    match event {
+        NumberInputEvent::Change(value) if value.is_empty() => ValueChange::Clear,
+        NumberInputEvent::Change(value) => value
+            .parse()
+            .map_or(ValueChange::Unchanged, ValueChange::Set),
+    }
+}
+
 #[derive(Debug)]
 pub struct NumberInputState {
     input: Entity<InputState>,
@@ -129,17 +141,7 @@ component_shape! {
             }
 
             fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<T> {
-                match event {
-                    NumberInputEvent::Change(value) => {
-                        if value.is_empty() {
-                            ValueChange::Clear
-                        } else {
-                            value
-                                .parse()
-                                .map_or(ValueChange::Unchanged, ValueChange::Set)
-                        }
-                    },
-                }
+                number_input_value_change(event)
             }
         }
     }
@@ -152,3 +154,24 @@ impl_form_component_shape!(
     ];
     gpui_form_runtime::shape::DirectValueStorage
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn number_input_events_parse_clear_and_preserve_invalid_values() {
+        assert_eq!(
+            number_input_value_change::<i32>(&NumberInputEvent::Change("42".to_owned())),
+            ValueChange::Set(42)
+        );
+        assert_eq!(
+            number_input_value_change::<i32>(&NumberInputEvent::Change(String::new())),
+            ValueChange::Clear
+        );
+        assert_eq!(
+            number_input_value_change::<i32>(&NumberInputEvent::Change("nope".to_owned())),
+            ValueChange::Unchanged
+        );
+    }
+}
