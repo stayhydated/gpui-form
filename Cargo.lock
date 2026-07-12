@@ -1280,7 +1280,7 @@ checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 [[package]]
 name = "component-shape"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "derive_more",
  "heck 0.5.0",
@@ -1292,7 +1292,7 @@ dependencies = [
 [[package]]
 name = "component-shape-codegen"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "attribute-dsl",
  "component-shape",
@@ -1304,7 +1304,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1314,7 +1314,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -1327,12 +1327,12 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "chrono",
  "component-shape",
  "component-shape-mcp-macros",
- "rmcp 1.8.0",
+ "rmcp",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -1344,7 +1344,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#872319877369f9fe12cf62a03fc16b5a15e79b2c"
+source = "git+https://github.com/stayhydated/component-shape#0fd8fa7eb4621c54a120f04e4160175acf849e54"
 dependencies = [
  "proc-macro-crate 3.5.0",
  "proc-macro2",
@@ -3387,7 +3387,7 @@ dependencies = [
  "component-shape-mcp",
  "gpui-form-schema",
  "inventory",
- "rmcp 2.2.0",
+ "rmcp",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -3434,7 +3434,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#2d605f8942a449e7e54aa6682f36dd910c5c949e"
+source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa4767f9f4c28e815c5e0eb0"
 dependencies = [
  "gpui",
  "gpui-storybook-core",
@@ -3447,7 +3447,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#2d605f8942a449e7e54aa6682f36dd910c5c949e"
+source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa4767f9f4c28e815c5e0eb0"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -3456,7 +3456,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#2d605f8942a449e7e54aa6682f36dd910c5c949e"
+source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa4767f9f4c28e815c5e0eb0"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -3480,7 +3480,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#2d605f8942a449e7e54aa6682f36dd910c5c949e"
+source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa4767f9f4c28e815c5e0eb0"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3491,7 +3491,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#2d605f8942a449e7e54aa6682f36dd910c5c949e"
+source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa4767f9f4c28e815c5e0eb0"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",
@@ -3570,7 +3570,7 @@ dependencies = [
  "gpui-table-runtime",
  "gpui-table-schema",
  "inventory",
- "rmcp 2.2.0",
+ "rmcp",
  "serde",
  "serde_json",
 ]
@@ -7308,26 +7308,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "rmcp"
-version = "1.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d1f571c72940a19d9532fe52dbea8bc9912bf1d766c2970bb824056b86f3f59"
-dependencies = [
- "async-trait",
- "chrono",
- "futures",
- "pastey 0.2.3",
- "pin-project-lite",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tracing",
 ]
 
 [[package]]
