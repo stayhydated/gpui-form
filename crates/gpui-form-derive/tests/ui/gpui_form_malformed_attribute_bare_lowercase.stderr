@@ -1,0 +1,5 @@
+error: unknown gpui_form field option `skpi`; component-backed fields must use `component(MyShape)` where `MyShape` is declared with `component_shape_gpui::component_shape!` or `#[derive(component_shape_gpui::GpuiComponentShape)]`
+ --> tests/ui/gpui_form_malformed_attribute_bare_lowercase.rs:5:17
+  |
+5 |     #[gpui_form(skpi)]
+  |                 ^^^^

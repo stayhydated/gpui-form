@@ -1,0 +1,23 @@
+error: `value(type = ...)` requires an explicit `from_source = ...` conversion
+ --> tests/ui/gpui_form_malformed_attribute_value_options.rs:5:52
+  |
+5 |     #[gpui_form(component(crate::InputShape, value(type = String, into_source = std::convert::identity)))]
+  |                                                    ^^^^
+
+error: `value(type = ...)` requires an explicit `into_source = ...` or `try_into_source = ...` conversion
+  --> tests/ui/gpui_form_malformed_attribute_value_options.rs:11:52
+   |
+11 |     #[gpui_form(component(crate::InputShape, value(type = String, from_source = std::convert::identity)))]
+   |                                                    ^^^^
+
+error: `from_source = ...` requires `type = ...` in the same `value(...)` option
+  --> tests/ui/gpui_form_malformed_attribute_value_options.rs:17:52
+   |
+17 |     #[gpui_form(component(crate::InputShape, value(from_source = std::convert::identity)))]
+   |                                                    ^^^^^^^^^^^
+
+error: `into_source = ...` requires `type = ...` in the same `value(...)` option
+  --> tests/ui/gpui_form_malformed_attribute_value_options.rs:23:52
+   |
+23 |     #[gpui_form(component(crate::InputShape, value(into_source = std::convert::identity)))]
+   |                                                    ^^^^^^^^^^^

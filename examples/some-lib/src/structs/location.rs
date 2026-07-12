@@ -4,15 +4,16 @@
 //! using the InfiniteSelect derive macro.
 
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
-use gpui_form::InfiniteSelect;
+use gpui_form_component::InfiniteSelect;
 use strum::EnumIter;
 
 // ============================================================================
 // Level 3: Cities (leaf nodes - no inner values)
 // ============================================================================
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum CaliforniaCity {
     #[default]
     LosAngeles,
@@ -22,8 +23,9 @@ pub enum CaliforniaCity {
     Sacramento,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum TexasCity {
     #[default]
     Houston,
@@ -33,8 +35,9 @@ pub enum TexasCity {
     FortWorth,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum NewYorkCity {
     #[default]
     NewYorkCity,
@@ -44,8 +47,9 @@ pub enum NewYorkCity {
     Syracuse,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum OntarioCity {
     #[default]
     Toronto,
@@ -55,8 +59,9 @@ pub enum OntarioCity {
     London,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum QuebecCity {
     #[default]
     Montreal,
@@ -66,8 +71,9 @@ pub enum QuebecCity {
     Longueuil,
 }
 
-#[derive(Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, PartialEq)]
-#[fluent_label(origin)]
+#[derive(
+    Clone, Debug, Default, EnumIter, EsFluent, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
+)]
 pub enum BritishColumbiaCity {
     #[default]
     Vancouver,
@@ -82,9 +88,8 @@ pub enum BritishColumbiaCity {
 // ============================================================================
 
 #[derive(
-    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, PartialEq,
+    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
 )]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 pub enum USAState {
     California(CaliforniaCity),
@@ -99,9 +104,8 @@ impl Default for USAState {
 }
 
 #[derive(
-    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, PartialEq,
+    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
 )]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 pub enum CanadaProvince {
     Ontario(OntarioCity),
@@ -120,9 +124,8 @@ impl Default for CanadaProvince {
 // ============================================================================
 
 #[derive(
-    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, PartialEq,
+    Clone, Debug, EnumIter, EsFluent, EsFluentVariants, EsFluentLabel, InfiniteSelect, Eq, PartialEq,
 )]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 pub enum Country {
     USA(USAState),
@@ -143,14 +146,13 @@ use gpui_form::GpuiForm;
 
 /// A form that demonstrates tuple select with nested enums.
 #[derive(Clone, Debug, Default, EsFluentLabel, EsFluentVariants, GpuiForm)]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 pub struct LocationForm {
     /// User's name
-    #[gpui_form(component(input))]
+    #[gpui_form(component(gpui_form_collection::input::Input::<_>))]
     pub name: String,
 
     /// Location selection using cascading selects
-    #[gpui_form(component(infinite_select))]
+    #[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
     pub location: Country,
 }

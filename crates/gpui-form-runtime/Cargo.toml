@@ -1,0 +1,19 @@
+[package]
+name = "gpui-form-runtime"
+description = """
+Runtime contracts referenced by gpui-form generated code.
+"""
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[dependencies]
+component-shape = { workspace = true }
+component-shape-gpui = { workspace = true }
+
+[lints]
+workspace = true

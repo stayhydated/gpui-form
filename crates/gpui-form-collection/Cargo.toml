@@ -1,0 +1,28 @@
+[package]
+name = "gpui-form-collection"
+description = """
+Curated component shapes for gpui-form.
+"""
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[dependencies]
+bon = { workspace = true }
+chrono = { workspace = true }
+component-shape = { workspace = true }
+component-shape-gpui = { workspace = true }
+gpui = { workspace = true }
+gpui-component = { workspace = true }
+gpui-form-runtime = { workspace = true }
+strum = { workspace = true }
+
+[dev-dependencies]
+gpui = { features = [ "test-support" ], workspace = true }
+
+[lints]
+workspace = true

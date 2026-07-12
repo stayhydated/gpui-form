@@ -1,0 +1,16 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: pretty_tokens(init)
+---
+fn __snapshot() {
+    country
+        .update(
+            cx,
+            |state, cx| {
+                seed_value_binding_state::<
+                    crate::shapes::CountryShape,
+                    CountryCode,
+                >(state, current_data.country.as_ref(), window, cx);
+            },
+        );
+}

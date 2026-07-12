@@ -1,6 +1,12 @@
+#[cfg(feature = "component-shape")]
+use gpui_component::select::{SelectDelegate, SelectItem as _};
+#[cfg(feature = "component-shape")]
 use gpui_form_component::infinite_select::{
-    InfiniteSelect as _, InfiniteSelectKeyPath, InfiniteSelectPath, InfiniteSelectPathErrorReason,
-    InfiniteSelectPathSegment, build_from_key_path, build_from_path,
+    InfiniteSelect as InfiniteSelectComponent, InfiniteSelectItem, InfiniteSelectOptions,
+};
+use gpui_form_component::infinite_select::{
+    InfiniteSelectKeyPath, InfiniteSelectPath, InfiniteSelectPathErrorReason,
+    InfiniteSelectPathSegment, InfiniteSelectValue as _, build_from_key_path, build_from_path,
 };
 use gpui_form_component_derive::InfiniteSelect;
 
@@ -223,16 +229,13 @@ fn build_from_path_reports_typed_errors() {
     let error =
         build_from_path::<Country>(&InfiniteSelectPath::new()).expect_err("empty path should fail");
     assert_eq!(error.depth(), 0);
-    assert_eq!(error.key_or_index(), None);
+    assert_eq!(error.segment(), None);
     assert_eq!(error.reason(), &InfiniteSelectPathErrorReason::EmptyPath);
 
     let invalid_path = InfiniteSelectPath::with_indices(vec![0, 99]);
     let error = build_from_path::<Country>(&invalid_path).expect_err("invalid child should fail");
     assert_eq!(error.depth(), 1);
-    assert_eq!(
-        error.key_or_index(),
-        Some(&InfiniteSelectPathSegment::Index(99))
-    );
+    assert_eq!(error.segment(), Some(&InfiniteSelectPathSegment::Index(99)));
     assert_eq!(
         error.reason(),
         &InfiniteSelectPathErrorReason::InvalidIndex { option_count: 3 }
@@ -250,7 +253,7 @@ fn build_from_key_path_reports_typed_errors() {
 
     assert_eq!(error.depth(), 2);
     assert_eq!(
-        error.key_or_index(),
+        error.segment(),
         Some(&InfiniteSelectPathSegment::Key("MoonBase".to_string()))
     );
     let InfiniteSelectPathErrorReason::UnknownKey { available_keys } = error.reason() else {
@@ -304,4 +307,113 @@ fn child_depth_matches_next_nested_level() {
         1
     );
     assert_eq!(CaliforniaCity::LosAngeles.child_depth(), 0);
+}
+
+#[test]
+fn index_and_key_paths_support_mutation_and_empty_round_trips() {
+    let mut path = InfiniteSelectPath::with_indices(vec![0, 1, 2]);
+    assert_eq!(path.get(1), Some(1));
+    assert_eq!(path.len(), 3);
+    assert!(!path.is_empty());
+    path.set(1, 9);
+    assert_eq!(path.indices(), &[0, 9]);
+    path.clear_from(1);
+    assert_eq!(path.indices(), &[0]);
+    path.truncate(0);
+    assert!(path.is_empty());
+
+    let mut keys = InfiniteSelectKeyPath::new();
+    assert!(keys.is_empty());
+    keys.set(0, "root");
+    keys.set(1, "child");
+    assert_eq!(keys.get(1), Some("child"));
+    assert_eq!(keys.len(), 2);
+    keys.clear_from(1);
+    assert_eq!(keys.keys(), &["root".to_string()]);
+    keys.set(1, "child");
+    keys.truncate(1);
+    assert_eq!(keys.to_string(), "root");
+    assert_eq!(
+        "".parse::<InfiniteSelectKeyPath>().unwrap(),
+        InfiniteSelectKeyPath::new()
+    );
+
+    let error = "root\\".parse::<InfiniteSelectKeyPath>().unwrap_err();
+    assert_eq!(error.input(), "root\\");
+    assert!(error.to_string().contains("incomplete escape sequence"));
+}
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn infinite_select_items_expose_labels_values_and_child_selection() {
+    let item = InfiniteSelectItem::from_variant(Country::default());
+    assert_eq!(item.title().as_ref(), "Usa");
+    assert_eq!(item.get_value().variant_name(), "Usa");
+    assert!(item.has_inner());
+    assert_eq!(
+        item.child_variant_names(),
+        vec!["California", "Texas", "NewYork"]
+    );
+    assert_eq!(
+        item.child_variant_keys(),
+        vec!["California", "Texas", "NewYork"]
+    );
+    assert_eq!(item.child_variant_labels().len(), 3);
+
+    let texas = item.with_child_at(1).expect("Texas child should exist");
+    assert_eq!(texas.title().as_ref(), "Texas");
+    assert_eq!(
+        texas.value().inner_child_variant_names(),
+        vec!["Houston", "Dallas", "Austin"]
+    );
+    assert!(item.with_child_at(99).is_none());
+    assert_eq!(
+        InfiniteSelectItem::new(Country::default(), "Custom")
+            .title()
+            .as_ref(),
+        "Custom"
+    );
+    assert_eq!(item.into_value(), Country::default());
+
+    let root_items = gpui_form_component::infinite_select::to_select_items::<Country>();
+    assert_eq!(root_items.len(), 2);
+    assert_eq!(root_items[1].title().as_ref(), "Canada");
+}
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn infinite_select_options_default_to_non_searchable() {
+    assert_eq!(
+        InfiniteSelectOptions::builder().build(),
+        InfiniteSelectOptions::default()
+    );
+}
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn infinite_select_options_record_searchable_configuration() {
+    assert_eq!(
+        InfiniteSelectOptions::builder().searchable(true).build(),
+        InfiniteSelectOptions::new(true, None)
+    );
+    assert_eq!(
+        InfiniteSelectComponent::<Country>::searchable(true),
+        InfiniteSelectOptions::new(true, None)
+    );
+}
+
+#[cfg(feature = "component-shape")]
+#[allow(dead_code)]
+fn assert_infinite_select_options_build_shape<D>()
+where
+    D: SelectDelegate<Item = InfiniteSelectItem<Country>>
+        + From<Vec<InfiniteSelectItem<Country>>>
+        + 'static,
+    InfiniteSelectOptions:
+        component_shape_gpui::GpuiComponentShapeBuilder<InfiniteSelectComponent<Country, D>>,
+{
+    let _ = InfiniteSelectComponent::<Country, D>::from(
+        InfiniteSelectOptions::builder().searchable(true).build(),
+    );
+    let _ = InfiniteSelectComponent::<Country, D>::searchable(true);
 }

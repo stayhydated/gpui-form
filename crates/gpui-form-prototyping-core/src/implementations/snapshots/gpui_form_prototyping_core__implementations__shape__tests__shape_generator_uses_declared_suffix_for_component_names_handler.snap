@@ -1,0 +1,25 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: "pretty_tokens(generated.handlers[0].clone())"
+---
+fn on_country_select_event(
+    &mut self,
+    state: &Entity<GpuiComponentStateOf<crate::shapes::CountrySelectShape>>,
+    event: &GpuiComponentEventOf<crate::shapes::CountrySelectShape, CountryCode>,
+    _window: &mut Window,
+    _cx: &mut Context<Self>,
+) {
+    let form_change = {
+        let state = state.read(_cx);
+        value_change::<crate::shapes::CountrySelectShape, CountryCode>(state, event)
+    };
+    match form_change {
+        ValueChange::Set(value) => {
+            self.current_data.country = Some(value);
+        }
+        ValueChange::Clear => {
+            self.current_data.country = None;
+        }
+        ValueChange::Unchanged => {}
+    }
+}

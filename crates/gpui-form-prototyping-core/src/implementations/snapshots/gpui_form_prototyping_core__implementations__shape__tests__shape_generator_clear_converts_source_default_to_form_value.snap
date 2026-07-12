@@ -1,0 +1,27 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: "pretty_tokens(generated.handlers[0].clone())"
+---
+fn on_birth_date_shape_event(
+    &mut self,
+    state: &Entity<GpuiComponentStateOf<crate::shapes::DatePicker>>,
+    event: &GpuiComponentEventOf<crate::shapes::DatePicker, chrono::NaiveDate>,
+    _window: &mut Window,
+    _cx: &mut Context<Self>,
+) {
+    let form_change = {
+        let state = state.read(_cx);
+        value_change::<crate::shapes::DatePicker, chrono::NaiveDate>(state, event)
+    };
+    match form_change {
+        ValueChange::Set(value) => {
+            self.current_data.birth_date = value;
+        }
+        ValueChange::Clear => {
+            self.current_data.birth_date = (to_form_datetime)(
+                Timestamp::from_micros_since_unix_epoch(0),
+            );
+        }
+        ValueChange::Unchanged => {}
+    }
+}

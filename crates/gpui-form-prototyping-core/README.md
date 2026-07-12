@@ -5,8 +5,7 @@ Scaffolding utilities built on top of `GpuiFormShape` inventory data.
 Use this crate when you want to generate GPUI form code from the metadata
 emitted by `#[derive(GpuiForm)]` instead of wiring forms by hand.
 
-Most application code should still start with
-[`gpui-form`](../gpui-form/README.md).
+Most application code should start with [`gpui-form`](../gpui-form/README.md).
 
 ## Quick Example
 
@@ -29,6 +28,10 @@ for shape in inventory::iter::<GpuiFormShape>() {
   fragments for one shape
 - `FormShapeAdapter::generate_file(&impl FormLayout)` renders a full file with
   your chosen layout
+- `FormShapeAdapter::remap_paths(...)` lets cross-crate generators rewrite
+  source-crate-relative paths before imports and component fragments are emitted
+- `FormShapeAdapter::render_validation_messages_with(...)` lets layouts format
+  validator refs without replacing the whole generated field layout
 - `FormLayout` lets callers define the overall file structure
 - `PrototypingError` reports malformed metadata without panicking
 
@@ -41,26 +44,78 @@ shows the normal flow:
 1. iterate `inventory::iter::<GpuiFormShape>()`
 1. adapt each shape with `FormShapeAdapter`
 1. render a file through a custom `FormLayout`
-1. clear stale generated modules and write the generated form files
+1. clear stale generated modules and write the generated form files into
+   `examples/some-lib-forms/src/forms`
+1. run `rustfmt` over the written files before treating the scaffold as ready
+
+Generators that write forms into a different crate than the source request
+models can remap inventory paths before rendering:
+
+```rs
+use gpui_form_prototyping_core::FormShapeAdapter;
+use quote::{format_ident, quote};
+
+fn remap_path(path: &syn::Path) -> Option<syn::Path> {
+    if path.leading_colon.is_some()
+        || path.segments.len() < 2
+        || path.segments[0].ident != "crate"
+        || path.segments[1].ident != "requests"
+    {
+        return None;
+    }
+
+    let mut remapped = path.clone();
+    remapped.segments[0].ident = format_ident!("request_crate");
+    Some(remapped)
+}
+
+let file = FormShapeAdapter::new(shape)
+    .remap_paths(remap_path)
+    .render_validation_messages_with(|value| quote! {
+        crate::i18n::render_validation_error(&#value)
+    })
+    .generate_file(&layout)?;
+```
 
 When the layout emits `gpui_storybook::Story`, pass the `cx: &gpui::App`
-provided by `Story::title` into the application i18n helper so generated form
-titles follow the active Storybook locale.
+provided by `Story::title` into `gpui_es_fluent::localize_label` so generated
+form titles follow the active Storybook locale.
 
 Generated infinite-select and file-picker fields use the same runtime helpers
 that hand-written forms use. Generated text inputs use the form-side
-`FieldVariant::value_type` and parse non-`String` values with `FromStr` instead
-of assuming every text field stores `String`.
+`ResolvedField::value_type()` and parse non-`String` values with `FromStr`
+instead of assuming every text field stores `String`.
 
-Custom fields remain inert by default. If a field's shape opts into
-`value_binding`, the adapter emits generic seed and subscription hooks through
-`gpui_form::custom::CustomComponentValueAdapter<T>`.
+Shape-backed fields must publish render and value-binding metadata before the
+adapter can scaffold them. Missing component capabilities return a
+`PrototypingError` with the source form name, field name, and missing
+capability instead of generating placeholder UI. For value-bound fields, the
+adapter emits generic seed and subscription hooks through
+`gpui_form::runtime::shape::GpuiComponentValueBinding<T>`. Generated scaffolds use
+the source field name for component entity fields and constructors, such as
+`email`, while suffix-bearing helper names such as `on_email_input_event` use
+resolved component suffix metadata and fall back to the generic `shape` suffix.
+Value-bound scaffolds use `seed_value_binding_state`, `value_change`,
+`ValueChange<T>`, and runtime aliases for state and actual component event
+projections so the output stays readable.
+`FormParts` exposes component creation, field initializer, subscription, and
+event-handler fragments as typed records that implement `ToTokens`, so
+custom layouts can inspect or reorder those pieces before rendering.
+On `ValueChange::Clear`, optional fields reset to `None`; non-optional
+fields reset to the intent-scoped source default converted into the form-side
+value when one exists, otherwise to the shape's default storage policy.
+The adapter also consumes `GpuiFormShape::holder_conversion_shape()` from
+inventory metadata, so generated debug rows use the same `into_original`,
+`try_into_original`, or skipped-field reconstruction shape as the
+derive-generated value holder. When skipped fields prevent automatic
+reconstruction, the generated debug row formats the holder's typed
+`present_fields()` snapshot instead of relying on derive-generated JSON.
 
 ## Feature Flags
 
 - `fluent`: use `es-fluent` keys for generated labels, descriptions, and
-  validation messages through an application helper named
-  `crate::i18n::localize(...)`
+  validation messages through a GPUI app-global localizer such as
+  `gpui_es_fluent::localize_message(...)`
 
 ## Most Users Should Use Instead
 

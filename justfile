@@ -1,3 +1,5 @@
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+
 default:
     @just --list
 
@@ -15,6 +17,9 @@ check:
 
 test:
     cargo test --workspace --all-features
+
+cov:
+    cargo llvm-cov --workspace --all-features --all-targets --exclude gpui-form-component-story --exclude some-lib-forms --exclude prototyping
 
 test-publish:
     cargo publish --workspace --dry-run --allow-dirty

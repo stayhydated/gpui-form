@@ -1,18 +1,15 @@
-#[cfg(feature = "derive")]
-pub use gpui_form_component::InfiniteSelect;
-#[cfg(feature = "derive")]
-pub use gpui_form_derive::{CustomComponentState, GpuiForm, SelectItem};
+//! Facade crate for deriving and using generated `gpui-form` forms.
 
-pub use gpui_form_component as runtime;
-pub use gpui_form_component::custom;
-pub use gpui_form_component::custom::CustomComponentShape;
-pub use gpui_form_component::custom_component_shape;
-pub use gpui_form_component::date_picker;
-pub use gpui_form_component::file_picker;
-pub use gpui_form_component::i18n;
-pub use gpui_form_component::infinite_select;
+#[cfg(feature = "derive")]
+pub use gpui_form_derive::GpuiForm;
+#[cfg(all(feature = "derive", feature = "mcp"))]
+pub use gpui_form_derive::mcp_submit;
+
 pub use gpui_form_core as core;
-pub use gpui_form_core::numeric;
+#[cfg(feature = "mcp")]
+pub use gpui_form_mcp as mcp;
+#[cfg(feature = "runtime")]
+pub use gpui_form_runtime as runtime;
 pub use gpui_form_schema as schema;
 
 pub use bon;

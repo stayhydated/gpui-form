@@ -1,0 +1,79 @@
+codecov:
+  require_ci_to_pass: true
+
+# https://docs.codecov.com/docs/components
+component_management:
+  individual_components:
+    - component_id: gpui-form
+      name: "gpui-form"
+      paths:
+        - crates/gpui-form/**
+
+    - component_id: gpui-form-core
+      name: "gpui-form-core"
+      paths:
+        - crates/gpui-form-core/**
+
+    - component_id: gpui-form-codegen
+      name: "gpui-form-codegen"
+      paths:
+        - crates/gpui-form-codegen/**
+
+    - component_id: gpui-form-collection
+      name: "gpui-form-collection"
+      paths:
+        - crates/gpui-form-collection/**
+
+    - component_id: gpui-form-collection-derive
+      name: "gpui-form-collection-derive"
+      paths:
+        - crates/gpui-form-collection-derive/**
+
+    - component_id: gpui-form-component
+      name: "gpui-form-component"
+      paths:
+        - crates/gpui-form-component/**
+
+    - component_id: gpui-form-component-derive
+      name: "gpui-form-component-derive"
+      paths:
+        - crates/gpui-form-component-derive/**
+
+    - component_id: gpui-form-derive
+      name: "gpui-form-derive"
+      paths:
+        - crates/gpui-form-derive/**
+
+    - component_id: gpui-form-mcp
+      name: "gpui-form-mcp"
+      paths:
+        - crates/gpui-form-mcp/**
+
+    - component_id: gpui-form-prototyping-core
+      name: "gpui-form-prototyping-core"
+      paths:
+        - crates/gpui-form-prototyping-core/**
+
+    - component_id: gpui-form-runtime
+      name: "gpui-form-runtime"
+      paths:
+        - crates/gpui-form-runtime/**
+
+    - component_id: gpui-form-schema
+      name: "gpui-form-schema"
+      paths:
+        - crates/gpui-form-schema/**
+
+coverage:
+  precision: 2
+  round: down
+  range: "90...100"
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 5%
+    patch:
+      default:
+        target: 90%
+        threshold: 10%

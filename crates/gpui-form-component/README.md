@@ -2,29 +2,37 @@
 
 GPUI-facing runtime helpers for the `gpui-form` ecosystem.
 
-Most applications should use [`gpui-form`](../gpui-form/README.md), which
-re-exports this crate as `gpui_form::runtime`. Depend on this crate directly
-when you want the runtime implementation layer without the facade.
+Applications that use these runtime helpers should depend on this crate
+directly. Component-shape contracts live in
+[`gpui-form-runtime`](../gpui-form-runtime/README.md) and are re-exported by
+`gpui-form` for generated `GpuiForm` field code.
 
 ## What It Provides
 
 - `infinite_select`: runtime traits and helpers for cascading enum selects
-- `date_picker`: localized runtime state and element wrapper for calendar date input
-- `file_picker`: native GPUI path selection rendered with `gpui-component` controls
-- `custom`: the runtime contract for user-defined component state
+- `date_picker`: localized runtime state and element wrappers for calendar
+  date input
+- `file_picker`: native GPUI path selection rendered with `gpui-component`
+  controls, plus a derive-backed `FilePicker` form shape when the
+  `component-shape` feature is enabled
+
+## Feature Flags
+
+- `derive`: re-exports `#[derive(InfiniteSelect)]`
+- `component-shape`: enables built-in `GpuiComponentShape` impls and value-binding
+  metadata for `InfiniteSelect`, `DatePicker`, `DateRangePicker`, and
+  `FilePicker`
 
 ## Infinite Select
 
-Most applications derive `gpui_form::InfiniteSelect` through the facade and use
-the runtime types from `gpui_form::runtime` or
-`gpui_form::infinite_select`. This crate owns the runtime trait and state
-helpers those derives target.
+Most applications derive `gpui_form_component::InfiniteSelect` by enabling this
+crate's `derive` feature and use runtime types from
+`gpui_form_component::infinite_select`. This crate owns the runtime trait and
+state helpers those derives target.
 
-If you want the derive without the full facade, either enable this crate's
-`derive` feature or pair it with
+If you want to depend on the derive crate directly, pair this crate with
 [`gpui-form-component-derive`](../gpui-form-component-derive/README.md). The
-proc macro resolves either `gpui-form` or `gpui-form-component`
-automatically, so direct users do not need a dependency rename.
+proc macro resolves `gpui-form-component` as the runtime crate.
 
 ```rs
 use gpui_form_component::InfiniteSelect;
@@ -41,18 +49,18 @@ pub enum Country {
 
 Useful runtime types:
 
-- `InfiniteSelect`
+- `InfiniteSelectValue`
 - `InfiniteSelectItem<T>`
 - `InfiniteSelectPath`
 - `InfiniteSelectKeyPath`
 - `InfiniteSelectKeyPathParseError`
 - `InfiniteSelectPathError`
 - `InfiniteSelectState<T>`
-- `SearchableInfiniteSelectState<T>`
+- `InfiniteSelect<T>`
 - `InfiniteSelectEvent<T>`
 - `InfiniteSelectLevel<D>`
 - `InfiniteSelectSnapshot<T, D>`
-- `InfiniteSelectStateOptions`
+- `InfiniteSelectOptions`
 - `to_select_items::<T>()`
 - `path_from_value(&value)`
 - `key_path_from_value(&value)`
@@ -63,7 +71,7 @@ Manual forms can subscribe to one runtime entity instead of rebuilding nested
 child selects themselves:
 
 ```rs
-use gpui_form::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
+use gpui_form_component::infinite_select::{InfiniteSelectEvent, InfiniteSelectState};
 
 let location = cx.new(|cx| {
     InfiniteSelectState::new(Country::default(), window, cx)
@@ -90,9 +98,30 @@ for field in location.read(cx).form_fields() {
 }
 ```
 
+For `#[derive(GpuiForm)]`, use the infinite-select component directly:
+
+```rs
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
+pub location: Country,
+```
+
+Enable search on each cascading select with the field-level builder expression:
+
+```rs
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
+pub location: Country,
+```
+
+Enable this crate's `component-shape` feature when using
+`InfiniteSelect::<_>` directly as a form shape.
+
+If a form needs non-default infinite-select options such as search or a depth
+limit, declare a small `component_shape!` wrapper whose `new` function calls
+`InfiniteSelectState::new_with_options(...)`.
+
 Derived `InfiniteSelect` enums expose:
 
-- `PartialEq` compatibility with the backing `gpui-component` select value
+- `PartialEq` alignment with the backing `gpui-component` select value
   comparison
 - `variant_label()` for user-facing option titles
 - `#[fluent_kv(keys = ["label", "description"], keys_this)]` to emit
@@ -109,14 +138,13 @@ Derived `InfiniteSelect` enums expose:
 
 ## Date Picker
 
-This crate provides the localized runtime date-picker used by generated
-`component(date_picker)` fields.
+This crate provides the localized runtime date-picker that component shapes can wrap.
 Its default empty placeholder is plain English fallback copy. Pass
 `DatePicker::placeholder(...)` with text rendered through your application-owned
 `es-fluent` localizer when a form needs localized or custom copy.
 
 ```rs
-use gpui_form::runtime::date_picker::{
+use gpui_form_component::date_picker::{
     DateDisplayStyle,
     DatePicker,
     DatePickerEvent,
@@ -127,33 +155,41 @@ use gpui_form::runtime::date_picker::{
 };
 ```
 
-Generated forms store `Entity<DatePickerState>`, render `DatePicker`, and
+Component shapes can store `Entity<DatePickerState>`, render `DatePicker`, and
 convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
 The selected-date label and embedded calendar popover share the same display
 locale: ICU4X formats month names, weekday headers, day/year labels, and the
 locale-specific first day of the week.
 Manual forms can use `DateRangePickerState`, `DateRangePicker`, and
 `DateRangePickerEvent` when they need range selection over the same localized
-calendar popover. Generated `component(date_picker)` fields remain single-date
-fields.
-Most application code should still go through
-[`gpui-form`](../gpui-form/README.md) instead of depending on this crate
-directly.
+calendar popover. The ready-made collection date shapes use
+`gpui_component::date_picker`; use this runtime directly when the localized
+`gpui-form-component` date picker is specifically needed.
+
+For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
+use the rendered component type as the form shape:
+
+```rs
+#[gpui_form(component(gpui_form_component::date_picker::DatePicker))]
+pub birth_date: chrono::NaiveDate;
+
+#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]
+pub holiday_range: (chrono::NaiveDate, chrono::NaiveDate);
+```
 
 ## File Picker
 
 This crate provides a native path picker backed by the pinned GPUI git API,
 not a separate dialog crate.
-Generated forms can use the same runtime with
-`#[gpui_form(component(file_picker))]`.
-The built-in placeholders, native-dialog prompts, browse label, dropped-dialog
+Component shapes can use the same runtime.
+The default placeholders, native-dialog prompts, browse label, dropped-dialog
 error, and selected-count text have plain English fallback copy. Explicit
 builder values such as `placeholder(...)`, `prompt(...)`, and
 `browse_label(...)` remain caller-provided text; render localized strings through
 your application-owned `es-fluent` localizer before passing them in.
 
 ```rs
-use gpui_form::runtime::file_picker::{
+use gpui_form_component::file_picker::{
     FilePicker,
     FilePickerEvent,
     FilePickerState,
@@ -177,6 +213,33 @@ Use `FilePicker::directories()` or `FilePicker::files_or_directories()` when
 the dialog should select directories instead of files. Multiple selection is
 available through `FilePicker::multiple(true)`.
 
+For `#[derive(GpuiForm)]`, enable this crate's `component-shape` feature and
+use the element type as the form shape:
+
+```rs
+#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]
+pub uploaded_files: Vec<std::path::PathBuf>;
+```
+
+Generated forms can configure the public `FilePicker` shape through
+`FilePickerOptions`. The value binding remains `Vec<PathBuf>` for both
+single-path and multi-path fields; `multiple(false)` only limits the native
+prompt to one selected path.
+
+```rs
+use gpui_form_component::file_picker::{FilePicker, FilePickerOptions};
+
+#[gpui_form(component(FilePicker.from(
+    FilePickerOptions::builder().multiple(false).build()
+)))]
+pub upload_file: Vec<std::path::PathBuf>;
+
+#[gpui_form(component(FilePicker.from(
+    FilePickerOptions::builder().multiple(true).build()
+)))]
+pub upload_files: Vec<std::path::PathBuf>;
+```
+
 ## Component Stories
 
 This crate is library-only. The interactive infinite-select, date-picker, and
@@ -190,45 +253,114 @@ Launch the component gallery with:
 cargo run -p gpui-form-component-story
 ```
 
-## Custom Components
+## Component Shapes
 
-`custom::CustomComponentShape` is the contract used by
-`component(custom(...))`.
+`GpuiComponentShape` is the runtime contract used by `#[gpui_form(component(Shape))]`.
+Generated `GpuiForm` field code also requires `DeclaredGpuiComponentShape`, emitted
+by `component_shape_gpui::component_shape!` and
+`#[derive(component_shape_gpui::GpuiComponentShape)]`. Field shapes should be declared
+with one of those macros. Generated field code reaches runtime contracts
+through `gpui_form::runtime::shape`; crates that define shapes directly may use
+`gpui_form_runtime::shape`. This crate's `component-shape` feature derives that
+contract for its built-in rendered component types.
 
-You can declare a reusable shape with the helper macro:
+For common external widgets, prefer the reusable shapes in
+[`gpui-form-collection`](../gpui-form-collection/README.md). Define your own
+shape when the application owns the component or when a collection shape is not
+specific enough.
+
+You can declare a reusable wrapper shape with
+`component_shape_gpui::component_shape!`. Prefer this form for reusable or
+generic shapes; it
+supports generics, where clauses, outer attributes, and order-independent
+metadata.
 
 ```rs
-gpui_form::custom_component_shape!(
-    pub EmailInputShape,
-    state = gpui_component::input::InputState,
-    new = gpui_component::input::InputState::new,
-    component = gpui_component::input::Input,
-);
+component_shape_gpui::component_shape! {
+    pub struct EmailInputShape {
+        state = gpui_component::input::InputState;
+        component = gpui_component::input::Input;
+        value = String;
+        field_suffix = "input";
+    }
+}
 ```
 
-Or, through the facade derive, implement the same contract directly on a state
-type:
+Or derive the same contract directly on an owned rendered component:
 
 ```rs
-#[derive(gpui_form::CustomComponentState)]
-#[gpui_form_custom(
-    new = crate::state::build,
-    component = crate::ui::TagsInput
+use crate::state::{TagsState, build};
+
+#[derive(component_shape_gpui::GpuiComponentShape)]
+#[gpui_component_shape(
+    state = TagsState,
+    new = build,
+    value = Vec<String>,
+    field_suffix = "input"
 )]
-pub struct TagsState;
+pub struct TagsInput {
+    state: gpui::Entity<TagsState>,
+}
+
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
+    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
+}
 ```
 
-For custom components that should participate in generated prototyping
-subscriptions, implement `custom::CustomComponentValueAdapter<T>` for the same
-shape and add `value_binding` to the `component(custom(...))` options. The
-adapter seeds state from the current form value and maps component events to
-`CustomComponentValueChange<T>`.
+`state` and `new` use normal Rust path resolution, so short in-scope names are
+fine. `new` accepts a constructor expression in shape declarations. Function
+paths and closures are called with
+`(window, cx)`; full constructor expressions such as
+`TagsState::with_label(window, cx, "tags")` are emitted as written. For
+`component_shape_gpui::component_shape!`, omitting `new` calls
+`<State>::new(window, cx)`. For `#[derive(GpuiComponentShape)]`, `state = ...` is
+required and omitting `new` also calls `<State>::new(window, cx)`.
+The `component = ...` option publishes a `RenderComponent` adapter for
+generated/prototyping render code, so prefer a type that remains valid from the
+consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
+The value must be a path-like type. `field_suffix = "..."` must be a
+non-empty identifier suffix.
+Use `value = ...` or `values(...)` to publish the form-side value types a
+shape supports; omit those metadata entries only when you provide manual
+`GpuiComponentShapeFor<Value>` impls. Do not mix value metadata with manual
+`GpuiComponentShapeFor<Value>` impls in the same `component_shape!` block.
+The function-like macro uses `state = ...` for the wrapped external state type
+and semicolons between options.
+
+For component-derived shapes that should participate in generated prototyping
+subscriptions, add `value_binding` to `#[gpui_component_shape(...)]` and implement
+`GpuiComponentStateValueBinding<T>` on the backing state. Component-derived shapes
+delegate their shape-level `GpuiComponentValueBinding<T>` impl through that
+state-level contract.
+For wrapper shapes declared with `component_shape_gpui::component_shape!`, put the
+`GpuiComponentValueBinding<T>` impl inside the macro block to emit the impl with
+the shape, and add `value_binding;` to publish shape-level value-binding
+metadata for generated prototyping subscriptions.
+
+Reusable shapes can also publish `ComponentPrototyping` metadata through the
+shape contract.
+Set `field_suffix = "..."` through `component_shape_gpui::component_shape!`, or
+`#[gpui_component_shape(...)]` so inventory and prototyping generators can emit
+helper names such as `on_email_input_event` without deriving that suffix from
+the shape type. Generated form entity fields and constructors use the source
+field name, such as `email`.
+Generated value-binding scaffolds can use `GpuiComponentStateOf`, `GpuiComponentEventOf`,
+`seed_value_binding_state`, and `value_change` to avoid repeating
+associated-type projections at every call site.
+Direct `ComponentPrototyping::field_suffix(...)` calls validate the same
+non-empty ASCII identifier suffix contract in const evaluation.
+
+Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` for a reusable shape when the component can
+synthesize a missing value. Generated forms then inherit direct `T` holder
+storage from the shape.
 
 ## Most Users Should Use Instead
 
-- [`gpui-form`](../gpui-form/README.md) for the public facade
+- [`gpui-form`](../gpui-form/README.md) for the `GpuiForm` facade
 - [`gpui-form-component-derive`](../gpui-form-component-derive/README.md) when
   you want only the `InfiniteSelect` derive plus this runtime layer
+- [`gpui-form-runtime`](../gpui-form-runtime/README.md) for component shape
+  contracts and value-binding helpers
 - [`gpui-component`](https://github.com/longbridge/gpui-component) for the
   upstream date-picker widget and other base components
 - [`gpui-form-schema`](../gpui-form-schema/README.md) for metadata and inventory

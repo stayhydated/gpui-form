@@ -1,0 +1,29 @@
+error: duplicate `type` option in `value(...)`; remove the duplicate `type` entry
+ --> tests/ui/gpui_form_duplicate_field_options.rs:5:67
+  |
+5 |     #[gpui_form(component(crate::InputShape, value(type = String, type = std::string::String)))]
+  |                                                                   ^^^^
+
+error: duplicate `from_source` option in `value(...)`; remove the duplicate `from_source` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:16:13
+   |
+16 |             from_source = std::convert::identity,
+   |             ^^^^^^^^^^^
+
+error: duplicate reverse conversion option in `value(...)`; use only one of `into_source` or `try_into_source`
+  --> tests/ui/gpui_form_duplicate_field_options.rs:31:13
+   |
+31 |             into_source = std::convert::identity,
+   |             ^^^^^^^^^^^
+
+error: duplicate `default` option in structured `gpui_form` field option; remove the duplicate `default` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:39:71
+   |
+39 |     #[gpui_form(component(crate::InputShape, default = String::new(), default = ""))]
+   |                                                                       ^^^^^^^
+
+error: duplicate `skip` option in `gpui_form` field attribute; remove the duplicate `skip` entry
+  --> tests/ui/gpui_form_duplicate_field_options.rs:45:23
+   |
+45 |     #[gpui_form(skip, skip)]
+   |                       ^^^^

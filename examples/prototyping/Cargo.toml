@@ -1,11 +1,13 @@
 [package]
 name = "prototyping"
 version = "0.1.0"
+rust-version.workspace = true
 edition.workspace = true
 license = "Unlicense"
 publish = false
 
 [dependencies]
+gpui-es-fluent = { workspace = true }
 gpui-form = { features = [ "inventory" ], workspace = true }
 gpui-form-prototyping-core = { features = [ "fluent" ], workspace = true }
 heck = { workspace = true }

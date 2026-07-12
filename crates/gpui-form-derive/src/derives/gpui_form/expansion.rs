@@ -1,24 +1,131 @@
 use darling::FromDeriveInput as _;
-use itertools::Itertools as _;
-use koruma_derive_core::{FieldInfo as KorumaFieldInfo, ParseFieldResult};
+use gpui_form_codegen::{
+    CratePaths,
+    metadata::{optional_rust_expr_tokens, rust_expr_tokens, rust_type_tokens},
+};
 use proc_macro2::TokenStream;
-use quote::{ToTokens as _, format_ident, quote};
-use std::collections::HashMap;
+use quote::{format_ident, quote};
 use syn::DeriveInput;
+use syn::GenericParam;
 
 use crate::derives::gpui_form::cfg_attr::flatten_cfg_attr_in_derive_input;
-use crate::derives::gpui_form::components::generate_component_field;
-use crate::derives::gpui_form::structs::{ComponentStruct, FieldOptionality, GpuiFormOptions};
-use crate::derives::gpui_form::utils::extract_option_inner_type;
-use crate::derives::gpui_form::value_holder::{generate_value_holder, parse_field_default};
+use crate::derives::gpui_form::holder_plan::ValueHolderPlan;
+use crate::derives::gpui_form::intent::ComponentStruct;
+use crate::derives::gpui_form::ir::{
+    ComponentFieldPlan, DeriveContext, FieldPlan, HolderStoragePlan, ValidationRule,
+};
+use crate::derives::gpui_form::mcp::generate_mcp_impl;
+use crate::derives::gpui_form::planner::plan_form;
+use crate::derives::gpui_form::structs::GpuiFormOptions;
+use crate::derives::gpui_form::value_holder::generate_value_holder;
 
-fn option_expr_string_tokens(expr: &Option<syn::Expr>) -> TokenStream {
-    match expr {
-        Some(expr) => {
-            let expr_str = expr.to_token_stream().to_string();
-            quote! { Some(#expr_str) }
+fn field_value_presence_tokens(
+    context: &DeriveContext,
+    storage: &HolderStoragePlan,
+) -> TokenStream {
+    let facade_crate = &context.paths.gpui_form;
+    match storage {
+        HolderStoragePlan::OriginallyOptional => {
+            quote! {
+                #facade_crate::schema::registry::FieldValuePresence::Optional
+            }
         },
-        None => quote! { None },
+        HolderStoragePlan::Direct => {
+            quote! {
+                #facade_crate::schema::registry::FieldValuePresence::DirectStorage
+            }
+        },
+        HolderStoragePlan::ShapePolicy { shape } => {
+            let runtime_crate = context.paths.gpui_form_facade_runtime();
+            quote! {
+                if <<#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
+                    as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
+                {
+                    #facade_crate::schema::registry::FieldValuePresence::RequiresValue
+                } else {
+                    #facade_crate::schema::registry::FieldValuePresence::DirectStorage
+                }
+            }
+        },
+    }
+}
+
+fn phantom_type_tokens(generics: &syn::Generics) -> TokenStream {
+    let params: Vec<TokenStream> = generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            GenericParam::Type(param) => {
+                let ident = &param.ident;
+                Some(quote! { #ident })
+            },
+            GenericParam::Lifetime(param) => {
+                let lifetime = &param.lifetime;
+                Some(quote! { &#lifetime () })
+            },
+            GenericParam::Const(_) => None,
+        })
+        .collect();
+
+    if params.is_empty() {
+        quote! { () }
+    } else {
+        quote! { (#(#params),*) }
+    }
+}
+
+fn marker_field_tokens(generics: &syn::Generics) -> TokenStream {
+    if generics
+        .params
+        .iter()
+        .any(|param| matches!(param, GenericParam::Type(_) | GenericParam::Lifetime(_)))
+    {
+        let phantom_type = phantom_type_tokens(generics);
+        quote! {
+            #[doc(hidden)]
+            pub __gpui_form_marker: ::core::marker::PhantomData<fn() -> #phantom_type>,
+        }
+    } else {
+        quote! {}
+    }
+}
+
+fn component_state_type_tokens(context: &DeriveContext, field: &ComponentFieldPlan) -> TokenStream {
+    let shape = field.component.shape.shape();
+    let runtime_crate = context.paths.gpui_form_facade_runtime();
+    quote! {
+        <#shape as #runtime_crate::shape::GpuiComponentShape>::State
+    }
+}
+
+fn component_field_structure_tokens(
+    context: &DeriveContext,
+    field: &ComponentFieldPlan,
+) -> TokenStream {
+    let field_ident = &field.component.field_ident;
+    let gpui_crate = &context.paths.gpui;
+    let state_type = component_state_type_tokens(context, field);
+    quote! {
+        pub #field_ident: #gpui_crate::Entity<#state_type>,
+    }
+}
+
+fn component_base_declaration_tokens(
+    context: &DeriveContext,
+    field: &ComponentFieldPlan,
+) -> TokenStream {
+    let field_ident = &field.component.field_ident;
+    let gpui_crate = &context.paths.gpui;
+    let state_type = component_state_type_tokens(context, field);
+    let constructor_tokens = field.component.shape.constructor_tokens();
+
+    quote! {
+        pub fn #field_ident(
+            window: &mut #gpui_crate::Window,
+            cx: &mut #gpui_crate::Context<'_, #state_type>,
+        ) -> #state_type {
+            #constructor_tokens
+        }
     }
 }
 
@@ -27,6 +134,8 @@ pub fn expand_gpui_form(
     options: GpuiFormOptions,
 ) -> proc_macro2::TokenStream {
     let original_input = derive_input.clone();
+    let context = DeriveContext::new(original_input.ident.clone(), CratePaths::resolve());
+    let facade_crate = &context.paths.gpui_form;
     let derive_input = flatten_cfg_attr_in_derive_input(derive_input);
 
     let parsed = match ComponentStruct::from_derive_input(&derive_input) {
@@ -34,93 +143,133 @@ pub fn expand_gpui_form(
         Err(e) => return e.write_errors(),
     };
 
-    let struct_name = &parsed.ident;
+    let struct_name = &context.original_ident;
+    if parsed.mcp.is_some() && !options.generate_mcp {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` requires the `gpui-form/mcp` feature",
+        )
+        .to_compile_error();
+    }
+    if parsed.mcp.is_some() && parsed.no_inventory.is_some() {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` cannot be combined with `#[gpui_form(no_inventory)]`; MCP submit registration uses inventory",
+        )
+        .to_compile_error();
+    }
+    if parsed.mcp.is_some() && !original_input.generics.params.is_empty() {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[gpui_form(mcp)]` does not support generic forms because MCP submit tools are registered in inventory",
+        )
+        .to_compile_error();
+    }
+
+    let generate_inventory = options.generate_shape && parsed.no_inventory.is_none();
+    let generate_mcp = options.generate_mcp && parsed.mcp.is_some();
+    if generate_inventory && !original_input.generics.params.is_empty() {
+        return syn::Error::new_spanned(
+            struct_name,
+            "`#[derive(GpuiForm)]` cannot register generic forms in inventory; add `#[gpui_form(no_inventory)]` to opt out",
+        )
+        .to_compile_error();
+    }
     let components_holder_name = format_ident!("{}FormFields", struct_name);
     let components_base_declarations_name = format_ident!("{}FormComponents", struct_name);
+    let (impl_generics, ty_generics, where_clause) = original_input.generics.split_for_impl();
+    let declaration_generics = &original_input.generics;
+    let form_fields_marker = marker_field_tokens(&original_input.generics);
 
     let koruma_options = parsed.koruma.as_ref().map(|k| k.0.clone());
 
-    if parsed.empty {
+    if parsed.empty.is_some() {
         let enable_koruma = koruma_options.is_some();
         let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
-        let empty_fields: Vec<FieldOptionality> = Vec::new();
-        let (value_holder_tokens, _) = generate_value_holder(
+        let empty_fields: Vec<FieldPlan> = Vec::new();
+        let holder_plan = match ValueHolderPlan::new(&empty_fields) {
+            Ok(holder_plan) => holder_plan,
+            Err(error) => return error.to_compile_error(),
+        };
+        let conversion_metadata = holder_plan.conversion_metadata_tokens(&context);
+        let value_holder_tokens = match generate_value_holder(
+            &context,
             &original_input,
-            &empty_fields,
+            &holder_plan,
             enable_koruma,
             enable_koruma_fluent,
-        );
-        let shape_impl = if options.generate_shape {
+            generate_mcp,
+        ) {
+            Ok(value_holder_tokens) => value_holder_tokens,
+            Err(error) => return error.to_compile_error(),
+        };
+        let shape_impl = if generate_inventory {
             quote! {
-                ::gpui_form::schema::registry::inventory::submit! {
-                    ::gpui_form::schema::registry::GpuiFormShape::new(
+                #facade_crate::schema::registry::inventory::submit! {
+                    #facade_crate::schema::registry::GpuiFormShape::new(
                         stringify!(#struct_name),
                         &[],
-                        file!(),
+                        #facade_crate::schema::registry::RustPath::from_macro_tokens_unchecked(module_path!()),
                         #enable_koruma
-                    ).with_skipped_fields(false)
+                    ).with_holder_conversion(#conversion_metadata)
                 }
             }
         } else {
             quote! {}
         };
+        let mcp_impl = if generate_mcp {
+            match generate_mcp_impl(
+                &context,
+                &original_input,
+                &empty_fields,
+                &holder_plan,
+                enable_koruma,
+                parsed.mcp.as_ref(),
+            ) {
+                Ok(tokens) => tokens,
+                Err(error) => return error.to_compile_error(),
+            }
+        } else {
+            quote! {}
+        };
+        let empty_struct_declarations = if original_input.generics.params.is_empty() {
+            quote! {
+                pub struct #components_holder_name;
+                pub struct #components_base_declarations_name;
+            }
+        } else {
+            quote! {
+                pub struct #components_holder_name #declaration_generics #where_clause {
+                    #form_fields_marker
+                }
+
+                pub struct #components_base_declarations_name #declaration_generics #where_clause {
+                    #form_fields_marker
+                }
+            }
+        };
 
         return quote! {
             #value_holder_tokens
-            pub struct #components_holder_name;
 
             #shape_impl
 
-            pub struct #components_base_declarations_name;
+            #mcp_impl
+
+            #empty_struct_declarations
         };
     }
 
     let fields_iter = match &parsed.data {
         darling::ast::Data::Struct(s) => &s.fields,
-        _ => unreachable!("GpuiForm derive only supports named structs"),
+        _ => {
+            return syn::Error::new_spanned(
+                &derive_input,
+                "`#[derive(GpuiForm)]` only supports named structs",
+            )
+            .to_compile_error();
+        },
     };
-
-    let has_skipped_fields = fields_iter.iter().any(|field| field.skip());
-
-    let parsed_koruma_fields: HashMap<String, KorumaFieldInfo> = match &derive_input.data {
-        syn::Data::Struct(data_struct) => data_struct
-            .fields
-            .iter()
-            .filter_map(|field| {
-                let ident = field.ident.as_ref()?.to_string();
-                match koruma_derive_core::parse_field(field, 0) {
-                    ParseFieldResult::Valid(info) => Some((ident, *info)),
-                    ParseFieldResult::Skip | ParseFieldResult::Error(_) => None,
-                }
-            })
-            .collect(),
-        _ => HashMap::new(),
-    };
-
-    let enable_koruma = koruma_options.is_some() || !parsed_koruma_fields.is_empty();
-    let enable_koruma_fluent = koruma_options.as_ref().map(|k| k.fluent).unwrap_or(false);
-
-    let koruma_validations: HashMap<String, Vec<String>> = parsed_koruma_fields
-        .iter()
-        .map(|(name, info)| {
-            let mut validator_names: Vec<String> = info
-                .validation
-                .field_validators
-                .iter()
-                .map(|v| v.name().to_string())
-                .collect();
-
-            if info.is_newtype() {
-                validator_names.push("NewtypeValidation".to_string());
-            }
-
-            if info.is_nested() {
-                validator_names.push("NestedValidation".to_string());
-            }
-
-            (name.clone(), validator_names)
-        })
-        .collect();
 
     if fields_iter.is_empty() {
         return syn::Error::new_spanned(
@@ -133,190 +282,292 @@ pub fn expand_gpui_form(
         .to_compile_error();
     }
 
-    let component_field_pairs: Vec<crate::derives::gpui_form::structs::ComponentFieldContent> =
-        fields_iter
-            .iter()
-            .filter(|field| !field.skip())
-            .map(generate_component_field)
-            .collect();
+    let form_plan = match plan_form(&parsed, &derive_input, koruma_options.as_ref()) {
+        Ok(plan) => plan,
+        Err(error) => return error.to_compile_error(),
+    };
+    let enable_koruma_fluent = form_plan.enable_koruma_fluent;
+    let effective_enable_koruma = form_plan.effective_enable_koruma;
 
-    let (field_structure_tokens, field_base_declarations_tokens, wrap_in_option_map): (
-        Vec<TokenStream>,
-        Vec<TokenStream>,
-        HashMap<String, bool>,
-    ) = component_field_pairs
-        .into_iter()
-        .map(|content| {
-            (
-                content.field_structure_tokens,
-                content.field_base_declarations_tokens,
-                content.wrap_in_option,
-            )
-        })
-        .multiunzip();
+    let field_structure_tokens: Vec<TokenStream> = form_plan
+        .component_fields()
+        .map(|field| component_field_structure_tokens(&context, field))
+        .collect();
+    let field_base_declarations_tokens: Vec<TokenStream> = form_plan
+        .component_fields()
+        .map(|field| component_base_declaration_tokens(&context, field))
+        .collect();
+    let field_plans = form_plan.fields;
+    let holder_plan = match ValueHolderPlan::new(&field_plans) {
+        Ok(holder_plan) => holder_plan,
+        Err(error) => return error.to_compile_error(),
+    };
 
-    let mut field_optionality = Vec::new();
-    for field in fields_iter {
-        let field_name = field.ident.clone().unwrap();
-        let field_name_str = field_name.to_string();
-        let (was_optional, inner_type) = extract_option_inner_type(&field.ty);
-        let wrap_in_option = !field.skip()
-            && field.component.is_some()
-            && wrap_in_option_map
-                .get(&field_name_str)
-                .copied()
-                .unwrap_or(false);
-        let koruma_info = parsed_koruma_fields.get(&field_name_str);
-        let validation = koruma_info
-            .map(|info| info.validation.clone())
-            .unwrap_or_default();
-        let default_expr = parse_field_default(field);
-        field_optionality.push(FieldOptionality {
-            field_name,
-            original_type: field.ty.clone(),
-            inner_type,
-            was_optional,
-            wrap_in_option,
-            validation,
-            default_expr,
-            override_type: field.r#type.as_ref().map(|ty| ty.0.clone()),
-            into_expr: field.into.clone(),
-            from_expr: field.from.clone(),
-            skip: field.skip(),
-        });
-    }
-
-    let has_fields_needing_required = field_optionality.iter().any(|f| {
-        !f.skip
-            && f.wrap_in_option
-            && !f.was_optional
-            && !f.validation.is_newtype
-            && !f.validation.is_nested
-    });
-
-    let has_any_koruma_validations = field_optionality.iter().any(|f| {
-        !f.skip
-            && (!f.validation.field_validators.is_empty()
-                || !f.validation.element_validators.is_empty()
-                || f.validation.is_nested)
-    });
-
-    let effective_enable_koruma =
-        enable_koruma || (has_fields_needing_required && has_any_koruma_validations);
-    let (value_holder_tokens, fields_requiring_required) = generate_value_holder(
+    let value_holder_tokens = match generate_value_holder(
+        &context,
         &original_input,
-        &field_optionality,
+        &holder_plan,
         effective_enable_koruma,
         enable_koruma_fluent,
-    );
+        generate_mcp,
+    ) {
+        Ok(value_holder_tokens) => value_holder_tokens,
+        Err(error) => return error.to_compile_error(),
+    };
+    let conversion_metadata = holder_plan.conversion_metadata_tokens(&context);
 
-    let field_variant_construction_code: Vec<TokenStream> = fields_iter
+    let field_variant_construction_code: Vec<TokenStream> = field_plans
         .iter()
         .filter_map(|field| {
-            if field.skip() {
-                None
-            } else if let Some(component_def) = field.component.as_ref() {
-                let field_name_str = field
-                    .ident
-                    .as_ref()
-                    .expect("Field should have an ident if not skipped and has component")
-                    .to_string();
-                let (was_optional, original_inner_type) = extract_option_inner_type(&field.ty);
-                let base_type = field
-                    .r#type
-                    .as_ref()
-                    .map(|ty| extract_option_inner_type(&ty.0).1)
-                    .unwrap_or_else(|| original_inner_type.clone());
-                let wraps_in_option = wrap_in_option_map
-                    .get(&field_name_str)
-                    .copied()
-                    .unwrap_or(false);
+            if field.is_skipped() {
+                return None;
+            }
 
-                let is_optional = was_optional;
-                let field_type_str = base_type.to_token_stream().to_string();
-                let source_value_type_str = original_inner_type.to_token_stream().to_string();
-                let behaviour_tokens = component_def.behaviour_tokens(&base_type);
-                let mut validation_rules = koruma_validations
-                    .get(&field_name_str)
-                    .cloned()
-                    .unwrap_or_default();
+            let shared = field.shared()?;
+            let field_name_str = field.field_name().to_string();
+            let value_presence_tokens = field_value_presence_tokens(&context, &shared.storage);
 
-                if fields_requiring_required.contains(&field_name_str)
-                    && !validation_rules.contains(&"RequiredValidation".to_string())
-                {
-                    validation_rules.insert(0, "RequiredValidation".to_string());
+            let field_type_tokens = rust_type_tokens(facade_crate, &shared.form_type);
+            let source_value_type_tokens =
+                rust_type_tokens(facade_crate, &shared.source_value_type);
+            let needs_inferred_required_rule = field.needs_required_validation()
+                && !shared.validation_metadata.has_required();
+
+            let validation_rules: Vec<ValidationRule> = if needs_inferred_required_rule
+                && !shared.storage.is_shape_policy()
+            {
+                std::iter::once(ValidationRule::Required)
+                    .chain(shared.validation_metadata.iter().cloned())
+                    .collect()
+            } else {
+                shared.validation_metadata.iter().cloned().collect()
+            };
+            let validation_rule_tokens: Vec<_> = validation_rules
+                .iter()
+                .map(|rule| {
+                    let registry = facade_crate;
+                    match rule {
+                        ValidationRule::Required => {
+                            quote! { #registry::schema::registry::ValidationRuleId::Required }
+                        },
+                        ValidationRule::Newtype => {
+                            quote! { #registry::schema::registry::ValidationRuleId::Newtype }
+                        },
+                        ValidationRule::Nested => {
+                            quote! { #registry::schema::registry::ValidationRuleId::Nested }
+                        },
+                        ValidationRule::Validator(name) => {
+                            let literal =
+                                syn::LitStr::new(name, proc_macro2::Span::call_site());
+                            quote! {
+                                #registry::schema::registry::ValidationRuleId::Custom(#literal)
+                            }
+                        },
+                    }
+                })
+                .collect();
+            let validation_rules_tokens = if needs_inferred_required_rule
+                && let Some(shape) = shared.storage.shape_policy()
+            {
+                let runtime_crate = context.paths.gpui_form_facade_runtime();
+                quote! {
+                    {
+                        const __GPUI_FORM_FIELD_VALIDATIONS: &[#facade_crate::schema::registry::ValidationRuleId] =
+                            if <<#shape as #runtime_crate::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy
+                                as #runtime_crate::shape::ComponentValueStoragePolicy>::REQUIRES_VALUE
+                            {
+                                &[
+                                    #facade_crate::schema::registry::ValidationRuleId::Required,
+                                    #( #validation_rule_tokens ),*
+                                ]
+                            } else {
+                                &[
+                                    #( #validation_rule_tokens ),*
+                                ]
+                            };
+                        __GPUI_FORM_FIELD_VALIDATIONS
+                    }
                 }
+            } else {
+                quote! {
+                    &[
+                        #( #validation_rule_tokens ),*
+                    ]
+                }
+            };
 
-                let validation_literals: Vec<_> = validation_rules
-                    .iter()
-                    .map(|v| syn::LitStr::new(v, proc_macro2::Span::call_site()))
-                    .collect();
+            let default_expr_tokens = shared.default_expr.as_ref().map(|expr| {
+                let expr_tokens = rust_expr_tokens(facade_crate, expr);
+                quote! {
+                    .with_default(#expr_tokens)
+                }
+            });
 
-                let default_expr_tokens = field.default.as_ref().map(|expr| {
-                    let expr_str = expr.0.to_token_stream().to_string();
-                    quote! { .with_default(#expr_str) }
+            let from_expr_tokens =
+                optional_rust_expr_tokens(facade_crate, shared.source_to_form_expr());
+            let into_expr_tokens =
+                optional_rust_expr_tokens(facade_crate, shared.form_to_source_expr());
+            let value_spec_tokens = quote! {
+                #facade_crate::schema::registry::FieldValueSpec::new(
+                    #field_type_tokens,
+                    #source_value_type_tokens,
+                    #value_presence_tokens
+                )
+                .with_conversions(
+                    #facade_crate::schema::registry::ConversionMetadata::new(
+                        #from_expr_tokens,
+                        #into_expr_tokens
+                    )
+                )
+                .with_validations(#validation_rules_tokens)
+                #default_expr_tokens
+            };
+                let field_variant_constructor_tokens = match field.component() {
+                    Some(component_def) => {
+                        let component_variant_tokens = component_def.component_variant_tokens();
+                        quote! {
+                            #facade_crate::schema::registry::FieldVariant::component_for_field(
+                                #field_name_str,
+                            #value_spec_tokens,
+                            #component_variant_tokens
+                        )
+                    }
+                },
+                None => {
+                    quote! {
+                        #facade_crate::schema::registry::FieldVariant::hidden_for_field(
+                            #field_name_str,
+                            #value_spec_tokens
+                        )
+                        }
+                    },
+                };
+                let label_tokens = shared.metadata.label.as_ref().map(|label| {
+                    let label = syn::LitStr::new(label, shared.field_name().span());
+                    quote! { .with_label(#label) }
+                });
+                let description_tokens = shared.metadata.description.as_ref().map(|description| {
+                    let description = syn::LitStr::new(description, shared.field_name().span());
+                    quote! { .with_description(#description) }
+                });
+                let examples_tokens = (!shared.metadata.examples.is_empty()).then(|| {
+                    let examples = shared
+                        .metadata
+                        .examples
+                        .iter()
+                        .map(|example| syn::LitStr::new(example, shared.field_name().span()))
+                        .collect::<Vec<_>>();
+                    quote! { .with_examples(&[#(#examples),*]) }
                 });
 
-                let custom_component_tokens = component_def.custom_component_tokens();
-                let custom_shape_tokens = component_def.custom_shape_tokens();
-                let custom_value_binding_tokens = component_def.custom_value_binding_tokens();
-                let from_expr_tokens = option_expr_string_tokens(&field.from);
-                let into_expr_tokens = option_expr_string_tokens(&field.into);
-
                 Some(quote! {
-                    ::gpui_form::schema::registry::FieldVariant::new(
-                        #field_name_str,
-                        #field_type_str,
-                        #is_optional,
-                        #behaviour_tokens
-                    )
-                    .with_source_value_type(#source_value_type_str)
-                    .with_wraps_in_option(#wraps_in_option)
-                    .with_conversions(#from_expr_tokens, #into_expr_tokens)
-                    .with_validations(&[
-                        #( #validation_literals ),*
-                    ])
-                    #default_expr_tokens
-                    #custom_component_tokens
-                    #custom_shape_tokens
-                    #custom_value_binding_tokens
+                    #field_variant_constructor_tokens
+                    #label_tokens
+                    #description_tokens
+                    #examples_tokens
                 })
-            } else {
-                None
-            }
         })
         .collect();
 
-    let shape_impl = if options.generate_shape {
+    let component_type_check_tokens: Vec<TokenStream> = field_plans
+        .iter()
+        .filter_map(|field| {
+            if field.is_skipped() {
+                return None;
+            }
+
+            field
+                .component()
+                .map(|component| component.type_check_tokens())
+        })
+        .collect();
+
+    let component_type_checks = if component_type_check_tokens.is_empty() {
+        quote! {}
+    } else {
         quote! {
-            ::gpui_form::schema::registry::inventory::submit! {
-                ::gpui_form::schema::registry::GpuiFormShape::new(
-                    stringify!(#struct_name),
-                    &[
+            impl #impl_generics #components_holder_name #ty_generics #where_clause {
+                #[allow(dead_code)]
+                fn __gpui_form_component_type_checks() {
+                    #(#component_type_check_tokens)*
+                }
+            }
+        }
+    };
+
+    let shape_impl = if generate_inventory {
+        quote! {
+            #facade_crate::schema::registry::inventory::submit! {
+                {
+                    const __GPUI_FORM_FIELDS: &[#facade_crate::schema::registry::FieldVariant] = &[
                         #(#field_variant_construction_code),*
-                    ],
-                    file!(),
-                    #effective_enable_koruma
-                ).with_skipped_fields(#has_skipped_fields)
+                    ];
+
+                    #facade_crate::schema::registry::GpuiFormShape::new(
+                        stringify!(#struct_name),
+                        __GPUI_FORM_FIELDS,
+                        #facade_crate::schema::registry::RustPath::from_macro_tokens_unchecked(module_path!()),
+                        #effective_enable_koruma
+                    ).with_holder_conversion(#conversion_metadata)
+                }
             }
         }
     } else {
         quote! {}
     };
+    let mcp_impl = if generate_mcp {
+        match generate_mcp_impl(
+            &context,
+            &original_input,
+            &field_plans,
+            &holder_plan,
+            effective_enable_koruma,
+            parsed.mcp.as_ref(),
+        ) {
+            Ok(tokens) => tokens,
+            Err(error) => return error.to_compile_error(),
+        }
+    } else {
+        quote! {}
+    };
+
+    let components_base_declarations = if original_input.generics.params.is_empty() {
+        quote! {
+            pub struct #components_base_declarations_name;
+
+            impl #components_base_declarations_name {
+              #(#field_base_declarations_tokens)*
+            }
+        }
+    } else {
+        let phantom_type = phantom_type_tokens(&original_input.generics);
+        quote! {
+            pub struct #components_base_declarations_name #declaration_generics #where_clause {
+                #[doc(hidden)]
+                pub __gpui_form_marker: ::core::marker::PhantomData<fn() -> #phantom_type>,
+            }
+
+            impl #impl_generics #components_base_declarations_name #ty_generics #where_clause {
+              #(#field_base_declarations_tokens)*
+            }
+        }
+    };
 
     let expanded = quote! {
         #value_holder_tokens
-        pub struct #components_holder_name {
+
+        pub struct #components_holder_name #declaration_generics #where_clause {
             #(#field_structure_tokens)*
+            #form_fields_marker
         }
+
+        #component_type_checks
 
         #shape_impl
 
-        pub struct #components_base_declarations_name;
+        #mcp_impl
 
-        impl #components_base_declarations_name {
-          #(#field_base_declarations_tokens)*
-        }
+        #components_base_declarations
     };
 
     expanded

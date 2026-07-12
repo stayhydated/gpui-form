@@ -1,0 +1,18 @@
+error[E0277]: the trait bound `NonDefault: std::default::Default` is not satisfied
+  --> tests/ui/gpui_form_direct_storage_non_default.rs:25:10
+   |
+25 | #[derive(GpuiForm)]
+   |          ^^^^^^^^ the trait `std::default::Default` is not implemented for `NonDefault`
+   |
+help: the trait `DefaultValueStorage<T>` is implemented for `DirectValueStorage`
+  --> $WORKSPACE/crates/gpui-form-runtime/src/shape.rs
+   |
+   | impl<T: Default> DefaultValueStorage<T> for DirectValueStorage {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: required for `DirectValueStorage` to implement `DefaultValueStorage<NonDefault>`
+   = note: this error originates in the derive macro `GpuiForm` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `NonDefault` with `#[derive(Default)]`
+   |
+ 4 + #[derive(Default)]
+ 5 | struct NonDefault(String);
+   |

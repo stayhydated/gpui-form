@@ -1,7 +1,7 @@
 [package]
 name = "gpui-form-component"
 description = """
-Custom components for gpui-form, including InfiniteSelect for nested enum support
+GPUI component runtimes for gpui-form, including InfiniteSelect for nested enum support
 """
 version.workspace = true
 rust-version.workspace = true
@@ -12,16 +12,26 @@ repository.workspace = true
 readme = "README.md"
 
 [features]
+component-shape = [
+  "dep:bon",
+  "dep:component-shape",
+  "dep:component-shape-gpui",
+  "dep:gpui-form-runtime",
+]
 default = [  ]
 derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]
+bon = { optional = true, workspace = true }
 chrono = { workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
+component-shape = { optional = true, workspace = true }
+component-shape-gpui = { optional = true, workspace = true }
+es-fluent = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-form-component-derive = { optional = true, workspace = true }
+gpui-form-runtime = { optional = true, workspace = true }
 icu_calendar = { workspace = true }
 icu_datetime = { workspace = true }
 icu_locale_core = { workspace = true }
@@ -35,6 +45,9 @@ es-fluent-build = { workspace = true }
 gpui-form-component-derive = { workspace = true }
 serde_json = { workspace = true }
 unic-langid = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = [ "component-shape" ]
 
 [lints]
 workspace = true

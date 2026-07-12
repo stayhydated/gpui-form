@@ -12,8 +12,11 @@ Today this crate is intentionally small and focused:
 
 - `numeric::validate_signed_numeric`
 - `numeric::validate_unsigned_numeric`
+- `component_suffix::{ComponentSuffix, validate_component_suffix}`
 
-These helpers match the text-entry rules used by `gpui-form` number inputs.
+These helpers are available for custom numeric input wrappers that want shared
+text-entry validation and for integration tooling that wants the same component
+suffix validation rules without depending on GPUI runtime crates.
 
 ## Example
 
@@ -40,5 +43,7 @@ assert!(!validate_unsigned_numeric::<u32>("-1", true));
 ## Most Users Should Use Instead
 
 - [`gpui-form`](../gpui-form/README.md) for normal application development
+- [`gpui-form-runtime`](../gpui-form-runtime/README.md) when you need the
+  component shape runtime contracts
 - [`gpui-form-component`](../gpui-form-component/README.md) when you need the
   GPUI runtime helpers

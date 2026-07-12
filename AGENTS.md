@@ -5,15 +5,14 @@ This is the working guide for contributors and coding agents in the
 
 Use it to decide:
 
-1. where documentation belongs,
-2. whether a crate or surface is user-facing, public integration, or internal,
-3. which related docs, examples, and skills must change together,
-4. which validation command should run before handoff.
+1. which crate or example owns a change,
+2. which docs, rustdocs, skills, examples, or generated outputs must change
+   with it,
+3. which narrow validation command proves the edit.
 
-For most application code, start with `crates/gpui-form`.
-
-Reach for `crates/gpui-form-prototyping-core` when you want to generate GPUI
-scaffolding from `GpuiFormShape` inventory data instead of wiring forms by hand.
+For most application-facing form work, start in `crates/gpui-form`. Use
+`crates/gpui-form-prototyping-core` for GPUI scaffolding from `GpuiFormShape`
+inventory data. Check `just --list` before broad validation.
 
 ## Project Summary
 
@@ -22,226 +21,210 @@ scaffolding from `GpuiFormShape` inventory data instead of wiring forms by hand.
 
 Its priorities are:
 
-1. **Type safety**: generate strongly typed form state, metadata, and helper APIs at compile time.
-2. **Ergonomics**: keep `#[derive(GpuiForm)]` and related attributes concise enough for normal application structs.
-3. **Developer experience**: support inventory-driven prototyping, custom components, and layered crates that can be used directly when needed.
+1. type-safe generated form state, metadata, value holders, and helper APIs,
+2. concise derive attributes for normal application structs,
+3. inventory-driven prototyping, component shapes, MCP submit integration, and
+   layered crates that can be used directly when needed.
 
 ## Quick Decision Flow
 
-Before editing, classify the change:
+Before editing:
 
-1. **Find the surface in the workspace map.** Use its audience label to decide
-   how much public explanation the change needs.
-2. **Place documentation by content, not by crate audience.** README files are
-   always user-facing. Internal design belongs in the matching
-   `docs/ARCHITECTURE.md`.
-3. **Sync public workflow changes.** If derive attributes, supported component
-   behavior, Koruma validation wiring, runtime re-exports, custom components,
-   prototyping output, or recommended usage changes, update the relevant
-   README, example, architecture note, and `.agents/skills/*` guidance in the
-   same change when applicable.
-4. **Validate narrowly.** Run the smallest command that proves the edited
-   behavior or documentation surface is still sound.
+1. Find the owning surface in the workspace map.
+2. Treat README files, `examples/README.md`, and in-repository `skills/*`
+   guidance as user-facing.
+3. Treat `//!` and `///` rustdocs, source-adjacent comments, tests, snapshots,
+   and examples as the internal behavior record.
+4. Update every public surface that describes a changed derive attribute,
+   component contract, feature flag, runtime import, prototyping workflow, MCP
+   workflow, or supported example.
+5. Run the smallest command that proves the edited behavior or docs surface.
 
-## Audience Labels
+Route public documentation to the README, example, skill, and rustdoc surfaces
+named below. Keep implementation rationale next to the relevant module as
+rustdocs/source comments, in focused tests or snapshots, or in this guide when
+it affects agent routing.
 
-These labels describe the crate or surface itself, not the documentation file
-being edited:
+## Documentation Sync
 
-- **User-facing**: normal entry points for application developers.
-- **Public integration**: public crates meant for extensions, lower-level runtime access, tooling, or deeper customization. These are usually not the default starting point.
-- **Internal**: workspace plumbing, parse-time and token-generation internals, examples, and maintenance surfaces.
+When public usage changes, update the applicable set:
 
-## Documentation Placement
+- root `README.md`
+- `crates/gpui-form/README.md`
+- affected crate `README.md` files
+- `examples/README.md` and showcased example crates
+- `skills/use-gpui-form` and `skills/use-gpui-form-component-shapes`
+- rustdocs on public traits, structs, macros, and helper functions
 
-### User-Facing Documentation
+Keep these specific surfaces aligned:
 
-Treat these surfaces as user-facing:
-
-- the root `README.md`,
-- `examples/README.md`,
-- crate-level `README.md` files under `crates/`.
-
-Even README files for public-integration or internal crates should explain:
-
-- who the crate is for,
-- what it does,
-- what most users should use instead.
-
-Keep user-facing documentation example-first. Prefer Rust snippets over
-prose-only explanations when showing behavior changes.
-
-### Internal Documentation
-
-Use the relevant `docs/ARCHITECTURE.md` file for internal documentation, such
-as the crate-level paths listed in the workspace map.
-
-Keep these topics in architecture documents, not in READMEs:
-
-- implementation details,
-- macro expansion and parse-time behavior,
-- subsystem boundaries,
-- data flow between facade, derive, runtime, schema, and prototyping layers,
-- design rationale,
-- internal relationships.
-
-### Skill Guidance
-
-`.agents/skills/use-gpui-form` is hosted in this repository as public
-`gpui-form` usage guidance for application developers. It is not internal
-architecture, maintenance, CI, release, or contributor-only workflow
-documentation.
-
-Update relevant in-repository `.agents/skills/*` guidance when a code change
-alters user-facing workflows, derive attributes, generated output, component
-syntax, runtime integration patterns, prototyping patterns, or recommended usage.
-
-## Synchronization Rules
-
-When a substantive change modifies a public derive attribute, supported
-component set, Koruma validation wiring, runtime re-export, custom component
-contract, prototyping workflow, or other user-visible API shape:
-
-1. Update the root `README.md`.
-2. Update `crates/gpui-form/README.md`.
-3. Update the affected crate `README.md` files.
-4. Update `examples/README.md` and the relevant example crates when showcased behavior changes.
-5. Update relevant in-repository `.agents/skills/*` guidance.
-6. Update the matching crate `docs/ARCHITECTURE.md` when boundaries or behavior change.
-7. Keep these surfaces aligned in the same change unless there is a documented reason not to.
-
-`examples/README.md` is the canonical index for runnable workspace examples.
-
-Keep the root `README.md` and `crates/gpui-form/README.md` aligned for install,
-quick-start, feature, and runtime re-export guidance.
-
-Keep supported-component docs aligned across the root `README.md` and
-`crates/gpui-form-derive/README.md`.
-
-Keep prototyping docs aligned across the root `README.md`,
-`crates/gpui-form-prototyping-core/README.md`, and `examples/prototyping` when
-inventory or codegen workflows change.
+- root `README.md` and `crates/gpui-form/README.md` for installation,
+  quick-start, feature flags, runtime imports, MCP, prototyping, and examples
+- root `README.md`, `crates/gpui-form-derive/README.md`, and
+  `skills/use-gpui-form/references/api-map.md` for supported component syntax
+  and derive attributes
+- root `README.md`, `crates/gpui-form-prototyping-core/README.md`,
+  `examples/README.md`, and `examples/prototyping` for inventory/codegen
+  workflows
+- `examples/README.md` as the canonical index for runnable workspace examples
+- package-local `i18n.toml`, `i18n/` Fluent resources, `src/i18n.rs`, and
+  matching README/example text for localization changes in `examples/some-lib`,
+  `crates/gpui-form-component`, or `crates/gpui-form-component-story`
 
 ## Workspace Map
 
-### Main User-Facing Entry Points
+### Main User-Facing Entry Point
 
 - `crates/gpui-form`
-  Audience: **User-facing**
-  Docs: [Architecture](crates/gpui-form/docs/ARCHITECTURE.md)
-  Role: workspace facade, default entry point, and home of the public feature flags. Re-exports derive macros plus `core`, `runtime`, and `schema`, and keeps compatibility re-exports such as `custom`, `date_picker`, `infinite_select`, and `numeric`.
+  Audience: user-facing.
+  Role: facade, default entry point, and home of public feature flags. It
+  re-exports `GpuiForm`, `core`, `runtime`, `schema`, and `bon`; `mcp` and
+  `mcp_submit` are available behind the experimental `mcp` feature.
 
 ### Public Integration Crates
 
 - `crates/gpui-form-core`
-  Audience: **Public integration**
-  Docs: [Architecture](crates/gpui-form-core/docs/ARCHITECTURE.md)
-  Role: pure, non-GPUI helper logic such as numeric validation. Most application users should start with `gpui-form`.
+  Role: non-GPUI helpers such as numeric validation and component suffix
+  validation.
+
+- `crates/gpui-form-collection`
+  Role: curated component shapes and value bindings for common
+  `gpui-component` widgets.
+
+- `crates/gpui-form-collection-derive`
+  Role: proc macros such as `SelectItem` that pair with
+  `gpui-form-collection`.
+
+- `crates/gpui-form-runtime`
+  Role: GPUI-facing runtime contracts used by generated form code, including
+  component-shape storage and value-binding helpers.
 
 - `crates/gpui-form-component`
-  Audience: **Public integration**
-  Docs: [Architecture](crates/gpui-form-component/docs/ARCHITECTURE.md)
-  Role: GPUI-facing runtime implementations for infinite select, date picker, and custom component helpers. Most users should go through `gpui_form::runtime` via the facade.
+  Role: runtime implementations for infinite select, date/date-range picker,
+  and file picker, plus optional built-in component-shape impls.
 
 - `crates/gpui-form-component-derive`
-  Audience: **Public integration**
-  Docs: [README](crates/gpui-form-component-derive/README.md)
-  Role: proc macros for the `InfiniteSelect` runtime surface. Most users should access this through `gpui-form` or `gpui-form-component`.
+  Role: `InfiniteSelect` derive macro for the runtime surface in
+  `gpui-form-component`.
 
 - `crates/gpui-form-schema`
-  Audience: **Public integration**
-  Docs: [Architecture](crates/gpui-form-schema/docs/ARCHITECTURE.md)
-  Role: schema metadata, component behavior metadata, and inventory registry types used by derives and prototyping. Most application users should not need it directly unless they are extending metadata or tooling.
+  Role: schema metadata, component behavior metadata, and inventory registry
+  types used by derives, MCP, and prototyping.
 
 - `crates/gpui-form-derive`
-  Audience: **Public integration**
-  Docs: [Architecture](crates/gpui-form-derive/docs/ARCHITECTURE.md)
-  Role: proc macros for `#[derive(GpuiForm)]`, `SelectItem`, and `CustomComponentState`. Most users should depend on `gpui-form` rather than this crate directly.
+  Role: proc macro for `#[derive(GpuiForm)]` and `#[gpui_form::mcp_submit]`.
+  Most users should depend on `gpui-form` rather than this crate directly.
+
+- `crates/gpui-form-mcp`
+  Role: experimental MCP submit/edit integration for generated form value
+  holders, including schema generation, typed handler registration, inventory
+  registration, and stdio serving.
 
 - `crates/gpui-form-prototyping-core`
-  Audience: **Public integration**
-  Docs: [Architecture](crates/gpui-form-prototyping-core/docs/ARCHITECTURE.md)
-  Role: prototyping and code-generation helpers that consume `GpuiFormShape` inventory data and generate scaffolded form code.
+  Role: code-generation helpers that consume `GpuiFormShape` inventory data and
+  generate scaffolded GPUI form code.
 
 ### Internal Crates
 
 - `crates/gpui-form-codegen`
-  Audience: **Internal**
-  Docs: [Architecture](crates/gpui-form-codegen/docs/ARCHITECTURE.md)
-  Role: parse-time component parsing, per-component layout emission, and token generation used by `gpui-form-derive`.
+  Role: parse-time component parsing, crate-path resolution, metadata token
+  lowering, and component field IR used by derive crates.
 
 - `crates/gpui-form-component-story`
-  Audience: **Internal**
-  Role: Storybook launcher, story UI, and story-only localization assets for the runtime components in `gpui-form-component`.
+  Role: Storybook-style GPUI app and story-only localization assets for
+  reusable runtime components.
 
-### Examples and Shared Surfaces
-
-- `examples/README.md`
-  Canonical index of runnable workspace examples.
-
-- `examples/i18n`
-  Shared localization assets used by the example crates.
+### Examples
 
 - `examples/some-lib`
-  Shared example domain types and source structs that derive `GpuiForm`.
-
-- `examples/some-lib-custom-components`
-  Example external custom component state types and UI widgets.
+  Shared example domain types and structs that derive `GpuiForm`, plus
+  package-local `es-fluent` config and Fluent assets.
 
 - `examples/some-lib-forms`
-  Storybook-like GPUI example app for browsing generated forms.
-
+  Storybook-style GPUI app for generated forms.
   Run with `cargo run -p some-lib-forms`.
 
-- `crates/gpui-form-component-story`
-  Storybook-like GPUI example app for browsing the reusable runtime components.
-
-  Run with `cargo run -p gpui-form-component-story`.
-
 - `examples/prototyping`
-  Prototype generator that reads `GpuiFormShape` inventory data and emits form scaffolding.
-
+  Generator that reads `GpuiFormShape` inventory data and emits form
+  scaffolding into `examples/some-lib-forms/src/forms` and
+  `examples/prototyping/output`.
   Run with `cargo run -p prototyping`.
 
-## Validation and Editing Rules
+- `examples/mcp-submit`
+  Stdio MCP server that exposes generated form value holders as MCP tools.
+  Run with `cargo run -p mcp-submit`.
 
-### Validation After Changes
+- `examples/mcp-form-table`
+  Headless composed MCP server for a generated form submit tool plus
+  `gpui-table` filter arguments.
+  Run with `cargo run -p mcp-form-table`.
 
-- Validation is the default after code or workflow changes.
-- Run the narrowest command that proves the edited behavior works for the
-  affected crate, docs, example, or generated surface.
-- Prefer targeted crate, example, docs, or generator checks before full-workspace validation.
-- Use `just check`, `just test`, or a more specific `justfile` recipe when the change spans multiple surfaces.
-- If validation cannot be run, state why and what remains unvalidated.
-- Do not claim a change works unless it was validated, generated from a source of truth, or the remaining risk is explicitly documented.
+- `crates/gpui-form-component-story`
+  Storybook-style GPUI app for reusable runtime components.
+  Run with `cargo run -p gpui-form-component-story`.
 
-### When Editing Docs
+## Editing Rules
 
-- Keep READMEs user-facing.
-- Move macro expansion details, parser internals, and subsystem design into `docs/ARCHITECTURE.md`.
-- Prefer examples over prose-only explanations.
-- Sync the root `README.md`, `crates/gpui-form/README.md`, `examples/README.md`, and `.agents/skills/*` guidance when the primary workflow changes.
+When editing Rust crates:
 
-### When Editing Rust Crates
+- Use `cargo` for focused build, test, and run tasks. Use `justfile` recipes
+  for workspace-wide format, clippy, check, test, coverage, and dry-run publish
+  tasks.
+- Treat `crates/gpui-form` as the public facade boundary unless intentionally
+  changing lower-level crate APIs.
 
-- Use `cargo` for build, test, and run tasks.
-- Keep shared package metadata and dependency versions in the workspace root `Cargo.toml`.
-- Prefer `workspace = true` for shared dependencies in workspace crates.
-- Use local `path` dependencies only where the workspace already relies on them, mainly in the workspace root and example crates.
-- Treat `crates/gpui-form` as the public compatibility boundary unless you are intentionally changing lower-level crate APIs too.
+When adding or changing a component shape:
 
-### When Editing Components or Generated Form Metadata
+- Keep `gpui-form-codegen` parsing and metadata emission,
+  `gpui-form-schema` metadata, and `gpui-form-prototyping-core` field
+  generation aligned.
+- Update supported-component docs in the root README,
+  `crates/gpui-form/README.md`, `crates/gpui-form-derive/README.md`, affected
+  crate READMEs, and public skills.
+- Keep facade imports and lower-level runtime/type surfaces aligned when
+  generated code paths change.
 
-- When adding or changing a component, update `gpui-form-codegen` component parsing and layout, `gpui-form-schema` runtime behavior metadata, and `gpui-form-prototyping-core` `FieldCodeGenerator` mapping together.
-- Update user-facing docs for supported components and usage syntax in the same change.
-- Keep facade re-exports and lower-level runtime and type surfaces aligned when generated code paths change.
+When editing prototyping or generated outputs:
 
-### When Editing Prototyping or Generated Outputs
+- Prefer changing the generator or inventory metadata over hand-editing
+  generated output.
+- Keep `examples/prototyping`, `examples/prototyping/output`, and
+  `examples/some-lib-forms/src/forms` aligned.
+- Keep `crates/gpui-form-prototyping-core/src/implementations/snapshots`
+  aligned when generator token output changes.
 
-- Prefer changing the source generator or inventory metadata over hand-editing generated output.
-- Keep `examples/prototyping` aligned with `gpui-form-prototyping-core` when shape metadata or emitted layout changes.
-
-### When Writing Tests
+When writing tests:
 
 - Prefer focused crate-level tests near the changed subsystem.
-- For macro or token-generation changes, test emitted behavior at the derive and codegen boundary rather than only the lowest-level helper.
+- For macro or token-generation changes, test emitted behavior at the derive
+  and codegen boundary rather than only the lowest-level helper.
+
+## Validation
+
+Run the narrowest command that proves the edit. CI also runs fmt, clippy,
+workspace tests, docs, package-content listing, cargo-machete, and an es-fluent
+FTL check.
+
+- `cargo check -p gpui-form` for facade compile checks, or the same `-p` form
+  for the package that owns a focused edit
+- `cargo test -p gpui-form` for facade behavior changes, or the same `-p` form
+  for the package that owns a focused edit
+- `cargo test -p gpui-form-derive --test ui` for derive UI diagnostics
+- `cargo test -p gpui-form-prototyping-core` for prototyping generator or
+  snapshot changes
+- `cargo run -p prototyping` after generator/inventory output changes
+- `cargo doc --workspace --all-features --no-deps --locked` when matching the CI
+  docs job
+- `cargo package --workspace --list` when matching the CI package job
+- `just cov` for LLVM source coverage across publishable library crates; the
+  recipe also exercises the headless example and MCP integration packages,
+  excluding only the GUI applications and prototyping generator
+- `just fmt`, `just clippy`, `just check`, `just test`, `just cov`, or the
+  matching `justfile` recipe when a change spans each recipe's scope
+
+CI generates a Cobertura report with `cargo-llvm-cov` and publishes it to
+Codecov using the same crate scope as `just cov`.
+
+If validation cannot be run, state why and what remains unvalidated. Do not
+claim a change works or was validated unless a proving command was run; for
+generated output, also state whether it was regenerated from source metadata.

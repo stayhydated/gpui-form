@@ -19,6 +19,8 @@ use jiff::civil::Date as JiffDate;
 
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
 use crate::i18n::DatePickerText;
+#[cfg(feature = "component-shape")]
+use gpui_form_runtime::shape::ValueChange;
 
 /// Localized date display widths for the runtime date picker.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -52,6 +54,31 @@ pub struct DatePickerState {
     _subscriptions: Vec<Subscription>,
 }
 
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<chrono::NaiveDate>
+    for DatePickerState
+{
+    type Event = DatePickerEvent;
+
+    fn seed_value_binding_state(
+        state: &mut Self,
+        value: Option<&chrono::NaiveDate>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self>,
+    ) {
+        let date = value.and_then(|value| value.to_string().parse::<JiffDate>().ok());
+        state.set_date(date, window, cx);
+    }
+
+    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<chrono::NaiveDate> {
+        match event {
+            DatePickerEvent::Change(Some(date)) => parse_form_date::<chrono::NaiveDate>(*date)
+                .map_or(ValueChange::Unchanged, ValueChange::Set),
+            DatePickerEvent::Change(None) => ValueChange::Clear,
+        }
+    }
+}
+
 impl Focusable for DatePickerState {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus_handle.clone()
@@ -70,6 +97,41 @@ pub struct DateRangePickerState {
     display_locale: Option<Locale>,
     display_style: DateDisplayStyle,
     _subscriptions: Vec<Subscription>,
+}
+
+#[cfg(feature = "component-shape")]
+impl
+    gpui_form_runtime::shape::GpuiComponentStateValueBinding<(chrono::NaiveDate, chrono::NaiveDate)>
+    for DateRangePickerState
+{
+    type Event = DateRangePickerEvent;
+
+    fn seed_value_binding_state(
+        state: &mut Self,
+        value: Option<&(chrono::NaiveDate, chrono::NaiveDate)>,
+        window: &mut Window,
+        cx: &mut Context<'_, Self>,
+    ) {
+        state.set_range(
+            value.and_then(|(start, _)| jiff_date_from_chrono(*start)),
+            value.and_then(|(_, end)| jiff_date_from_chrono(*end)),
+            window,
+            cx,
+        );
+    }
+
+    fn value_change(
+        _state: &Self,
+        event: &Self::Event,
+    ) -> ValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
+        match event {
+            DateRangePickerEvent::Change(Some(start), Some(end)) => {
+                jiff_date_range_from_chrono(*start, *end)
+                    .map_or(ValueChange::Unchanged, ValueChange::Set)
+            },
+            DateRangePickerEvent::Change(_, _) => ValueChange::Clear,
+        }
+    }
 }
 
 impl Focusable for DateRangePickerState {
@@ -326,6 +388,19 @@ impl Render for DateRangePickerState {
 }
 
 /// A localized date picker element.
+#[cfg_attr(
+    feature = "component-shape",
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
+        state = DatePickerState,
+        value = chrono::NaiveDate,
+        field_suffix = "date_picker",
+        value_binding
+    )
+)]
 #[derive(IntoElement)]
 pub struct DatePicker {
     id: ElementId,
@@ -339,7 +414,25 @@ pub struct DatePicker {
     disabled: bool,
 }
 
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for DatePicker {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
+}
+
 /// A localized date range picker element.
+#[cfg_attr(
+    feature = "component-shape",
+    derive(component_shape_gpui::GpuiComponentShape)
+)]
+#[cfg_attr(
+    feature = "component-shape",
+    gpui_component_shape(
+        state = DateRangePickerState,
+        value = (chrono::NaiveDate, chrono::NaiveDate),
+        field_suffix = "date_range_picker",
+        value_binding
+    )
+)]
 #[derive(IntoElement)]
 pub struct DateRangePicker {
     id: ElementId,
@@ -351,6 +444,11 @@ pub struct DateRangePicker {
     number_of_months: usize,
     appearance: bool,
     disabled: bool,
+}
+
+#[cfg(feature = "component-shape")]
+impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for DateRangePicker {
+    type ValueStoragePolicy = gpui_form_runtime::shape::RequiredValueStorage;
 }
 
 impl Sizable for DatePicker {
@@ -762,6 +860,14 @@ fn jiff_date_from_chrono(date: NaiveDate) -> Option<JiffDate> {
     JiffDate::new(year, month, day).ok()
 }
 
+#[cfg(feature = "component-shape")]
+fn jiff_date_range_from_chrono(
+    start: JiffDate,
+    end: JiffDate,
+) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
+    Some((parse_form_date(start)?, parse_form_date(end)?))
+}
+
 fn active_locale() -> Locale {
     let raw = gpui_component::locale();
     let normalized = raw.deref().replace('_', "-");
@@ -864,5 +970,30 @@ mod tests {
         .expect("formatted date range");
 
         assert_eq!(formatted.to_string(), "Jan 15, 2025 - Jan 20, 2025");
+    }
+
+    #[test]
+    fn formats_partial_ranges_and_all_display_widths() {
+        let value = date(2025, 1, 15);
+        assert_eq!(
+            format_display_range(
+                Some(value),
+                None,
+                &locale!("en-US"),
+                DateDisplayStyle::Short,
+            )
+            .unwrap()
+            .to_string(),
+            "1/15/25 - ..."
+        );
+        assert_eq!(
+            format_display_range(None, Some(value), &locale!("en-US"), DateDisplayStyle::Long,)
+                .unwrap()
+                .to_string(),
+            "... - January 15, 2025"
+        );
+        assert!(
+            format_display_range(None, None, &locale!("en-US"), DateDisplayStyle::Medium).is_none()
+        );
     }
 }

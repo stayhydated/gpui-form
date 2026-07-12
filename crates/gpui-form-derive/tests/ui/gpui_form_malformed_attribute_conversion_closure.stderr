@@ -1,0 +1,35 @@
+error[E0631]: type mismatch in closure arguments
+ --> tests/ui/gpui_form_malformed_attribute_conversion_closure.rs:8:23
+  |
+8 |         from_source = |value: String| value,
+  |         -----------   ---------------^^^^^^
+  |         |             |
+  |         |             expected due to this
+  |         |             found signature defined here
+  |         required by a bound introduced by this call
+  |
+  = note: expected closure signature `fn(u64) -> _`
+             found closure signature `fn(String) -> _`
+note: required by a bound in `assert_source_to_form`
+ --> tests/ui/gpui_form_malformed_attribute_conversion_closure.rs:7:16
+  |
+7 |           type = String,
+  |  ________________^
+8 | |         from_source = |value: String| value,
+  | |___________________^ required by this bound in `assert_source_to_form`
+
+error[E0308]: mismatched types
+ --> tests/ui/gpui_form_malformed_attribute_conversion_closure.rs:3:10
+  |
+3 | #[derive(GpuiForm)]
+  |          ^^^^^^^^ expected `String`, found `u64`
+...
+8 |         from_source = |value: String| value,
+  |                       --------------------- arguments to this function are incorrect
+  |
+note: closure parameter defined here
+ --> tests/ui/gpui_form_malformed_attribute_conversion_closure.rs:8:24
+  |
+8 |         from_source = |value: String| value,
+  |                        ^^^^^^^^^^^^^
+  = note: this error originates in the derive macro `GpuiForm` (in Nightly builds, run with -Z macro-backtrace for more info)

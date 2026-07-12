@@ -1,0 +1,32 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: pretty_tokens(tokens)
+---
+fn __snapshot() {
+    __snapshot
+        .child(
+            field()
+                .label({
+                    let message = DemoLabelVariants::Tags;
+                    gpui_es_fluent::localize_message(cx, &message)
+                })
+                .description_fn({
+                    let description = {
+                        let message = DemoDescriptionVariants::Tags;
+                        gpui_es_fluent::localize_message(cx, &message)
+                    };
+                    move |_, _| {
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .child(div().child(description.clone()))
+                    }
+                })
+                .child(
+                    <<crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                        <crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::GpuiComponentShape>::State,
+                    >>::new(&self.fields.tags),
+                ),
+        );
+}

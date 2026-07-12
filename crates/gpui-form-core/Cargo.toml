@@ -11,5 +11,8 @@ publish.workspace = true
 repository.workspace = true
 readme = "README.md"
 
+[dependencies]
+component-shape = { workspace = true }
+
 [lints]
 workspace = true

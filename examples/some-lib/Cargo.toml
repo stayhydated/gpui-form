@@ -1,6 +1,7 @@
 [package]
 name = "some-lib"
 version = "0.1.0"
+rust-version.workspace = true
 edition.workspace = true
 license = "Unlicense"
 publish = false
@@ -9,11 +10,16 @@ publish = false
 anyhow = { workspace = true }
 chrono = { workspace = true }
 derive_more = { features = [ "full" ], workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
+es-fluent = { workspace = true }
+es-fluent-lang = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
+gpui-es-fluent = { workspace = true }
+gpui-form-component = { features = [ "component-shape", "derive" ], workspace = true }
 gpui-form = { features = [ "derive" ], workspace = true }
+gpui-form-collection = { workspace = true }
+gpui-form-collection-derive = { workspace = true }
 koruma = { features = [ "fluent" ], workspace = true }
 koruma-collection = { features = [ "rust_decimal", "email", "fluent" ], workspace = true }
 rust_decimal = { workspace = true }
@@ -30,3 +36,6 @@ validation = [  ]
 
 [package.metadata.cargo-machete]
 ignored = [ "gpui", "gpui-component" ]
+
+[lints]
+workspace = true

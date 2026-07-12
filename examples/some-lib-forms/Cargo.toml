@@ -1,6 +1,7 @@
 [package]
 name = "some-lib-forms"
 version = "0.1.0"
+rust-version.workspace = true
 edition.workspace = true
 license = "Unlicense"
 publish = false
@@ -8,19 +9,19 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
-es-fluent-lang = { workspace = true }
-es-fluent-manager-embedded = { workspace = true }
+chrono = { workspace = true }
+es-fluent = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-es-fluent = { workspace = true }
 gpui-form = { workspace = true }
+gpui-form-collection = { workspace = true }
+gpui-form-component = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
 gpui-storybook-core = { workspace = true }
 gpui_platform = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
-strum = { workspace = true }
 
-[build-dependencies]
-es-fluent-build = { workspace = true }
+[lints]
+workspace = true

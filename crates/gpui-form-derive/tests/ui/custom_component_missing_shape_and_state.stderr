@@ -1,5 +1,0 @@
-error: custom component requires `shape = ...` or `state = ...`
- --> tests/ui/custom_component_missing_shape_and_state.rs:5:27
-  |
-5 |     #[gpui_form(component(custom(component = crate::widgets::TagsInput)))]
-  |                           ^^^^^^

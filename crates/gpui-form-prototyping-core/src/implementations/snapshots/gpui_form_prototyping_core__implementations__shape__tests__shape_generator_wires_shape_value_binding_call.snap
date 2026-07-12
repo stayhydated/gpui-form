@@ -1,0 +1,5 @@
+---
+source: crates/gpui-form-prototyping-core/src/implementations/shape.rs
+expression: "pretty_tokens(generated.bindings[0].clone())"
+---
+cx . subscribe_in (& country , window , Self :: on_country_shape_event)

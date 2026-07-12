@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 anyhow = { workspace = true }
-es-fluent = { features = [ "derive" ], workspace = true }
+es-fluent = { workspace = true }
 es-fluent-lang = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui = { workspace = true }
@@ -23,7 +23,6 @@ gpui-form-component = { features = [ "derive" ], workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
 gpui-storybook-core = { workspace = true }
 gpui_platform = { workspace = true }
-icu_locale_core = { workspace = true }
 jiff = { workspace = true }
 strum = { workspace = true }
 

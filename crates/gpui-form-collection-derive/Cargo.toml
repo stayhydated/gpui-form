@@ -1,0 +1,29 @@
+[package]
+name = "gpui-form-collection-derive"
+description = """
+Collection-specific derive macros for gpui-form.
+"""
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = { workspace = true }
+gpui-form-codegen = { workspace = true }
+quote = { workspace = true }
+syn = { features = [ "full" ], workspace = true }
+
+[dev-dependencies]
+gpui = { workspace = true }
+gpui-component = { workspace = true }
+trybuild = "1.0"
+
+[lints]
+workspace = true

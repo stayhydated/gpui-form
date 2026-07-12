@@ -1,3 +1,5 @@
+//! Prototyping utilities that generate GPUI form scaffolds from shape metadata.
+
 pub mod code_gen;
 pub mod error;
 pub mod implementations;

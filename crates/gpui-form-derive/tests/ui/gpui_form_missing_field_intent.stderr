@@ -1,0 +1,11 @@
+error: field `value` must choose a gpui_form field intent; add `component(...)`, `hidden`, or `skip`
+ --> tests/ui/gpui_form_missing_field_intent.rs:5:5
+  |
+5 |     value: String,
+  |     ^^^^^
+
+error: field `value` must choose a gpui_form field intent; add `component(...)`, `hidden`, or `skip`
+  --> tests/ui/gpui_form_missing_field_intent.rs:10:5
+   |
+10 |     #[gpui_form()]
+   |     ^

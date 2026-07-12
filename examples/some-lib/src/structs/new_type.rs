@@ -22,7 +22,7 @@ use koruma_collection::numeric::NonNegativeValidation;
 #[display("{}", value)]
 #[koruma(try_new, newtype)]
 pub struct Age {
-    #[koruma(NonNegativeValidation::<_>::builder())]
+    #[koruma(NonNegativeValidation::<_>)]
     pub value: i32,
 }
 
@@ -37,10 +37,12 @@ pub struct Age {
     derive(koruma::Koruma, koruma::KorumaAllFluent)
 )]
 #[cfg_attr(feature = "fluent", fluent_variants(keys = ["description", "label"]))]
-#[cfg_attr(feature = "fluent", fluent_label(origin, variants))]
 #[cfg_attr(feature = "ui", gpui_form(koruma(fluent)))]
 pub struct Item {
-    #[cfg_attr(feature = "ui", gpui_form(component(number_input)))]
+    #[cfg_attr(
+        feature = "ui",
+        gpui_form(component(gpui_form_collection::input::Input::<_>))
+    )]
     #[cfg_attr(feature = "validation", koruma(newtype))]
     pub index: Age,
 }

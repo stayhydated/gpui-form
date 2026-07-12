@@ -8,7 +8,7 @@ use gpui_component::form::v_form;
 
 use gpui_form_component::InfiniteSelect;
 use gpui_form_component::infinite_select::{
-    InfiniteSelect as _, InfiniteSelectEvent, InfiniteSelectItem, InfiniteSelectState,
+    InfiniteSelectEvent, InfiniteSelectItem, InfiniteSelectState, InfiniteSelectValue as _,
     build_from_key_path, build_from_path, to_select_items,
 };
 
@@ -206,7 +206,6 @@ impl Render for InfiniteSelectStory {
 
 #[derive(Clone, Debug, EsFluentLabel, EsFluentVariants, InfiniteSelect, PartialEq)]
 #[fluent(namespace = "infinite_select")]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 #[fluent_kv(keys = ["description", "label"], keys_this)]
 enum DeploymentTarget {
@@ -241,7 +240,6 @@ impl Default for DeploymentTarget {
 
 #[derive(Clone, Debug, EsFluentLabel, EsFluentVariants, InfiniteSelect, PartialEq)]
 #[fluent(namespace = "infinite_select")]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 #[fluent_kv(keys = ["description", "label"], keys_this)]
 enum WebRegion {
@@ -274,7 +272,6 @@ impl Default for WebRegion {
 
 #[derive(Clone, Debug, Default, EsFluentLabel, EsFluentVariants, InfiniteSelect, PartialEq)]
 #[fluent(namespace = "infinite_select")]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 #[fluent_kv(keys = ["description", "label"], keys_this)]
 enum AvailabilityZone {
@@ -296,7 +293,6 @@ impl AvailabilityZone {
 
 #[derive(Clone, Debug, Default, EsFluentLabel, EsFluentVariants, InfiniteSelect, PartialEq)]
 #[fluent(namespace = "infinite_select")]
-#[fluent_label(origin, variants)]
 #[fluent_variants(keys = ["description", "label"])]
 #[fluent_kv(keys = ["description", "label"], keys_this)]
 enum DesktopPlatform {

@@ -1,0 +1,13 @@
+error[E0599]: no method named `into_original` found for struct `DemoFormValueHolder` in the current scope
+  --> tests/ui/gpui_form_required_shape_into_original.rs:33:20
+   |
+25 | #[derive(GpuiForm)]
+   |          -------- method `into_original` not found for this struct
+...
+33 |     let _ = holder.into_original();
+   |                    ^^^^^^^^^^^^^
+   |
+help: there is a method `try_into_original` with a similar name
+   |
+33 |     let _ = holder.try_into_original();
+   |                    ++++

@@ -1,0 +1,17 @@
+error[E0277]: GPUI component shape `ManualShape` must be declared with `component_shape_gpui::component_shape!` or `#[derive(component_shape_gpui::GpuiComponentShape)]`
+  --> tests/ui/gpui_form_missing_declared_component_shape.rs:38:27
+   |
+38 |     #[gpui_form(component(ManualShape))]
+   |                           ^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `DeclaredGpuiComponentShape` is not implemented for `ManualShape`
+  --> tests/ui/gpui_form_missing_declared_component_shape.rs:15:1
+   |
+15 | struct ManualShape;
+   | ^^^^^^^^^^^^^^^^^^
+   = note: hand-written `GpuiComponentShape` implementations are not accepted by consumers that require declared shapes
+note: required by a bound in `__gpui_form_assert_value_declared_component_shape`
+  --> tests/ui/gpui_form_missing_declared_component_shape.rs:38:17
+   |
+38 |     #[gpui_form(component(ManualShape))]
+   |                 ^^^^^^^^^ required by this bound in `__gpui_form_assert_value_declared_component_shape`

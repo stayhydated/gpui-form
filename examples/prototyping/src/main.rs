@@ -1,8 +1,13 @@
-use gpui_form::schema::registry::GpuiFormShape;
+use gpui_form::schema::registry::{GpuiFormShape, HolderConversionShape};
 use gpui_form_prototyping_core::{FormLayout, FormParts, FormShapeAdapter};
 use heck::ToSnakeCase as _;
 use quote::quote;
-use std::{collections::BTreeSet, fs, path::Path};
+use std::{
+    collections::BTreeSet,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 // import targeted lib to get inventory registrations
 extern crate some_lib;
@@ -21,6 +26,7 @@ impl FormLayout for StorybookLayout {
             is_empty,
             has_koruma,
             has_skipped_fields,
+            holder_conversion_shape,
             imports,
             component_creations,
             event_handlers,
@@ -48,8 +54,22 @@ impl FormLayout for StorybookLayout {
             }
         } else if *has_koruma {
             quote! { Result<Option<#struct_name_ident>, String> }
+        } else if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
+            quote! { Option<#struct_name_ident> }
         } else {
             quote! { #struct_name_ident }
+        };
+
+        let fallible_submit_payload = if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
+            quote! { self.current_data.clone().try_into_original().ok() }
+        } else {
+            quote! { Some(self.current_data.clone().into_original()) }
         };
 
         let submit_payload_expr = if *is_empty {
@@ -68,12 +88,17 @@ impl FormLayout for StorybookLayout {
         } else if *has_koruma {
             quote! {
                 match self.current_data.validate() {
-                    Ok(_) => Ok(#form_value_holder_ident::try_from(self.current_data.clone()).ok()),
+                    Ok(_) => Ok(#fallible_submit_payload),
                     Err(error) => Err(format!("{error:?}")),
                 }
             }
+        } else if matches!(
+            holder_conversion_shape,
+            HolderConversionShape::FallibleRequired
+        ) {
+            fallible_submit_payload
         } else {
-            quote! { self.current_data.clone().into() }
+            quote! { self.current_data.clone().into_original() }
         };
 
         let submit_disabled = if *has_koruma {
@@ -129,8 +154,8 @@ impl FormLayout for StorybookLayout {
                     div()
                         .flex()
                         .gap_2()
-                        .child(self.submit_button(cx, localize(cx, &FormAction::Submit), on_submit))
-                        .child(self.reset_button(cx, localize(cx, &FormAction::Reset)))
+                        .child(self.submit_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Submit), on_submit))
+                        .child(self.reset_button(cx, gpui_es_fluent::localize_message(cx, &FormAction::Reset)))
                 }
             }
         };
@@ -150,16 +175,46 @@ impl FormLayout for StorybookLayout {
             }
         };
 
+        let disableable_import = if *is_empty {
+            quote! {}
+        } else {
+            quote! { use gpui_component::Disableable as _; }
+        };
+
         let form_action_import = if *is_empty {
             quote! {}
         } else {
             quote! { use some_lib::structs::form_action::FormAction; }
         };
 
+        let form_fields_struct_field = if *is_empty {
+            quote! { _fields: #form_fields_ident, }
+        } else {
+            quote! { fields: #form_fields_ident, }
+        };
+
+        let fields_init = if *is_empty {
+            quote! { _fields: #form_fields_ident, }
+        } else {
+            fields_init.to_token_stream()
+        };
+
+        let new_window_arg = if *is_empty {
+            quote! { _window }
+        } else {
+            quote! { window }
+        };
+
+        let render_cx_arg = if *is_empty {
+            quote! { _cx }
+        } else {
+            quote! { cx }
+        };
+
         syn::parse2(quote! {
             #imports
             use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-            use gpui_component::Disableable as _;
+            #disableable_import
             use gpui_component::separator::Separator;
             use gpui_component::form::v_form;
             use gpui_component::v_flex;
@@ -167,17 +222,13 @@ impl FormLayout for StorybookLayout {
 
             const CONTEXT: &str = #context_str;
 
-            fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl es_fluent::FluentMessage) -> String {
-                crate::i18n::localize_message(cx, message)
-            }
-
             #[gpui_storybook::story_init]
             pub fn init(_cx: &mut App) {}
 
             #[gpui_storybook::story]
             pub struct #form_ident {
                 #current_data_field
-                fields: #form_fields_ident,
+                #form_fields_struct_field
                 focus_handle: FocusHandle,
                 #subscriptions_field
             }
@@ -190,7 +241,7 @@ impl FormLayout for StorybookLayout {
 
             impl gpui_storybook::Story for #form_ident {
                 fn title(cx: &gpui::App) -> String {
-                    crate::i18n::localize_label::<#struct_name_ident>(cx)
+                    gpui_es_fluent::localize_label::<#struct_name_ident>(cx)
                 }
 
                 fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
@@ -201,7 +252,7 @@ impl FormLayout for StorybookLayout {
             impl #form_ident {
                 #event_handlers
 
-                fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+                fn new(#new_window_arg: &mut Window, cx: &mut Context<Self>) -> Self {
                     #current_data_let
 
                     #component_creations
@@ -222,7 +273,7 @@ impl FormLayout for StorybookLayout {
             }
 
             impl Render for #form_ident {
-                fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                fn render(&mut self, _: &mut Window, #render_cx_arg: &mut Context<Self>) -> impl IntoElement {
 #validation_binding
                     v_flex()
                         .key_context(CONTEXT)
@@ -246,10 +297,30 @@ impl FormLayout for StorybookLayout {
     }
 }
 
-fn main() {
-    let output_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("output");
-    fs::create_dir_all(&output_dir).expect("Failed to create output directory");
-    for entry in fs::read_dir(&output_dir).expect("Failed to read output directory") {
+fn rustfmt_generated_files(paths: &[PathBuf]) {
+    if paths.is_empty() {
+        return;
+    }
+
+    let output = Command::new("rustfmt")
+        .arg("--edition")
+        .arg("2024")
+        .args(paths)
+        .output()
+        .expect("failed to run rustfmt; install the rustfmt component to generate form scaffolds");
+
+    if !output.status.success() {
+        panic!(
+            "rustfmt failed for generated form scaffolds\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+    }
+}
+
+fn generate_forms(output_dir: &Path) {
+    fs::create_dir_all(output_dir).expect("Failed to create output directory");
+    for entry in fs::read_dir(output_dir).expect("Failed to read output directory") {
         let entry = entry.expect("Failed to inspect output entry");
         let path = entry.path();
         if path.extension().is_some_and(|ext| ext == "rs")
@@ -262,6 +333,7 @@ fn main() {
     println!("Generating forms in: {}", output_dir.display());
 
     let mut modules: BTreeSet<String> = BTreeSet::new();
+    let mut generated_files = Vec::new();
 
     for shape in inventory::iter::<GpuiFormShape>() {
         println!("Shape: {:?}", shape);
@@ -280,8 +352,9 @@ fn main() {
         fs::write(&file_path, prettyplease::unparse(&syn_file))
             .unwrap_or_else(|_| panic!("Failed to write file: {}", file_path.display()));
 
+        generated_files.push(file_path.clone());
         modules.insert(file_stem);
-        println!("Generated and formatted: {}", file_path.display());
+        println!("Generated: {}", file_path.display());
     }
 
     let mod_rs_path = output_dir.join("mod.rs");
@@ -292,7 +365,23 @@ fn main() {
 
     fs::write(&mod_rs_path, mod_rs)
         .unwrap_or_else(|_| panic!("Failed to write file: {}", mod_rs_path.display()));
+    generated_files.push(mod_rs_path.clone());
 
     println!("Generated module index: {}", mod_rs_path.display());
+    rustfmt_generated_files(&generated_files);
+    println!("Formatted generated files with rustfmt.");
     println!("Form generation complete.");
+}
+
+fn main() {
+    let examples_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("prototyping example manifest should live under examples/");
+
+    for output_dir in [
+        examples_dir.join("some-lib-forms/src/forms"),
+        examples_dir.join("prototyping/output"),
+    ] {
+        generate_forms(&output_dir);
+    }
 }
