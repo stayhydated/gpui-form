@@ -90,19 +90,6 @@ printf '%s\n' \
   | cargo run -p mcp-submit
 ```
 
-## mcp-form-table
-
-Headless composed MCP server example that declares a custom
-`component_shape_gpui` form component shape, exposes a generated form submit
-tool, exposes explicit `gpui-table` text filter arguments, and serves both
-integrations through one shared MCP server.
-
-Run a local smoke test with:
-
-```sh
-cargo run -p mcp-form-table
-```
-
 ## i18n
 
 `examples/some-lib/i18n.toml` lives next to that package's `Cargo.toml`, and

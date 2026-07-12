@@ -154,11 +154,6 @@ Keep these specific surfaces aligned:
   Stdio MCP server that exposes generated form value holders as MCP tools.
   Run with `cargo run -p mcp-submit`.
 
-- `examples/mcp-form-table`
-  Headless composed MCP server for a generated form submit tool plus
-  `gpui-table` filter arguments.
-  Run with `cargo run -p mcp-form-table`.
-
 - `crates/gpui-form-component-story`
   Storybook-style GPUI app for reusable runtime components.
   Run with `cargo run -p gpui-form-component-story`.

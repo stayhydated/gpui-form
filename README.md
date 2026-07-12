@@ -376,17 +376,9 @@ selected tool definitions and skipped-tool report without mutating the server.
 `tool_definitions_with_options(...)` returns the profile-selected definitions
 directly. `register()` remains equivalent to `McpFormRegistrationOptions::all()`.
 
-For a composed server, such as a binary that also depends on `gpui-table`,
-use the shared builder:
-
-```rs
-let server = gpui_form::mcp::McpServer::builder("my-app", env!("CARGO_PKG_VERSION"))
-    .register(gpui_form::mcp::register)
-    .register(gpui_form::mcp::register_prompt_templates)
-    // If your binary also enables gpui-table MCP integration:
-    .register(gpui_table::mcp::register)
-    .build()?;
-```
+For a server composed from multiple `component-shape-mcp` integrations, use
+the shared builder and add each integration's registration function with
+`.register(...)`.
 
 Manual form tools can still be registered directly:
 `gpui_form::mcp::form::<ContactRequest>(&mut server).model(handler)?` or
@@ -517,7 +509,7 @@ unconstrained JSON. Aliases inherit the schema of their target type, fixed
 tuples with 1 to 4 elements publish exact array schemas, and tuple or named
 transparent newtypes, named structs, or fieldless enums can derive the schema
 trait directly through `gpui_form::mcp`.
-In crates that also depend on another MCP facade such as `gpui-table`, add
+In crates that also depend on another MCP facade, add
 `#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
 derives so generated schema impls target the gpui-form facade.
 The derive follows serde deserialize names, records field aliases in
@@ -545,14 +537,6 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}' \
   '{"jsonrpc":"2.0","id":3,"method":"prompts/list","params":{}}' \
   | cargo run -p mcp-submit
-```
-
-See `examples/mcp-form-table` for a headless composed server that declares a
-custom component shape, exposes a form submit tool, and composes it with a
-`gpui-table` MCP query tool:
-
-```sh
-cargo run -p mcp-form-table
 ```
 
 ## Infinite Select Runtime
@@ -929,5 +913,3 @@ workspace examples.
   inventory
 - `cargo run -p mcp-submit`: serve generated form submit/edit tools,
   resources, and prompt templates over stdio MCP
-- `cargo run -p mcp-form-table`: run the composed form submit plus table-filter
-  MCP server

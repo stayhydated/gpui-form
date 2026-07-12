@@ -17,7 +17,6 @@ members = [
   "examples/some-lib",
   "examples/some-lib-forms",
   "examples/mcp-submit",
-  "examples/mcp-form-table",
   "examples/prototyping",
 ]
 resolver = "3"

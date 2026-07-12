@@ -392,7 +392,7 @@ schemas. Generic or custom component shapes can declare `mcp_input = string`,
 model-facing MCP input better than the value type can be inferred. App-owned
 object structs, tuple or named transparent newtypes, and fieldless enums can
 derive `gpui_form::mcp::McpJsonSchema` directly. In crates that also depend on
-another MCP facade such as `gpui-table`, add
+another MCP facade, add
 `#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
 derives so generated schema impls target the gpui-form facade. The derive
 follows serde deserialize names, records field aliases in `x-mcpAliases`,

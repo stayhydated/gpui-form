@@ -73,17 +73,9 @@ Use `gpui_form::mcp::builder()` or
 deferred setup. Use
 `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
 
-When composing multiple integrations, such as a binary that also depends on
-`gpui-table`, keep using the shared builder:
-
-```rust
-let server = gpui_form::mcp::McpServer::builder("my-app", env!("CARGO_PKG_VERSION"))
-    .register(gpui_form::mcp::register)
-    .register(gpui_form::mcp::register_prompt_templates)
-    // If your binary also enables gpui-table MCP integration:
-    .register(gpui_table::mcp::register)
-    .build()?;
-```
+When composing multiple `component-shape-mcp` integrations, keep using the
+shared builder and add each integration's registration function with
+`.register(...)`.
 
 Submit handlers can be synchronous or async. Return `Result<T, E>` for handler
 errors and normal responses, where `T: serde::Serialize + gpui_form::mcp::McpJsonSchema`
@@ -275,8 +267,8 @@ the blanket implementation covers `Deserialize` types that implement or derive
 accepts unconstrained JSON. Fixed tuples with 1 to 4 elements publish exact
 array schemas, and app-owned object structs, tuple or named transparent
 newtypes, or fieldless enums that should expose precise schemas can derive
-`gpui_form::mcp::McpJsonSchema` directly. In crates that also depend on
-another MCP facade such as `gpui-table`, add
+`gpui_form::mcp::McpJsonSchema` directly. In crates that also depend on another
+MCP facade, add
 `#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
 derives so generated schema impls target the gpui-form facade. The derive
 follows serde deserialize names, records field aliases in `x-mcpAliases`,

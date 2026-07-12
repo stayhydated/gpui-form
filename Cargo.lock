@@ -3224,7 +3224,6 @@ dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
  "gpui",
- "gpui-component",
  "strum 0.28.0",
  "unic-langid",
 ]
@@ -3495,108 +3494,6 @@ source = "git+https://github.com/stayhydated/gpui-storybook#edc39769dc3a4612aa47
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",
-]
-
-[[package]]
-name = "gpui-table"
-version = "0.5.0"
-dependencies = [
- "chrono",
- "gpui-table-core",
- "gpui-table-derive",
- "gpui-table-mcp",
- "gpui-table-runtime",
- "gpui-table-schema",
- "serde",
-]
-
-[[package]]
-name = "gpui-table-component"
-version = "0.5.0"
-dependencies = [
- "chrono",
- "component-shape",
- "es-fluent",
- "es-fluent-build",
- "es-fluent-manager-embedded",
- "gpui",
- "gpui-component",
- "gpui-es-fluent",
- "gpui-table-core",
- "gpui-table-mcp",
- "gpui-table-runtime",
- "gpui-table-schema",
- "icu",
- "jiff",
- "regex",
- "rust_decimal",
-]
-
-[[package]]
-name = "gpui-table-core"
-version = "0.5.0"
-dependencies = [
- "chrono",
- "derive_more",
- "es-fluent",
- "es-fluent-build",
- "es-fluent-manager-embedded",
- "gpui-table-schema",
- "rust_decimal",
-]
-
-[[package]]
-name = "gpui-table-derive"
-version = "0.5.0"
-dependencies = [
- "component-shape",
- "component-shape-codegen",
- "darling",
- "heck 0.5.0",
- "koruma-derive-core",
- "proc-macro-crate 3.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
-
-[[package]]
-name = "gpui-table-mcp"
-version = "0.5.0"
-dependencies = [
- "component-shape",
- "component-shape-mcp",
- "gpui-table-core",
- "gpui-table-runtime",
- "gpui-table-schema",
- "inventory",
- "rmcp",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "gpui-table-runtime"
-version = "0.5.0"
-dependencies = [
- "chrono",
- "component-shape",
- "gpui",
- "gpui-component",
- "gpui-table-core",
- "gpui-table-schema",
- "icu",
- "jiff",
- "rust_decimal",
-]
-
-[[package]]
-name = "gpui-table-schema"
-version = "0.5.0"
-dependencies = [
- "component-shape",
- "inventory",
- "strum 0.28.0",
 ]
 
 [[package]]
@@ -4206,30 +4103,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "icu"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00380f83691e089bcfa4aeb03a2d96a910b1c9ea406d6f822fc19dfb8b58d1ec"
-dependencies = [
- "icu_calendar",
- "icu_casemap",
- "icu_collator",
- "icu_collections",
- "icu_datetime",
- "icu_decimal",
- "icu_experimental",
- "icu_list",
- "icu_locale",
- "icu_normalizer",
- "icu_pattern",
- "icu_plurals",
- "icu_properties",
- "icu_provider",
- "icu_segmenter",
- "icu_time",
-]
-
-[[package]]
 name = "icu_calendar"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4242,7 +4115,6 @@ dependencies = [
  "icu_locale_core",
  "icu_provider",
  "ixdtf",
- "serde",
  "tinystr",
  "zerovec",
 ]
@@ -4274,31 +4146,6 @@ name = "icu_casemap_data"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "846b0857ca091204be3c874bc93daaf89d4777e8d2d20b0d3ffe8f671d98014b"
-
-[[package]]
-name = "icu_collator"
-version = "2.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bbdf98e5e0aa827770acee171ebb568aaab975a36b56afdb5fd0e2f525750bb"
-dependencies = [
- "icu_collator_data",
- "icu_collections",
- "icu_locale",
- "icu_locale_core",
- "icu_normalizer",
- "icu_properties",
- "icu_provider",
- "smallvec",
- "utf16_iter",
- "utf8_iter",
- "zerovec",
-]
-
-[[package]]
-name = "icu_collator_data"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "038ed8e5817f2059c2f3efb0945ba78d060d3d25e8f1a1bea5139f821a21a2f0"
 
 [[package]]
 name = "icu_collections"
@@ -4358,7 +4205,6 @@ dependencies = [
  "icu_pattern",
  "icu_plurals",
  "icu_provider",
- "serde",
  "writeable",
  "zerovec",
 ]
@@ -4418,7 +4264,6 @@ dependencies = [
  "icu_locale",
  "icu_provider",
  "regex-automata",
- "serde",
  "writeable",
  "zerovec",
 ]
@@ -4475,9 +4320,6 @@ dependencies = [
  "icu_properties",
  "icu_provider",
  "smallvec",
- "utf16_iter",
- "utf8_iter",
- "write16",
  "zerovec",
 ]
 
@@ -4557,28 +4399,6 @@ dependencies = [
  "zerotrie",
  "zerovec",
 ]
-
-[[package]]
-name = "icu_segmenter"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c0794db0b1a86193ac9c48768d0e6c52c54448e0870ad87907d456ee0dac964"
-dependencies = [
- "core_maths",
- "icu_collections",
- "icu_locale",
- "icu_provider",
- "icu_segmenter_data",
- "potential_utf",
- "utf8_iter",
- "zerovec",
-]
-
-[[package]]
-name = "icu_segmenter_data"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4a2c462a4d927d512f5f882a033ddd62f33a05bb9f230d98f736ac3dc85938f"
 
 [[package]]
 name = "icu_time"
@@ -5381,20 +5201,6 @@ checksum = "8ea1f30cedd69f0a2954655f7188c6a834246d2bcf1e315e2ac40c4b24dc9519"
 dependencies = [
  "cfg-if",
  "rayon",
-]
-
-[[package]]
-name = "mcp-form-table"
-version = "0.1.0"
-dependencies = [
- "component-shape-gpui",
- "gpui",
- "gpui-component",
- "gpui-form",
- "gpui-table",
- "gpui-table-component",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -9271,12 +9077,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
-name = "utf16_iter"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8232dd3cdaed5356e0f716d285e4b40b932ac434100fe9b7e0e8e935b9e6246"
-
-[[package]]
 name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10440,12 +10240,6 @@ name = "workspace-hack"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "beffa227304dbaea3ad6a06ac674f9bc83a3dec3b7f63eeb442de37e7cb6bb01"
-
-[[package]]
-name = "write16"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1890f4022759daae28ed4fe62859b1236caebfc61ede2f63ed4e695f3f6d936"
 
 [[package]]
 name = "writeable"
