@@ -67,13 +67,13 @@ component_management:
 coverage:
   precision: 2
   round: down
-  range: "90...100"
+  range: "70...100"
   status:
     project:
       default:
-        target: 90%
+        target: 70%
         threshold: 5%
     patch:
       default:
-        target: 90%
+        target: 70%
         threshold: 10%

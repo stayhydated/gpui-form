@@ -18,8 +18,10 @@ pub use component_shape_gpui::{
 
 /// Form storage policy for a GPUI component shape.
 ///
-/// Implement this for shapes declared with `component_shape_gpui::component_shape!`
-/// when the shape should be consumable by `#[derive(GpuiForm)]`.
+/// Implement this for shapes declared with
+/// `component_shape_gpui::component_shape!` or
+/// `#[derive(component_shape_gpui::GpuiComponentShape)]` when the shape should
+/// be consumable by `#[derive(GpuiForm)]`.
 pub trait GpuiFormComponentShapePolicy {
     /// Shape-owned value-holder storage policy.
     type ValueStoragePolicy: ComponentValueStoragePolicy;
@@ -46,6 +48,9 @@ impl ComponentValueStoragePolicy for RequiredValueStorage {
 }
 
 /// Store non-optional source fields directly as `T`.
+///
+/// Generated initialization requires an intent-scoped field default or a
+/// form-side `T` that implements [`Default`].
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct DirectValueStorage;
 

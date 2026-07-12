@@ -350,9 +350,10 @@ associated-type projections at every call site.
 Direct `ComponentPrototyping::field_suffix(...)` calls validate the same
 non-empty ASCII identifier suffix contract in const evaluation.
 
-Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` for a reusable shape when the component can
-synthesize a missing value. Generated forms then inherit direct `T` holder
-storage from the shape.
+Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` for a
+reusable shape when required fields should store direct `T`. Supply an
+intent-scoped field default or require the form-side `T: Default`; generated
+forms then inherit direct `T` holder storage from the shape.
 
 ## Most Users Should Use Instead
 

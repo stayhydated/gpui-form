@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Use when Codex needs to build user-facing application forms with gpui-form, including adding #[derive(GpuiForm)] to app structs, choosing existing gpui_form component shapes, using generated form fields/components/value holders, and wiring SelectItem or InfiniteSelect enums."
+description: "Use when Codex needs to build or expose user-facing application forms with gpui-form, including #[derive(GpuiForm)], field intents and conversions, generated fields/components/value holders, built-in component shapes, SelectItem or InfiniteSelect enums, Koruma validation, inventory prototyping, and MCP submit or editor tools."
 ---
 
 # Use GPUI Form
@@ -52,8 +52,9 @@ helpers and component-specific derives explicitly:
    `#[koruma(newtype)]` field. Do not use `Option<T>` in `value(type = ...)`;
    write the form-side base type `T` and let the source field optionality control
    holder storage. Do not combine
-   `skip` with component or hidden intent on the same field. Text input
-   prototyping parses non-`String` form-side types with `FromStr`.
+   `skip` with component or hidden intent on the same field. `Input::<_>`,
+   `NumberInput::<_>`, and `OtpInput::<_>` parse non-`String` form-side types
+   with `FromStr` in generated prototyping code.
 7. Add `#[gpui_form(no_inventory)]` to generic form structs when the
    `inventory` feature is enabled; generic forms cannot register concrete
    prototyping metadata.
@@ -173,115 +174,25 @@ Common patterns:
   `holder.present_fields()` outside the generated holder instead of expecting a
   JSON helper.
 - For MCP submit integration, keep GPUI as a presentation surface over the same
-  holder and submit handler. MCP tool calls should populate the generated value
-  holder from structured JSON, run generated validation, and call an
-  application-owned handler registered through `#[gpui_form::mcp_submit]`.
-  The first parameter chooses the mode through generated `McpSubmitArgument`
-  implementations: source model for model submission, generated
-  `*FormValueHolder` for holder submission.
-  Exposed forms must opt in with `#[gpui_form(mcp)]`, must not use
-  `#[gpui_form(no_inventory)]`, and must not be generic.
-  Handlers can be synchronous or async and must return `Result<T, E>`.
-  Use `gpui_form::mcp::server()?` for the default generated server and
-  `gpui_form::mcp::server_named(name, version)?` when application-owned server
-  metadata is needed. Use `gpui_form::mcp::builder()` or
-  `builder_named(name, version)` when deferred builder setup is needed.
-  Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
-  Use `McpServer::builder(name, version)` when composing forms with tables or
-  other MCP integrations, and add generated handlers with
-  `.register(gpui_form::mcp::register)`. Add
-  `.register(gpui_form::mcp::register_prompt_templates)` when the server
-  should also advertise generated fill, repair, and submit prompt templates.
-  Use `register_with_options(&mut server, McpFormRegistrationOptions::submit_only())`
-  for quiet submit-only tool lists, `McpFormRegistrationOptions::editor_only()`
-  for editable holder sessions without submit handlers, or
-  `McpFormRegistrationOptions::metadata_only()`/`tool_definitions_with_options(...)`
-  to inspect generated definitions without mutating a server.
-  Generated MCP servers also advertise `resources` and publish JSON resources
-  for each registered form at
-  `gpui-form://forms/{tool_name}/descriptor`,
-  `gpui-form://forms/{tool_name}/schema`, and
-  `gpui-form://forms/{tool_name}/examples`. The descriptor resource includes
-  field labels, descriptions, examples, storage/default metadata, component
-  MCP input metadata, validation rules, and per-field schemas; the schema
-  resource contains the submit input schema. `metadata_only()` does not
-  register tools or resources.
-  Prompt templates are opt-in: use `register_prompt_templates(&mut server)?`
-  for inventory-discovered forms,
-  `register_context_submitter_prompt_templates::<Context>(...)` for
-  context-backed submitters, or `register_form_prompt_templates::<Form>(...)`
-  for one form. Generated names are `fill_{tool_name}_form`,
-  `repair_{tool_name}_form`, and `submit_{tool_name}_form`, and the prompt
-  text references the descriptor/schema/examples resources plus edit tools
-  when iterative repair is useful.
-  Register manual handlers with
-  `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
-  `.holder(handler)?` for handlers returning `Result<T, E>`.
-  For context-backed fleets of form submit tools, prefer struct-level
-  `context(MyContext)` MCP options plus `McpContextSubmit<MyContext>`
-  implementations or generated impls from `submit(path::to::async_fn)`,
-  or `submitter(path::to::Trait)` when one visible trait should supply the
-  context, response, error, and submit method, adding `map_response(path)` when
-  that trait returns a raw response and `response(MyResponse)` only when precise
-  response schemas matter, then call
-  `gpui_form::mcp::register_context_submitters(&mut server, context)?` once.
-  Use `register_context_submitters_strict(...)` when zero matching context
-  registrations should be a setup error.
-  Register headless field-editing tools with
-  `gpui_form::mcp::form::<Form>(&mut server).editor()?`. The generated editor
-  tools open a bounded value-holder session, bulk patch or clear fields through
-  the same component-shape-aware decoder used by submit calls, expose
-  `revision`, `session_limit`, `session_idle_timeout_ms`, agent-supplied
-  values, and `submit_arguments`, validate, expire idle sessions, and close the
-  session. Use `McpFormEditorOptions` or the `*_with_editor_options` submit
-  helpers when a server needs a custom session cap or idle timeout. Treat this
-  as holder editing only; live GPUI widget mutation still needs an app-owned
-  bridge from the holder/session into GPUI entities.
-  Use struct-level `#[gpui_form(mcp(name = "...", title = "...", description = "..."))]`
-  when generated MCP tools need application-owned names or descriptions. Add
-  `context(Type)` there when the form should emit context-submit inventory,
-  `submit(path)` when the derive should generate `McpContextSubmit`, and
-  `response(Type)` only to override the default `McpObject` response. Use
-  `submitter(TraitPath)` instead of those context-submit wiring options when a
-  visible trait supplies the associated context, response, error, and submit
-  method, and pair it with `map_response(path)` when the trait returns a raw
-  application response.
-  Direct submit tools default to destructive open-world MCP annotations unless
-  overridden. Add `icon(src = "...", mime_type = "...", size = "...", theme = "light" | "dark")`
-  entries for MCP tool icons, and
-  `task_support = "forbidden" | "optional" | "required"` for MCP execution task
-  support.
-  If `description` is omitted, the derive uses the form type's Rust doc
-  comment.
-  Use field-level `#[gpui_form(label = "...")]`,
-  `#[gpui_form(description = "...")]`, and `#[gpui_form(example = "...")]`
-  when MCP schemas and editor snapshots need form-author labels,
-  descriptions, or examples; field descriptions infer from `///` rustdoc when
-  not overridden.
-  Registration reports setup errors such as duplicate tool names or generated
-  resource URIs.
-  Component-backed fields use value-specific
-  `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata in generated
-  schemas when available, then fall back to the field type's schema.
-  Generic or custom component shapes can declare `mcp_input = string`,
-  `mcp_input = object`, or another `McpInput` expression when the shape knows
-  its model-facing MCP input better than the value type can be inferred.
-  Custom field value types exposed through MCP should implement
-  `gpui_form::mcp::McpToolValue`; this is automatic for `Deserialize` types
-  that implement or derive `gpui_form::mcp::McpJsonSchema`; use
-  `gpui_form::mcp::McpAny` when a typed field intentionally accepts
-  unconstrained JSON. Aliases inherit their target type schema, fixed tuples
-  with 1 to 4 elements publish exact array schemas, and tuple or named
-  transparent newtypes, named structs, or fieldless enums can derive
-  `McpJsonSchema` directly through `gpui_form::mcp`. The
-  derive follows serde deserialize names, records field aliases in
-  `x-mcpAliases`, includes enum aliases, skips deserialization-skipped fields,
-  rejects flattened fields, and treats serde-defaulted fields as not required.
-  Custom top-level MCP inputs can derive `gpui_form::mcp::McpToolInput`; that
-  derive also implements `McpJsonSchema`, so object inputs can be reused as
-  field values. Use `gpui_form::mcp::McpRange<T>` for typed
-  `{ "min": ..., "max": ... }` range arguments.
-- `Combobox::<Item>` treats an empty selection as `FormValueChange::Clear`; optional fields clear to `None`, while non-optional `Vec<Item>` fields reset to their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
+  generated holder and application-owned submit handler. Opt concrete,
+  inventory-backed forms in with `#[gpui_form(mcp)]`; use a source-model first
+  handler parameter for model submission or a generated `*FormValueHolder`
+  parameter when skipped fields require application-owned context. Register
+  generated or manual submitters through `gpui_form::mcp`, and use generated
+  editor tools only for headless holder sessions; live GPUI entity mutation
+  still needs an app-owned bridge.
+- Generated MCP field schemas always use the field type's `McpToolValue`
+  schema. Component-backed fields additionally attach value-specific
+  `<Shape as ComponentShapeFor<Field>>::MCP_INPUT` metadata when the shape
+  publishes it. Use `McpJsonSchema`, `McpToolInput`, `McpAny`, and `McpRange<T>`
+  through the `gpui_form::mcp` facade for custom typed wire contracts.
+- Read `references/api-map.md` for complete MCP registration profiles,
+  context submitters, editor session options, resources, prompt templates,
+  annotations, validation metadata, and schema patterns.
+- `Combobox::<Item>` treats an empty selection as `ValueChange::Clear`;
+  optional fields clear to `None`, while non-optional `Vec<Item>` fields reset
+  to their intent-scoped `default = ...` when present, otherwise
+  `Vec::default()`.
 - For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`. Generated `FormFields` members and

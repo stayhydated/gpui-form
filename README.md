@@ -142,12 +142,13 @@ declared with `component_shape_gpui::component_shape!` or
 Shape declarations own render component metadata and prototyping suffix
 metadata.
 
-Component shapes own the default value-storage policy for non-optional fields.
-Shapes that can safely synthesize a default value, such as the built-in inputs,
-selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
-generated value-holder storage as `T`. Shapes that require a present value use
-`Option<T>` storage; generated `validate()` reports a missing value and
-conversion back to the source model fails when the value is missing. Fields
+Component shapes own the value-storage policy for non-optional fields. Direct
+storage keeps generated value-holder storage as `T` and requires either an
+intent-scoped field default or a form-side `T: Default`; the built-in inputs,
+selects, toggles, sliders, OTP inputs, file picker, and infinite select use this
+policy. Shapes that require a present value use `Option<T>` storage; generated
+`validate()` reports a missing value and conversion back to the source model
+fails when the value is missing. Fields
 that use `try_into_source = ...` or `value(koruma_newtype)` can also fail
 source reconstruction. Those fallible holder-to-model paths expose
 `holder.try_into_original()`; infallible paths expose `holder.into_original()`
@@ -189,7 +190,9 @@ Common field-level helpers:
   the source model with `NewtypeTryFromInner::try_from_inner`. This works for
   private tuple or named newtype fields and keeps invalid inner values on the
   checked `try_into_original()` / MCP validation path.
-- `gpui_form_collection::input::Input::<_>` parses non-`String` form-side
+- `gpui_form_collection::input::Input::<_>`,
+  `gpui_form_collection::number_input::NumberInput::<_>`, and
+  `gpui_form_collection::otp_input::OtpInput::<_>` parse non-`String` form-side
   value types with `FromStr` in prototyping output, so value objects can use
   `value(type = ..., from_source = ..., into_source = ...)` while the source
   model keeps its storage type.
@@ -197,10 +200,6 @@ Common field-level helpers:
   widget but lets applications provide a typed parser, formatter, placeholder,
   empty-as-clear policy, and optional widget-level validation when `FromStr`
   and `ToString` are not the right UI contract.
-- `gpui_form_collection::number_input::NumberInput::<_>` uses `FromStr` for
-  non-`String` form-side values when parsing edits.
-- `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr` for
-  non-`String` form-side values.
 - Generic component expressions use Rust expression turbofish syntax, such as
   `Input::<_>`, `Select::<_>.searchable(true)`,
   or `Select::<_>.from(SelectArgs::builder().searchable(true).build())`. The

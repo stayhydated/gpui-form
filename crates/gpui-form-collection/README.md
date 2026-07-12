@@ -24,7 +24,7 @@ the attribute and are normalized back into base shape type paths by the derive.
 `Combobox<T>` is different: `T` is the item type for a `Vec<T>` field, so write
 `Combobox::<Country>` rather than `Combobox::<_>`.
 
-Currently provided components:
+Provided components:
 
 - `input::Input<T>` for `gpui_component::input::Input`
 - `input::ParsedInput<T, C>` for `gpui_component::input::Input` with an

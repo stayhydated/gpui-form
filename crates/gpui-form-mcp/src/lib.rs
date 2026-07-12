@@ -305,6 +305,11 @@ impl McpField {
         }
     }
 
+    /// Describe a component-backed form field.
+    ///
+    /// The generated JSON Schema comes from `T`'s [`McpToolValue`]
+    /// implementation. The shape/value pair contributes additional
+    /// [`ComponentShapeFor::MCP_INPUT`] metadata when it publishes one.
     pub const fn component<T, Shape>(
         name: &'static str,
         value_type: RustType,

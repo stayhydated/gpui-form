@@ -102,7 +102,7 @@ pub struct UserProfile {
 ## Component Syntax
 
 `gpui-form` parses contract-backed component expressions. The short form places
-the component shape with the direct shape argument:
+the component shape as a direct shape argument:
 
 - `#[gpui_form(component(my::Shape))]`
 - `#[gpui_form(component(gpui_form_collection::input::Input::<_>))]`
@@ -141,12 +141,13 @@ declared with `component_shape_gpui::component_shape!` or
 Shape declarations own render component metadata and prototyping suffix
 metadata.
 
-Component shapes own the default value-storage policy for non-optional fields.
-Shapes that can safely synthesize a default value, such as the built-in inputs,
-selects, toggles, sliders, OTP inputs, file picker, and infinite select, keep
-generated value-holder storage as `T`. Shapes that require a present value use
-`Option<T>` storage; generated `validate()` reports a missing value and
-conversion back to the source model fails when the value is missing. Fields
+Component shapes own the value-storage policy for non-optional fields. Direct
+storage keeps generated value-holder storage as `T` and requires either an
+intent-scoped field default or a form-side `T: Default`; the built-in inputs,
+selects, toggles, sliders, OTP inputs, file picker, and infinite select use this
+policy. Shapes that require a present value use `Option<T>` storage; generated
+`validate()` reports a missing value and conversion back to the source model
+fails when the value is missing. Fields
 that use `try_into_source = ...` or `value(koruma_newtype)` can also fail
 source reconstruction. Those fallible holder-to-model paths expose
 `holder.try_into_original()`; infallible paths expose `holder.into_original()`
@@ -188,12 +189,12 @@ Common field-level helpers:
   the source model with `NewtypeTryFromInner::try_from_inner`. This works for
   private tuple or named newtype fields and keeps invalid inner values on the
   checked `try_into_original()` / MCP validation path.
-- `gpui_form_collection::input::Input::<_>` and
-  `gpui_form_collection::number_input::NumberInput::<_>` parse non-`String`
-  form-side value types with `FromStr` in prototyping output, so value objects
-  can use `value(type = ..., from_source = ..., into_source = ...)` while the
-  source model keeps its storage type. `gpui_form_collection::otp_input::OtpInput::<_>` also uses `FromStr`
-  for non-`String` form-side value types.
+- `gpui_form_collection::input::Input::<_>`,
+  `gpui_form_collection::number_input::NumberInput::<_>`, and
+  `gpui_form_collection::otp_input::OtpInput::<_>` parse non-`String` form-side
+  value types with `FromStr` in prototyping output, so value objects can use
+  `value(type = ..., from_source = ..., into_source = ...)` while the source
+  model keeps its storage type.
 - `gpui_form_collection::input::ParsedInput::<_, Config>` keeps the same input
   widget but lets applications provide a typed parser, formatter, placeholder,
   empty-as-clear policy, and optional widget-level validation when `FromStr`
@@ -209,8 +210,8 @@ Common field-level helpers:
   a resolved shape-name fallback, for prototyping-specific DOM IDs, event
   handlers, and helper names such as `on_birth_date_date_picker_event`.
   Shape-level suffixes must be non-empty ASCII identifier suffixes; direct
-  `ComponentPrototyping::field_suffix(...)` calls validate the same contract in
-  const evaluation.
+  `component_shape::ComponentPrototyping::field_suffix(...)` calls validate the
+  same contract in const evaluation.
 - Field-level `#[koruma(...)]` attributes are accepted by `GpuiForm` and copied
   onto the generated value holder, including fields that use intent-scoped
   `value(type = ..., from_source = ..., into_source = ...)` or
@@ -298,9 +299,11 @@ reconstruct the model, and then call the application-owned handler. Forms with
 `#[gpui_form(skip)]` fields intentionally do not get model-handler conversion;
 give those handlers the generated `FormValueHolder` as their first parameter.
 `#[gpui_form::mcp_submit]` infers model submission when the handler takes the
-source model. For forms with `#[gpui_form(skip)]` fields or app-owned context,
-give the handler the generated `*FormValueHolder` parameter and the macro
-registers holder submission instead.
+source model. For forms with `#[gpui_form(skip)]` context or other
+application-owned context, give the handler the generated `*FormValueHolder`
+parameter and the macro registers holder submission instead. This inference is
+type-directed through generated `McpSubmitArgument` implementations, not a
+name suffix convention.
 Submit handlers can be synchronous or async. Return `Result<T, E>` for handler
 errors and normal responses, where `T: serde::Serialize + gpui_form::mcp::McpJsonSchema`
 and `E: fmt::Display`. Prefer a typed response struct or newtype that derives

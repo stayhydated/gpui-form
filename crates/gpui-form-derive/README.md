@@ -128,10 +128,11 @@ Behavior notes:
   to derive `gpui_form_component::InfiniteSelect`, which implements
   `gpui_form_component::infinite_select::InfiniteSelectValue`
 - `default = ...` seeds the generated value holder
-- component shapes own the default value-storage policy for non-optional
-  fields; shapes that can synthesize a default value keep generated value-holder
-  storage as `T`, while required shapes use `Option<T>` and fail conversion when
-  missing. Generated `validate()` reports missing required shape values.
+- component shapes own the value-storage policy for non-optional fields;
+  direct storage keeps generated value-holder storage as `T` and requires an
+  intent-scoped field default or a form-side `T: Default`, while required
+  shapes use `Option<T>` and fail conversion when missing. Generated
+  `validate()` reports missing required shape values.
   Fallible holder-to-model paths, including `try_into_source` and
   `value(koruma_newtype)` fields, expose `holder.try_into_original()`;
   infallible paths expose `holder.into_original()` and implement `From` when
@@ -139,7 +140,8 @@ Behavior notes:
   fields, or shape-backed fields with a declared field default. Shape-backed
   fields without a field default keep the checked `try_into_original()` path.
 - set `GpuiFormComponentShapePolicy::ValueStoragePolicy` to
-  `DirectValueStorage` on reusable shapes that can synthesize default values
+  `DirectValueStorage` when required fields should store direct `T`; provide an
+  intent-scoped field default or require the form-side `T: Default`
 - `ComponentShapeMetadata::CAPABILITIES` records whether the component shape
   implements `gpui_form_runtime::shape::GpuiComponentValueBinding<T>` for
   generated prototyping subscriptions; the adapter seeds component state with

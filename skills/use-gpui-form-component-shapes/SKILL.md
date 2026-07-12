@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form-component-shapes
-description: "Use when Codex needs to wire component-shape-gpui component shapes into gpui-form forms, including #[gpui_form(component(...))], gpui-form-runtime storage policy, generated form fields/components, value-holder behavior, or prototyping output."
+description: "Use when Codex needs to wire component-shape-gpui shapes into gpui-form forms, including #[gpui_form(component(...))], gpui-form-runtime storage policy, configured shape builders, value compatibility or binding, generated fields/components/value holders, component MCP metadata, and inventory prototyping."
 ---
 
 # Use GPUI Form Component Shapes
@@ -42,10 +42,11 @@ First decide whether the form can use an existing shape:
 - New custom shape: create or select the shape with the component-shape GPUI
   guidance first, then return here for gpui-form wiring.
 
-Application crates that only derive forms normally depend on `gpui-form`.
-Crates that define custom component-backed shapes should also depend on
-`gpui-form-runtime` directly when they implement lower-level runtime policies
-or value binding.
+Application crates that only consume existing shapes need not depend on
+`gpui-form-runtime` directly; depend on `gpui-form` plus the crate that owns the
+selected shape. Crates that define custom component-backed shapes should also
+depend on `gpui-form-runtime` directly when they implement lower-level runtime
+policies or value binding.
 
 ## Field Shape Usage
 
@@ -76,8 +77,9 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape 
 
 Use:
 
-- `DirectValueStorage` when the component can synthesize a default value and
-  non-optional fields should store direct `T` values.
+- `DirectValueStorage` when non-optional fields should always store direct `T`
+  values. Initialization must come from an intent-scoped default or a form-side
+  `T` that implements `Default`.
 - `RequiredValueStorage` when a required field should represent missing input
   as `Option<T>` in the generated holder.
 

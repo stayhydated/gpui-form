@@ -2,6 +2,19 @@
 
 Use this reference for application code that consumes `gpui-form`.
 
+## Contents
+
+- [Install Shape](#install-shape)
+- [Imports](#imports)
+- [Supported Component Syntax](#supported-component-syntax)
+- [Component Selection](#component-selection)
+- [MCP Submit Pattern](#mcp-submit-pattern)
+- [Generated Names](#generated-names)
+- [Select Pattern](#select-pattern)
+- [Infinite Select Pattern](#infinite-select-pattern)
+- [Type Conversion Pattern](#type-conversion-pattern)
+- [Component Shape Patterns](#component-shape-patterns)
+
 ## Install Shape
 
 Use `gpui-form` as the public entry point. Match `gpui` and `gpui-component`
@@ -135,7 +148,7 @@ Common struct attributes:
   `Select::<_>.searchable(true)` when the field needs custom construction.
 - Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
   choices from `gpui_component::combobox::Combobox`. Empty selection is
-  `FormValueChange::Clear`; optional fields clear to `None`, and non-optional
+  `ValueChange::Clear`; optional fields clear to `None`, and non-optional
   `Vec<Item>` fields reset to their intent-scoped `default = ...`
   when present, otherwise `Vec::default()`.
 - Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
@@ -163,11 +176,12 @@ Common struct attributes:
 - Treat `component(...)` as the only component field intent in
   `#[gpui_form(...)]`; runtime construction uses
   `GpuiComponentShape::new`.
-- Component shapes own the default value-storage policy for non-optional
-  fields. Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage`
-  when the reusable shape can synthesize default values. Required shape-backed values are reported
-  by generated `validate()` and by fallible holder-to-model conversion, while
-  default-synthesizing policies expose `holder.into_original()`.
+- Component shapes own the value-storage policy for non-optional fields.
+  Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` when
+  required fields should store direct `T`; initialization must come from an
+  intent-scoped default or a form-side `T: Default`. Required shape-backed
+  values are reported by generated `validate()` and by fallible holder-to-model
+  conversion, while direct-storage policies expose infallible value mapping.
 - Holders for forms with skipped source fields expose
   `holder.present_fields()` as a typed snapshot for debug/preview formatting;
   JSON or text formatting belongs in the app or generator layer.
