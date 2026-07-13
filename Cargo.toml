@@ -41,10 +41,10 @@ component-shape-mcp = { git = "https://github.com/stayhydated/component-shape" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
-es-fluent = "0.18"
-es-fluent-build = "0.18"
-es-fluent-lang = "0.18"
-es-fluent-manager-embedded = "0.18"
+es-fluent = { git = "https://github.com/stayhydated/es-fluent" }
+es-fluent-build = { git = "https://github.com/stayhydated/es-fluent" }
+es-fluent-lang = { git = "https://github.com/stayhydated/es-fluent" }
+es-fluent-manager-embedded = { git = "https://github.com/stayhydated/es-fluent" }
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
@@ -77,9 +77,9 @@ insta = "1.48"
 inventory = "0.3"
 itertools = "0.14"
 jiff = "0.2.32"
-koruma = "0.10"
-koruma-collection = "0.10"
-koruma-derive-core = "0.10"
+koruma = { git = "https://github.com/stayhydated/koruma" }
+koruma-collection = { git = "https://github.com/stayhydated/koruma" }
+koruma-derive-core = { git = "https://github.com/stayhydated/koruma" }
 log = "0.4"
 prettyplease = "0.2"
 proc-macro-crate = "3.5"
