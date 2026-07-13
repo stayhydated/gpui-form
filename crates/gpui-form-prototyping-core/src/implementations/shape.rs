@@ -159,6 +159,13 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
         let event_handler_fn_name_ident = field.component_event_handler_ident();
         let state_type = quote! { GpuiComponentStateOf<#shape> };
         let event_type = quote! { GpuiComponentEventOf<#shape, #field_type> };
+        let previous_value_ident = quote! { previous_value };
+        let before_field_change = options.has_after_field_change().then(|| {
+            quote! {
+                let previous_value = self.current_data.#field_name_ident.clone();
+            }
+        });
+        let after_field_change = options.after_field_change(field, previous_value_ident);
 
         let bindings = vec![SubscriptionBinding::new(
             field_var_name_ident.clone(),
@@ -200,13 +207,16 @@ impl FieldCodeGenerator for ShapeCodeGenerator {
                         event,
                     )
                 };
+                #before_field_change
 
                 match form_change {
                     ValueChange::Set(value) => {
                         #set_tokens
+                        #after_field_change
                     }
                     ValueChange::Clear => {
                         #clear_tokens
+                        #after_field_change
                     }
                     ValueChange::Unchanged => {}
                 }
@@ -485,6 +495,46 @@ mod tests {
             .expect("value-bound direct-storage fields should generate subscriptions");
 
         insta::assert_snapshot!(pretty_tokens(generated.handlers[0].clone()));
+    }
+
+    #[test]
+    fn shape_generator_runs_change_hook_after_set_and_clear() {
+        const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
+            ComponentFieldName::new("code"),
+            value_spec("String", FieldValuePresence::DirectStorage),
+            FieldComponentVariant::new(RustPath::from_macro_tokens_unchecked(
+                "crate::shapes::OtpInput<String>",
+            ))
+            .with_value_binding(true),
+        )];
+        const SHAPE: GpuiFormShape = GpuiFormShape::new(
+            "Demo",
+            &FIELDS,
+            RustPath::from_macro_tokens_unchecked("demo"),
+            false,
+        );
+
+        let generator = ShapeCodeGenerator;
+        let field = crate::implementations::ResolvedField::new(&FIELDS[0]).unwrap();
+        let options = FieldCodegenOptions {
+            field_change_renderer: Some(&|field, previous| {
+                let field_name = field.field_name().as_str();
+                quote! { self.changed(#field_name, #previous); }
+            }),
+            ..FieldCodegenOptions::default()
+        };
+        let generated = generator
+            .generate_subscription(&field, &SHAPE, &options)
+            .expect("value-bound fields should generate subscriptions");
+        let compact = compact(&generated.handlers[0].to_string());
+
+        assert!(compact.contains("letprevious_value=self.current_data.code.clone()"));
+        assert_eq!(
+            compact
+                .matches("self.changed(\"code\",previous_value)")
+                .count(),
+            2
+        );
     }
 
     #[test]

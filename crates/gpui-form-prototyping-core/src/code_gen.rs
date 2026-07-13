@@ -7,8 +7,9 @@ use quote::quote;
 
 use crate::error::{PrototypingError, PrototypingResult};
 use crate::implementations::{
-    ComponentCreation, EventHandler, FieldCodegenOptions, FieldInitializer, GeneratedSubscription,
-    RenderChildRenderer, SubscriptionBinding, field_generator,
+    AdditionalValidationMessageRenderer, ComponentCreation, EventHandler, FieldChangeRenderer,
+    FieldCodegenOptions, FieldInitializer, GeneratedSubscription, RenderChildRenderer,
+    SubscriptionBinding, ValidationVisibilityRenderer, field_generator,
 };
 use crate::imports::{Alias, ImportItem, ImportSet};
 
@@ -118,6 +119,9 @@ pub struct FormShapeAdapter<'a> {
     pub shape_data: &'a GpuiFormShape,
     path_remapper: Option<Box<PathRemapper<'a>>>,
     validation_message_renderer: Option<Box<ValidationMessageRenderer<'a>>>,
+    validation_visibility_renderer: Option<Box<ValidationVisibilityRenderer<'a>>>,
+    additional_validation_message_renderer: Option<Box<AdditionalValidationMessageRenderer<'a>>>,
+    field_change_renderer: Option<Box<FieldChangeRenderer<'a>>>,
     render_child_renderer: Option<Box<RenderChildRenderer<'a>>>,
 }
 
@@ -127,6 +131,9 @@ impl<'a> FormShapeAdapter<'a> {
             shape_data,
             path_remapper: None,
             validation_message_renderer: None,
+            validation_visibility_renderer: None,
+            additional_validation_message_renderer: None,
+            field_change_renderer: None,
             render_child_renderer: None,
         }
     }
@@ -154,6 +161,42 @@ impl<'a> FormShapeAdapter<'a> {
         self
     }
 
+    /// Control whether generated validation messages are visible for each field.
+    ///
+    /// The callback receives the resolved field and returns a boolean expression.
+    /// This is useful for touched-field and submit-attempted presentation policies.
+    pub fn show_validation_messages_when(
+        mut self,
+        renderer: impl for<'field> Fn(&ResolvedField<'field>) -> TokenStream + 'a,
+    ) -> Self {
+        self.validation_visibility_renderer = Some(Box::new(renderer));
+        self
+    }
+
+    /// Render an additional field-error expression alongside Koruma errors.
+    ///
+    /// The callback expression must evaluate to `Option<String>` and is used for
+    /// widget parsing or staged-candidate errors owned by the caller.
+    pub fn render_additional_validation_messages_with(
+        mut self,
+        renderer: impl for<'field> Fn(&ResolvedField<'field>) -> TokenStream + 'a,
+    ) -> Self {
+        self.additional_validation_message_renderer = Some(Box::new(renderer));
+        self
+    }
+
+    /// Add caller-owned statements after a generated field is set or cleared.
+    ///
+    /// The callback receives the resolved field and tokens for a cloned previous
+    /// value. It is not emitted for `ValueChange::Unchanged`.
+    pub fn after_field_change_with(
+        mut self,
+        renderer: impl for<'field> Fn(&ResolvedField<'field>, TokenStream) -> TokenStream + 'a,
+    ) -> Self {
+        self.field_change_renderer = Some(Box::new(renderer));
+        self
+    }
+
     /// Render component-backed form rows with caller-owned metadata.
     ///
     /// The default shape generator requires component shapes to publish render
@@ -177,6 +220,11 @@ impl<'a> FormShapeAdapter<'a> {
         FieldCodegenOptions {
             path_remapper: self.path_remapper.as_deref(),
             validation_message_renderer: self.validation_message_renderer.as_deref(),
+            validation_visibility_renderer: self.validation_visibility_renderer.as_deref(),
+            additional_validation_message_renderer: self
+                .additional_validation_message_renderer
+                .as_deref(),
+            field_change_renderer: self.field_change_renderer.as_deref(),
             render_child_renderer: self.render_child_renderer.as_deref(),
         }
     }

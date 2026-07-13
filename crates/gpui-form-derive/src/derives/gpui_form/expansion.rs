@@ -5,6 +5,7 @@ use gpui_form_codegen::{
 };
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use std::collections::BTreeMap;
 use syn::DeriveInput;
 use syn::GenericParam;
 
@@ -17,7 +18,74 @@ use crate::derives::gpui_form::ir::{
 use crate::derives::gpui_form::mcp::generate_mcp_impl;
 use crate::derives::gpui_form::planner::plan_form;
 use crate::derives::gpui_form::structs::GpuiFormOptions;
-use crate::derives::gpui_form::value_holder::generate_value_holder;
+use crate::derives::gpui_form::value_holder::{field_variant_ident, generate_value_holder};
+
+fn form_field_enum_tokens(
+    context: &DeriveContext,
+    field_names: &[syn::Ident],
+) -> syn::Result<TokenStream> {
+    if field_names.is_empty() {
+        return Ok(TokenStream::new());
+    }
+
+    let struct_name = &context.original_ident;
+    let facade_crate = &context.paths.gpui_form;
+    let enum_name = format_ident!("{}FormField", struct_name);
+    let mut known_variants = BTreeMap::new();
+    let mut variants = Vec::with_capacity(field_names.len());
+
+    for field_name in field_names {
+        let variant = field_variant_ident(field_name);
+        if let Some(previous_field) = known_variants.insert(variant.to_string(), field_name) {
+            return Err(syn::Error::new_spanned(
+                field_name,
+                format!(
+                    "component fields `{previous_field}` and `{field_name}` both generate the form-field variant `{variant}`"
+                ),
+            ));
+        }
+
+        let source_name = field_name.to_string();
+        let source_name = source_name.strip_prefix("r#").unwrap_or(&source_name);
+        let source_name = syn::LitStr::new(source_name, field_name.span());
+        variants.push(quote! {
+            #[strum(to_string = #source_name)]
+            #variant
+        });
+    }
+
+    Ok(quote! {
+        #[doc = concat!("Typed component fields generated for [`", stringify!(#struct_name), "`].")]
+        #[derive(
+            Clone,
+            Copy,
+            Debug,
+            Eq,
+            Hash,
+            Ord,
+            PartialEq,
+            PartialOrd,
+            #facade_crate::strum::IntoStaticStr,
+        )]
+        #[strum(const_into_str)]
+        pub enum #enum_name {
+            #(#variants),*
+        }
+
+        impl #enum_name {
+            /// Returns the source-level Rust field name for this component field.
+            pub const fn name(self) -> &'static str {
+                self.into_str()
+            }
+        }
+
+        impl #facade_crate::core::FormField for #enum_name {
+            fn name(self) -> &'static str {
+                Self::name(self)
+            }
+        }
+    })
+}
 
 fn field_value_presence_tokens(
     context: &DeriveContext,
@@ -288,6 +356,14 @@ pub fn expand_gpui_form(
     };
     let enable_koruma_fluent = form_plan.enable_koruma_fluent;
     let effective_enable_koruma = form_plan.effective_enable_koruma;
+    let component_field_names = form_plan
+        .component_fields()
+        .map(|field| field.shared.field_name.clone())
+        .collect::<Vec<_>>();
+    let form_field_enum = match form_field_enum_tokens(&context, &component_field_names) {
+        Ok(tokens) => tokens,
+        Err(error) => return error.to_compile_error(),
+    };
 
     let field_structure_tokens: Vec<TokenStream> = form_plan
         .component_fields()
@@ -555,6 +631,8 @@ pub fn expand_gpui_form(
 
     let expanded = quote! {
         #value_holder_tokens
+
+        #form_field_enum
 
         pub struct #components_holder_name #declaration_generics #where_clause {
             #(#field_structure_tokens)*

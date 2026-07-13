@@ -38,8 +38,11 @@ helpers and component-specific derives explicitly:
 4. Add `GpuiForm` to a normal Rust struct and give every field one explicit
    intent: component, `hidden`, or `skip`.
 5. Use generated types named from the source struct, such as
-   `UserProfileFormFields`, `UserProfileFormComponents`, and
+   `UserProfileFormField`, `UserProfileFormFields`, `UserProfileFormComponents`, and
    `UserProfileFormValueHolder`.
+   `UserProfileFormField` contains one variant per component-backed field,
+   implements `gpui_form::core::FormField`, and returns the exact static source
+   field name through `name()`.
 6. Put the component shape in `#[gpui_form(component(...))]`, use
    `#[gpui_form(hidden)]` for value-holder-only fields,
    intent-scoped `default = ...` inside `component(...)` or `hidden(...)` for initial form values,

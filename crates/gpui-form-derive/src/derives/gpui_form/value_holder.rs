@@ -351,7 +351,7 @@ impl HolderStorageStrategy for HolderStoragePlan {
         _present_lifetime: &syn::Lifetime,
     ) -> ValueHolderResult<TokenStream> {
         let field_name = field.field_name();
-        let variant_ident = present_field_variant_ident(field_name);
+        let variant_ident = field_variant_ident(field_name);
 
         match self {
             HolderStoragePlan::OriginallyOptional => {
@@ -882,7 +882,7 @@ fn generate_from_wrapped_field(
     })
 }
 
-fn present_field_variant_ident(field_name: &syn::Ident) -> syn::Ident {
+pub(crate) fn field_variant_ident(field_name: &syn::Ident) -> syn::Ident {
     let source = field_name.to_string();
     let source = source.strip_prefix("r#").unwrap_or(&source);
     let mut ident = String::new();
@@ -930,7 +930,7 @@ fn generate_present_field_variant(
     present_lifetime: &syn::Lifetime,
     present: &PresentFieldPlan,
 ) -> TokenStream {
-    let variant_ident = present_field_variant_ident(field.field_name());
+    let variant_ident = field_variant_ident(field.field_name());
     let variant_type = present_field_variant_type_tokens(field, present_lifetime, present);
 
     quote! {

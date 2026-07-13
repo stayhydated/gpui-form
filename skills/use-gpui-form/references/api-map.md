@@ -420,10 +420,15 @@ inputs can derive `gpui_form::mcp::McpToolInput`; that derive also implements
 For a source struct named `UserProfile`, expect generated types named:
 
 ```rust
+UserProfileFormField
 UserProfileFormFields
 UserProfileFormComponents
 UserProfileFormValueHolder
 ```
+
+`UserProfileFormField` contains the component-backed fields, implements
+`gpui_form::core::FormField`, and exposes each exact source-level Rust field
+name through its const `name()` method.
 
 Use the generated value holder for editable form data, defaults, and conversion
 back into the original model.

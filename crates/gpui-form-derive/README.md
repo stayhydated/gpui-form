@@ -38,6 +38,10 @@ pub struct UserProfile {
 }
 ```
 
+The derive emits `UserProfileFormField` with one variant per component-backed
+field. Each variant implements `gpui_form::core::FormField` and exposes its
+exact source field name as a static string through `name()`.
+
 Supported component forms:
 
 - `#[gpui_form(component(my::Shape))]`

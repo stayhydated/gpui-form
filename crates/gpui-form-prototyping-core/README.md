@@ -32,6 +32,12 @@ for shape in inventory::iter::<GpuiFormShape>() {
   source-crate-relative paths before imports and component fragments are emitted
 - `FormShapeAdapter::render_validation_messages_with(...)` lets layouts format
   validator refs without replacing the whole generated field layout
+- `FormShapeAdapter::show_validation_messages_when(...)` lets layouts apply a
+  touched-field or submit-attempted visibility policy to generated errors
+- `FormShapeAdapter::render_additional_validation_messages_with(...)` merges
+  caller-owned widget or staged-candidate messages into generated field rows
+- `FormShapeAdapter::after_field_change_with(...)` lets layouts publish
+  caller-owned validation/change state after a generated value is set or cleared
 - `FormLayout` lets callers define the overall file structure
 - `PrototypingError` reports malformed metadata without panicking
 

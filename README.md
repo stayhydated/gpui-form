@@ -95,6 +95,8 @@ pub struct UserProfile {
 
 `#[derive(GpuiForm)]` generates the typed form support around that struct:
 
+- `UserProfileFormField` for typed component-field identity and static source
+  field names through `UserProfileFormField::Username.name()`
 - `UserProfileFormFields` for GPUI entity state
 - `UserProfileFormComponents` constructors for those fields
 - `UserProfileFormValueHolder` for typed editing, defaults, validation, and

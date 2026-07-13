@@ -25,6 +25,60 @@ mod gpui_form_tests {
     }
 
     #[test]
+    fn generated_form_field_enum_contains_only_component_fields() {
+        let derive_input: DeriveInput = syn::parse_quote! {
+            #[derive(GpuiForm)]
+            #[gpui_form(no_inventory)]
+            struct UserProfile {
+                #[gpui_form(component(crate::Input))]
+                display_name: String,
+                #[gpui_form(hidden)]
+                internal_note: String,
+                #[gpui_form(skip)]
+                database_id: u64,
+            }
+        };
+
+        let expanded = expansion::expand_gpui_form(
+            derive_input,
+            structs::GpuiFormOptions {
+                generate_shape: false,
+                generate_mcp: false,
+            },
+        );
+        let file = syn::parse2::<syn::File>(expanded.clone()).expect("expansion should parse");
+        let form_field = file
+            .items
+            .iter()
+            .find_map(|item| match item {
+                syn::Item::Enum(item) if item.ident == "UserProfileFormField" => Some(item),
+                _ => None,
+            })
+            .expect("generated form-field enum");
+
+        let variants = form_field
+            .variants
+            .iter()
+            .map(|variant| variant.ident.to_string())
+            .collect::<Vec<_>>();
+        assert_eq!(variants, ["DisplayName"]);
+
+        let compact = compact_tokens(&expanded.to_string());
+        assert!(
+            compact.contains("#[strum(to_string=\"display_name\")]DisplayName"),
+            "form-field enum should retain the exact source field name: {compact}"
+        );
+        assert!(
+            compact.contains("impl::gpui_form::core::FormFieldforUserProfileFormField"),
+            "form-field enum should implement the facade contract: {compact}"
+        );
+        assert!(
+            compact.contains("pubconstfnname(self)->&'staticstr{self.into_str()}"),
+            "form-field enum should expose a const static name: {compact}"
+        );
+    }
+
+    #[test]
     fn test_koruma_field_parsing_with_cfg_attr() {
         let tokens = quote! {
             struct Test {

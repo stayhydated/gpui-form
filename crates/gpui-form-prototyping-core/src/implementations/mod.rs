@@ -19,6 +19,9 @@ pub fn field_generator() -> &'static dyn FieldCodeGenerator {
 pub struct FieldCodegenOptions<'a> {
     pub path_remapper: Option<&'a dyn Fn(&syn::Path) -> Option<syn::Path>>,
     pub validation_message_renderer: Option<&'a dyn Fn(TokenStream) -> TokenStream>,
+    pub validation_visibility_renderer: Option<&'a ValidationVisibilityRenderer<'a>>,
+    pub additional_validation_message_renderer: Option<&'a AdditionalValidationMessageRenderer<'a>>,
+    pub field_change_renderer: Option<&'a FieldChangeRenderer<'a>>,
     pub render_child_renderer: Option<&'a RenderChildRenderer<'a>>,
 }
 
@@ -33,6 +36,36 @@ impl FieldCodegenOptions<'_> {
         self.validation_message_renderer
             .map(|renderer| renderer(value_tokens.clone()))
             .unwrap_or_else(|| default_validation_message_tokens(value_tokens))
+    }
+
+    pub fn validation_messages_visible(&self, field: &ResolvedField<'_>) -> TokenStream {
+        self.validation_visibility_renderer
+            .map(|renderer| renderer(field))
+            .unwrap_or_else(|| quote! { true })
+    }
+
+    pub fn additional_validation_message(&self, field: &ResolvedField<'_>) -> TokenStream {
+        self.additional_validation_message_renderer
+            .map(|renderer| renderer(field))
+            .unwrap_or_else(|| quote! { None })
+    }
+
+    pub fn has_additional_validation_message(&self) -> bool {
+        self.additional_validation_message_renderer.is_some()
+    }
+
+    pub fn after_field_change(
+        &self,
+        field: &ResolvedField<'_>,
+        previous_value: TokenStream,
+    ) -> TokenStream {
+        self.field_change_renderer
+            .map(|renderer| renderer(field, previous_value))
+            .unwrap_or_default()
+    }
+
+    pub fn has_after_field_change(&self) -> bool {
+        self.field_change_renderer.is_some()
     }
 
     pub fn render_child(
@@ -63,6 +96,15 @@ pub type RenderChildRenderer<'a> = dyn for<'field, 'options> Fn(
         &FieldCodegenOptions<'options>,
     ) -> Option<TokenStream>
     + 'a;
+
+pub type ValidationVisibilityRenderer<'a> =
+    dyn for<'field> Fn(&ResolvedField<'field>) -> TokenStream + 'a;
+
+pub type AdditionalValidationMessageRenderer<'a> =
+    dyn for<'field> Fn(&ResolvedField<'field>) -> TokenStream + 'a;
+
+pub type FieldChangeRenderer<'a> =
+    dyn for<'field> Fn(&ResolvedField<'field>, TokenStream) -> TokenStream + 'a;
 
 struct PathRemapVisitor<'a, 'b> {
     options: &'a FieldCodegenOptions<'b>,
@@ -427,14 +469,35 @@ pub fn generate_description_fn_tokens(
     let uses_optional_inner_validation_errors = field.uses_optional_inner_validation_errors();
     let error_tokens = if field_has_validations {
         let conversion_tokens = options.render_validation_message(quote! { v });
+        let validation_visible = options.validation_messages_visible(field);
 
         if uses_optional_inner_validation_errors {
             quote! {
-                validation_errors
-                    .as_ref()
-                    .and_then(|e| e.#field_name_ident())
-                    .and_then(|inner_error| {
-                        let errors = inner_error
+                if #validation_visible {
+                    validation_errors
+                        .as_ref()
+                        .and_then(|e| e.#field_name_ident())
+                        .and_then(|inner_error| {
+                            let errors = inner_error
+                                .all()
+                                .map(|v| #conversion_tokens)
+                                .collect::<Vec<_>>();
+                            if errors.is_empty() {
+                                None
+                            } else {
+                                Some(errors.join("\n"))
+                            }
+                        })
+                } else {
+                    None
+                }
+            }
+        } else {
+            quote! {{
+                if #validation_visible {
+                    validation_errors.as_ref().and_then(|e| {
+                        let errors = e
+                            .#field_name_ident()
                             .all()
                             .map(|v| #conversion_tokens)
                             .collect::<Vec<_>>();
@@ -444,29 +507,18 @@ pub fn generate_description_fn_tokens(
                             Some(errors.join("\n"))
                         }
                     })
-            }
-        } else {
-            quote! {{
-                validation_errors.as_ref().and_then(|e| {
-                    let errors = e
-                        .#field_name_ident()
-                        .all()
-                        .map(|v| #conversion_tokens)
-                        .collect::<Vec<_>>();
-                    if errors.is_empty() {
-                        None
-                    } else {
-                        Some(errors.join("\n"))
-                    }
-                })
+                } else {
+                    None
+                }
             }}
         }
     } else {
         quote! {{ None }}
     };
+    let additional_error_tokens = options.additional_validation_message(field);
     let error_color_tokens = quote! { cx.theme().danger };
 
-    if !field_has_validations {
+    if !field_has_validations && !options.has_additional_validation_message() {
         quote! {
             .description_fn({
                 let description = #description_tokens;
@@ -483,7 +535,7 @@ pub fn generate_description_fn_tokens(
         quote! {
             .description_fn({
                 let description = #description_tokens;
-                let error = #error_tokens;
+                let error = (#error_tokens).or_else(|| #additional_error_tokens);
                 let error_color = #error_color_tokens;
                 move |_, _| {
                     div()
@@ -655,6 +707,10 @@ mod tests {
             validation_message_renderer: Some(&|value| {
                 quote::quote! { crate::i18n::localize_validation_debug(&#value) }
             }),
+            validation_visibility_renderer: Some(&|field| {
+                let field_name = field.field_name().as_str();
+                quote::quote! { self.validation.should_show(#field_name) }
+            }),
             ..FieldCodegenOptions::default()
         };
         let compact =
@@ -665,6 +721,10 @@ mod tests {
                 "leterrors=e.index().all().map(|v|crate::i18n::localize_validation_debug(&v)).collect::<Vec<_>>();"
             ),
             "custom validation renderers should control validation message formatting: {compact}"
+        );
+        assert!(
+            compact.contains("ifself.validation.should_show(\"index\")"),
+            "custom validation visibility should guard field errors: {compact}"
         );
     }
 }

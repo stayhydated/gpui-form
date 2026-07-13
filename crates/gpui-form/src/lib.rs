@@ -13,3 +13,6 @@ pub use gpui_form_runtime as runtime;
 pub use gpui_form_schema as schema;
 
 pub use bon;
+#[cfg(feature = "derive")]
+#[doc(hidden)]
+pub use strum;

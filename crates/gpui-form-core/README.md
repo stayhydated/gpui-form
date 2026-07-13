@@ -13,6 +13,8 @@ Today this crate is intentionally small and focused:
 - `numeric::validate_signed_numeric`
 - `numeric::validate_unsigned_numeric`
 - `component_suffix::{ComponentSuffix, validate_component_suffix}`
+- `FormField`, implemented by the typed component-field enums emitted by
+  `#[derive(GpuiForm)]`
 
 These helpers are available for custom numeric input wrappers that want shared
 text-entry validation and for integration tooling that wants the same component
