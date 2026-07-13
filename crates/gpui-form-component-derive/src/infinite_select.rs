@@ -1,7 +1,7 @@
 use darling::{FromDeriveInput, FromVariant};
 use gpui_form_codegen::resolve_crate_path;
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use std::collections::HashMap;
 use syn::{DeriveInput, Ident, Type};
 
@@ -173,11 +173,28 @@ pub fn from(input: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error().into(),
     };
 
-    let _type_label_uses_fluent = fluent_kv.uses_type_label();
-    let type_label_impl = quote! { stringify!(#enum_ident).into() };
+    let type_label_impl = if fluent_kv.uses_type_label() {
+        quote! {
+            #runtime_crate::__macro_support::localize_label::<#enum_ident>(cx).into()
+        }
+    } else {
+        quote! {
+            let _ = cx;
+            stringify!(#enum_ident).into()
+        }
+    };
 
-    let _type_description_uses_fluent = fluent_kv.uses_type_description();
-    let type_description_impl = quote! { stringify!(#enum_ident).into() };
+    let type_description_impl = if fluent_kv.uses_type_description() {
+        let description_variants_ident = format_ident!("{}DescriptionVariants", enum_ident);
+        quote! {
+            #runtime_crate::__macro_support::localize_label::<#description_variants_ident>(cx).into()
+        }
+    } else {
+        quote! {
+            let _ = cx;
+            stringify!(#enum_ident).into()
+        }
+    };
 
     let variants: Result<Vec<VariantInfo>, syn::Error> = match &args.data {
         darling::ast::Data::Enum(variants) => variants
@@ -292,14 +309,31 @@ pub fn from(input: TokenStream) -> TokenStream {
         })
         .collect();
 
-    let variant_label_arms: Vec<_> = variants
-        .iter()
-        .map(|variant| {
-            let pattern = variant.ignore_pattern();
-            let label = variant.ident.to_string();
-            quote! { #pattern => #label.into(), }
-        })
-        .collect();
+    let variant_label_arms: Vec<_> = if fluent_kv.has_label {
+        let label_variants_ident = format_ident!("{}LabelVariants", enum_ident);
+        variants
+            .iter()
+            .map(|variant| {
+                let pattern = variant.ignore_pattern();
+                let variant_ident = &variant.ident;
+                quote! {
+                    #pattern => #runtime_crate::__macro_support::localize_message(
+                        cx,
+                        &#label_variants_ident::#variant_ident,
+                    ).into(),
+                }
+            })
+            .collect()
+    } else {
+        variants
+            .iter()
+            .map(|variant| {
+                let pattern = variant.ignore_pattern();
+                let label = variant.ident.to_string();
+                quote! { #pattern => #label.into(), }
+            })
+            .collect()
+    };
 
     let has_inner_arms = map_variant_arms(
         &variants,
@@ -363,7 +397,7 @@ pub fn from(input: TokenStream) -> TokenStream {
                 #pattern => {
                     <#inner_type as #runtime_crate::infinite_select::InfiniteSelectValue>::variants()
                         .into_iter()
-                        .map(|variant| variant.variant_label())
+                        .map(|variant| variant.variant_label(cx))
                         .collect()
                 }
             }
@@ -402,7 +436,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, _| {
             let pattern = variant.binding_pattern();
-            quote! { #pattern => inner.child_variant_labels(), }
+            quote! { #pattern => inner.child_variant_labels(cx), }
         },
     );
 
@@ -624,7 +658,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, _| {
             let pattern = variant.binding_pattern();
-            quote! { #pattern => inner.child_label_at_depth(depth), }
+            quote! { #pattern => inner.child_label_at_depth(depth, cx), }
         },
     );
 
@@ -636,7 +670,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, _| {
             let pattern = variant.binding_pattern();
-            quote! { #pattern => inner.child_description_at_depth(depth), }
+            quote! { #pattern => inner.child_description_at_depth(depth, cx), }
         },
     );
 
@@ -648,7 +682,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, _| {
             let pattern = variant.binding_pattern();
-            quote! { #pattern => Some(inner.type_label()), }
+            quote! { #pattern => Some(inner.type_label(cx)), }
         },
     );
 
@@ -660,7 +694,7 @@ pub fn from(input: TokenStream) -> TokenStream {
         },
         |variant, _| {
             let pattern = variant.binding_pattern();
-            quote! { #pattern => Some(inner.type_description()), }
+            quote! { #pattern => Some(inner.type_description(cx)), }
         },
     );
 
@@ -703,7 +737,11 @@ pub fn from(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn variant_label(&self) -> gpui::SharedString {
+            fn variant_label(
+                &self,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> gpui::SharedString {
+                let _ = cx;
                 match self {
                     #(#variant_label_arms)*
                 }
@@ -727,7 +765,10 @@ pub fn from(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn child_variant_labels(&self) -> Vec<gpui::SharedString> {
+            fn child_variant_labels(
+                &self,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Vec<gpui::SharedString> {
                 match self {
                     #(#child_variant_label_arms)*
                 }
@@ -791,7 +832,10 @@ pub fn from(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn inner_child_variant_labels(&self) -> Vec<gpui::SharedString> {
+            fn inner_child_variant_labels(
+                &self,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Vec<gpui::SharedString> {
                 match self {
                     #(#inner_child_variant_label_arms)*
                 }
@@ -815,43 +859,65 @@ pub fn from(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn type_label(&self) -> gpui::SharedString {
+            fn type_label(
+                &self,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> gpui::SharedString {
                 #type_label_impl
             }
 
-            fn type_description(&self) -> gpui::SharedString {
+            fn type_description(
+                &self,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> gpui::SharedString {
                 #type_description_impl
             }
 
-            fn inner_child_label_at_depth(&self, depth: usize) -> Option<gpui::SharedString> {
+            fn inner_child_label_at_depth(
+                &self,
+                depth: usize,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Option<gpui::SharedString> {
                 match self {
                     #(#inner_child_label_arms)*
                 }
             }
 
-            fn inner_child_description_at_depth(&self, depth: usize) -> Option<gpui::SharedString> {
+            fn inner_child_description_at_depth(
+                &self,
+                depth: usize,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Option<gpui::SharedString> {
                 match self {
                     #(#inner_child_description_arms)*
                 }
             }
 
-            fn child_label_at_depth(&self, depth: usize) -> Option<gpui::SharedString> {
+            fn child_label_at_depth(
+                &self,
+                depth: usize,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Option<gpui::SharedString> {
                 if depth == 0 {
                     match self {
                         #(#child_label_immediate_arms)*
                     }
                 } else {
-                    self.inner_child_label_at_depth(depth - 1)
+                    self.inner_child_label_at_depth(depth - 1, cx)
                 }
             }
 
-            fn child_description_at_depth(&self, depth: usize) -> Option<gpui::SharedString> {
+            fn child_description_at_depth(
+                &self,
+                depth: usize,
+                cx: &impl std::borrow::Borrow<gpui::App>,
+            ) -> Option<gpui::SharedString> {
                 if depth == 0 {
                     match self {
                         #(#child_description_immediate_arms)*
                     }
                 } else {
-                    self.inner_child_description_at_depth(depth - 1)
+                    self.inner_child_description_at_depth(depth - 1, cx)
                 }
             }
         }

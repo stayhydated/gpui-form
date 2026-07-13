@@ -30,6 +30,7 @@ strum = { workspace = true }
 es-fluent-build = { workspace = true }
 
 [dev-dependencies]
+gpui = { features = [ "test-support" ], workspace = true }
 unic-langid = { workspace = true }
 
 [lints]

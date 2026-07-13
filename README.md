@@ -580,11 +580,13 @@ for field in location.read(cx).form_fields() {
 The derive/runtime pair also exposes typed option labels, stable key paths, and
 typed path errors:
 
-- root option titles come from `variant_label()` instead of raw `variant_name()`
-- `#[fluent_kv(keys = ["label", "description"], keys_this)]` emits
-  `es-fluent` variant and type metadata for application-owned localizers;
-  generated runtime labels use plain fallback names because the runtime trait
-  contract is localizer-free
+- root option titles come from `variant_label(cx)` instead of raw
+  `variant_name()`
+- `#[fluent_kv(keys = ["label", "description"], keys_this)]` tells the derive
+  to resolve metadata emitted by `EsFluentLabel` / `EsFluentVariants` through
+  the installed `gpui-es-fluent` global; missing initialization or resources
+  are hard errors, while enums without Fluent metadata retain static variant
+  names
 - `#[tuple_enum(key = "...")]` overrides persisted keys when enum names should
   stay decoupled from storage
 - `selection_key_path()` / `build_from_key_path(...)` round-trip nested values
@@ -804,11 +806,11 @@ For manual native path selection, use `gpui_form_component::file_picker`. The
 runtime uses GPUI's
 `PathPromptOptions` from the pinned Zed git dependency and renders the control
 with `gpui-component` buttons, icons, sizing, and theme tokens.
-Built-in defaults are plain English fallback copy. When a form needs localized
-placeholder, prompt, or button text, render those messages through an
-application-owned `es-fluent` localizer and pass the resulting strings through
-`placeholder(...)`, `prompt(...)`, and `browse_label(...)`. The runtime ships
-Fluent resources for callers that localize those messages explicitly.
+Built-in placeholders, prompts, button text, errors, and selected-count text
+resolve typed Fluent messages through the installed `gpui-es-fluent` global.
+Missing localization initialization or resources are hard errors. Callers can
+still pass explicit custom text through `placeholder(...)`, `prompt(...)`, and
+`browse_label(...)`.
 
 ```rs
 use gpui_form_component::file_picker::{FilePicker, FilePickerEvent, FilePickerState};

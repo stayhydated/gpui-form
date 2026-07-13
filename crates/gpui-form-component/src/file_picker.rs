@@ -18,6 +18,7 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
 };
+use gpui_es_fluent::localize_message;
 
 use crate::i18n::FilePickerText;
 #[cfg(feature = "component-shape")]
@@ -63,22 +64,22 @@ impl FilePickerMode {
         }
     }
 
-    fn default_placeholder(self) -> SharedString {
+    fn default_placeholder(self, cx: &impl std::borrow::Borrow<App>) -> SharedString {
         let message = match self {
             Self::File => FilePickerText::SelectAFile,
             Self::Directory => FilePickerText::SelectADirectory,
             Self::FileOrDirectory => FilePickerText::SelectAFileOrDirectory,
         };
-        message.default_text().into()
+        localize_message(cx, &message).into()
     }
 
-    fn default_prompt(self) -> SharedString {
+    fn default_prompt(self, cx: &impl std::borrow::Borrow<App>) -> SharedString {
         let message = match self {
             Self::File => FilePickerText::SelectFile,
             Self::Directory => FilePickerText::SelectDirectory,
             Self::FileOrDirectory => FilePickerText::SelectFileOrDirectory,
         };
-        message.default_text().into()
+        localize_message(cx, &message).into()
     }
 }
 
@@ -477,11 +478,13 @@ impl RenderOnce for FilePicker {
         let size = self.size.unwrap_or(options.size);
         let has_paths = !paths.is_empty();
         let show_clean = cleanable && has_paths;
-        let placeholder = placeholder.unwrap_or_else(|| mode.default_placeholder());
-        let display_title = display_paths(&paths, placeholder);
-        let prompt = prompt.or_else(|| Some(mode.default_prompt()));
+        let placeholder = placeholder.unwrap_or_else(|| mode.default_placeholder(cx));
+        let display_title = display_paths(&paths, placeholder, |count| {
+            localize_message(cx, &FilePickerText::PathsSelected { count }).into()
+        });
+        let prompt = prompt.or_else(|| Some(mode.default_prompt(cx)));
         let browse_label =
-            browse_label.unwrap_or_else(|| FilePickerText::Browse.default_text().into());
+            browse_label.unwrap_or_else(|| localize_message(cx, &FilePickerText::Browse).into());
         let text_state = self.state.clone();
         let text_prompt = prompt.clone();
         let browse_state = self.state.clone();
@@ -616,7 +619,7 @@ fn prompt_for_selection(
                 FilePickerPromptOutcome::Cancelled => this.emit_cancel(cx),
                 FilePickerPromptOutcome::Failed(message) => this.emit_error(message, cx),
                 FilePickerPromptOutcome::Dropped => {
-                    this.emit_error(FilePickerText::DialogDropped.default_text(), cx);
+                    this.emit_error(localize_message(cx, &FilePickerText::DialogDropped), cx);
                 },
             });
         })
@@ -660,13 +663,15 @@ where
     }
 }
 
-fn display_paths(paths: &[PathBuf], placeholder: SharedString) -> SharedString {
+fn display_paths(
+    paths: &[PathBuf],
+    placeholder: SharedString,
+    multiple_label: impl FnOnce(usize) -> SharedString,
+) -> SharedString {
     match paths {
         [] => placeholder,
         [path] => path.display().to_string().into(),
-        _ => FilePickerText::PathsSelected { count: paths.len() }
-            .default_text()
-            .into(),
+        _ => multiple_label(paths.len()),
     }
 }
 
@@ -781,13 +786,17 @@ mod tests {
             ValueChange::Unchanged
         ));
 
-        assert_eq!(display_paths(&[], "Choose".into()).as_ref(), "Choose");
+        let multiple_label = |count| format!("{count} paths selected").into();
         assert_eq!(
-            display_paths(&["one.txt".into()], "Choose".into()).as_ref(),
+            display_paths(&[], "Choose".into(), multiple_label).as_ref(),
+            "Choose"
+        );
+        assert_eq!(
+            display_paths(&["one.txt".into()], "Choose".into(), multiple_label).as_ref(),
             "one.txt"
         );
         assert_eq!(
-            display_paths(&paths, "Choose".into()).as_ref(),
+            display_paths(&paths, "Choose".into(), multiple_label).as_ref(),
             "2 paths selected"
         );
     }

@@ -123,10 +123,11 @@ Derived `InfiniteSelect` enums expose:
 
 - `PartialEq` alignment with the backing `gpui-component` select value
   comparison
-- `variant_label()` for user-facing option titles
-- `#[fluent_kv(keys = ["label", "description"], keys_this)]` to emit
-  `es-fluent` metadata for application-owned localizers; runtime labels use
-  plain fallback names because the runtime trait contract is localizer-free
+- `variant_label(cx)` for user-facing option titles
+- `#[fluent_kv(keys = ["label", "description"], keys_this)]` to resolve
+  metadata emitted by `EsFluentLabel` / `EsFluentVariants` through the
+  installed `gpui-es-fluent` global; missing initialization or resources are
+  hard errors, while unannotated enums keep static variant names
 - `variant_key()` plus `selection_key_path()` for order-independent paths
 - `#[tuple_enum(key = "...")]` when persisted keys should not mirror variant names
 - `set_child_by_key(...)` / `set_child_by_key_path(...)` for programmatic updates
@@ -138,10 +139,10 @@ Derived `InfiniteSelect` enums expose:
 
 ## Date Picker
 
-This crate provides the localized runtime date-picker that component shapes can wrap.
-Its default empty placeholder is plain English fallback copy. Pass
-`DatePicker::placeholder(...)` with text rendered through your application-owned
-`es-fluent` localizer when a form needs localized or custom copy.
+This crate provides the localized runtime date-picker that component shapes can
+wrap. Its default empty placeholder resolves a typed Fluent message through the
+installed `gpui-es-fluent` global. Missing localization initialization or
+resources are hard errors; pass `DatePicker::placeholder(...)` for custom copy.
 
 ```rs
 use gpui_form_component::date_picker::{
@@ -159,7 +160,8 @@ Component shapes can store `Entity<DatePickerState>`, render `DatePicker`, and
 convert emitted `DatePickerEvent::Change` values with `parse_form_date`.
 The selected-date label and embedded calendar popover share the same display
 locale: ICU4X formats month names, weekday headers, day/year labels, and the
-locale-specific first day of the week.
+locale-specific first day of the week. Invalid locales and unavailable ICU
+formatters fail explicitly instead of substituting English names.
 Manual forms can use `DateRangePickerState`, `DateRangePicker`, and
 `DateRangePickerEvent` when they need range selection over the same localized
 calendar popover. The ready-made collection date shapes use
@@ -183,10 +185,10 @@ This crate provides a native path picker backed by the pinned GPUI git API,
 not a separate dialog crate.
 Component shapes can use the same runtime.
 The default placeholders, native-dialog prompts, browse label, dropped-dialog
-error, and selected-count text have plain English fallback copy. Explicit
-builder values such as `placeholder(...)`, `prompt(...)`, and
-`browse_label(...)` remain caller-provided text; render localized strings through
-your application-owned `es-fluent` localizer before passing them in.
+error, and selected-count text resolve typed Fluent messages through the
+installed `gpui-es-fluent` global. Missing localization initialization or
+resources are hard errors. Explicit builder values such as `placeholder(...)`,
+`prompt(...)`, and `browse_label(...)` remain caller-provided custom text.
 
 ```rs
 use gpui_form_component::file_picker::{

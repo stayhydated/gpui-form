@@ -12,9 +12,10 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
 };
+use gpui_es_fluent::localize_message;
 use icu_calendar::{Date as IcuDate, Gregorian};
 use icu_datetime::{FixedCalendarDateTimeFormatter, fieldsets};
-use icu_locale_core::{Locale, locale};
+use icu_locale_core::Locale;
 use jiff::civil::Date as JiffDate;
 
 use crate::calendar::{Calendar, CalendarEvent, CalendarState, Date as CalendarDate};
@@ -593,7 +594,7 @@ impl RenderOnce for DatePicker {
         let placeholder = self
             .placeholder
             .clone()
-            .unwrap_or_else(|| DatePickerText::SelectDate.default_text().into());
+            .unwrap_or_else(|| localize_message(cx, &DatePickerText::SelectDate).into());
         let locale = state.display_locale.clone().unwrap_or_else(active_locale);
         let display_title = state
             .date
@@ -718,7 +719,7 @@ impl RenderOnce for DateRangePicker {
         let placeholder = self
             .placeholder
             .clone()
-            .unwrap_or_else(|| DatePickerText::SelectDate.default_text().into());
+            .unwrap_or_else(|| localize_message(cx, &DatePickerText::SelectDate).into());
         let locale = state.display_locale.clone().unwrap_or_else(active_locale);
         let display_title = format_display_range(
             state.start_date,
@@ -871,7 +872,9 @@ fn jiff_date_range_from_chrono(
 fn active_locale() -> Locale {
     let raw = gpui_component::locale();
     let normalized = raw.deref().replace('_', "-");
-    Locale::from_str(&normalized).unwrap_or(locale!("en-US"))
+    Locale::from_str(&normalized).unwrap_or_else(|error| {
+        panic!("gpui-component locale `{normalized}` is not a valid ICU locale: {error}")
+    })
 }
 
 fn format_display_date(
@@ -887,7 +890,9 @@ fn format_display_date(
             DateDisplayStyle::Long => fieldsets::YMD::long(),
         },
     )
-    .ok()?;
+    .unwrap_or_else(|error| {
+        panic!("failed to create date formatter for locale `{locale}`: {error:?}")
+    });
 
     let icu_date = IcuDate::try_new_gregorian(
         i32::from(date.year()),

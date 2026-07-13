@@ -344,40 +344,42 @@ fn index_and_key_paths_support_mutation_and_empty_round_trips() {
 }
 
 #[cfg(feature = "component-shape")]
-#[test]
-fn infinite_select_items_expose_labels_values_and_child_selection() {
-    let item = InfiniteSelectItem::from_variant(Country::default());
-    assert_eq!(item.title().as_ref(), "Usa");
-    assert_eq!(item.get_value().variant_name(), "Usa");
-    assert!(item.has_inner());
-    assert_eq!(
-        item.child_variant_names(),
-        vec!["California", "Texas", "NewYork"]
-    );
-    assert_eq!(
-        item.child_variant_keys(),
-        vec!["California", "Texas", "NewYork"]
-    );
-    assert_eq!(item.child_variant_labels().len(), 3);
+#[gpui::test]
+fn infinite_select_items_expose_labels_values_and_child_selection(cx: &mut gpui::TestAppContext) {
+    cx.update(|cx| {
+        let item = InfiniteSelectItem::from_variant(Country::default(), cx);
+        assert_eq!(item.title().as_ref(), "Usa");
+        assert_eq!(item.get_value().variant_name(), "Usa");
+        assert!(item.has_inner());
+        assert_eq!(
+            item.child_variant_names(),
+            vec!["California", "Texas", "NewYork"]
+        );
+        assert_eq!(
+            item.child_variant_keys(),
+            vec!["California", "Texas", "NewYork"]
+        );
+        assert_eq!(item.child_variant_labels(cx).len(), 3);
 
-    let texas = item.with_child_at(1).expect("Texas child should exist");
-    assert_eq!(texas.title().as_ref(), "Texas");
-    assert_eq!(
-        texas.value().inner_child_variant_names(),
-        vec!["Houston", "Dallas", "Austin"]
-    );
-    assert!(item.with_child_at(99).is_none());
-    assert_eq!(
-        InfiniteSelectItem::new(Country::default(), "Custom")
-            .title()
-            .as_ref(),
-        "Custom"
-    );
-    assert_eq!(item.into_value(), Country::default());
+        let texas = item.with_child_at(1, cx).expect("Texas child should exist");
+        assert_eq!(texas.title().as_ref(), "Texas");
+        assert_eq!(
+            texas.value().inner_child_variant_names(),
+            vec!["Houston", "Dallas", "Austin"]
+        );
+        assert!(item.with_child_at(99, cx).is_none());
+        assert_eq!(
+            InfiniteSelectItem::new(Country::default(), "Custom")
+                .title()
+                .as_ref(),
+            "Custom"
+        );
+        assert_eq!(item.into_value(), Country::default());
 
-    let root_items = gpui_form_component::infinite_select::to_select_items::<Country>();
-    assert_eq!(root_items.len(), 2);
-    assert_eq!(root_items[1].title().as_ref(), "Canada");
+        let root_items = gpui_form_component::infinite_select::to_select_items::<Country>(cx);
+        assert_eq!(root_items.len(), 2);
+        assert_eq!(root_items[1].title().as_ref(), "Canada");
+    });
 }
 
 #[cfg(feature = "component-shape")]

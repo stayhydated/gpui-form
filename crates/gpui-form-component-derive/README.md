@@ -40,10 +40,10 @@ Variant attributes:
 
 - `#[tuple_enum(skip)]` omits a variant from the select tree
 - `#[tuple_enum(key = "...")]` overrides the stable persisted key for a variant
-- `#[fluent_kv(keys = ["label", "description"], keys_this)]` emits
-  `EsFluentVariants` / `EsFluentLabel` metadata for application-owned
-  localizers. Runtime labels use plain fallback names because the runtime trait
-  contract is localizer-free.
+- `#[fluent_kv(keys = ["label", "description"], keys_this)]` tells the derive
+  to consume metadata emitted by `EsFluentVariants` / `EsFluentLabel` through
+  the installed `gpui-es-fluent` global. Missing initialization or resources
+  are hard errors.
 
 Behavior notes:
 
@@ -51,9 +51,8 @@ Behavior notes:
   `gpui-component` select compares selected values
 - derived enums expose stable `variant_key()` values plus `selection_key_path()`
 - custom keys are validated for uniqueness within the enum
-- fluent metadata is emitted for callers that render through their own
-  `es-fluent` localizer; runtime trait methods use fallback names because the
-  contract is localizer-free
+- localized runtime methods accept a GPUI app context; enums without
+  `fluent_kv` metadata use static variant/type names
 
 ## Most Users Should Use Instead
 

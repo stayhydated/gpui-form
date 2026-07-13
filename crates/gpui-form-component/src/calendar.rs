@@ -645,7 +645,9 @@ impl RenderOnce for Calendar {
 fn first_weekday(locale: &Locale) -> Weekday {
     WeekInformation::try_new(WeekPreferences::from(locale))
         .map(|info| info.first_weekday)
-        .unwrap_or(Weekday::Sunday)
+        .unwrap_or_else(|error| {
+            panic!("failed to resolve week information for locale `{locale}`: {error:?}")
+        })
 }
 
 fn days_in_month(year: i32, month: u32, first_weekday: Weekday) -> Vec<Vec<NaiveDate>> {
@@ -683,16 +685,15 @@ fn weekday_names(locale: &Locale) -> Vec<SharedString> {
         locale.clone().into(),
         fieldsets::E::short(),
     )
-    .ok();
+    .unwrap_or_else(|error| {
+        panic!("failed to create weekday formatter for locale `{locale}`: {error:?}")
+    });
     let first_weekday = first_weekday(locale);
 
     (0..7)
         .map(|offset| {
             let weekday = add_weekdays(first_weekday, offset);
-            formatter
-                .as_ref()
-                .map(|formatter| formatter.format(&weekday).to_string().into())
-                .unwrap_or_else(|| fallback_weekday_name(weekday))
+            formatter.format(&weekday).to_string().into()
         })
         .collect()
 }
@@ -704,50 +705,50 @@ fn month_names(locale: &Locale) -> Vec<SharedString> {
 }
 
 fn format_month_name(year: i32, month: u32, locale: &Locale) -> SharedString {
-    let formatted = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
+    let formatter = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
         locale.clone().into(),
         fieldsets::M::long(),
     )
-    .ok()
-    .and_then(|formatter| {
-        let month = u8::try_from(month).ok()?;
-        let icu_date = IcuDate::try_new_gregorian(year, month, 1).ok()?;
-        Some(formatter.format(&icu_date).to_string())
+    .unwrap_or_else(|error| {
+        panic!("failed to create month formatter for locale `{locale}`: {error:?}")
     });
+    let month = u8::try_from(month)
+        .unwrap_or_else(|error| panic!("calendar month `{month}` is out of range: {error}"));
+    let icu_date = IcuDate::try_new_gregorian(year, month, 1)
+        .unwrap_or_else(|error| panic!("invalid Gregorian month `{year}-{month:02}`: {error:?}"));
 
-    formatted
-        .unwrap_or_else(|| fallback_month_name(month).to_string())
-        .into()
+    formatter.format(&icu_date).to_string().into()
 }
 
 fn format_year_name(year: i32, locale: &Locale) -> SharedString {
-    let formatted = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
+    let formatter = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
         locale.clone().into(),
         fieldsets::Y::medium(),
     )
-    .ok()
-    .and_then(|formatter| {
-        let icu_date = IcuDate::try_new_gregorian(year, 1, 1).ok()?;
-        Some(formatter.format(&icu_date).to_string())
+    .unwrap_or_else(|error| {
+        panic!("failed to create year formatter for locale `{locale}`: {error:?}")
     });
+    let icu_date = IcuDate::try_new_gregorian(year, 1, 1)
+        .unwrap_or_else(|error| panic!("invalid Gregorian year `{year}`: {error:?}"));
 
-    formatted.unwrap_or_else(|| year.to_string()).into()
+    formatter.format(&icu_date).to_string().into()
 }
 
 fn format_day_name(date: &NaiveDate, locale: &Locale) -> SharedString {
-    let formatted = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
+    let formatter = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
         locale.clone().into(),
         fieldsets::D::short(),
     )
-    .ok()
-    .and_then(|formatter| {
-        let month = u8::try_from(date.month()).ok()?;
-        let day = u8::try_from(date.day()).ok()?;
-        let icu_date = IcuDate::try_new_gregorian(date.year(), month, day).ok()?;
-        Some(formatter.format(&icu_date).to_string())
+    .unwrap_or_else(|error| {
+        panic!("failed to create day formatter for locale `{locale}`: {error:?}")
+    });
+    let month = u8::try_from(date.month()).expect("chrono months fit ICU month values");
+    let day = u8::try_from(date.day()).expect("chrono days fit ICU day values");
+    let icu_date = IcuDate::try_new_gregorian(date.year(), month, day).unwrap_or_else(|error| {
+        panic!("invalid Gregorian date `{date}` for ICU formatting: {error:?}")
     });
 
-    formatted.unwrap_or_else(|| date.day().to_string()).into()
+    formatter.format(&icu_date).to_string().into()
 }
 
 fn add_weekdays(weekday: Weekday, offset: u8) -> Weekday {
@@ -766,37 +767,6 @@ fn days_since_sunday(weekday: Weekday) -> u8 {
     }
 }
 
-fn fallback_weekday_name(weekday: Weekday) -> SharedString {
-    match weekday {
-        Weekday::Sunday => "Sun",
-        Weekday::Monday => "Mon",
-        Weekday::Tuesday => "Tue",
-        Weekday::Wednesday => "Wed",
-        Weekday::Thursday => "Thu",
-        Weekday::Friday => "Fri",
-        Weekday::Saturday => "Sat",
-    }
-    .into()
-}
-
-fn fallback_month_name(month: u32) -> &'static str {
-    match month {
-        1 => "January",
-        2 => "February",
-        3 => "March",
-        4 => "April",
-        5 => "May",
-        6 => "June",
-        7 => "July",
-        8 => "August",
-        9 => "September",
-        10 => "October",
-        11 => "November",
-        12 => "December",
-        _ => "",
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
@@ -804,9 +774,8 @@ mod tests {
     use icu_locale_core::locale;
 
     use super::{
-        Date, ViewMode, add_weekdays, days_in_month, days_since_sunday, fallback_month_name,
-        fallback_weekday_name, first_weekday, format_day_name, format_month_name, format_year_name,
-        month_names, weekday_names,
+        Date, ViewMode, add_weekdays, days_in_month, days_since_sunday, first_weekday,
+        format_day_name, format_month_name, format_year_name, month_names, weekday_names,
     };
 
     #[test]
@@ -856,7 +825,7 @@ mod tests {
     }
 
     #[test]
-    fn calendar_view_modes_and_fallback_names_cover_all_variants() {
+    fn calendar_view_modes_and_icu_names_cover_all_variants() {
         assert!(ViewMode::Day.is_day());
         assert!(ViewMode::Month.is_month());
         assert!(ViewMode::Year.is_year());
@@ -872,17 +841,17 @@ mod tests {
             Weekday::Saturday,
         ];
         let names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let localized_names = weekday_names(&locale!("en-US"));
         for (index, weekday) in weekdays.into_iter().enumerate() {
             assert_eq!(days_since_sunday(weekday), index as u8);
-            assert_eq!(fallback_weekday_name(weekday).as_ref(), names[index]);
+            assert_eq!(localized_names[index].as_ref(), names[index]);
             assert_eq!(add_weekdays(Weekday::Sunday, index as u8), weekday);
         }
 
         let months = month_names(&locale!("en-US"));
         assert_eq!(months.len(), 12);
-        assert_eq!(fallback_month_name(1), "January");
-        assert_eq!(fallback_month_name(12), "December");
-        assert_eq!(fallback_month_name(13), "");
+        assert_eq!(months[0].as_ref(), "January");
+        assert_eq!(months[11].as_ref(), "December");
         assert_eq!(format_year_name(2025, &locale!("en-US")).as_ref(), "2025");
         assert_eq!(
             format_day_name(

@@ -29,14 +29,6 @@ pub(crate) enum DatePickerText {
     SelectDate,
 }
 
-impl DatePickerText {
-    pub(crate) fn default_text(&self) -> String {
-        match self {
-            Self::SelectDate => "Select date".to_string(),
-        }
-    }
-}
-
 #[derive(Clone, Debug, EsFluent)]
 #[fluent(namespace = "file_picker")]
 pub(crate) enum FilePickerText {
@@ -49,25 +41,6 @@ pub(crate) enum FilePickerText {
     Browse,
     DialogDropped,
     PathsSelected { count: usize },
-}
-
-impl FilePickerText {
-    pub(crate) fn default_text(&self) -> String {
-        match self {
-            Self::SelectAFile => "Select a file".to_string(),
-            Self::SelectADirectory => "Select a directory".to_string(),
-            Self::SelectAFileOrDirectory => "Select a file or directory".to_string(),
-            Self::SelectFile => "Select file".to_string(),
-            Self::SelectDirectory => "Select directory".to_string(),
-            Self::SelectFileOrDirectory => "Select file or directory".to_string(),
-            Self::Browse => "Browse".to_string(),
-            Self::DialogDropped => {
-                "The file picker dialog closed before returning a result.".to_string()
-            },
-            Self::PathsSelected { count: 1 } => "1 path selected".to_string(),
-            Self::PathsSelected { count } => format!("{count} paths selected"),
-        }
-    }
 }
 
 #[cfg(test)]
