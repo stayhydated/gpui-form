@@ -113,6 +113,8 @@ Manual server composition uses
 `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
 `.holder(handler)?` for `Result<T, E>` handlers. The handler must return
 `Result`.
+Use `.model_async(handler)?` or `.holder_async(handler)?` for asynchronous
+handlers without editor tools.
 Use `.model_with_editor(handler)?`, `.model_async_with_editor(handler)?`,
 `.holder_with_editor(handler)?`, or `.holder_async_with_editor(handler)?` when
 the same form should publish submit, editable holder-session tools, and

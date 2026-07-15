@@ -45,5 +45,6 @@ Optional attribute:
 
 - [`gpui-form`](../gpui-form/README.md) for standard form derives and schema
   wiring.
-- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`,
-  `GpuiComponentShape`, and `component_shape!`.
+- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`.
+- [`component-shape-gpui`](https://github.com/stayhydated/component-shape/tree/master/crates/component-shape-gpui)
+  for `GpuiComponentShape` and `component_shape!`.

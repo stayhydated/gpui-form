@@ -97,13 +97,14 @@ schema and attach value-specific shape MCP input metadata when available.
 Generated MCP descriptor resources expose the same shape MCP input metadata for
 clients that inspect `gpui-form://forms/{tool_name}/descriptor` instead of the
 raw submit schema.
-Use `mcp_input = string`, `mcp_input = object`, or another `McpInput`
-expression when a generic or custom shape knows its model-facing MCP input
-better than the value type can be inferred. Use value types that implement
-`gpui_form::mcp::McpToolValue` for ambiguous or intentionally different wire
-shapes; the blanket implementation covers `Deserialize` types that implement
-or derive `McpJsonSchema`. Use `gpui_form::mcp::McpAny` when a typed field
-intentionally accepts unconstrained JSON.
+When a generic or custom shape knows its model-facing MCP input better than the
+value type can infer, follow the component-shape skills to declare that
+metadata. This integration consumes the resulting value-specific metadata.
+Use value types that implement `gpui_form::mcp::McpToolValue` for ambiguous or
+intentionally different wire shapes; the blanket implementation covers
+`Deserialize` types that implement or derive `McpJsonSchema`. Use
+`gpui_form::mcp::McpAny` when a typed field intentionally accepts unconstrained
+JSON.
 
 ## Field-Level Builder Configuration
 
@@ -136,7 +137,8 @@ impl gpui_form_runtime::shape::GpuiComponentShapeBuilder<MySelect> for SelectArg
         window: &mut gpui::Window,
         cx: &mut gpui::Context<'_, <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State>,
     ) -> <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State {
-        let mut state = MySelect::new(window, cx);
+        let mut state =
+            <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::new(window, cx);
         if self.searchable {
             state = state.searchable(true);
         }
@@ -164,7 +166,9 @@ changes. Form attributes use dot-chain shape configuration.
 When a shape is used by inventory-driven prototyping, ensure it exposes stable
 component prototyping metadata. In practice, custom shapes should set a
 non-empty ASCII identifier suffix through component-shape metadata so generated
-DOM IDs, event handlers, and helper names stay stable.
+DOM IDs, event handlers, and helper names stay stable. Follow
+`use-component-shape` or `use-component-shape-gpui` to declare and validate
+that metadata; this skill covers only how gpui-form consumes it.
 
 Generated `FormFields` members and `FormComponents` constructors use the source
 field name. The component suffix affects generated helper naming around the

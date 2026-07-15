@@ -13,7 +13,7 @@ Use this reference for application code that consumes `gpui-form`.
 - [Select Pattern](#select-pattern)
 - [Infinite Select Pattern](#infinite-select-pattern)
 - [Type Conversion Pattern](#type-conversion-pattern)
-- [Component Shape Patterns](#component-shape-patterns)
+- [Custom Shape Routing](#custom-shape-routing)
 
 ## Install Shape
 
@@ -28,8 +28,6 @@ gpui-form = "*"
 gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
 gpui-form-collection = "*"
 gpui-form-collection-derive = "*"
-component-shape-gpui = "*"
-gpui-form-runtime = "*"
 
 # Optional experimental MCP submit integration:
 # gpui-form = { version = "*", features = ["mcp"] }
@@ -46,7 +44,7 @@ Use the facade for `GpuiForm` and import component derives explicitly:
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
 use gpui_form_component::InfiniteSelect;
-use component_shape_gpui::GpuiComponentShape;
+use gpui_form_component::infinite_select::InfiniteSelectOptions;
 ```
 
 Useful runtime/helper paths:
@@ -57,12 +55,9 @@ Useful runtime/helper paths:
 - `gpui_form_component::file_picker`
 - `gpui_form_component::infinite_select`
 - `gpui_form::core::numeric`
-- `component_shape_gpui::component_shape!`
 
 Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
-the facade when the `runtime` feature is enabled. Add `gpui-form-runtime`
-directly only when defining lower-level shapes with `component_shape_gpui`
-shape macros or direct runtime value-binding impls.
+the facade when the `runtime` feature is enabled.
 
 ## Supported Component Syntax
 
@@ -87,15 +82,15 @@ shape macros or direct runtime value-binding impls.
 #[gpui_form(component(gpui_form_collection::switch::Switch))]
 #[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
 #[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
+#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.from(
+    InfiniteSelectOptions::new(true, Some(3))
+)))]
 #[gpui_form(component(my::Shape))]
 ```
 
-Custom `my::Shape` types must be declared with
-`component_shape_gpui::component_shape!` or
-`#[derive(component_shape_gpui::GpuiComponentShape)]`. Put render component
-metadata and `field_suffix = "..."` metadata on the shape declaration, and implement
-`gpui_form_runtime::shape::GpuiFormComponentShapePolicy` for form holder
-storage.
+Use `use-gpui-form-component-shapes` when `my::Shape` is app-owned. That skill
+covers form-side compatibility and storage policy and routes generic shape
+declaration to the component-shape skills.
 
 Common field attributes:
 
@@ -111,8 +106,9 @@ Common field attributes:
 #[gpui_form(skip)]
 ```
 
-Configured shape expressions, such as `Select::<_>.searchable(true)` or
-`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, may be
+Configured shape expressions, such as `Select::<_>.searchable(true)`,
+`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
+`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))`, may be
 used anywhere `<shape>` appears when the expression returns a
 `GpuiComponentShapeBuilder` for the same base shape.
 
@@ -167,21 +163,22 @@ Common struct attributes:
 - Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
   nested/cascading enum trees; derive `InfiniteSelect`. Use
   `InfiniteSelect::<_>.searchable(true)` when search should be enabled.
-  Use a custom `GpuiComponentShape` wrapper when deeper runtime options are
-  needed.
+  Use `InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))`
+  to configure search and maximum depth together. Use a custom shape wrapper
+  only when construction behavior falls outside the built-in options.
 - Define a custom component shape around `gpui_form_component::date_picker` or
   `gpui_form_component::file_picker` only when the ready-made shape needs
   non-default runtime construction or rendering metadata.
-- Use `#[gpui_form(component(my::Shape))]` when the app owns the state/widget contract.
+- Use `#[gpui_form(component(my::Shape))]` when the app owns the state/widget
+  contract, and follow `use-gpui-form-component-shapes` for that integration.
 - Treat `component(...)` as the only component field intent in
   `#[gpui_form(...)]`; runtime construction uses
   `GpuiComponentShape::new`.
 - Component shapes own the value-storage policy for non-optional fields.
-  Implement `GpuiFormComponentShapePolicy` with `DirectValueStorage` when
-  required fields should store direct `T`; initialization must come from an
-  intent-scoped default or a form-side `T: Default`. Required shape-backed
-  values are reported by generated `validate()` and by fallible holder-to-model
-  conversion, while direct-storage policies expose infallible value mapping.
+  Existing built-in shapes already publish their policy. For an app-owned
+  shape, follow `use-gpui-form-component-shapes` to choose required or direct
+  holder storage. Required shape-backed values are reported by generated
+  `validate()` and by fallible holder-to-model conversion.
 - Holders for forms with skipped source fields expose
   `holder.present_fields()` as a typed snapshot for debug/preview formatting;
   JSON or text formatting belongs in the app or generator layer.
@@ -295,6 +292,8 @@ also expose generated prompt templates.
 Register manual handlers with
 `gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
 `.holder(handler)?` for handlers returning `Result<T, E>`.
+Use `.model_async(handler)?` or `.holder_async(handler)?` for asynchronous
+handlers without editor tools.
 Use `.model_with_editor(handler)?`, `.model_async_with_editor(handler)?`,
 `.holder_with_editor(handler)?`, or `.holder_async_with_editor(handler)?` when
 the same form should publish submit, editable holder-session tools, and
@@ -389,24 +388,17 @@ when the field schema type is unambiguous.
 Generated MCP validation errors use gpui-form's field rule metadata first and
 fall back to Koruma's generic `ValidationIssues` output when no field-specific
 rule extractor is available.
-`component_shape_gpui` infers common MCP metadata from unambiguous declared
-values such as `String`, booleans, numbers, dates, `Vec<T>`, set-like
-primitive collections, fixed arrays, `gpui_form::mcp::McpRange<T>`, or
-`(Option<T>, Option<T>)` ranges. `Vec<T>` and fixed arrays publish list
-metadata; set-like collections publish set metadata. Inferred metadata is
-attached to generated `ComponentShapeFor<Value>` impls, so multi-value shapes
-can expose distinct MCP input shapes per supported value. For custom field
-value types, generated descriptors require `gpui_form::mcp::McpToolValue`; the
+For custom field value types, generated descriptors require
+`gpui_form::mcp::McpToolValue`; the
 blanket implementation covers `Deserialize` types that implement or derive
 `gpui_form::mcp::McpJsonSchema`; use `gpui_form::mcp::McpAny` when a typed
 field intentionally accepts unconstrained JSON. Type aliases inherit the
 underlying schema. Fixed tuples with 1 to 4 elements publish exact array
-schemas. Generic or custom component shapes can declare `mcp_input = string`,
-`mcp_input = object`, or another `McpInput` expression when the shape knows its
-model-facing MCP input better than the value type can be inferred. App-owned
-object structs, tuple or named transparent newtypes, and fieldless enums can
-derive `gpui_form::mcp::McpJsonSchema` directly. In crates that also depend on
-another MCP facade, add
+schemas. Use `use-gpui-form-component-shapes` when a custom component needs
+shape-specific MCP input metadata; generic metadata declaration belongs to the
+component-shape skills. App-owned object structs, tuple or named transparent
+newtypes, and fieldless enums can derive `gpui_form::mcp::McpJsonSchema`
+directly. In crates that also depend on another MCP facade, add
 `#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
 derives so generated schema impls target the gpui-form facade. The derive
 follows serde deserialize names, records field aliases in `x-mcpAliases`,
@@ -479,6 +471,13 @@ pub struct LocationForm {
 ```
 
 Helper state is available from `gpui_form_component::infinite_select`.
+Direct helpers that produce localized labels or render-ready fields take the
+active app context, for example `value.variant_label(cx)` and
+`state.form_fields(cx)`. Enums with `#[fluent_kv(...)]` metadata resolve
+through the installed `gpui-es-fluent` global; missing initialization or
+resources are hard errors, while enums without Fluent metadata retain static
+variant names. Built-in date and file runtime copy uses the same strict global
+localization contract.
 
 ## Type Conversion Pattern
 
@@ -508,77 +507,12 @@ fail. For Koruma newtypes, `value(koruma_newtype)` expands to the public
 `NewtypeValue` / `NewtypeTryFromInner` trait surface and works with private
 wrapper fields.
 
-## Component Shape Patterns
+## Custom Shape Routing
 
-Derive on the rendered component. The derive infers a same-module backing state
-named after the component, such as `TagsInputState`; declare `state = ...` only
-when the backing state uses a different name or path:
-
-```rust
-use gpui_form::GpuiForm;
-use component_shape_gpui::GpuiComponentShape;
-
-#[derive(GpuiComponentShape)]
-#[gpui_component_shape(
-    value = Vec<String>,
-    field_suffix = "input"
-)]
-pub struct TagsInput {
-    state: gpui::Entity<TagsInputState>,
-}
-
-impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for TagsInput {
-    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
-}
-
-pub struct TagsInputState;
-
-#[derive(Clone, Debug, Default, GpuiForm)]
-pub struct PostEditor {
-    #[gpui_form(component(TagsInput))]
-    pub tags: Option<Vec<String>>,
-}
-```
-
-`new` accepts a constructor path or closure and is called with `(window, cx)`;
-if omitted, the derive calls `<State>::new(window, cx)`.
-Crates that use `#[derive(GpuiComponentShape)]`, `component_shape!`, or direct
-runtime value-binding impls should depend on `gpui-form-runtime` directly
-because those lower-level surfaces emit direct runtime paths.
-
-Or declare a reusable shape:
-
-```rust
-component_shape_gpui::component_shape! {
-    pub struct EmailInputShape {
-        state = gpui_component::input::InputState;
-        component = gpui_component::input::Input;
-        value = String;
-    }
-}
-
-impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape {
-    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
-}
-```
-
-`component_shape_gpui::component_shape!` uses semicolons between options.
-Use `value = ...` or `values(...)` to publish supported form-side value types
-when the shape is not value-bound.
-Use `mcp_input = string`, another common constructor shorthand, or any
-`McpInput` expression when a generic/custom shape knows its model-facing MCP
-input better than type inference can.
-Manual
-`GpuiComponentShapeFor<Value>` impls are rejected inside `component_shape!`.
-Implement `GpuiFormComponentShapePolicy` when the reusable shape should be used
-by `#[derive(GpuiForm)]`. Put `GpuiComponentValueBinding<T>` impls inside the
-macro block when the wrapper shape owns reusable synchronization; when no
-explicit `value = ...` or `values(...)` metadata is present, the nested binding
-impl publishes both compatible value metadata and shape-level value-binding
-metadata. `component = ...` must be a path-like type, `mcp_input = ...` accepts
-common constructor shorthands or a `McpInput` expression, and
-`field_suffix = "..."` must be a non-empty ASCII identifier suffix.
-
-Do not hand-write `GpuiComponentShape` for `#[gpui_form(component(...))]`
-fields. `#[derive(GpuiForm)]` requires the `DeclaredGpuiComponentShape` marker
-emitted by `#[derive(GpuiComponentShape)]` or `component_shape!`.
+For an app-owned `#[gpui_form(component(my::Shape))]`, switch to
+`use-gpui-form-component-shapes` for form compatibility, storage policy,
+configured builders, MCP metadata consumption, and prototyping integration.
+That companion skill routes generic shape declaration, suffix metadata, render
+contracts, and value binding to `use-component-shape` and
+`use-component-shape-gpui`. Keep those lower-level authoring details out of
+ordinary built-in form guidance.

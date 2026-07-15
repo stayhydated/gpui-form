@@ -23,9 +23,9 @@ Source structs and enums that demonstrate the supported derive surface:
 ## some-lib-forms
 
 Storybook-style GPUI app that renders generated forms around the example types.
-The checked-in `location_form` example shows the runtime-owned
-`Select` flow with `form_fields()` instead of manual child-select
-rebuilding.
+The checked-in `location_form` example shows the generated component-shape
+flow for a nested `InfiniteSelect` field. The component storybook demonstrates
+the lower-level snapshot `form_fields()` flow.
 
 Run it with:
 

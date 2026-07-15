@@ -159,7 +159,7 @@ impl<T: InfiniteSelectValue> InfiniteSelectItem<T> {
         }
     }
 
-    /// Creates an item using `variant_label()` as the title.
+    /// Creates an item using `variant_label(cx)` as the title.
     pub fn from_variant(value: T, cx: &impl std::borrow::Borrow<App>) -> Self {
         let title = value.variant_label(cx);
         Self { value, title }

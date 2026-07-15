@@ -24,8 +24,9 @@ It demonstrates:
 - structured validation issue objects in submit failures and edit-session
   snapshots
 - headless edit-session tools for a support ticket value holder:
-  `mcp_submit_support_ticket_edit_open`, `_edit_read`, `_edit_patch`,
-  `_edit_validate`, and `_edit_close`
+  `mcp_submit_support_ticket_edit_open`, `_edit_list`, `_edit_read`,
+  `_edit_patch`, `_edit_validate`, `_edit_close`, `_edit_close_all`, and the
+  handler-backed `_edit_submit`
 
 Run a tool list request:
 

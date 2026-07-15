@@ -4,11 +4,13 @@ Procedural macros behind the `gpui-form` ecosystem.
 
 Most users should depend on [`gpui-form`](../gpui-form/README.md) and derive
 from the facade crate. Use this crate directly when you want only the
-`GpuiForm` proc macro.
+`GpuiForm` proc macro or its MCP submit attribute.
 
 ## What This Crate Provides
 
 - `#[derive(GpuiForm)]`
+- `#[gpui_form_derive::mcp_submit]` with the `mcp` feature, re-exported as
+  `#[gpui_form::mcp_submit]` by the facade
 
 GPUI component shape derives and helper macros live in
 [`component-shape-gpui`](https://github.com/stayhydated/component-shape/tree/master/crates/component-shape-gpui).
@@ -63,6 +65,7 @@ Supported component forms:
 - `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))))]`
 
 The `gpui_form_component` shape examples require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -73,7 +76,7 @@ The `component(...)` value starts with a Rust shape path. Plain paths delegate
 runtime construction to `GpuiComponentShape::new`; configured expressions such
 as `Select::<_>.searchable(true)`,
 `Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
-`InfiniteSelect::<_>.searchable(true)` use the
+`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))` use the
 expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
 type must be declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
@@ -230,9 +233,10 @@ Behavior notes:
   form-side type
 - generated `FormFields` members and `FormComponents` constructors use the
   source field identifier. Derive-generated inventory records
-  shape-level `field_suffix = "..."` metadata when available, or a resolved
-  shape-name fallback, for prototyping-specific DOM IDs, event handlers, and
-  helper names. Shape-level suffixes must be non-empty identifier suffixes
+  shape-level `field_suffix = "..."` metadata when available, or the generic
+  `shape` suffix otherwise, for prototyping-specific DOM IDs, event
+  handlers, and helper names. Shape-level suffixes must be non-empty ASCII
+  identifier suffixes
 - field-level `#[koruma(...)]` attributes using Koruma's direct validator
   syntax are accepted by `GpuiForm` and copied onto the generated value holder,
   which allows validating form-side override types without deriving `Koruma` on
@@ -256,6 +260,8 @@ storage.
 ## Feature Flags
 
 - `inventory`: enables `GpuiFormShape` registration for `#[derive(GpuiForm)]`
+- `mcp`: enables MCP form expansion and `#[gpui_form_derive::mcp_submit]`;
+  implies `inventory`
 
 ## Most Users Should Use Instead
 

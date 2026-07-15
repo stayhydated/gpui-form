@@ -402,6 +402,10 @@ fn infinite_select_options_record_searchable_configuration() {
         InfiniteSelectComponent::<Country>::searchable(true),
         InfiniteSelectOptions::new(true, None)
     );
+    assert_ne!(
+        InfiniteSelectOptions::new(true, Some(3)),
+        InfiniteSelectOptions::new(true, Some(2))
+    );
 }
 
 #[cfg(feature = "component-shape")]
@@ -417,5 +421,6 @@ where
     let _ = InfiniteSelectComponent::<Country, D>::from(
         InfiniteSelectOptions::builder().searchable(true).build(),
     );
+    let _ = InfiniteSelectComponent::<Country, D>::from(InfiniteSelectOptions::new(true, Some(3)));
     let _ = InfiniteSelectComponent::<Country, D>::searchable(true);
 }

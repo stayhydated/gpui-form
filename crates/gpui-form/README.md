@@ -125,6 +125,7 @@ the component shape as a direct shape argument:
 - `#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]`
 - `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]`
+- `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))))]`
 
 The `gpui_form_component` shape entries above require that crate's
 `component-shape` feature. Infinite-select field types also need the
@@ -135,8 +136,9 @@ The `component(...)` value starts with a Rust shape path. Plain paths delegate
 runtime construction to `GpuiComponentShape::new`; configured expressions such
 as `Select::<_>.searchable(true)`,
 `Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
-`InfiniteSelect::<_>.searchable(true)` use the expression as a
-`GpuiComponentShapeBuilder` for the same base shape. The shape type must be
+`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))` use the
+expression as a `GpuiComponentShapeBuilder` for the same base shape. The shape
+type must be
 declared with `component_shape_gpui::component_shape!` or
 `#[derive(component_shape_gpui::GpuiComponentShape)]`; hand-written
 `GpuiComponentShape` impls are not accepted by `#[derive(GpuiForm)]`.
@@ -209,7 +211,7 @@ Common field-level helpers:
 - generated `FormFields` members and `FormComponents` constructors use the
   source field identifier, such as `birth_date`. Derive-generated inventory
   records shape-level `field_suffix = "..."` metadata when available, or
-  a resolved shape-name fallback, for prototyping-specific DOM IDs, event
+  the generic `shape` suffix otherwise, for prototyping-specific DOM IDs, event
   handlers, and helper names such as `on_birth_date_date_picker_event`.
   Shape-level suffixes must be non-empty ASCII identifier suffixes; direct
   `component_shape::ComponentPrototyping::field_suffix(...)` calls validate the
@@ -230,7 +232,10 @@ Use `gpui-form-component` with its `derive` feature or import
 Enable `gpui-form-component`'s `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
 Use `InfiniteSelect::<_>.searchable(true)` when the cascading selects should
-enable search; use plain `InfiniteSelect::<_>` for default options.
+enable search. Use
+`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))` to set
+search and a maximum depth together; use plain `InfiniteSelect::<_>` for
+default options.
 
 Common struct-level helpers:
 
@@ -384,6 +389,8 @@ Manual form tools can still be registered directly:
 `gpui_form::mcp::form::<ContactRequest>(&mut server).model(handler)?` or
 `.holder(handler)?` for `Result<T, E>` handlers and `handler` must return
 `Result`.
+Use `.model_async(handler)?` or `.holder_async(handler)?` for asynchronous
+handlers without editor tools.
 Use `.model_with_editor(handler)?`, `.model_async_with_editor(handler)?`,
 `.holder_with_editor(handler)?`, or `.holder_async_with_editor(handler)?` when
 the same form should publish submit, editable holder-session tools, and
@@ -571,7 +578,7 @@ Rendering code can stay on the runtime helper instead of combining select
 handles with separate label lookups:
 
 ```rs
-for field in location.read(cx).form_fields() {
+for field in location.read(cx).form_fields(cx) {
     let _ = field;
 }
 ```
@@ -579,11 +586,13 @@ for field in location.read(cx).form_fields() {
 The derive/runtime pair also exposes typed option labels, stable key paths, and
 typed path errors:
 
-- root option titles come from `variant_label()` instead of raw `variant_name()`
-- `#[fluent_kv(keys = ["label", "description"], keys_this)]` emits
-  `es-fluent` variant and type metadata for application-owned localizers;
-  generated runtime labels use plain fallback names because the runtime trait
-  contract is localizer-free
+- root option titles come from `variant_label(cx)` instead of raw
+  `variant_name()`
+- `#[fluent_kv(keys = ["label", "description"], keys_this)]` tells the derive
+  to resolve metadata emitted by `EsFluentLabel` / `EsFluentVariants` through
+  the installed `gpui-es-fluent` global; missing initialization or resources
+  are hard errors, while enums without Fluent metadata retain static variant
+  names
 - `#[tuple_enum(key = "...")]` overrides persisted keys when enum names should
   stay decoupled from storage
 - `selection_key_path()` / `build_from_key_path(...)` round-trip nested values
@@ -803,11 +812,11 @@ For manual native path selection, use `gpui_form_component::file_picker`. The
 runtime uses GPUI's
 `PathPromptOptions` from the pinned Zed git dependency and renders the control
 with `gpui-component` buttons, icons, sizing, and theme tokens.
-Built-in defaults are plain English fallback copy. When a form needs localized
-placeholder, prompt, or button text, render those messages through an
-application-owned `es-fluent` localizer and pass the resulting strings through
-`placeholder(...)`, `prompt(...)`, and `browse_label(...)`. The runtime ships
-Fluent resources for callers that localize those messages explicitly.
+Built-in placeholders, prompts, button text, errors, and selected-count text
+resolve typed Fluent messages through the installed `gpui-es-fluent` global.
+Missing localization initialization or resources are hard errors. Callers can
+still pass explicit custom text through `placeholder(...)`, `prompt(...)`, and
+`browse_label(...)`.
 
 ```rs
 use gpui_form_component::file_picker::{FilePicker, FilePickerEvent, FilePickerState};

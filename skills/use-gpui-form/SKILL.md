@@ -157,7 +157,8 @@ Common patterns:
   `ParsedInputConfig<T>` with the parser, formatter, placeholder,
   empty-as-clear policy, and optional widget validation.
 - For selects, derive `SelectItem` from `gpui-form-collection-derive` on enum-like values and `EnumIter` when the app needs iteration-backed choices. `SelectItem` uses variant-name fallback labels by default and only needs `Display` with `#[select_item(display)]`. Use `Select::<_>.searchable(true)` when the field should construct the built-in select with search enabled; use `Select::<_>.from(SelectArgs::builder().searchable(true).build())` when passing a completed Bon-built select configuration.
-- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly. Use `InfiniteSelect::<_>.searchable(true)` when the cascading selects should construct with search enabled.
+- For cascading or nested selects, derive `InfiniteSelect` from `gpui-form-component` with its `derive` feature and `PartialEq` on the enum tree. Enable `gpui-form-component`'s `component-shape` feature when using `#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]` directly. Use `InfiniteSelect::<_>.searchable(true)` when the cascading selects should construct with search enabled, or `InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))` to configure search and maximum depth together.
+- Infinite-select enums with `#[fluent_kv(...)]` metadata, direct runtime label/render helpers such as `variant_label(cx)` and `form_fields(cx)`, and built-in date/file runtime copy resolve through the installed `gpui-es-fluent` global. Missing initialization or resources are hard errors; infinite-select enums without Fluent metadata retain static variant names.
 - Component shapes own the default value-storage policy for non-optional fields. Use plain built-in default-synthesizing shapes such as `Input::<_>`, `Select::<_>`, `Combobox::<Item>`, `Checkbox`, `Switch`, `NumberInput::<_>`, `Slider`, `OtpInput::<_>`, `FilePicker`, and `InfiniteSelect::<_>`. Date picker and color picker shapes can back optional fields; for a required model field that should start empty, omit `default = ...` and use the fallible holder-to-model path. Required shape-backed values are visible to generated `validate()` as well as fallible holder-to-model conversion.
 - For Koruma validation, add `#[gpui_form(koruma)]` or `#[gpui_form(koruma(fluent))]` to the form struct and write field validators with Koruma's direct syntax, such as `#[koruma(NonEmptyValidation::<_>)]` or `#[koruma(RangeValidation::<_>.min(18).max(120))]`. Use Koruma target selectors such as `full(...)` when a validator must receive the full optional value.
 - Koruma-backed MCP forms publish validation rule metadata in generated field
@@ -196,14 +197,14 @@ Common patterns:
   optional fields clear to `None`, while non-optional `Vec<Item>` fields reset
   to their intent-scoped `default = ...` when present, otherwise
   `Vec::default()`.
-- For app-owned widgets, external component/state wrappers, custom search/depth options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
+- For app-owned widgets, external component/state wrappers, custom construction behavior beyond built-in shape builders/options, reusable `GpuiComponentShape` implementations, or shape-level value bindings, use `use-gpui-form-component-shapes`.
 - Collection and component-owned shapes publish prototyping suffixes such as `input`, `select`, `combobox`, `checkbox`, `switch`, `number_input`, `slider`, `color_picker`, `date_picker`, `date_range_picker`,
   `file_picker`, `infinite_select`, and `otp_input`. Generated `FormFields` members and
   `FormComponents` constructors use the source field name. Derive-emitted inventory uses
-  shape-level `field_suffix = "..."` metadata when available, or the shape type fallback otherwise,
+  shape-level `field_suffix = "..."` metadata when available, or the generic `shape` suffix otherwise,
   for prototyping-specific DOM IDs, event handlers, and helper names. Shape-level suffixes must be
-  non-empty ASCII identifier suffixes. Direct `ComponentPrototyping::field_suffix(...)` calls
-  validate the same suffix contract.
+  non-empty ASCII identifier suffixes. Use `use-gpui-form-component-shapes` for custom shape
+  integration and the component-shape skills for declaring or validating custom suffix metadata.
 - Inventory prototyping fails fast when a shape-backed field is missing render,
   value-binding, shape path, or default-storage metadata. Fix the component
   shape metadata instead of relying on placeholder generated UI.

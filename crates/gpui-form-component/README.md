@@ -61,7 +61,7 @@ Useful runtime types:
 - `InfiniteSelectLevel<D>`
 - `InfiniteSelectSnapshot<T, D>`
 - `InfiniteSelectOptions`
-- `to_select_items::<T>()`
+- `to_select_items::<T>(cx)`
 - `path_from_value(&value)`
 - `key_path_from_value(&value)`
 - `build_from_path`
@@ -93,7 +93,7 @@ cx.subscribe_in(
 Rendering code can iterate render-ready form fields directly:
 
 ```rs
-for field in location.read(cx).form_fields() {
+for field in location.read(cx).form_fields(cx) {
     let _ = field;
 }
 ```
@@ -115,9 +115,20 @@ pub location: Country,
 Enable this crate's `component-shape` feature when using
 `InfiniteSelect::<_>` directly as a form shape.
 
-If a form needs non-default infinite-select options such as search or a depth
-limit, declare a small `component_shape!` wrapper whose `new` function calls
-`InfiniteSelectState::new_with_options(...)`.
+Use the built-in options type when a form needs both search and a depth
+limit:
+
+```rs
+use gpui_form_component::infinite_select::{InfiniteSelect, InfiniteSelectOptions};
+
+#[gpui_form(component(InfiniteSelect::<_>.from(
+    InfiniteSelectOptions::new(true, Some(3))
+)))]
+pub location: Country,
+```
+
+Declare a custom shape wrapper only when construction behavior falls outside
+`InfiniteSelectOptions`.
 
 Derived `InfiniteSelect` enums expose:
 
@@ -315,13 +326,15 @@ paths and closures are called with
 `(window, cx)`; full constructor expressions such as
 `TagsState::with_label(window, cx, "tags")` are emitted as written. For
 `component_shape_gpui::component_shape!`, omitting `new` calls
-`<State>::new(window, cx)`. For `#[derive(GpuiComponentShape)]`, `state = ...` is
-required and omitting `new` also calls `<State>::new(window, cx)`.
+`<State>::new(window, cx)`. For `#[derive(GpuiComponentShape)]`, omitting
+`state = ...` infers a same-module state named after the component, such as
+`TagsInputState`; use an explicit state when its name or path differs. Omitting
+`new` also calls `<State>::new(window, cx)`.
 The `component = ...` option publishes a `RenderComponent` adapter for
 generated/prototyping render code, so prefer a type that remains valid from the
 consumer crate, such as `gpui_form_collection::checkbox::CheckboxField`.
 The value must be a path-like type. `field_suffix = "..."` must be a
-non-empty identifier suffix.
+non-empty ASCII identifier suffix.
 Use `value = ...` or `values(...)` to publish the form-side value types a
 shape supports; omit those metadata entries only when you provide manual
 `GpuiComponentShapeFor<Value>` impls. Do not mix value metadata with manual

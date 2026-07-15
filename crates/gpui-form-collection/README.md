@@ -91,8 +91,9 @@ checkbox, switch, number input, slider, and OTP input, publish direct `T`
 value-holder storage as their default value-storage policy. For combobox,
 empty selection is explicit: value binding emits `ValueChange::Clear`, so
 optional fields clear to `None` and non-optional `Vec<T>` fields reset to
-`Vec::default()`. They also publish prototyping field suffix metadata, so
+their intent-scoped `default = ...` when present, otherwise `Vec::default()`.
+They also publish prototyping field suffix metadata, so
 generated scaffolds use names such as `code_input`, `country_select`,
 `theme_combobox`, `notifications_switch`, `age_number_input`, `volume_slider`,
 `theme_color_picker`, `birth_date_picker`, `holiday_date_range_picker`, and
-`otp_code_otp_input` without relying on shape-name fallbacks.
+`otp_code_otp_input` rather than the generic `shape` suffix.
