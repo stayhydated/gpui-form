@@ -61,8 +61,7 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook" }
-gpui-storybook-core = { git = "https://github.com/stayhydated/gpui-storybook" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "d344c0cd876c314b31f3caec089c07ff03f2154c" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",

@@ -403,7 +403,7 @@ mod tests {
     #[gpui::test]
     fn infinite_select_runtime_uses_strict_fluent_labels(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
-            crate::i18n::init(cx, crate::i18n::Languages::default())
+            crate::i18n::apply_locale(crate::i18n::Languages::default(), cx)
                 .expect("story Fluent resources should initialize");
 
             let target = DeploymentTarget::default();

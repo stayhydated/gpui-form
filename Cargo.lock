@@ -1826,6 +1826,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16f5094c54661b38d03bd7e50df373292118db60b585c08a411c6d840017fe7d"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1843,7 +1852,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3317,7 +3326,6 @@ dependencies = [
 name = "gpui-form-component-story"
 version = "0.5.1"
 dependencies = [
- "anyhow",
  "es-fluent",
  "es-fluent-build",
  "es-fluent-lang",
@@ -3327,7 +3335,6 @@ dependencies = [
  "gpui-es-fluent",
  "gpui-form-component",
  "gpui-storybook",
- "gpui-storybook-core",
  "gpui_platform",
  "jiff",
  "strum 0.28.0",
@@ -3423,20 +3430,25 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#e76114da0aa7afd686c5ffef20b63585cb0b5721"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
 dependencies = [
  "gpui",
+ "gpui-es-fluent",
  "gpui-storybook-core",
  "gpui-storybook-macros",
+ "gpui-storybook-preferences",
  "gpui-storybook-toml",
+ "gpui_tokio",
  "inventory",
+ "thiserror 2.0.18",
  "tracing",
+ "unic-langid",
 ]
 
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#e76114da0aa7afd686c5ffef20b63585cb0b5721"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -3445,17 +3457,21 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#e76114da0aa7afd686c5ffef20b63585cb0b5721"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
 dependencies = [
  "anyhow",
  "derive_more",
  "es-fluent",
  "es-fluent-build",
+ "es-fluent-manager-core",
+ "es-fluent-manager-embedded",
  "gpui",
  "gpui-component",
  "gpui-component-assets",
  "gpui-es-fluent",
  "gpui-storybook-components",
+ "gpui-storybook-preferences",
+ "gpui_tokio",
  "gtk",
  "inventory",
  "rust-embed",
@@ -3469,7 +3485,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#e76114da0aa7afd686c5ffef20b63585cb0b5721"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3478,9 +3494,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpui-storybook-preferences"
+version = "0.5.0"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
+dependencies = [
+ "directories",
+ "fluent-langneg",
+ "schemars",
+ "serde",
+ "serde_json",
+ "strum 0.28.0",
+ "sys-locale",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "unic-langid",
+]
+
+[[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook#e76114da0aa7afd686c5ffef20b63585cb0b5721"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=d344c0cd876c314b31f3caec089c07ff03f2154c#d344c0cd876c314b31f3caec089c07ff03f2154c"
 dependencies = [
  "serde",
  "toml 1.1.2+spec-1.1.0",
@@ -3617,6 +3652,17 @@ dependencies = [
  "schemars",
  "serde",
  "smol_str",
+]
+
+[[package]]
+name = "gpui_tokio"
+version = "0.1.0"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#46e305cf83522decb6547a1604f71c39e18eec0c"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "gpui_util",
+ "tokio",
 ]
 
 [[package]]
@@ -4080,7 +4126,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.58.0",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -5455,7 +5501,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -7299,7 +7345,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7897,9 +7943,7 @@ dependencies = [
 name = "some-lib-forms"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "chrono",
- "es-fluent",
  "gpui",
  "gpui-component",
  "gpui-es-fluent",
@@ -7907,7 +7951,6 @@ dependencies = [
  "gpui-form-collection",
  "gpui-form-component",
  "gpui-storybook",
- "gpui-storybook-core",
  "gpui_platform",
  "rust_decimal",
  "some-lib",
@@ -8366,7 +8409,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.4",
  "windows-sys 0.52.0",
@@ -8967,9 +9010,9 @@ checksum = "b1d386ff53b415b7fe27b50bb44679e2cc4660272694b7b6f3326d8480823a94"
 
 [[package]]
 name = "unicode-width"
-version = "0.2.2"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
+checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
 
 [[package]]
 name = "unicode-xid"

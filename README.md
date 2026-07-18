@@ -923,3 +923,9 @@ workspace examples.
   inventory
 - `cargo run -p mcp-submit`: serve generated form submit/edit tools,
   resources, and prompt templates over stdio MCP
+
+The two Storybook binaries use distinct stable consumer namespaces for their
+local appearance, light/dark theme, language, and scrollbar preferences. Each
+launcher waits for GPUI Storybook preference readiness before opening its first
+window, and its locale adapter applies every resolved language to the owning
+Fluent resources.

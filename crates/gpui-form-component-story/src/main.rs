@@ -1,82 +1,107 @@
-use es_fluent::unic_langid::LanguageIdentifier;
-use gpui::BorrowAppContext as _;
-use gpui_form_component_story::i18n::Languages;
-use gpui_storybook::{Assets, Gallery};
-use gpui_storybook_core::{
-    language::Language,
-    locale::{LocaleManager, LocaleStore},
-};
+use gpui_form_component_story::i18n::{self, Languages};
+use gpui_storybook::{Assets, ConsumerId, Gallery, StorybookOptions};
 
 // Bring the library target into scope so story inventory registrations are linked.
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use gpui_form_component_story;
 
-struct ComponentLocaleStore<L: Language> {
-    inner: LocaleManager<L>,
-}
-
-impl<L: Language> ComponentLocaleStore<L> {
-    fn new() -> Self {
-        Self {
-            inner: LocaleManager::new(),
-        }
-    }
-}
-
-impl<L: Language> LocaleStore for ComponentLocaleStore<L> {
-    fn available_locales(
-        &self,
-        cx: &gpui::App,
-    ) -> anyhow::Result<Vec<(String, LanguageIdentifier)>> {
-        self.inner.available_locales(cx)
-    }
-
-    fn current_locale(&self, cx: &gpui::App) -> anyhow::Result<LanguageIdentifier> {
-        self.inner.current_locale(cx)
-    }
-
-    fn set_current_locale(
-        &self,
-        locale: LanguageIdentifier,
-        cx: &mut gpui::App,
-    ) -> anyhow::Result<()> {
-        self.inner.set_current_locale(locale.clone(), cx)?;
-        gpui_form_component_story::i18n::change_locale(cx, locale.clone()).map_err(|err| {
-            anyhow::anyhow!(
-                "failed to sync gpui-form-component-story locale to '{}': {err}",
-                locale
-            )
-        })?;
-        Ok(())
-    }
-}
+const CONSUMER_ID: &str = "gpui-form-component-story";
 
 fn main() {
     let app = gpui_platform::application().with_assets(Assets);
     let name_arg = std::env::args().nth(1);
 
     app.run(move |app_cx| {
-        gpui_component::init(app_cx);
-        gpui_form_component_story::i18n::init(app_cx, Languages::default())
-            .expect("failed to initialize component story i18n");
-        gpui_storybook::init(app_cx, Languages::default());
-        app_cx
-            .set_global(Box::new(ComponentLocaleStore::<Languages>::new()) as Box<dyn LocaleStore>);
-        app_cx
-            .update_global::<Box<dyn LocaleStore>, _>(|locale_store, cx| {
-                locale_store.set_current_locale(Languages::default().into(), cx)
-            })
-            .expect("default component story locale should be available");
-        app_cx.activate(true);
-
-        gpui_storybook::create_new_window(
-            &format!("{} - Stories", env!("CARGO_PKG_NAME")),
-            move |window, cx| {
-                let all_stories = gpui_storybook::generate_stories(window, cx);
-
-                Gallery::view(all_stories, name_arg.as_deref(), window, cx)
+        let consumer_id = match ConsumerId::new(CONSUMER_ID) {
+            Ok(consumer_id) => consumer_id,
+            Err(error) => {
+                eprintln!("invalid component Storybook consumer id: {error}");
+                app_cx.quit();
+                return;
             },
-            app_cx,
-        );
+        };
+        let options = StorybookOptions::new(consumer_id, Languages::default(), i18n::apply_locale);
+        let readiness = match gpui_storybook::init(app_cx, options) {
+            Ok(readiness) => readiness,
+            Err(error) => {
+                eprintln!("failed to initialize component Storybook: {error}");
+                app_cx.quit();
+                return;
+            },
+        };
+
+        app_cx
+            .spawn(async move |cx| {
+                let ready = readiness.await;
+                if !ready.diagnostics.is_empty() {
+                    eprintln!(
+                        "component Storybook preferences initialized with diagnostics: {:?}",
+                        ready.diagnostics
+                    );
+                }
+
+                cx.update(|app_cx| {
+                    app_cx.activate(true);
+                    gpui_storybook::create_new_window(
+                        &format!("{} - Stories", env!("CARGO_PKG_NAME")),
+                        move |window, cx| {
+                            let all_stories = gpui_storybook::generate_stories(window, cx);
+                            Gallery::view(all_stories, name_arg.as_deref(), window, cx)
+                        },
+                        app_cx,
+                    );
+                });
+            })
+            .detach();
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn startup_contract_uses_a_stable_consumer_and_typed_adapter() {
+        let consumer = ConsumerId::new(CONSUMER_ID).expect("checked consumer id");
+        let options =
+            StorybookOptions::new(consumer.clone(), Languages::default(), i18n::apply_locale);
+        assert_eq!(options.consumer_id, consumer);
+        assert_eq!(options.fallback_language, Languages::default());
+    }
+
+    #[gpui::test]
+    async fn startup_applies_preferences_before_the_first_window(cx: &mut gpui::TestAppContext) {
+        cx.executor().allow_parking();
+        let readiness = cx.update(|cx| {
+            let consumer = ConsumerId::new("gpui-form-component-story-test")
+                .expect("checked test consumer id");
+            gpui_storybook::init(
+                cx,
+                StorybookOptions::new(consumer, Languages::default(), i18n::apply_locale)
+                    .with_persistence(gpui_storybook::PersistenceMode::Disabled)
+                    .with_overrides(gpui_storybook::PreferenceOverrides {
+                        language: Some(Languages::FrFr),
+                        ..Default::default()
+                    }),
+            )
+            .expect("component Storybook should initialize")
+        });
+        let ready = readiness.await;
+        assert_eq!(
+            ready.persistence_status,
+            gpui_storybook::PersistenceStatus::Ready
+        );
+        assert!(ready.diagnostics.is_empty());
+
+        let (language, source) = cx.update(|cx| {
+            let state = gpui_storybook::try_preference_state(cx)
+                .expect("preference state should be installed after initialization");
+            (
+                state.resolved.language.language.to_string(),
+                state.resolved.language.source,
+            )
+        });
+        assert_eq!(language, "fr-FR");
+        assert_eq!(source, gpui_storybook::LanguageSource::Override);
+    }
 }
