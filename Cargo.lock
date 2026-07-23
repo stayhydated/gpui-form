@@ -3488,7 +3488,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "gpui",
  "gpui-es-fluent",
@@ -3507,7 +3507,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -3516,7 +3516,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -3544,7 +3544,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3555,7 +3555,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-preferences"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "fluent-langneg",
  "schemars",
@@ -3573,7 +3573,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=b594c37c8b3cb39f79114348b0fb941fda25cee9#b594c37c8b3cb39f79114348b0fb941fda25cee9"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=450c3b13d328c94a89a768a59c7a5fbd62ecc60f#450c3b13d328c94a89a768a59c7a5fbd62ecc60f"
 dependencies = [
  "serde",
  "toml 1.1.3+spec-1.1.0",
