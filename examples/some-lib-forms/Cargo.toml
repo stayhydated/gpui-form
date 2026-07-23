@@ -8,9 +8,7 @@ publish = false
 
 
 [dependencies]
-anyhow = { workspace = true }
 chrono = { workspace = true }
-es-fluent = { workspace = true }
 gpui = { workspace = true }
 gpui-component = { workspace = true }
 gpui-es-fluent = { workspace = true }
@@ -18,10 +16,12 @@ gpui-form = { workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
-gpui-storybook-core = { workspace = true }
 gpui_platform = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
+
+[dev-dependencies]
+gpui = { features = [ "test-support" ], workspace = true }
 
 [lints]
 workspace = true

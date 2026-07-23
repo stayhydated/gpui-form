@@ -12,7 +12,6 @@ repository.workspace = true
 readme = "README.md"
 
 [dependencies]
-anyhow = { workspace = true }
 es-fluent = { workspace = true }
 es-fluent-lang = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
@@ -21,7 +20,6 @@ gpui-component = { workspace = true }
 gpui-es-fluent = { workspace = true }
 gpui-form-component = { features = [ "derive" ], workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
-gpui-storybook-core = { workspace = true }
 gpui_platform = { workspace = true }
 jiff = { workspace = true }
 strum = { workspace = true }

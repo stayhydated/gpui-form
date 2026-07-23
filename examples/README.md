@@ -25,7 +25,11 @@ Source structs and enums that demonstrate the supported derive surface:
 Storybook-style GPUI app that renders generated forms around the example types.
 The checked-in `location_form` example shows the generated component-shape
 flow for a nested `InfiniteSelect` field. The component storybook demonstrates
-the lower-level snapshot `form_fields()` flow.
+the lower-level snapshot `form_fields()` flow. The launcher stores preferences
+under the stable `gpui-form-some-lib-forms` consumer namespace and waits for
+the saved appearance, theme, language, and scrollbar intent to resolve before
+opening the gallery. Resolved language changes are applied through
+`some_lib::i18n::apply_locale`.
 
 Run it with:
 
@@ -36,7 +40,9 @@ cargo run -p some-lib-forms
 ## gpui-form-component-story
 
 Storybook-style GPUI app for the reusable runtime components themselves:
-infinite select, date picker, and file picker.
+infinite select, date picker, and file picker. Its preferences use the distinct
+`gpui-form-component-story` namespace, and the launcher applies the resolved
+locale before creating the first window.
 
 Run it with:
 
