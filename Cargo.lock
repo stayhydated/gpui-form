@@ -691,7 +691,7 @@ dependencies = [
  "bitflags 2.13.1",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1309,7 +1309,7 @@ checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 [[package]]
 name = "component-shape"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "derive_more",
  "heck 0.5.0",
@@ -1321,7 +1321,7 @@ dependencies = [
 [[package]]
 name = "component-shape-codegen"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "attribute-dsl",
  "component-shape",
@@ -1333,7 +1333,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1343,7 +1343,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -1356,12 +1356,12 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "chrono",
  "component-shape",
  "component-shape-mcp-macros",
- "rmcp",
+ "rmcp 3.1.0",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -1373,7 +1373,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp-macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/component-shape#05c8a0b14593844d84239532273f4df8eae3e9f0"
+source = "git+https://github.com/stayhydated/component-shape#f26be759a312beec8be85d01167cbca456555885"
 dependencies = [
  "proc-macro-crate 3.5.0",
  "proc-macro2",
@@ -2113,7 +2113,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3441,7 +3441,7 @@ dependencies = [
  "component-shape-mcp",
  "gpui-form-schema",
  "inventory",
- "rmcp",
+ "rmcp 2.2.0",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -4197,7 +4197,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.58.0",
 ]
 
 [[package]]
@@ -6850,7 +6850,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7312,6 +7312,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmcp"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad26b216c966e987e80e86daf784a455c039c43d98575ceed57b8faa259e5695"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "pastey 0.2.3",
+ "pin-project-lite",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "rmcp-macros"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7486,7 +7507,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7499,7 +7520,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -8581,7 +8602,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -9863,7 +9884,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
