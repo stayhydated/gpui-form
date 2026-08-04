@@ -26,10 +26,10 @@ pub use component_shape_mcp::{
     McpRange, McpRangeBoundKind, McpResourceContents, McpResourceResult, McpRole, McpSchema,
     McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder, McpToolAnnotations,
     McpToolArguments, McpToolCall, McpToolError, McpToolIcon, McpToolInput, McpToolMetadata,
-    McpToolTaskSupport, McpToolValue, McpTypedTool, McpValidationIssue, McpValidationParam,
-    McpValidationRule, McpValidationScope, McpValidationTarget, McpValidationTypeArgMode,
-    PromptDefinition, ResourceDefinition, ResourceTemplateDefinition, ServeStdioResult,
-    ToolCallResult, ToolDefinition, object_schema, serde, serde_json, validation_issues_error,
+    McpToolValue, McpTypedTool, McpValidationIssue, McpValidationParam, McpValidationRule,
+    McpValidationScope, McpValidationTarget, McpValidationTypeArgMode, PromptDefinition,
+    ResourceDefinition, ResourceTemplateDefinition, ServeStdioResult, ToolCallResult,
+    ToolDefinition, object_schema, serde, serde_json, validation_issues_error,
 };
 pub use rmcp;
 
@@ -538,14 +538,9 @@ impl McpFormDescriptor {
         self.tool_metadata.tool_icons()
     }
 
-    pub fn tool_execution(self) -> Option<component_shape_mcp::McpToolExecution> {
-        self.tool_metadata.tool_execution()
-    }
-
     fn apply_tool_metadata(self, tool: &mut ToolDefinition) {
         tool.annotations = self.tool_annotations();
         tool.icons = self.tool_icons();
-        tool.execution = self.tool_execution();
     }
 
     fn tool_definition(self) -> Result<ToolDefinition, McpToolError> {

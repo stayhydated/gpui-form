@@ -1,51 +1,20 @@
 # gpui-form-core
 
-UI-neutral helper logic for the `gpui-form` ecosystem.
+UI-neutral contracts and validation helpers shared by `gpui-form`.
 
-Most application code should use [`gpui-form`](../gpui-form/README.md) instead.
-Reach for this crate directly only when you want the helper logic without the
-GPUI runtime layer.
+Application crates normally use the
+[`gpui-form` facade](../gpui-form/README.md). Depend on this crate directly when
+you need these helpers without the GPUI runtime:
 
-## What It Provides
+- `FormField`, implemented by generated typed field enums
+- `ComponentSuffix` and suffix validation
+- signed and unsigned numeric text validation
 
-Today this crate is intentionally small and focused:
-
-- `numeric::validate_signed_numeric`
-- `numeric::validate_unsigned_numeric`
-- `component_suffix::{ComponentSuffix, validate_component_suffix}`
-- `FormField`, implemented by the typed component-field enums emitted by
-  `#[derive(GpuiForm)]`
-
-These helpers are available for custom numeric input wrappers that want shared
-text-entry validation and for integration tooling that wants the same component
-suffix validation rules without depending on GPUI runtime crates.
-
-## Example
-
-```rs
-use gpui_form_core::numeric::{
-    validate_signed_numeric,
-    validate_unsigned_numeric,
-};
+```rust
+use gpui_form_core::numeric::validate_signed_numeric;
 
 assert!(validate_signed_numeric::<i32>("-42", true));
-assert!(validate_unsigned_numeric::<u32>("42", true));
-
-assert!(!validate_signed_numeric::<i32>("01", true));
-assert!(!validate_unsigned_numeric::<u32>("-1", true));
 ```
 
-## When To Use This Crate Directly
-
-- You are building your own numeric input wrapper and want the same text-entry
-  rules as `gpui-form`
-- You want the validation helpers without pulling in `gpui` or
-  `gpui-component`
-
-## Most Users Should Use Instead
-
-- [`gpui-form`](../gpui-form/README.md) for normal application development
-- [`gpui-form-runtime`](../gpui-form-runtime/README.md) when you need the
-  component shape runtime contracts
-- [`gpui-form-component`](../gpui-form-component/README.md) when you need the
-  GPUI runtime helpers
+See the [API documentation](https://docs.rs/gpui-form-core/) for the complete
+surface.

@@ -1,0 +1,27 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: stayhydated/shared/.github/workflows/deploy-pages.yml@master
+    with:
+      build-command: |
+        env -u RUSTC_WRAPPER cargo xtask build gpui-demo
+        cargo xtask build book
+        cargo xtask build llms-txt
+        cargo xtask build web
+      install-trunk: true
+      install-nightly: true

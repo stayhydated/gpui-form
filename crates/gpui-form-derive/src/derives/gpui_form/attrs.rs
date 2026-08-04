@@ -56,7 +56,6 @@ pub struct McpToolOptions {
     pub idempotent: Option<bool>,
     pub open_world: Option<bool>,
     pub icons: Vec<McpIconOptions>,
-    pub task_support: Option<McpTaskSupportOption>,
     pub context_submit: Option<McpContextSubmitOptions>,
 }
 
@@ -73,14 +72,6 @@ pub struct McpIconOptions {
 pub enum McpIconThemeOption {
     Light,
     Dark,
-}
-
-#[derive(Clone, Copy, Debug, EnumString, Eq, PartialEq)]
-#[strum(serialize_all = "snake_case")]
-pub enum McpTaskSupportOption {
-    Forbidden,
-    Optional,
-    Required,
 }
 
 #[derive(Clone, Debug)]
@@ -185,14 +176,6 @@ fn parse_mcp_tool_options(items: &[darling::ast::NestedMeta]) -> darling::Result
                     "open_world",
                     &mut options.open_world,
                     bool::from_meta(meta)?,
-                    name_value.path.to_token_stream(),
-                )?;
-            },
-            Meta::NameValue(name_value) if name_value.path.is_ident("task_support") => {
-                assign_once(
-                    "task_support",
-                    &mut options.task_support,
-                    parse_mcp_task_support(String::from_meta(meta)?)?,
                     name_value.path.to_token_stream(),
                 )?;
             },
@@ -444,12 +427,6 @@ fn parse_mcp_icon_theme(value: String) -> darling::Result<McpIconThemeOption> {
     value
         .parse()
         .map_err(|_| DarlingError::custom("`theme` must be either \"light\" or \"dark\""))
-}
-
-fn parse_mcp_task_support(value: String) -> darling::Result<McpTaskSupportOption> {
-    value.parse().map_err(|_| {
-        DarlingError::custom("`task_support` must be \"forbidden\", \"optional\", or \"required\"")
-    })
 }
 
 fn assign_once<T>(
@@ -1062,7 +1039,6 @@ mod tests {
             parse_quote!(destructive = true),
             parse_quote!(idempotent = false),
             parse_quote!(open_world = true),
-            parse_quote!(task_support = "optional"),
             parse_quote!(icon(
                 src = "https://example.com/contact.png",
                 mime_type = "image/png",
@@ -1087,10 +1063,6 @@ mod tests {
         assert_eq!(parsed_list.destructive, Some(true));
         assert_eq!(parsed_list.idempotent, Some(false));
         assert_eq!(parsed_list.open_world, Some(true));
-        assert_eq!(
-            parsed_list.task_support,
-            Some(McpTaskSupportOption::Optional)
-        );
         assert_eq!(parsed_list.icons.len(), 1);
         assert_eq!(parsed_list.icons[0].src, "https://example.com/contact.png");
         assert_eq!(parsed_list.icons[0].mime_type.as_deref(), Some("image/png"));
@@ -1204,16 +1176,7 @@ mod tests {
     }
 
     #[test]
-    fn mcp_tool_options_rejects_invalid_icon_and_task_support() {
-        let error = McpToolOptions::from_list(&[parse_quote!(task_support = "sometimes")])
-            .expect_err("invalid task support should fail");
-        assert!(
-            error
-                .to_string()
-                .contains("task_support` must be \"forbidden\", \"optional\", or \"required\""),
-            "unexpected error: {error}"
-        );
-
+    fn mcp_tool_options_rejects_invalid_icons() {
         let error = McpToolOptions::from_list(&[parse_quote!(icon(mime_type = "image/png"))])
             .expect_err("missing icon src should fail");
         assert!(
@@ -1322,7 +1285,6 @@ mod tests {
             parse_quote!(submit = "crate::submit_request"),
             parse_quote!(map_response = "crate::map_response"),
             parse_quote!(icon(src = "icon.svg", sizes = "32x32", theme = "dark")),
-            parse_quote!(task_support = "required"),
         ])
         .expect("string path syntax should parse");
 
@@ -1350,13 +1312,11 @@ mod tests {
             "crate :: map_response"
         );
         assert_eq!(parsed.icons[0].theme, Some(McpIconThemeOption::Dark));
-        assert_eq!(parsed.task_support, Some(McpTaskSupportOption::Required));
 
         let submitter = McpToolOptions::from_list(&[
             parse_quote!(submitter = "crate::Submitter"),
             parse_quote!(response = "crate::SubmitResponse"),
             parse_quote!(map_response = "crate::map_response"),
-            parse_quote!(task_support = "forbidden"),
         ])
         .expect("string submitter syntax should parse");
         let McpContextSubmitOptions::Submitter(submitter) = submitter.context_submit.unwrap()

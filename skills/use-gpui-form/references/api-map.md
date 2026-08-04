@@ -1,518 +1,251 @@
-# gpui-form User API Map
+# gpui-form API map
 
 Use this reference for application code that consumes `gpui-form`.
 
 ## Contents
 
-- [Install Shape](#install-shape)
-- [Imports](#imports)
-- [Supported Component Syntax](#supported-component-syntax)
-- [Component Selection](#component-selection)
-- [MCP Submit Pattern](#mcp-submit-pattern)
-- [Generated Names](#generated-names)
-- [Select Pattern](#select-pattern)
-- [Infinite Select Pattern](#infinite-select-pattern)
-- [Type Conversion Pattern](#type-conversion-pattern)
-- [Custom Shape Routing](#custom-shape-routing)
+- [Dependencies](#dependencies)
+- [Field and struct syntax](#field-and-struct-syntax)
+- [Generated state](#generated-state)
+- [Shape selection](#shape-selection)
+- [Validation and conversion](#validation-and-conversion)
+- [Inventory prototyping](#inventory-prototyping)
+- [MCP forms](#mcp-forms)
+- [Custom shape routing](#custom-shape-routing)
 
-## Install Shape
+## Dependencies
 
-Use `gpui-form` as the public entry point. Match `gpui` and `gpui-component`
-versions to the version guidance for the `gpui-form` version in use.
+Keep `gpui` and `gpui-component` aligned with the repository guidance:
 
 ```toml
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-form = "*"
-gpui-form-component = { version = "*", features = ["component-shape", "derive"] }
-gpui-form-collection = "*"
-gpui-form-collection-derive = "*"
-
-# Optional experimental MCP submit integration:
-# gpui-form = { version = "*", features = ["mcp"] }
-
-# Headless MCP-only forms can skip the GPUI runtime re-export:
-# gpui-form = { version = "*", default-features = false, features = ["derive", "mcp"] }
+gpui-form = "0.5"
+gpui-form-collection = "0.5"
+gpui-form-collection-derive = "0.5"
+gpui-form-component = { version = "0.5", features = ["component-shape", "derive"] }
 ```
 
-## Imports
+Select only the optional crates the form uses.
 
-Use the facade for `GpuiForm` and import component derives explicitly:
+| Need | `gpui-form` configuration |
+|---|---|
+| Normal GPUI form | Default features |
+| Inventory metadata | `features = ["inventory"]` |
+| MCP in a GPUI app | `features = ["mcp"]` |
+| Headless MCP form | `default-features = false, features = ["derive", "mcp"]` |
+| MCP Chrono or decimal schemas | Add `chrono` or `rust_decimal` |
 
-```rust
-use gpui_form::GpuiForm;
-use gpui_form_collection_derive::SelectItem;
-use gpui_form_component::InfiniteSelect;
-use gpui_form_component::infinite_select::InfiniteSelectOptions;
-```
+## Field and struct syntax
 
-Useful runtime/helper paths:
-
-- `gpui_form::runtime::shape`
-- `gpui_form::mcp` when the `gpui-form` `mcp` feature is enabled
-- `gpui_form_component::date_picker`
-- `gpui_form_component::file_picker`
-- `gpui_form_component::infinite_select`
-- `gpui_form::core::numeric`
-
-Generated `GpuiForm` component fields use `gpui_form::runtime::shape` through
-the facade when the `runtime` feature is enabled.
-
-## Supported Component Syntax
+Every non-empty form field has exactly one intent:
 
 ```rust
-#[gpui_form(component(gpui_form_collection::input::Input::<_>))]
-#[gpui_form(component(gpui_form_collection::select::Select::<_>))]
-#[gpui_form(component(gpui_form_collection::select::Select::<_>.searchable(true)))]
-#[gpui_form(component(gpui_form_collection::select::Select::<_>.from(
-    SelectArgs::builder().searchable(true).build()
-)))]
-#[gpui_form(component(gpui_form_collection::combobox::Combobox::<Item>))]
-#[gpui_form(component(gpui_form_collection::number_input::NumberInput::<_>))]
-#[gpui_form(component(gpui_form_collection::slider::Slider))]
-#[gpui_form(component(gpui_form_collection::color_picker::ColorPicker))]
-#[gpui_form(component(gpui_form_collection::date_picker::DatePicker))]
-#[gpui_form(component(gpui_form_collection::date_picker::DateRangePicker))]
-#[gpui_form(component(gpui_form_collection::otp_input::OtpInput::<_>))]
-#[gpui_form(component(gpui_form_component::date_picker::DatePicker))]
-#[gpui_form(component(gpui_form_component::date_picker::DateRangePicker))]
-#[gpui_form(component(gpui_form_component::file_picker::FilePicker))]
-#[gpui_form(component(gpui_form_collection::checkbox::Checkbox))]
-#[gpui_form(component(gpui_form_collection::switch::Switch))]
-#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
-#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.searchable(true)))]
-#[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>.from(
-    InfiniteSelectOptions::new(true, Some(3))
-)))]
 #[gpui_form(component(my::Shape))]
-```
-
-Use `use-gpui-form-component-shapes` when `my::Shape` is app-owned. That skill
-covers form-side compatibility and storage policy and routes generic shape
-declaration to the component-shape skills.
-
-Common field attributes:
-
-```rust
-#[gpui_form(component(<shape>))]
+#[gpui_form(component(my::Shape, default = <expr>))]
 #[gpui_form(hidden)]
-#[gpui_form(component(<shape>, default = <expr>))]
 #[gpui_form(hidden(default = <expr>))]
-#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
-#[gpui_form(component(<shape>, value(type = <form_type>, from_source = <expr>, try_into_source = <expr>)))]
-#[gpui_form(hidden(value(type = <form_type>, from_source = <expr>, into_source = <expr>)))]
-#[gpui_form(hidden(value(koruma_newtype)))]
 #[gpui_form(skip)]
 ```
 
-Configured shape expressions, such as `Select::<_>.searchable(true)`,
-`Select::<_>.from(SelectArgs::builder().searchable(true).build())`, or
-`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))`, may be
-used anywhere `<shape>` appears when the expression returns a
-`GpuiComponentShapeBuilder` for the same base shape.
+Defaults and conversions are intent-scoped:
 
-Every field must choose exactly one intent: component, `hidden`, or `skip`.
-Use `hidden` for value-holder-only fields. `skip` cannot be combined with
-component or hidden intent on the same field. `value(type = ...)` expects the
-form-side base value type, so use `type = T`, not `type = Option<T>`, even when
-the source field is optional. Use `try_into_source = ...` when the reverse
-conversion returns `Result<Source, Error>` with `Error: Debug`, and use
-`value(koruma_newtype)` for
-struct-level `#[koruma(newtype)]` fields that should edit and validate their
-inner value.
+```rust
+#[gpui_form(component(
+    my::Shape,
+    value(
+        type = FormValue,
+        from_source = to_form,
+        try_into_source = to_model,
+    ),
+    default = source_default()
+))]
+```
 
-Common struct attributes:
+Use `into_source` instead of `try_into_source` when reverse conversion is
+infallible. Use `value(koruma_newtype)` for the inner value of a struct-level
+`#[koruma(newtype)]`. The `type` option names the base form-side type; source
+optionality determines optional holder storage.
+
+Field metadata for MCP uses separate `label`, `description`, and repeatable
+`example` attributes. Descriptions fall back to field rustdoc.
+
+Common struct attributes are:
 
 ```rust
 #[gpui_form(empty)]
 #[gpui_form(koruma)]
 #[gpui_form(koruma(fluent))]
+#[gpui_form(no_inventory)]
+#[gpui_form(mcp)]
 ```
 
-## Component Selection
+`no_inventory` is for generic forms or deliberate inventory exclusion. It is
+incompatible with MCP form registration.
 
-- Use `gpui_form_collection::input::Input::<_>` for text-like and
-  `FromStr`-parsable values.
-- Use `gpui_form_collection::input::ParsedInput::<_, Config>` when a text-like
-  value needs an application-owned parser, formatter, placeholder,
-  empty-as-clear policy, or widget-level validation.
-- Use `gpui_form_collection::checkbox::Checkbox` or
-  `gpui_form_collection::switch::Switch` for `bool` fields.
-- Use `gpui_form_collection::select::Select::<_>` for a single enum-like
-  choice; derive `SelectItem`. Use a configured shape expression such as
-  `Select::<_>.searchable(true)` when the field needs custom construction.
-- Use `gpui_form_collection::combobox::Combobox::<Item>` for multi-value enum-like
-  choices from `gpui_component::combobox::Combobox`. Empty selection is
-  `ValueChange::Clear`; optional fields clear to `None`, and non-optional
-  `Vec<Item>` fields reset to their intent-scoped `default = ...`
-  when present, otherwise `Vec::default()`.
-- Use `gpui_form_collection::number_input::NumberInput::<_>` for numeric text
-  input with step buttons.
-- Use `gpui_form_collection::slider::Slider` for continuous numeric values.
-- Use `gpui_form_collection::color_picker::ColorPicker` for color selection.
-- Use `gpui_form_collection::date_picker::DatePicker` for single-date editing.
-- Use `gpui_form_collection::date_picker::DateRangePicker` for date-range editing.
-- Use `gpui_form_component::date_picker::DatePicker` or
-  `gpui_form_component::date_picker::DateRangePicker` when the localized
-  runtime date picker should be used directly as the form shape; enable
-  `gpui-form-component`'s `component-shape` feature.
-- Use `gpui_form_component::file_picker::FilePicker` for native file/directory
-  selection; enable `gpui-form-component`'s `component-shape` feature.
-- Use `gpui_form_collection::otp_input::OtpInput::<_>` for OTP inputs.
-- Use `gpui_form_component::infinite_select::InfiniteSelect::<_>` for
-  nested/cascading enum trees; derive `InfiniteSelect`. Use
-  `InfiniteSelect::<_>.searchable(true)` when search should be enabled.
-  Use `InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))`
-  to configure search and maximum depth together. Use a custom shape wrapper
-  only when construction behavior falls outside the built-in options.
-- Define a custom component shape around `gpui_form_component::date_picker` or
-  `gpui_form_component::file_picker` only when the ready-made shape needs
-  non-default runtime construction or rendering metadata.
-- Use `#[gpui_form(component(my::Shape))]` when the app owns the state/widget
-  contract, and follow `use-gpui-form-component-shapes` for that integration.
-- Treat `component(...)` as the only component field intent in
-  `#[gpui_form(...)]`; runtime construction uses
-  `GpuiComponentShape::new`.
-- Component shapes own the value-storage policy for non-optional fields.
-  Existing built-in shapes already publish their policy. For an app-owned
-  shape, follow `use-gpui-form-component-shapes` to choose required or direct
-  holder storage. Required shape-backed values are reported by generated
-  `validate()` and by fallible holder-to-model conversion.
-- Holders for forms with skipped source fields expose
-  `holder.present_fields()` as a typed snapshot for debug/preview formatting;
-  JSON or text formatting belongs in the app or generator layer.
+## Generated state
 
-## MCP Submit Pattern
+For `UserProfile`, the derive emits:
 
-Enable the facade `mcp` feature only when forms should be exposed through MCP
-tools. MCP calls use structured JSON arguments; they do not use `clap`, shell
-argument parsing, or GPUI button callbacks. Exposed forms must opt in with
-`#[gpui_form(mcp)]`, must not use `#[gpui_form(no_inventory)]`, and must not be
-generic.
+| Type | Role |
+|---|---|
+| `UserProfileFormField` | Typed identity for component-backed source fields |
+| `UserProfileFormFields` | GPUI component entities |
+| `UserProfileFormComponents` | Entity-state constructors |
+| `UserProfileFormValueHolder` | Editable values, defaults, validation, and conversion |
+
+A hand-wired view:
+
+1. Constructs a holder.
+2. Creates each component entity with `*FormComponents`.
+3. Stores the entities in `*FormFields`.
+4. Retains subscriptions on the owning GPUI entity.
+5. Seeds state with `seed_value_binding_state`.
+6. Applies events with `value_change`.
+7. Renders the shape's declared render component.
+8. Validates and converts before submission.
+
+Generated field and constructor names use the source field identifier.
+Prototyping-only helper names use the shape's field suffix.
+
+## Shape selection
+
+| Value or behavior | Shape |
+|---|---|
+| `FromStr + ToString` text-like value | `gpui_form_collection::input::Input::<_>` |
+| App-defined text parsing/formatting | `input::ParsedInput::<_, Config>` |
+| One enum-like choice | `select::Select::<_>` |
+| `Vec<Item>` choices | `combobox::Combobox::<Item>` |
+| `bool` | `checkbox::Checkbox` or `switch::Switch` |
+| Numeric text with step controls | `number_input::NumberInput::<_>` |
+| `f32` or `SliderValue` | `slider::Slider` |
+| `gpui::Hsla` | `color_picker::ColorPicker` |
+| `chrono::NaiveDate` or date pair | Collection `DatePicker` or `DateRangePicker` |
+| OTP value | `otp_input::OtpInput::<_>` |
+| Localized date or date pair | Component `DatePicker` or `DateRangePicker` |
+| `Vec<PathBuf>` | `gpui_form_component::file_picker::FilePicker` |
+| Cascading enum tree | `gpui_form_component::infinite_select::InfiniteSelect::<_>` |
+
+Select values normally derive `SelectItem` and `EnumIter`. Cascading enum trees
+derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static`;
+nested payloads also implement `Default`.
+
+Configure one field through a shape builder:
 
 ```rust
-use gpui_form::GpuiForm;
-use serde::{Deserialize, Serialize};
+#[gpui_form(component(
+    gpui_form_collection::select::Select::<_>.searchable(true)
+))]
+```
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
-#[gpui_form(mcp)]
+Use `Shape.from(options)` for a completed options value. Use
+`use-gpui-form-component-shapes` for an app-owned shape or construction
+behavior outside a built-in builder.
+
+## Validation and conversion
+
+Add `#[gpui_form(koruma)]` and place Koruma validators on source fields. The
+derive copies them to the generated holder, so call `holder.validate()` before
+conversion. Use `koruma(fluent)` when the application installs the matching
+Fluent validation resources.
+
+Choose conversion from the form contract:
+
+| Contract | Conversion |
+|---|---|
+| Statically infallible, no skipped fields | `holder.into_original()` |
+| Missing required values or fallible reverse conversion | `holder.try_into_original()` |
+| Skipped source fields | `holder.into_original(skipped_value, ...)` |
+
+Use `holder.present_fields()` for app-owned debug or preview formatting when
+skipped fields prevent automatic reconstruction.
+
+## Inventory prototyping
+
+Enable `inventory` and link the crate that owns the concrete forms into the
+generator. Iterate:
+
+```rust,ignore
+use gpui_form::schema::registry::{GpuiFormShape, inventory};
+
+for shape in inventory::iter::<GpuiFormShape>() {
+    gpui_form_prototyping_core::FormShapeAdapter::new(shape)
+        .generate_file(&layout)?;
+}
+```
+
+Implement `FormLayout` for the target file. Use `parts()` for custom assembly
+or path remapping when output belongs to another crate. Format written Rust
+with `rustfmt`. Missing render, value-binding, path, or storage metadata is a
+shape contract error; fix the shape rather than emitting placeholder UI.
+
+Generic form structs use `#[gpui_form(no_inventory)]`.
+
+## MCP forms
+
+Enable `mcp`, derive Serde support for exposed values, and opt in a concrete
+form:
+
+```rust
+#[derive(Clone, Debug, serde::Deserialize, gpui_form::GpuiForm, serde::Serialize)]
+#[gpui_form(mcp(name = "submit_contact"))]
 pub struct ContactRequest {
     #[gpui_form(hidden)]
     pub email: String,
 }
 
-#[derive(Debug, gpui_form::mcp::McpJsonSchema, Serialize)]
-pub struct ContactSubmitResponse {
-    pub email: String,
-}
-
 #[gpui_form::mcp_submit]
-async fn submit_contact(request: ContactRequest) -> Result<ContactSubmitResponse, String> {
-    Ok(ContactSubmitResponse {
-        email: request.email,
-    })
-}
-
-fn main() -> gpui_form::mcp::ServeStdioResult {
-    gpui_form::mcp::serve_stdio_blocking()
+async fn submit_contact(
+    request: ContactRequest,
+) -> Result<ContactResponse, String> {
+    // Application-owned submission.
 }
 ```
 
-For skipped-field forms that need application-owned context, use the generated
-`*FormValueHolder` as the first parameter; `#[gpui_form::mcp_submit]` infers
-holder submission from that parameter type. Handlers must be synchronous or
-async and return `Result<T, E>`, where `T: serde::Serialize +
-gpui_form::mcp::McpJsonSchema`. Prefer a typed response struct or newtype that
-derives `gpui_form::mcp::McpJsonSchema` for precise output schemas, or return
-`gpui_form::mcp::McpObject` for dynamic object-shaped JSON.
-For submit flows with shared runtime state, put `context(MyContext)` in the
-form's struct-level `gpui_form(mcp(...))` options, optionally add
-`response(MyResponse)` for a precise output schema, and either implement
-`gpui_form::mcp::McpContextSubmit<MyContext>` for the source model or add
-`submit(path::to::async_fn)` so the derive emits that impl. Generated submit
-impls can also use `map_response(path::to::fn)` to convert a raw handler
-response into the published response type, and `error(MyError)` to override
-the default `String` error type. Use `submitter(path::to::Trait)` instead
-when a visible trait supplies associated `Context`, `Response`, and `Error`
-types plus `submit_with_context(self, context)`. Pair submitters with
-`map_response(path::to::fn)` when the submitter returns a raw application
-response that should be converted into the published MCP response. Then call
-`gpui_form::mcp::register_context_submitters(&mut server, context)?` or
-`register_context_submitters_with_editor_options(...)`. The derive inventories
-those forms, so one registration call wires every matching context-backed
-submit tool plus `*_edit_submit`; the context type must be
-`Clone + Send + Sync + 'static`. If `response(...)` is omitted, the generated
-registration uses `McpObject`. Use `register_context_submitters_strict(...)`
-or `register_context_submitters_strict_with_editor_options(...)` when zero
-matching context registrations should fail setup instead of succeeding as a
-no-op; the strict variants return a registration report with the matched
-context registration count.
-Use `gpui_form::mcp::server()?` for the default generated server and
-`gpui_form::mcp::server_named(name, version)?` when application-owned server
-metadata is needed. Generated servers register `#[gpui_form::mcp_submit]`
-submit handlers plus editable holder-session tools for every
-`#[gpui_form(mcp)]` form. Forms that also have a submit handler get
-`*_edit_submit`, so agents can submit a valid edit session by `session_id`.
-Use `register_with_options(&mut server, McpFormRegistrationOptions::submit_only())`
-to publish only generated submit handlers,
-`McpFormRegistrationOptions::editor_only()` to publish only editable holder
-sessions, or `McpFormRegistrationOptions::metadata_only()` to inspect selected
-tool definitions and skipped-tool report without mutating the server.
-`tool_definitions_with_options(...)` returns the profile-selected definitions
-directly. `register()` remains equivalent to `McpFormRegistrationOptions::all()`.
-Generated servers also advertise `resources` and publish JSON resources for
-every registered form at `gpui-form://forms/{tool_name}/descriptor`,
-`gpui-form://forms/{tool_name}/schema`, and
-`gpui-form://forms/{tool_name}/examples`. The descriptor resource includes
-form/tool metadata, resource links, field labels, descriptions, examples,
-required/default/storage metadata, component MCP input metadata, validation
-rules, and per-field schemas; the schema resource contains the submit input
-schema; the examples resource groups field examples. `metadata_only()` does not
-register resources. Use `form_resource_uris`, `form_descriptor_resource_value`,
-`form_schema_resource_value`, and `form_examples_resource_value` in tests or
-manual integrations that need the same resource contract without serving an
-MCP transport.
-Prompt templates are opt-in: use
-`register_prompt_templates(&mut server)?` for inventory-discovered forms,
-`register_context_submitter_prompt_templates::<Context>(...)` for
-context-backed submitters, or `register_form_prompt_templates::<Form>(...)`
-for one form. Generated prompt names are `fill_{tool_name}_form`,
-`repair_{tool_name}_form`, and `submit_{tool_name}_form`; the text references
-the generated descriptor/schema/examples resources and matching edit tools
-when iterative repair is useful.
-Use `gpui_form::mcp::builder()` or
-`builder_named(name, version)` when deferred builder setup is needed.
-Use `gpui_form::mcp::serve_stdio_blocking()` for the default stdio server.
-Use `McpServer::builder(name, version)` when composing forms with tables or
-other MCP integrations, and add generated handlers and editors with
-`.register(gpui_form::mcp::register)`. Chain
-`.register(gpui_form::mcp::register_prompt_templates)` when the server should
-also expose generated prompt templates.
-Register manual handlers with
-`gpui_form::mcp::form::<Form>(&mut server).model(handler)?` or
-`.holder(handler)?` for handlers returning `Result<T, E>`.
-Use `.model_async(handler)?` or `.holder_async(handler)?` for asynchronous
-handlers without editor tools.
-Use `.model_with_editor(handler)?`, `.model_async_with_editor(handler)?`,
-`.holder_with_editor(handler)?`, or `.holder_async_with_editor(handler)?` when
-the same form should publish submit, editable holder-session tools, and
-`*_edit_submit` for submitting the current edit session through the same
-handler.
-Use the matching `*_with_editor_options` helpers with
-`McpFormEditorOptions` when a server needs a custom session cap.
-Editor `open`, `read`, `patch`, and `validate` responses include
-the session `revision`, agent-supplied `values`, missing required fields,
-validation `errors`, `valid`, `fields` metadata with per-field schemas, field
-labels, descriptions, examples, current `has_value`/`value` state, and
-field-level `errors`, plus
-`submit_arguments` that can be passed to the submit tool.
-Published snapshot schemas keep `fields[]` typed with a per-field `oneOf`.
-`*_edit_list` returns all active sessions for that form using the same snapshot
-shape plus `session_limit`, `session_idle_timeout_ms`, and `session_count`.
-`*_edit_close` accepts optional `expected_revision` before closing one session.
-`*_edit_close_all` closes every active session for that form and returns
-`closed_count` plus the closed `session_ids`.
-Editors retain at most `DEFAULT_EDITOR_SESSION_LIMIT` active sessions per form
-by default and expire idle sessions after
-`DEFAULT_EDITOR_SESSION_IDLE_TIMEOUT`; opening another session evicts the oldest
-session when the cap is exceeded. Use
-`.editor_with_options(McpFormEditorOptions::default().with_session_limit(n).with_session_idle_timeout(duration))`
-or
-`McpFormEditorOptions::default().without_session_limit().without_session_idle_timeout()`
-to tune that policy.
-`edit_open` and `edit_list` report a `cleanup` object with expired and evicted
-session IDs so clients can drop local handles that the server removed while
-servicing the request.
-`edit_patch` accepts a `session_id`, optional
-`values` object, optional `clear` field-name array, and optional
-`replace = true` to replace the whole pending value set instead of merging.
-It also accepts optional `expected_revision` to reject stale client updates;
-bulk patches decode by rebuilding a cloned holder before commit, so failed
-patches do not partially mutate the session.
-Handler-backed editors, including generated `#[gpui_form::mcp_submit]`
-handlers, also register `*_edit_submit`, which accepts a `session_id`,
-optional `expected_revision`, and optional `close_on_success = false`, validates
-the current session, and calls the same submit handler without copying
-`submit_arguments` into a second tool call. Successful edit submits close the
-session by default only when the session has not advanced while the handler was
-running; validation, stale revision, handler failure, or concurrent patch cases
-leave it open for repair or retry.
-Generated editor tool definitions publish MCP annotations: `edit_list`,
-`edit_read`, and `edit_validate` are read-only and idempotent, `edit_open` is a
-non-destructive session mutation, `edit_patch`, `edit_close`, and
-`edit_close_all` are destructive session mutations, and `edit_submit` is a
-destructive open-world submit call.
-MCP failures keep their text content and also set `structured_content.error`
-with a stable `kind` plus relevant fields such as `field`, `value`, `name`, or
-`detail`, so agents can inspect decode, validation, session, unknown-tool, and
-handler failures without parsing prose. Generated form validation failures also
-include a `details` array of structured issue objects with `scope`, `message`,
-and, when available, `field`, `validator`, `path`, `target`, `element_index`,
-and validator `params`. Editor session `errors` and field-level `errors` use
-the same issue object shape.
-Generated tool definitions also publish output schemas: submit tools advertise
-the handler response type's `McpJsonSchema` or `McpObject` for dynamic JSON,
-and editor tools publish strict schemas for session snapshots and close
-results. Output schemas must declare root `type: "object"` to match MCP
-structured content.
-Use struct-level `#[gpui_form(mcp(...))]` with `name`, `title`, `description`,
-`read_only`, `destructive`, `idempotent`, `open_world`, repeated `icon(...)`,
-`task_support = "forbidden" | "optional" | "required"`, `context(Type)`, and
-optional `response(Type)`, `error(Type)`, `submit(path)`, and
-`map_response(path)`, or `submitter(TraitPath)` with optional
-`map_response(path)` when generated MCP tools need application-owned metadata,
-MCP tool annotation hints, MCP tool icons, execution task support,
-context-submit inventory, generated context submit impls, trait-backed context
-submitters, raw response mapping, or precise response
-schemas. Direct submit tools default to destructive open-world annotations
-unless overridden. If `description` is omitted, the derive uses the form type's
-Rust doc comment.
-`read_only = true` and `destructive = true` cannot be combined.
-Use field-level `#[gpui_form(label = "...")]`,
-`#[gpui_form(description = "...")]`, and `#[gpui_form(example = "...")]` for
-MCP field metadata. Field descriptions infer from `///` rustdoc when not
-overridden, labels default from the field name, and examples may be repeated.
-Registration reports setup errors such as duplicate tool names or generated
-resource URIs.
+The handler is a free synchronous or asynchronous function with one owned
+parameter. Use the source model for normal submission or the generated holder
+when skipped fields require application-owned context. Responses implement
+`Serialize + McpJsonSchema`; errors implement `Display`.
 
-MCP input schemas use the field type's `McpToolValue` schema. Component-backed
-fields also attach value-specific `<Shape as ComponentShapeFor<Field>>::MCP_INPUT`
-metadata when it is available.
-When Koruma validation is enabled, generated field schemas attach
-`x-gpuiFormValidation` rule metadata. Literal `LenValidation`,
-`RangeValidation`, and `NonEmptyValidation` arguments are also reflected as
-JSON Schema hints such as `minLength`, `maxLength`, `minimum`,
-`maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minItems`, and `maxItems`
-when the field schema type is unambiguous.
-Generated MCP validation errors use gpui-form's field rule metadata first and
-fall back to Koruma's generic `ValidationIssues` output when no field-specific
-rule extractor is available.
-For custom field value types, generated descriptors require
-`gpui_form::mcp::McpToolValue`; the
-blanket implementation covers `Deserialize` types that implement or derive
-`gpui_form::mcp::McpJsonSchema`; use `gpui_form::mcp::McpAny` when a typed
-field intentionally accepts unconstrained JSON. Type aliases inherit the
-underlying schema. Fixed tuples with 1 to 4 elements publish exact array
-schemas. Use `use-gpui-form-component-shapes` when a custom component needs
-shape-specific MCP input metadata; generic metadata declaration belongs to the
-component-shape skills. App-owned object structs, tuple or named transparent
-newtypes, and fieldless enums can derive `gpui_form::mcp::McpJsonSchema`
-directly. In crates that also depend on another MCP facade, add
-`#[mcp(crate = gpui_form::mcp)]` to custom `McpJsonSchema` or `McpToolInput`
-derives so generated schema impls target the gpui-form facade. The derive
-follows serde deserialize names, records field aliases in `x-mcpAliases`,
-includes enum aliases, skips deserialization-skipped fields, rejects flattened
-fields, and treats serde-defaulted fields as not required. Custom top-level MCP
-inputs can derive `gpui_form::mcp::McpToolInput`; that derive also implements
-`McpJsonSchema`, so object inputs can be reused as field values.
+For shared state, add `context(MyContext)` and either implement
+`McpContextSubmit<MyContext>` or provide `submit(path)`. Add
+`response(MyResponse)` for a precise schema, `map_response(path)` for fallible
+response mapping, or `submitter(TraitPath)` when an application trait owns the
+submission contract. Register matching forms with
+`register_context_submitters(...)`.
 
-## Generated Names
+Registration choices:
 
-For a source struct named `UserProfile`, expect generated types named:
+| Need | API |
+|---|---|
+| Default stdio server | `serve_stdio_blocking()` |
+| Existing MCP server | `register(&mut server)` |
+| Submit/editor/metadata profile | `register_with_options(...)` |
+| Shared context | `register_context_submitters(...)` |
+| Generated prompts | `register_prompt_templates(...)` |
+| One manual form | `form::<Form>(&mut server)` |
 
-```rust
-UserProfileFormField
-UserProfileFormFields
-UserProfileFormComponents
-UserProfileFormValueHolder
-```
+Editor sessions use `*_edit_open`, `*_edit_patch`, `*_edit_validate`,
+`*_edit_submit`, and `*_edit_close`. Retain revisions and send
+`expected_revision` for optimistic concurrency. Configure limits and idle
+expiry with `McpFormEditorOptions`. Sessions do not mutate live GPUI entities.
 
-`UserProfileFormField` contains the component-backed fields, implements
-`gpui_form::core::FormField`, and exposes each exact source-level Rust field
-name through its const `name()` method.
+Registered forms publish descriptor, schema, and examples resources below
+`gpui-form://forms/{tool_name}/...`. Field schemas use `McpToolValue`; custom
+Serde values normally derive `McpJsonSchema`. Component shapes can attach
+value-specific MCP input metadata. Koruma forms publish validation rules and
+structured issues.
 
-Use the generated value holder for editable form data, defaults, and conversion
-back into the original model.
+## Custom shape routing
 
-## Select Pattern
+Switch to `use-gpui-form-component-shapes` when the task:
 
-```rust
-use gpui_form_collection_derive::SelectItem;
-use strum::EnumIter;
+- defines an application-owned rendered component as a form shape
+- wraps state or a component from another crate
+- implements shape-level value compatibility or event binding
+- selects direct versus required holder storage
+- publishes shape-specific MCP input or prototyping suffix metadata
 
-#[derive(Clone, Debug, Default, EnumIter, PartialEq, SelectItem)]
-pub enum Country {
-    #[default]
-    UnitedStates,
-    France,
-}
-```
-
-`SelectItem` uses enum variant names as fallback labels by default. Add
-`#[select_item(display)]` only when `title()` should call `Display`, or
-`#[select_item(fluent)]` when the enum derives `EsFluent` and the app will
-handle localized labels outside the `SelectItem::title()` call.
-
-## Infinite Select Pattern
-
-```rust
-use gpui_form::GpuiForm;
-use gpui_form_component::InfiniteSelect;
-use strum::EnumIter;
-
-#[derive(Clone, Debug, Default, EnumIter, InfiniteSelect, PartialEq)]
-pub enum City {
-    #[default]
-    Paris,
-    Lyon,
-}
-
-#[derive(Clone, Debug, EnumIter, InfiniteSelect, PartialEq)]
-pub enum Country {
-    France(City),
-}
-
-#[derive(Clone, Debug, Default, GpuiForm)]
-pub struct LocationForm {
-    #[gpui_form(component(gpui_form_component::infinite_select::InfiniteSelect::<_>))]
-    pub location: Country,
-}
-```
-
-Helper state is available from `gpui_form_component::infinite_select`.
-Direct helpers that produce localized labels or render-ready fields take the
-active app context, for example `value.variant_label(cx)` and
-`state.form_fields(cx)`. Enums with `#[fluent_kv(...)]` metadata resolve
-through the installed `gpui-es-fluent` global; missing initialization or
-resources are hard errors, while enums without Fluent metadata retain static
-variant names. Built-in date and file runtime copy uses the same strict global
-localization contract.
-
-## Type Conversion Pattern
-
-Use intent-scoped `value(type = ..., from_source = ..., into_source = ...)`
-when the UI edits a different type than the model stores:
-
-```rust
-#[derive(Clone, Debug, gpui_form::GpuiForm)]
-pub struct User {
-    #[gpui_form(
-        component(
-            gpui_form_collection::date_picker::DatePicker,
-            value(
-                type = chrono::NaiveDate,
-                from_source = to_form_date,
-                into_source = to_model_timestamp,
-            )
-        )
-    )]
-    pub birth_date: Option<Timestamp>,
-}
-```
-
-This is useful for dates, paths, numeric newtypes, and other domain-specific
-wrappers. Replace `into_source` with `try_into_source` when reconstruction can
-fail. For Koruma newtypes, `value(koruma_newtype)` expands to the public
-`NewtypeValue` / `NewtypeTryFromInner` trait surface and works with private
-wrapper fields.
-
-## Custom Shape Routing
-
-For an app-owned `#[gpui_form(component(my::Shape))]`, switch to
-`use-gpui-form-component-shapes` for form compatibility, storage policy,
-configured builders, MCP metadata consumption, and prototyping integration.
-That companion skill routes generic shape declaration, suffix metadata, render
-contracts, and value binding to `use-component-shape` and
-`use-component-shape-gpui`. Keep those lower-level authoring details out of
-ordinary built-in form guidance.
+That skill routes generic declaration and rendering details to
+`use-component-shape` and `use-component-shape-gpui`.

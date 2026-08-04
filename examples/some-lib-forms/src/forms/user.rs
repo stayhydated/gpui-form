@@ -32,10 +32,14 @@ impl gpui_storybook::Story for UserForm {
         gpui_es_fluent::localize_label::<User>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
-        cx.new(|cx| Self::new(window, cx))
+        Self::view(window, cx)
     }
 }
 impl UserForm {
+    pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
+
     fn on_username_input_event(
         &mut self,
         state: &Entity<GpuiComponentStateOf<gpui_form_collection::input::Input<String>>>,

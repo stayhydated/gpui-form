@@ -1,23 +1,15 @@
 # gpui-form-collection-derive
 
-Proc macros for collection-oriented workflows in `gpui-form`.
-
-Use this crate for collection-specific derive support, currently
-`#[derive(SelectItem)]`. `gpui-form` does not re-export this derive.
-
-## Installation
+Collection-oriented procedural macros for `gpui-form`. This crate provides
+`#[derive(SelectItem)]` for enum values used by collection-backed selects.
 
 ```toml
 [dependencies]
-gpui-form-collection-derive = "*"
+gpui-form-collection-derive = "0.5"
+strum = { version = "0.28", features = ["derive"] }
 ```
 
-## `#[derive(SelectItem)]`
-
-Implements `gpui_component::select::SelectItem` for enums that drive
-collection-backed select controls.
-
-```rs
+```rust
 use gpui_form_collection_derive::SelectItem;
 use strum::EnumIter;
 
@@ -29,22 +21,8 @@ pub enum Country {
 }
 ```
 
-Optional attribute:
+Variant names provide fallback labels. Add `#[select_item(display)]` when
+`SelectItem::title()` should use the enum's `Display` implementation.
 
-- By default, `SelectItem::title()` uses the enum variant name as fallback text
-  and does not require `Display`.
-- `#[select_item(display)]` uses `self.to_string()` when the enum intentionally
-  provides display text.
-- `#[select_item(fluent)]` is accepted for enums that also derive `EsFluent`;
-  the generated `SelectItem::title()` output remains plain fallback text
-  because this contract has no localizer argument.
-
-`display` and `fluent` are mutually exclusive.
-
-## Most Users Should Use Instead
-
-- [`gpui-form`](../gpui-form/README.md) for standard form derives and schema
-  wiring.
-- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`.
-- [`component-shape-gpui`](https://github.com/stayhydated/component-shape/tree/master/crates/component-shape-gpui)
-  for `GpuiComponentShape` and `component_shape!`.
+See the [API documentation](https://docs.rs/gpui-form-collection-derive/) for
+derive attributes.

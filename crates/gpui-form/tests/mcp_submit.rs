@@ -496,7 +496,6 @@ fn map_trait_raw_response(
     destructive = false,
     idempotent = true,
     open_world = false,
-    task_support = "optional",
     icon(
         src = "https://example.com/submit-metadata.png",
         mime_type = "image/png",
@@ -762,14 +761,6 @@ fn generated_mcp_tool_definitions_include_registered_handlers_and_editors() {
         metadata_icons[0].theme,
         Some(gpui_form::mcp::McpIconTheme::Light)
     );
-    assert_eq!(
-        metadata_submit
-            .execution
-            .as_ref()
-            .and_then(|execution| execution.task_support),
-        Some(gpui_form::mcp::McpToolTaskSupport::Optional)
-    );
-
     #[cfg(feature = "runtime")]
     {
         let component_editor_names = editor_tool_names(ComponentRequest::descriptor());
@@ -1107,12 +1098,6 @@ fn generated_mcp_descriptor_uses_explicit_metadata() {
         .expect("explicit icon metadata should publish icons");
     assert_eq!(icons[0].src, "https://example.com/submit-metadata.png");
     assert_eq!(icons[0].mime_type.as_deref(), Some("image/png"));
-    assert_eq!(
-        descriptor
-            .tool_execution()
-            .and_then(|execution| execution.task_support),
-        Some(gpui_form::mcp::McpToolTaskSupport::Optional)
-    );
 }
 
 #[test]

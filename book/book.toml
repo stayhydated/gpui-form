@@ -1,0 +1,13 @@
+[book]
+authors = [ "stayhydated" ]
+language = "en"
+src = "src"
+title = "gpui-form"
+
+[rust]
+edition = "2024"
+
+[build]
+
+[output.html.playground]
+runnable = false

@@ -1,65 +1,15 @@
 # gpui-form-component-derive
 
-Proc macros for the `InfiniteSelect` runtime surface.
+The `#[derive(InfiniteSelect)]` procedural macro for nested enum trees used by
+`gpui-form-component`.
 
-Most applications should use [`gpui-form-component`](../gpui-form-component/README.md)
-with its `derive` feature, which re-exports `#[derive(InfiniteSelect)]` as
-`gpui_form_component::InfiniteSelect`. Use this crate directly when you want
-only the infinite-select derive plus the runtime crate.
+Most applications should enable the `derive` feature on
+[`gpui-form-component`](../gpui-form-component/README.md), which re-exports the
+macro as `gpui_form_component::InfiniteSelect`. Depend on this crate directly
+only when the separate proc-macro dependency is useful.
 
-## Direct Use
+Derived enum trees must implement `Clone + Default + PartialEq + 'static`;
+nested payload types must also implement `Default`.
 
-When you use this crate directly, depend on the runtime crate normally. The
-macro resolves `gpui-form-component` as the runtime crate:
-
-```toml
-[dependencies]
-gpui-form-component = "*"
-gpui-form-component-derive = "*"
-```
-
-## `#[derive(InfiniteSelect)]`
-
-Implements the runtime crate's `InfiniteSelect` contract for nested enums used
-by cascading selects.
-
-```rs
-use gpui_form_component::infinite_select::{InfiniteSelectPath, build_from_path};
-use gpui_form_component_derive::InfiniteSelect;
-
-#[derive(Clone, Debug, Default, InfiniteSelect, PartialEq)]
-pub enum Country {
-    #[default]
-    USA(USAState),
-    Canada(CanadaProvince),
-    UK,
-}
-```
-
-Variant attributes:
-
-- `#[tuple_enum(skip)]` omits a variant from the select tree
-- `#[tuple_enum(key = "...")]` overrides the stable persisted key for a variant
-- `#[fluent_kv(keys = ["label", "description"], keys_this)]` tells the derive
-  to consume metadata emitted by `EsFluentVariants` / `EsFluentLabel` through
-  the installed `gpui-es-fluent` global. Missing initialization or resources
-  are hard errors.
-
-Behavior notes:
-
-- derived enums must also implement `PartialEq` because the runtime
-  `gpui-component` select compares selected values
-- derived enums expose stable `variant_key()` values plus `selection_key_path()`
-- custom keys are validated for uniqueness within the enum
-- localized runtime methods accept a GPUI app context; enums without
-  `fluent_kv` metadata use static variant/type names
-
-## Most Users Should Use Instead
-
-- [`gpui-form-component`](../gpui-form-component/README.md) for the runtime
-  state helpers targeted by the derive and its `derive` feature re-export
-- [`gpui-form-derive`](../gpui-form-derive/README.md) for `GpuiForm`
-- [`component-shape-gpui`](https://github.com/stayhydated/component-shape/tree/master/crates/component-shape-gpui)
-  for GPUI component-shape declarations
-- [`gpui-form-collection-derive`](../gpui-form-collection-derive/README.md) for
-  `SelectItem`
+See the [API documentation](https://docs.rs/gpui-form-component-derive/) for
+variant keys, skipped variants, and Fluent metadata.

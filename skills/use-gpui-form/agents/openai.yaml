@@ -1,4 +1,4 @@
 interface:
-  display_name: "use-gpui-form"
+  display_name: "Use GPUI Form"
   short_description: "Build and expose forms with gpui-form"
   default_prompt: "Use $use-gpui-form to add a generated GPUI form or MCP form tool to my app."

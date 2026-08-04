@@ -5,7 +5,19 @@ rust-version.workspace = true
 edition.workspace = true
 license = "Unlicense"
 publish = false
+autobins = false
+autolib = false
 
+[[bin]]
+name = "some-lib-forms"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[[example]]
+name = "demo"
+path = "examples/demo.rs"
 
 [dependencies]
 chrono = { workspace = true }
@@ -20,7 +32,10 @@ gpui_platform = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
 
-[dev-dependencies]
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen = { workspace = true }
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 gpui = { features = [ "test-support" ], workspace = true }
 
 [lints]
