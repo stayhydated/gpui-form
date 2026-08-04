@@ -92,9 +92,9 @@ rmcp = "3.1"
 rust_decimal = "1.42"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { path = "../shared/crates/stayhydated-dioxus" }
-stayhydated-site = { path = "../shared/crates/stayhydated-site" }
-stayhydated-xtask = { path = "../shared/crates/stayhydated-xtask" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
 strum = "0.28"
 syn = "2.0"
 syn-cfg-attr = "0.2"
