@@ -1,4 +1,4 @@
 interface:
-  display_name: "use-gpui-form-component-shapes"
+  display_name: "Use GPUI Form Component Shapes"
   short_description: "Wire component shapes into gpui-form"
   default_prompt: "Use $use-gpui-form-component-shapes to wire an existing or custom GPUI component shape into a generated form."

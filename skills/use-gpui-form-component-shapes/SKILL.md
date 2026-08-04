@@ -1,56 +1,50 @@
 ---
 name: use-gpui-form-component-shapes
-description: "Use when Codex needs to wire component-shape-gpui shapes into gpui-form forms, including #[gpui_form(component(...))], gpui-form-runtime storage policy, configured shape builders, value compatibility or binding, generated fields/components/value holders, component MCP metadata, and inventory prototyping."
+description: "Use when adding, reviewing, or refactoring gpui-form integration for an application-owned or third-party GPUI component shape: #[gpui_form(component(...))], shape/value compatibility, gpui-form-runtime storage policy, configured builders, generated holder behavior, MCP input metadata, or inventory prototyping. Use use-gpui-form for existing built-in shapes."
 ---
 
 # Use GPUI Form Component Shapes
 
-## Scope Boundary
+## Scope
 
-Use this skill for `gpui-form` integration work after a GPUI component shape
-exists or needs to be selected. It covers how shapes participate in
-`#[derive(gpui_form::GpuiForm)]`, generated form state, value storage, runtime
-imports, and prototyping output.
+Apply this skill after deciding that an existing `gpui-form-collection` or
+`gpui-form-component` shape is insufficient, or when integrating an existing
+custom shape into `#[derive(GpuiForm)]`.
 
-Use `use-gpui-form` for ordinary generated forms that only use built-in,
-collection, or component-owned shapes.
+Use `use-gpui-form` for ordinary forms with built-in shapes. Use
+`use-component-shape` for framework-neutral metadata and
+`use-component-shape-gpui` for shape declaration, rendering, construction, and
+value-binding syntax.
 
-Use the component-shape repository skills for shape ownership and declaration:
+## Workflow
 
-- `use-component-shape` for framework-neutral shape metadata, suffixes,
-  capabilities, and value-change concepts.
-- `use-component-shape-gpui` for `component_shape_gpui::GpuiComponentShape`,
-  `component_shape_gpui::component_shape!`, GPUI render contracts, and
-  value-binding declarations.
+1. Confirm the field's source type, form-side type, optionality, and desired
+   empty-value behavior.
+2. Reuse an existing shape when it supports that contract.
+3. For a new shape, declare it through
+   `#[derive(component_shape_gpui::GpuiComponentShape)]` or
+   `component_shape_gpui::component_shape!` using the component-shape skills.
+4. Publish compatibility with the form-side value through declared value
+   metadata, `GpuiComponentShapeFor<Value>`, or shape value binding.
+5. Implement `GpuiFormComponentShapePolicy` and choose direct or required
+   holder storage.
+6. Add a `GpuiComponentShapeBuilder<Shape>` only when individual fields need
+   construction options.
+7. Publish stable prototyping and MCP metadata when those workflows consume
+   the shape.
+8. Use the base shape or configured builder in `component(...)` and check the
+   generated holder contract.
 
-This reusable skill does not cover proc-macro implementation internals,
-repository maintenance, or contributor-only architecture work. Use the
-workspace `AGENTS.md` and crate architecture docs for those tasks.
+## Dependency boundary
 
-## Integration Rule
+Applications that consume a shape use `gpui-form` plus the crate that owns the
+shape. They normally access runtime contracts through
+`gpui_form::runtime::shape`.
 
-First decide whether the form can use an existing shape:
+A reusable integration crate depends directly on `gpui-form-runtime` when it
+implements form storage policy or lower-level value binding.
 
-- Existing collection shape: prefer `gpui_form_collection::*` shapes when they
-  already model the widget and value type.
-- Parsed text input: prefer
-  `gpui_form_collection::input::ParsedInput::<_, Config>` when the widget is a
-  standard input but the value type needs custom parser/formatter,
-  empty-as-clear, placeholder, or widget-validation behavior.
-- Existing component shape: use the shape directly in
-  `#[gpui_form(component(...))]`.
-- New custom shape: create or select the shape with the component-shape GPUI
-  guidance first, then return here for gpui-form wiring.
-
-Application crates that only consume existing shapes need not depend on
-`gpui-form-runtime` directly; depend on `gpui-form` plus the crate that owns the
-selected shape. Crates that define custom component-backed shapes should also
-depend on `gpui-form-runtime` directly when they implement lower-level runtime
-policies or value binding.
-
-## Field Shape Usage
-
-Use the shape type in the field attribute:
+## Field integration
 
 ```rust
 #[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
@@ -60,132 +54,63 @@ pub struct ContactForm {
 }
 ```
 
-The shape must be compatible with the field value type through either explicit
-shape metadata, a `GpuiComponentShapeFor<Value>` implementation, or a
-`GpuiComponentValueBinding<Value>` implementation declared by the shape.
+The shape must carry the declaration marker emitted by the GPUI component-shape
+derive or macro. A hand-written construction trait implementation alone is not
+a complete form-shape declaration.
 
-## Storage Policy
-
-Reusable component shapes should implement `GpuiFormComponentShapePolicy` so
-the generated form chooses the right value-holder strategy:
+## Choose storage
 
 ```rust
 impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape {
-    type ValueStoragePolicy = gpui_form_runtime::shape::DirectValueStorage;
+    type ValueStoragePolicy =
+        gpui_form_runtime::shape::DirectValueStorage;
 }
 ```
 
-Use:
+- Use `DirectValueStorage` when a required field always stores `T`. Provide an
+  intent-scoped default or require form-side `T: Default`.
+- Use `RequiredValueStorage` when the holder must represent missing input as
+  `Option<T>`. Conversion is fallible while the value is absent, and generated
+  Koruma validation reports the missing field.
 
-- `DirectValueStorage` when non-optional fields should always store direct `T`
-  values. Initialization must come from an intent-scoped default or a form-side
-  `T` that implements `Default`.
-- `RequiredValueStorage` when a required field should represent missing input
-  as `Option<T>` in the generated holder.
+Value compatibility and storage are separate decisions. Compatibility answers
+whether the shape can edit `T`; storage answers how a non-optional source field
+represents an empty form value.
 
-When reviewing a field type mismatch, check the storage policy separately from
-value compatibility. Compatibility determines whether a shape can support a
-value type; storage policy determines how required values are represented.
-When the shape should participate in MCP submit schemas, rely on inferred MCP
-metadata for unambiguous declared values such as `String`, booleans, numbers,
-dates, `Vec<T>`, set-like primitive collections, fixed arrays,
-`gpui_form::mcp::McpRange<T>`, or `(Option<T>, Option<T>)` ranges. The
-generated `ComponentShapeFor<Value>` impl carries the value-specific metadata,
-so multi-value shapes can expose distinct MCP input shapes per supported
-value. Component-backed form fields publish the field type's `McpToolValue`
-schema and attach value-specific shape MCP input metadata when available.
-Generated MCP descriptor resources expose the same shape MCP input metadata for
-clients that inspect `gpui-form://forms/{tool_name}/descriptor` instead of the
-raw submit schema.
-When a generic or custom shape knows its model-facing MCP input better than the
-value type can infer, follow the component-shape skills to declare that
-metadata. This integration consumes the resulting value-specific metadata.
-Use value types that implement `gpui_form::mcp::McpToolValue` for ambiguous or
-intentionally different wire shapes; the blanket implementation covers
-`Deserialize` types that implement or derive `McpJsonSchema`. Use
-`gpui_form::mcp::McpAny` when a typed field intentionally accepts unconstrained
-JSON.
+## Configure construction
 
-## Field-Level Builder Configuration
-
-Use `gpui_form_runtime::shape::GpuiComponentShapeBuilder<Shape>` when a
-reusable shape needs field-local construction options without creating a new
-shape type for every variant. Expose direct shape helpers backed by Bon builder
-setters, plus a `from(config)` helper for completed config values.
+Implement `GpuiComponentShapeBuilder<Shape>` for a configuration type when one
+shape needs field-local options. Expose a shape helper that returns the builder,
+then use dot-chain syntax:
 
 ```rust
-#[derive(gpui_form::bon::Builder)]
-#[builder(crate = ::gpui_form::bon)]
-pub struct SelectArgs {
-    #[builder(default)]
-    searchable: bool,
-}
-
-impl MySelect {
-    pub fn searchable(searchable: bool) -> SelectArgs {
-        SelectArgs::builder().searchable(searchable).build()
-    }
-
-    pub fn from(args: SelectArgs) -> SelectArgs {
-        args
-    }
-}
-
-impl gpui_form_runtime::shape::GpuiComponentShapeBuilder<MySelect> for SelectArgs {
-    fn build(
-        self,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<'_, <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State>,
-    ) -> <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::State {
-        let mut state =
-            <MySelect as gpui_form_runtime::shape::GpuiComponentShape>::new(window, cx);
-        if self.searchable {
-            state = state.searchable(true);
-        }
-        state
-    }
-}
+#[gpui_form(component(AssigneeSelect.searchable(true)))]
+pub assignee: Option<UserId>,
 ```
 
-Then configure individual form fields:
+The builder changes construction only. Compatibility, rendering, storage,
+value binding, MCP metadata, and prototyping metadata remain properties of the
+base shape.
 
-```rust
-#[derive(Clone, Debug, Default, gpui_form::GpuiForm)]
-pub struct SearchForm {
-    #[gpui_form(component(MySelect.searchable(true)))]
-    pub assignee: Option<String>,
-}
-```
+## Align metadata
 
-The field still uses the same base shape for value compatibility, storage
-policy, render metadata, and prototyping metadata; only state construction
-changes. Form attributes use dot-chain shape configuration.
+For generated subscriptions, the shape needs value-binding capability and an
+event-to-`ValueChange<T>` contract. For inventory scaffolding, publish a stable
+non-empty ASCII field suffix plus render, path, binding, and storage metadata.
 
-## Prototyping Alignment
+MCP form schemas start from the field type's `McpToolValue` implementation.
+Attach shape-specific MCP input metadata when the widget narrows or explains
+that wire contract. Multi-value shapes publish metadata for each supported
+value through the generated `ComponentShapeFor<Value>` implementation.
 
-When a shape is used by inventory-driven prototyping, ensure it exposes stable
-component prototyping metadata. In practice, custom shapes should set a
-non-empty ASCII identifier suffix through component-shape metadata so generated
-DOM IDs, event handlers, and helper names stay stable. Follow
-`use-component-shape` or `use-component-shape-gpui` to declare and validate
-that metadata; this skill covers only how gpui-form consumes it.
+Fix missing metadata at the shape declaration. Do not compensate with
+placeholder generator output or per-form compatibility wrappers.
 
-Generated `FormFields` members and `FormComponents` constructors use the source
-field name. The component suffix affects generated helper naming around the
-component role, not the original Rust field name.
+## Routing
 
-## Documentation Sync
-
-When changing user-visible form/component-shape behavior in this repository,
-keep the relevant public surfaces aligned:
-
-- root `README.md`
-- `crates/gpui-form/README.md`
-- affected crate READMEs
-- `examples/README.md` and showcased examples when behavior changes
-- in-repository `skills/*` guidance
-- matching rustdocs, source-adjacent comments, tests, and examples when
-  boundaries or behavior change
-
-Do not duplicate generic component-shape macro guidance here; update the
-component-shape-owned skills instead.
+- Existing collection/component shape: `use-gpui-form`
+- Generic component metadata and suffixes: `use-component-shape`
+- GPUI declaration, rendering, builders, and value binding:
+  `use-component-shape-gpui`
+- Form intents, holders, validation, inventory use, and MCP submission:
+  `use-gpui-form`

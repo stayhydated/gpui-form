@@ -6,7 +6,7 @@ use quote::{ToTokens as _, format_ident, quote};
 use syn::{DeriveInput, Expr, Lit, LitStr, Path, Type, UnOp, spanned::Spanned as _};
 
 use crate::derives::gpui_form::attrs::{
-    McpContextSubmitOptions, McpIconThemeOption, McpTaskSupportOption, McpToolOptions,
+    McpContextSubmitOptions, McpIconThemeOption, McpToolOptions,
 };
 use crate::derives::gpui_form::holder_plan::{HolderConversionMode, ValueHolderPlan};
 use crate::derives::gpui_form::ir::{DeriveContext, FieldPlan, HolderFieldIr, HolderStoragePlan};
@@ -560,22 +560,18 @@ fn tool_metadata_tokens(
         span,
     )?;
 
-    if let Some(options) = options {
-        if !options.icons.is_empty() {
-            let icons = options
-                .icons
-                .iter()
-                .map(|icon| icon_tokens(&mcp_crate, icon, span))
-                .collect::<Vec<_>>();
-            tokens = quote! {{
-                const MCP_TOOL_ICONS: &[#mcp_crate::McpToolIcon] = &[#(#icons),*];
-                (#tokens).with_icons(MCP_TOOL_ICONS)
-            }};
-        }
-        if let Some(task_support) = options.task_support {
-            let task_support = task_support_tokens(&mcp_crate, task_support);
-            tokens = quote! { (#tokens).with_task_support(#task_support) };
-        }
+    if let Some(options) = options
+        && !options.icons.is_empty()
+    {
+        let icons = options
+            .icons
+            .iter()
+            .map(|icon| icon_tokens(&mcp_crate, icon, span))
+            .collect::<Vec<_>>();
+        tokens = quote! {{
+            const MCP_TOOL_ICONS: &[#mcp_crate::McpToolIcon] = &[#(#icons),*];
+            (#tokens).with_icons(MCP_TOOL_ICONS)
+        }};
     }
 
     Ok(tokens)
@@ -608,14 +604,6 @@ fn icon_tokens(
         tokens = quote! { #tokens.with_theme(#theme) };
     }
     tokens
-}
-
-fn task_support_tokens(mcp_crate: &Path, task_support: McpTaskSupportOption) -> TokenStream {
-    match task_support {
-        McpTaskSupportOption::Forbidden => quote! { #mcp_crate::McpToolTaskSupport::Forbidden },
-        McpTaskSupportOption::Optional => quote! { #mcp_crate::McpToolTaskSupport::Optional },
-        McpTaskSupportOption::Required => quote! { #mcp_crate::McpToolTaskSupport::Required },
-    }
 }
 
 fn context_submit_registration_tokens(

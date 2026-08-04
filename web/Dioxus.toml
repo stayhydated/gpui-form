@@ -1,0 +1,13 @@
+[application]
+asset_dir = "public"
+name = "gpui-form"
+out_dir = "dist"
+
+[web.app]
+base_path = "gpui-form"
+title = "gpui-form | Typed GPUI forms"
+
+[web.watcher]
+index_on_404 = true
+reload_html = true
+watch_path = [ "src", "public" ]

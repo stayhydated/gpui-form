@@ -18,6 +18,8 @@ members = [
   "examples/some-lib-forms",
   "examples/mcp-submit",
   "examples/prototyping",
+  "web",
+  "xtask",
 ]
 resolver = "3"
 
@@ -34,6 +36,7 @@ version = "0.5.1"
 anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
+clap = "4.6"
 component-shape = { git = "https://github.com/stayhydated/component-shape" }
 component-shape-codegen = { git = "https://github.com/stayhydated/component-shape" }
 component-shape-gpui = { git = "https://github.com/stayhydated/component-shape" }
@@ -41,6 +44,7 @@ component-shape-mcp = { git = "https://github.com/stayhydated/component-shape" }
 crabtime = "1.1"
 darling = "0.23"
 derive_more = "2.1"
+dioxus = { default-features = false, version = "0.7" }
 es-fluent = { git = "https://github.com/stayhydated/es-fluent" }
 es-fluent-build = { git = "https://github.com/stayhydated/es-fluent" }
 es-fluent-lang = { git = "https://github.com/stayhydated/es-fluent" }
@@ -61,7 +65,7 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.5.1" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "450c3b13d328c94a89a768a59c7a5fbd62ecc60f" }
+gpui-storybook = { path = "../gpui-storybook/crates/gpui-storybook" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",
@@ -75,7 +79,7 @@ icu_locale_core = "2.2.0"
 insta = "1.48"
 inventory = "0.3"
 itertools = "0.14"
-jiff = "0.2.34"
+jiff = "0.2.35"
 koruma = { git = "https://github.com/stayhydated/koruma" }
 koruma-collection = { git = "https://github.com/stayhydated/koruma" }
 koruma-derive-core = { git = "https://github.com/stayhydated/koruma" }
@@ -84,10 +88,13 @@ prettyplease = "0.2"
 proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
-rmcp = "2.2.0"
+rmcp = "3.0"
 rust_decimal = "1.42"
 serde = "1.0"
 serde_json = "1.0"
+stayhydated-dioxus = { path = "../shared/crates/stayhydated-dioxus" }
+stayhydated-site = { path = "../shared/crates/stayhydated-site" }
+stayhydated-xtask = { path = "../shared/crates/stayhydated-xtask" }
 strum = "0.28"
 syn = "2.0"
 syn-cfg-attr = "0.2"
@@ -96,6 +103,9 @@ tokio = "1.53"
 tracing-subscriber = "0.3"
 unic-langid = "0.9"
 unicode-segmentation = "1.13"
+wasm-bindgen = "0.2"
+web = { path = "web" }
+web-sys = { features = [ "Location", "Window" ], version = "0.3" }
 
 [patch."https://github.com/zed-industries/zed"]
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "=0.2.2" }

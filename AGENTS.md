@@ -6,13 +6,15 @@ This is the working guide for contributors and coding agents in the
 Use it to decide:
 
 1. which crate or example owns a change,
-2. which docs, rustdocs, skills, examples, or generated outputs must change
-   with it,
+2. which docs, rustdocs, book pages, skills, examples, or generated outputs
+   must change with it,
 3. which narrow validation command proves the edit.
 
 For most application-facing form work, start in `crates/gpui-form`. Use
 `crates/gpui-form-prototyping-core` for GPUI scaffolding from `GpuiFormShape`
 inventory data. Check `just --list` before broad validation.
+Use `book/src/SUMMARY.md` to route user-guide edits and `web/src/lib.rs` for
+the public catalog.
 
 ## Project Summary
 
@@ -31,8 +33,8 @@ Its priorities are:
 Before editing:
 
 1. Find the owning surface in the workspace map.
-2. Treat README files, `examples/README.md`, and in-repository `skills/*`
-   guidance as user-facing.
+2. Treat README files, `book/src`, `examples/README.md`, and in-repository
+   `skills/*` guidance as user-facing.
 3. Treat `//!` and `///` rustdocs, source-adjacent comments, tests, snapshots,
    and examples as the internal behavior record.
 4. Update every public surface that describes a changed derive attribute,
@@ -50,16 +52,21 @@ it affects agent routing.
 When public usage changes, update the applicable set:
 
 - root `README.md`
+- `book/src` for task-oriented guides and the published chapter structure
 - `crates/gpui-form/README.md`
 - affected crate `README.md` files
 - `examples/README.md` and showcased example crates
 - `skills/use-gpui-form` and `skills/use-gpui-form-component-shapes`
 - rustdocs on public traits, structs, macros, and helper functions
+- `web/src/lib.rs` when the catalog description or published destinations
+  change
 
 Keep these specific surfaces aligned:
 
 - root `README.md` and `crates/gpui-form/README.md` for installation,
   quick-start, feature flags, runtime imports, MCP, prototyping, and examples
+- root `README.md`, affected crate READMEs, and matching `book/src` chapters
+  for public workflows covered by the guide
 - root `README.md`, `crates/gpui-form-derive/README.md`, and
   `skills/use-gpui-form/references/api-map.md` for supported component syntax
   and derive attributes
@@ -70,6 +77,11 @@ Keep these specific surfaces aligned:
 - package-local `i18n.toml`, `i18n/` Fluent resources, `src/i18n.rs`, and
   matching README/example text for localization changes in `examples/some-lib`,
   `crates/gpui-form-component`, or `crates/gpui-form-component-story`
+
+The checked-in sources are `book/src`, `web/src`, and
+`examples/some-lib-forms`. Build `web/public/book`, `web/public/llms*`,
+`web/public/gpui-demo`, and `web/dist` through `cargo xtask`; do not maintain
+those generated publication artifacts by hand.
 
 ## Workspace Map
 
@@ -141,7 +153,9 @@ Keep these specific surfaces aligned:
   package-local `es-fluent` config and Fluent assets.
 
 - `examples/some-lib-forms`
-  Storybook-style GPUI app for generated forms.
+  Shared native and WebAssembly Storybook gallery for generated forms. The
+  `demo` example target used by the public site also launches natively and runs
+  the same registrations and gallery startup as the native binary.
   Run with `cargo run -p some-lib-forms`.
 
 - `examples/prototyping`
@@ -157,6 +171,26 @@ Keep these specific surfaces aligned:
 - `crates/gpui-form-component-story`
   Storybook-style GPUI app for reusable runtime components.
   Run with `cargo run -p gpui-form-component-story`.
+
+### Documentation, Demo, and Publishing
+
+- `book/src`
+  Audience: user-facing.
+  Role: mdBook source for installation, field intent, validation, component
+  shapes, MCP, and prototyping workflows.
+
+- `examples/some-lib-forms/examples/demo.rs`
+  Audience: user-facing.
+  Role: native and nightly Trunk entry point for the full `some-lib-forms`
+  Storybook gallery.
+
+- `web`
+  Audience: user-facing.
+  Role: Dioxus catalog that links the book, GPUI demo, API docs, and source.
+
+- `xtask`
+  Audience: internal.
+  Role: reproducible book, `llms.txt`, GPUI demo, and Pages-site builds.
 
 ## Editing Rules
 
@@ -208,12 +242,16 @@ FTL check.
 - `cargo test -p gpui-form-prototyping-core` for prototyping generator or
   snapshot changes
 - `cargo run -p prototyping` after generator/inventory output changes
+- `cargo xtask build book` and `cargo xtask build llms-txt` for book changes
+- `cargo xtask build gpui-demo` for the nightly Wasm GPUI example
+- `cargo xtask build web` after the book, language-model docs, and demo assets
+  exist, or `just web-build` for the complete publication pipeline
 - `cargo doc --workspace --all-features --no-deps --locked` when matching the CI
   docs job
 - `cargo package --workspace --list` when matching the CI package job
 - `just cov` for LLVM source coverage across publishable library crates; the
   recipe also exercises the headless example and MCP integration packages,
-  excluding only the GUI applications and prototyping generator
+  while excluding GUI applications, prototyping, and publication tooling
 - `just fmt`, `just clippy`, `just check`, `just test`, `just cov`, or the
   matching `justfile` recipe when a change spans each recipe's scope
 

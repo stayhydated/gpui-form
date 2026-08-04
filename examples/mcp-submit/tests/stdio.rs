@@ -28,7 +28,21 @@ impl StdioMcp {
         }
     }
 
-    fn request(&mut self, id: u64, method: &str, params: Value) -> Value {
+    fn request(&mut self, id: u64, method: &str, mut params: Value) -> Value {
+        params
+            .as_object_mut()
+            .expect("request params should be an object")
+            .insert(
+                "_meta".to_string(),
+                json!({
+                    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                    "io.modelcontextprotocol/clientCapabilities": {},
+                    "io.modelcontextprotocol/clientInfo": {
+                        "name": "stdio-test",
+                        "version": "0.0.0"
+                    }
+                }),
+            );
         let request = json!({
             "jsonrpc": "2.0",
             "id": id,
@@ -49,16 +63,6 @@ impl StdioMcp {
         response
     }
 
-    fn notify(&mut self, method: &str, params: Value) {
-        let notification = json!({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-        });
-        writeln!(self.stdin, "{notification}").expect("notification should write");
-        self.stdin.flush().expect("notification should flush");
-    }
-
     fn shutdown(mut self) {
         drop(self.stdin);
         let status = self.child.wait().expect("server should exit");
@@ -70,28 +74,23 @@ impl StdioMcp {
 fn stdio_json_rpc_lists_calls_repairs_and_submits_edit_sessions() {
     let mut server = StdioMcp::spawn();
 
-    let initialized = server.request(
-        0,
-        "initialize",
-        json!({
-            "protocolVersion": "2025-11-25",
-            "capabilities": {},
-            "clientInfo": {
-                "name": "stdio-test",
-                "version": "0.0.0"
-            }
-        }),
+    let discovered = server.request(0, "server/discover", json!({}));
+    assert_eq!(discovered["result"]["resultType"], "complete");
+    assert!(
+        discovered["result"]["supportedVersions"]
+            .as_array()
+            .expect("discovery should list supported versions")
+            .contains(&json!("2026-07-28"))
     );
-    assert_eq!(initialized["result"]["protocolVersion"], "2025-11-25");
-    assert_eq!(initialized["result"]["capabilities"]["tools"], json!({}));
     assert_eq!(
-        initialized["result"]["capabilities"]["resources"],
-        json!({})
+        discovered["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]["name"],
+        "mcp-submit"
     );
-    assert_eq!(initialized["result"]["capabilities"]["prompts"], json!({}));
-    server.notify("notifications/initialized", json!({}));
 
     let listed = server.request(1, "tools/list", json!({}));
+    assert_eq!(listed["result"]["resultType"], "complete");
+    assert_eq!(listed["result"]["ttlMs"], 0);
+    assert_eq!(listed["result"]["cacheScope"], "private");
     let tools = listed["result"]["tools"]
         .as_array()
         .expect("tools/list should return tools");

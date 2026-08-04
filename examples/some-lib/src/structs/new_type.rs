@@ -27,7 +27,7 @@ pub struct Age {
 }
 
 #[derive(Clone, Debug, Default)]
-#[cfg_attr(feature = "ui", derive(gpui_form::GpuiForm,))]
+#[cfg_attr(feature = "ui", derive(gpui_form::GpuiForm))]
 #[cfg_attr(
     feature = "fluent",
     derive(es_fluent::EsFluentVariants, es_fluent::EsFluentLabel,)
