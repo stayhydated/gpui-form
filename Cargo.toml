@@ -96,7 +96,7 @@ stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "3e6
 stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
 stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
 strum = "0.28"
-syn = "2.0"
+syn = "3.0"
 syn-cfg-attr = "0.2"
 thiserror = "2.0"
 tokio = "1.53"

@@ -4362,7 +4362,7 @@ dependencies = [
  "proc-macro-crate 3.5.0",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -4388,7 +4388,7 @@ dependencies = [
  "gpui-component",
  "gpui-form-codegen",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
  "trybuild",
 ]
 
@@ -4425,7 +4425,7 @@ dependencies = [
  "gpui-form-codegen",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -4476,7 +4476,7 @@ dependencies = [
  "quote",
  "serde",
  "strum 0.28.0",
- "syn 2.0.119",
+ "syn 3.0.3",
  "syn-cfg-attr",
  "trybuild",
 ]
@@ -4508,7 +4508,7 @@ dependencies = [
  "prettyplease",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
  "thiserror 2.0.19",
 ]
 
@@ -4529,7 +4529,7 @@ dependencies = [
  "heck 0.5.0",
  "inventory",
  "strum 0.28.0",
- "syn 2.0.119",
+ "syn 3.0.3",
  "thiserror 2.0.19",
 ]
 
@@ -8299,7 +8299,7 @@ dependencies = [
  "prettyplease",
  "quote",
  "some-lib",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
