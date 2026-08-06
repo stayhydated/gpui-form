@@ -184,18 +184,6 @@ pub fn from(input: TokenStream) -> TokenStream {
         }
     };
 
-    let type_description_impl = if fluent_kv.uses_type_description() {
-        let description_variants_ident = format_ident!("{}DescriptionVariants", enum_ident);
-        quote! {
-            #runtime_crate::__macro_support::localize_label::<#description_variants_ident>(cx).into()
-        }
-    } else {
-        quote! {
-            let _ = cx;
-            stringify!(#enum_ident).into()
-        }
-    };
-
     let variants: Result<Vec<VariantInfo>, syn::Error> = match &args.data {
         darling::ast::Data::Enum(variants) => variants
             .iter()
@@ -263,6 +251,23 @@ pub fn from(input: TokenStream) -> TokenStream {
     let variants = match variants {
         Ok(variants) => variants,
         Err(err) => return err.to_compile_error().into(),
+    };
+
+    let type_description_impl = if fluent_kv.uses_type_description() {
+        let description_variants_ident = format_ident!("{}DescriptionVariants", enum_ident);
+        let description_variant_uses = variants.iter().map(|variant| {
+            let variant_ident = &variant.ident;
+            quote! { let _ = #description_variants_ident::#variant_ident; }
+        });
+        quote! {
+            #(#description_variant_uses)*
+            #runtime_crate::__macro_support::localize_label::<#description_variants_ident>(cx).into()
+        }
+    } else {
+        quote! {
+            let _ = cx;
+            stringify!(#enum_ident).into()
+        }
     };
 
     let mut seen_keys = HashMap::new();

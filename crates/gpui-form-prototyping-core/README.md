@@ -5,8 +5,8 @@ registrations.
 
 ```toml
 [dependencies]
-gpui-form = { version = "0.5", features = ["inventory"] }
-gpui-form-prototyping-core = "0.5"
+gpui-form = { version = "0.6", features = ["inventory"] }
+gpui-form-prototyping-core = "0.6"
 ```
 
 Implement `FormLayout` for the target view, then adapt each registered shape:

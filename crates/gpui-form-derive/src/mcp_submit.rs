@@ -172,7 +172,7 @@ fn parse_result_return_type(output: &ReturnType) -> syn::Result<(Type, Type)> {
 }
 
 fn parse_result_type(ty: &Type) -> Option<(Type, Type)> {
-    let Type::Path(TypePath { path, qself }) = ty else {
+    let Type::Path(TypePath { path, qself, .. }) = ty else {
         return None;
     };
     if qself.is_some() {

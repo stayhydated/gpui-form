@@ -21,10 +21,10 @@ Keep `gpui` and `gpui-component` aligned with the repository guidance:
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-form = "0.5"
-gpui-form-collection = "0.5"
-gpui-form-collection-derive = "0.5"
-gpui-form-component = { version = "0.5", features = ["component-shape", "derive"] }
+gpui-form = "0.6"
+gpui-form-collection = "0.6"
+gpui-form-collection-derive = "0.6"
+gpui-form-component = { version = "0.6", features = ["component-shape", "derive"] }
 ```
 
 Select only the optional crates the form uses.

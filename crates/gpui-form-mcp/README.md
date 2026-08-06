@@ -7,7 +7,7 @@ Application crates should normally enable the facade feature:
 
 ```toml
 [dependencies]
-gpui-form = { version = "0.5", default-features = false, features = ["derive", "mcp"] }
+gpui-form = { version = "0.6", default-features = false, features = ["derive", "mcp"] }
 serde = { version = "1", features = ["derive"] }
 ```
 

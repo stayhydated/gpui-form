@@ -718,22 +718,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Username;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .username()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .username()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -774,22 +779,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Email;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .email()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .email()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -830,22 +840,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Age;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .age()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .age()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -886,22 +901,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Balance;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .balance()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .balance()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -942,22 +962,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Debt;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .debt()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .debt()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -1264,22 +1289,27 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::BirthDate;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .birth_date()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .birth_date()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()

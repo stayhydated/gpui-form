@@ -30,42 +30,42 @@ publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
 rust-version = "1.96"
-version = "0.5.1"
+version = "0.6.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
 clap = "4.6"
-component-shape = { git = "https://github.com/stayhydated/component-shape" }
-component-shape-codegen = { git = "https://github.com/stayhydated/component-shape" }
-component-shape-gpui = { git = "https://github.com/stayhydated/component-shape" }
-component-shape-mcp = { git = "https://github.com/stayhydated/component-shape" }
+component-shape = { git = "https://github.com/stayhydated/component-shape", rev = "09ebec5af9fc3522e96b272d79036501b9116d60", version = "0.2.0" }
+component-shape-codegen = { git = "https://github.com/stayhydated/component-shape", rev = "09ebec5af9fc3522e96b272d79036501b9116d60", version = "0.2.0" }
+component-shape-gpui = { git = "https://github.com/stayhydated/component-shape", rev = "09ebec5af9fc3522e96b272d79036501b9116d60", version = "0.2.0" }
+component-shape-mcp = { git = "https://github.com/stayhydated/component-shape", rev = "09ebec5af9fc3522e96b272d79036501b9116d60", version = "0.2.0" }
 crabtime = "1.1"
-darling = "0.23"
+darling = "0.24"
 derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
-es-fluent = { git = "https://github.com/stayhydated/es-fluent" }
-es-fluent-build = { git = "https://github.com/stayhydated/es-fluent" }
-es-fluent-lang = { git = "https://github.com/stayhydated/es-fluent" }
-es-fluent-manager-embedded = { git = "https://github.com/stayhydated/es-fluent" }
+es-fluent = { git = "https://github.com/stayhydated/es-fluent", rev = "be9ccf8d9fc5e417e2605af3b648a6199cb39f8d", version = "0.18.1" }
+es-fluent-build = { git = "https://github.com/stayhydated/es-fluent", rev = "be9ccf8d9fc5e417e2605af3b648a6199cb39f8d", version = "0.18.1" }
+es-fluent-lang = { git = "https://github.com/stayhydated/es-fluent", rev = "be9ccf8d9fc5e417e2605af3b648a6199cb39f8d", version = "0.18.1" }
+es-fluent-manager-embedded = { git = "https://github.com/stayhydated/es-fluent", rev = "be9ccf8d9fc5e417e2605af3b648a6199cb39f8d", version = "0.18.1" }
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent" }
-gpui-form = { path = "crates/gpui-form", version = "0.5.1" }
-gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.5.1" }
-gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.5.1" }
-gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.5.1" }
-gpui-form-component = { path = "crates/gpui-form-component", version = "0.5.1" }
-gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.5.1" }
-gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.5.1" }
-gpui-form-core = { path = "crates/gpui-form-core", version = "0.5.1" }
-gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.5.1" }
-gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.5.1" }
-gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.5.1" }
-gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.5.1" }
-gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.5.1" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "855141bc755f177cbec2fed96c12849c8d6925f2" }
+gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent", rev = "b104b172c0e365d03a2e6c0d79fbcc78b171306f", version = "0.1.0" }
+gpui-form = { path = "crates/gpui-form", version = "0.6.0" }
+gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.6.0" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.6.0" }
+gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.6.0" }
+gpui-form-component = { path = "crates/gpui-form-component", version = "0.6.0" }
+gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.6.0" }
+gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.6.0" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.6.0" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.6.0" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.6.0" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.6.0" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.6.0" }
+gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.6.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "c4f6697abed0baeaaadc4a643715b96e1ac723c7", version = "0.5.0" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",
@@ -78,13 +78,13 @@ icu_datetime = "2.2.0"
 icu_locale_core = "2.2.0"
 insta = "1.48"
 inventory = "0.3"
-itertools = "0.14"
+itertools = "0.15"
 jiff = "0.2.35"
-koruma = { git = "https://github.com/stayhydated/koruma" }
-koruma-collection = { git = "https://github.com/stayhydated/koruma" }
-koruma-derive-core = { git = "https://github.com/stayhydated/koruma" }
+koruma = { git = "https://github.com/stayhydated/koruma", rev = "0e92fde0b37f7caff376b8d95ed7fae1b18d3ed8", version = "0.11.0" }
+koruma-collection = { git = "https://github.com/stayhydated/koruma", rev = "0e92fde0b37f7caff376b8d95ed7fae1b18d3ed8", version = "0.11.0" }
+koruma-derive-core = { git = "https://github.com/stayhydated/koruma", rev = "0e92fde0b37f7caff376b8d95ed7fae1b18d3ed8", version = "0.11.0" }
 log = "0.4"
-prettyplease = "0.2"
+prettyplease = "0.3"
 proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
@@ -92,12 +92,12 @@ rmcp = "3.1"
 rust_decimal = "1.42"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "3e63926d573ca52c14ad922a7711fc98865bab36" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "2b62be85c86ddfe616fc2081c1aeaa5c00decca6" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "2b62be85c86ddfe616fc2081c1aeaa5c00decca6" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "2b62be85c86ddfe616fc2081c1aeaa5c00decca6" }
 strum = "0.28"
-syn = "2.0"
-syn-cfg-attr = "0.2"
+syn = "3.0"
+syn-cfg-attr = { git = "https://github.com/stayhydated/syn-cfg-attr", rev = "71973020566bd26372f9cb4b1d8615911f617956", version = "0.3.0" }
 thiserror = "2.0"
 tokio = "1.53"
 tracing-subscriber = "0.3"

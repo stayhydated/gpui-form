@@ -20,9 +20,9 @@ ready-made collection shapes and the collection select derive:
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-form = "0.5"
-gpui-form-collection = "0.5"
-gpui-form-collection-derive = "0.5"
+gpui-form = "0.6"
+gpui-form-collection = "0.6"
+gpui-form-collection-derive = "0.6"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
@@ -103,9 +103,9 @@ from the same shape metadata.
 
 | Need | Configuration |
 |---|---|
-| Inventory metadata | `gpui-form = { version = "0.5", features = ["inventory"] }` |
-| MCP tools in a GPUI application | `gpui-form = { version = "0.5", features = ["mcp"] }` |
-| Headless MCP forms | `gpui-form = { version = "0.5", default-features = false, features = ["derive", "mcp"] }` |
+| Inventory metadata | `gpui-form = { version = "0.6", features = ["inventory"] }` |
+| MCP tools in a GPUI application | `gpui-form = { version = "0.6", features = ["mcp"] }` |
+| Headless MCP forms | `gpui-form = { version = "0.6", default-features = false, features = ["derive", "mcp"] }` |
 | MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 

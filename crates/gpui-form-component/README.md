@@ -5,7 +5,7 @@ Reusable GPUI runtime components and form shapes that complement
 
 ```toml
 [dependencies]
-gpui-form-component = { version = "0.5", features = ["component-shape", "derive"] }
+gpui-form-component = { version = "0.6", features = ["component-shape", "derive"] }
 ```
 
 ## Modules

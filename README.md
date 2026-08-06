@@ -21,8 +21,8 @@ Keep `gpui` and `gpui-component` aligned with the revisions used by
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-form = "0.5"
-gpui-form-collection = "0.5"
+gpui-form = "0.6"
+gpui-form-collection = "0.6"
 ```
 
 ## Define a form

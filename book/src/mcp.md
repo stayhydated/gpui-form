@@ -11,7 +11,7 @@ For a crate that also renders GPUI forms:
 
 ```toml
 [dependencies]
-gpui-form = { version = "0.5", features = ["mcp"] }
+gpui-form = { version = "0.6", features = ["mcp"] }
 serde = { version = "1", features = ["derive"] }
 ```
 
@@ -19,7 +19,7 @@ For a headless form server, disable the default runtime and enable the derive
 explicitly:
 
 ```toml
-gpui-form = { version = "0.5", default-features = false, features = ["derive", "mcp"] }
+gpui-form = { version = "0.6", default-features = false, features = ["derive", "mcp"] }
 ```
 
 Add `chrono` or `rust_decimal` beside `mcp` when exposed fields or responses

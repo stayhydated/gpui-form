@@ -154,22 +154,27 @@ impl Render for ItemForm {
                                     let message = ItemDescriptionVariants::Index;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = {
-                                    validation_errors
-                                        .as_ref()
-                                        .and_then(|e| {
-                                            let errors = e
-                                                .index()
-                                                .all()
-                                                .map(|v| gpui_es_fluent::localize_message(cx, &v))
-                                                .collect::<Vec<_>>();
-                                            if errors.is_empty() {
-                                                None
-                                            } else {
-                                                Some(errors.join("\n"))
-                                            }
-                                        })
-                                };
+                                let error = ({
+                                    if true {
+                                        validation_errors
+                                            .as_ref()
+                                            .and_then(|e| {
+                                                let errors = e
+                                                    .index()
+                                                    .all()
+                                                    .map(|v| gpui_es_fluent::localize_message(cx, &v))
+                                                    .collect::<Vec<_>>();
+                                                if errors.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(errors.join("\n"))
+                                                }
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                                    .or_else(|| None);
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
