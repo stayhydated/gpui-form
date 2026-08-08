@@ -13,6 +13,7 @@ use some_lib::structs::location::*;
 const CONTEXT: &str = "LocationFormForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
+#[derive(gpui_storybook::StoryControls)]
 #[gpui_storybook::story]
 pub struct LocationFormForm {
     current_data: LocationFormFormValueHolder,
@@ -29,7 +30,7 @@ impl gpui_storybook::Story for LocationFormForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<LocationForm>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

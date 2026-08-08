@@ -225,6 +225,7 @@ impl FormLayout for StorybookLayout {
             #[gpui_storybook::story_init]
             pub fn init(_cx: &mut App) {}
 
+            #[derive(gpui_storybook::StoryControls)]
             #[gpui_storybook::story]
             pub struct #form_ident {
                 #current_data_field
@@ -244,7 +245,7 @@ impl FormLayout for StorybookLayout {
                     gpui_es_fluent::localize_label::<#struct_name_ident>(cx)
                 }
 
-                fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+                fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
                     cx.new(|cx| Self::new(window, cx))
                 }
             }

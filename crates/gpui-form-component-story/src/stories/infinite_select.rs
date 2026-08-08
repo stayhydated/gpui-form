@@ -99,6 +99,7 @@ fn child_items_for_level(
         .collect()
 }
 
+#[derive(gpui_storybook::StoryControls)]
 #[gpui_storybook::story]
 pub struct InfiniteSelectStory {
     select_state: Entity<DeploymentSelectState>,
@@ -112,7 +113,7 @@ impl gpui_storybook::Story for InfiniteSelectStory {
         "Infinite Select".into()
     }
 
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

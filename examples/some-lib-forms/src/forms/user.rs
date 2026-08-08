@@ -15,6 +15,7 @@ use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
+#[derive(gpui_storybook::StoryControls)]
 #[gpui_storybook::story]
 pub struct UserForm {
     current_data: UserFormValueHolder,
@@ -31,7 +32,7 @@ impl gpui_storybook::Story for UserForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<User>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

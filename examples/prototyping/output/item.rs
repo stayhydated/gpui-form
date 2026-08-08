@@ -15,6 +15,7 @@ use some_lib::structs::new_type::*;
 const CONTEXT: &str = "ItemForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
+#[derive(gpui_storybook::StoryControls)]
 #[gpui_storybook::story]
 pub struct ItemForm {
     current_data: ItemFormValueHolder,
@@ -31,7 +32,7 @@ impl gpui_storybook::Story for ItemForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<Item>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

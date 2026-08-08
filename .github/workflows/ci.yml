@@ -42,6 +42,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Setup sccache
+        if: runner.os != 'Windows'
         uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Install Linux dependencies
@@ -49,6 +50,13 @@ jobs:
         uses: ./.github/actions/install-linux-deps
 
       - name: Run tests
+        if: runner.os != 'Windows'
+        run: cargo test --workspace --all-features
+
+      - name: Run tests
+        if: runner.os == 'Windows'
+        env:
+          RUSTC_WRAPPER: ""
         run: cargo test --workspace --all-features
 
   fmt:
