@@ -51,7 +51,7 @@ es-fluent-lang = { git = "https://github.com/stayhydated/es-fluent", rev = "8ff5
 es-fluent-manager-embedded = { git = "https://github.com/stayhydated/es-fluent", rev = "8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9", version = "0.18.1" }
 gpui = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed", version = "0.2.2" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent", rev = "71ae96cdf29d53b5434eb7aadd4036d3a25f9f70", version = "0.1.0" }
+gpui-es-fluent = { git = "https://github.com/stayhydated/gpui-es-fluent", rev = "8d64313a33d3b5f08775b4846f9aca4655147831", version = "0.1.0" }
 gpui-form = { path = "crates/gpui-form", version = "0.6.0" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.6.0" }
 gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.6.0" }
@@ -65,7 +65,7 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.6.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.6.0" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.6.0" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.6.0" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "7dc9be9d4ef056ef9846d98a7bf0a46ee5100b67", version = "0.5.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "dd431cae1c9bfa2e84104ee20f758a00d4ed7718", version = "0.5.0" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",
