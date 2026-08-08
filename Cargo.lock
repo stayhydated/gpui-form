@@ -966,7 +966,7 @@ version = "3.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6dee98b0db6a962de883bf5d20362dee4d7ca0d12fe39a7c6c73c844e1cd7c1f"
 dependencies = [
- "darling 0.20.11",
+ "darling 0.21.3",
  "ident_case",
  "prettyplease 0.2.37",
  "proc-macro2",
@@ -2113,6 +2113,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
+ "strsim",
  "syn 2.0.119",
 ]
 
@@ -3104,7 +3105,7 @@ dependencies = [
 [[package]]
 name = "es-fluent"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-derive",
  "es-fluent-manager-core",
@@ -3117,7 +3118,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-build"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-toml",
 ]
@@ -3125,7 +3126,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-derive"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "darling 0.24.0",
  "es-fluent-derive-core",
@@ -3138,7 +3139,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-derive-core"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "bon",
  "darling 0.24.0",
@@ -3157,7 +3158,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-lang"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-lang-macro",
  "es-fluent-manager-core",
@@ -3173,7 +3174,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-lang-macro"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-derive-core",
  "es-fluent-toml",
@@ -3187,7 +3188,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-manager-core"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-shared",
  "fluent-bundle",
@@ -3206,7 +3207,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-manager-embedded"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent",
  "es-fluent-manager-core",
@@ -3219,7 +3220,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-manager-macros"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "es-fluent-derive-core",
  "es-fluent-shared",
@@ -3235,7 +3236,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-shared"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "anyhow",
  "camino",
@@ -3258,7 +3259,7 @@ dependencies = [
 [[package]]
 name = "es-fluent-toml"
 version = "0.18.1"
-source = "git+https://github.com/stayhydated/es-fluent?rev=8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9#8ff586b958c3e17bfc530b2ddf7b7a5c87b716b9"
+source = "git+https://github.com/stayhydated/es-fluent?rev=ec72a62d176770424b02f7cb194cb167a16aeb0e#ec72a62d176770424b02f7cb194cb167a16aeb0e"
 dependencies = [
  "bon",
  "es-fluent-shared",
@@ -4321,7 +4322,7 @@ dependencies = [
 [[package]]
 name = "gpui-es-fluent"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-es-fluent?rev=8d64313a33d3b5f08775b4846f9aca4655147831#8d64313a33d3b5f08775b4846f9aca4655147831"
+source = "git+https://github.com/stayhydated/gpui-es-fluent?rev=32e8e787a07b5af81df1a120a5e13afa885ec534#32e8e787a07b5af81df1a120a5e13afa885ec534"
 dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
@@ -4535,7 +4536,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "gpui",
  "gpui-es-fluent",
@@ -4554,7 +4555,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -4563,7 +4564,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -4596,7 +4597,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "darling 0.24.0",
  "heck 0.5.0",
@@ -4608,7 +4609,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-preferences"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "fluent-langneg",
  "schemars",
@@ -4626,7 +4627,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=dd431cae1c9bfa2e84104ee20f758a00d4ed7718#dd431cae1c9bfa2e84104ee20f758a00d4ed7718"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=18503a210700d556a45c71cebd31530bf91cb243#18503a210700d556a45c71cebd31530bf91cb243"
 dependencies = [
  "serde",
  "toml 1.1.4+spec-1.1.0",
@@ -6099,7 +6100,7 @@ checksum = "a4933f3f57a8e9d9da04db23fb153356ecaf00cbd14aee46279c33dc80925c37"
 [[package]]
 name = "koruma"
 version = "0.11.0"
-source = "git+https://github.com/stayhydated/koruma?rev=efbac2d9bddeade53c61f85f5a5ddaa689a01970#efbac2d9bddeade53c61f85f5a5ddaa689a01970"
+source = "git+https://github.com/stayhydated/koruma?rev=081f2f33da7f8f288966e7ffa73d595aa7d2a510#081f2f33da7f8f288966e7ffa73d595aa7d2a510"
 dependencies = [
  "koruma-core",
  "koruma-derive",
@@ -6108,7 +6109,7 @@ dependencies = [
 [[package]]
 name = "koruma-collection"
 version = "0.11.0"
-source = "git+https://github.com/stayhydated/koruma?rev=efbac2d9bddeade53c61f85f5a5ddaa689a01970#efbac2d9bddeade53c61f85f5a5ddaa689a01970"
+source = "git+https://github.com/stayhydated/koruma?rev=081f2f33da7f8f288966e7ffa73d595aa7d2a510#081f2f33da7f8f288966e7ffa73d595aa7d2a510"
 dependencies = [
  "email_address",
  "es-fluent",
@@ -6122,7 +6123,7 @@ dependencies = [
 [[package]]
 name = "koruma-core"
 version = "0.11.0"
-source = "git+https://github.com/stayhydated/koruma?rev=efbac2d9bddeade53c61f85f5a5ddaa689a01970#efbac2d9bddeade53c61f85f5a5ddaa689a01970"
+source = "git+https://github.com/stayhydated/koruma?rev=081f2f33da7f8f288966e7ffa73d595aa7d2a510#081f2f33da7f8f288966e7ffa73d595aa7d2a510"
 dependencies = [
  "es-fluent",
 ]
@@ -6130,7 +6131,7 @@ dependencies = [
 [[package]]
 name = "koruma-derive"
 version = "0.11.0"
-source = "git+https://github.com/stayhydated/koruma?rev=efbac2d9bddeade53c61f85f5a5ddaa689a01970#efbac2d9bddeade53c61f85f5a5ddaa689a01970"
+source = "git+https://github.com/stayhydated/koruma?rev=081f2f33da7f8f288966e7ffa73d595aa7d2a510#081f2f33da7f8f288966e7ffa73d595aa7d2a510"
 dependencies = [
  "heck 0.5.0",
  "koruma-derive-core",
@@ -6143,7 +6144,7 @@ dependencies = [
 [[package]]
 name = "koruma-derive-core"
 version = "0.11.0"
-source = "git+https://github.com/stayhydated/koruma?rev=efbac2d9bddeade53c61f85f5a5ddaa689a01970#efbac2d9bddeade53c61f85f5a5ddaa689a01970"
+source = "git+https://github.com/stayhydated/koruma?rev=081f2f33da7f8f288966e7ffa73d595aa7d2a510#081f2f33da7f8f288966e7ffa73d595aa7d2a510"
 dependencies = [
  "attribute-dsl",
  "heck 0.5.0",
