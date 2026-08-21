@@ -11,6 +11,10 @@ pub struct NonDefault(String);
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct SourceCode(String);
 
+fn source_code_to_form(value: SourceCode) -> String {
+    value.0
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FallibleCode(String);
 
@@ -91,7 +95,7 @@ pub struct ConvertedDefaultDemo {
         RequiredShape,
         value(
             type = String,
-            from_source = |value: SourceCode| value.0,
+            from_source = source_code_to_form,
             into_source = SourceCode,
         ),
         default = SourceCode("fallback".to_string())

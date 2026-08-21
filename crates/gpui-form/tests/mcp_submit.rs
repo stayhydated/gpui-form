@@ -28,13 +28,13 @@ use std::{
 type Attempts = u32;
 
 #[derive(
-    Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
+    Clone, Debug, Default, Deserialize, Eq, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
 #[serde(transparent)]
 pub struct AccountId(u64);
 
 /// Submit a plain request from inferred docs.
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct PlainRequest {
     /// Title from rustdoc that explicit MCP field metadata overrides.
@@ -74,7 +74,7 @@ fn object_response(value: Value) -> ObjectResponse {
     ObjectResponse(value)
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(koruma)]
 #[gpui_form(mcp)]
 pub struct ValidatedRequest {
@@ -83,7 +83,7 @@ pub struct ValidatedRequest {
     name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(koruma)]
 #[gpui_form(mcp)]
 pub struct ConstrainedRequest {
@@ -100,6 +100,7 @@ pub struct ConstrainedRequest {
     Debug,
     Default,
     Deserialize,
+    Eq,
     gpui_form::mcp::McpJsonSchema,
     koruma::Koruma,
     PartialEq,
@@ -109,7 +110,7 @@ pub struct ConstrainedRequest {
 #[koruma(newtype)]
 pub struct RequestCode(#[koruma(LenValidation::<_>.min(2).max(8))] String);
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct NewtypeConvertedRequest {
     #[gpui_form(hidden(value(koruma_newtype)))]
@@ -117,7 +118,7 @@ pub struct NewtypeConvertedRequest {
 }
 
 #[cfg(feature = "runtime")]
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentRequest {
     #[gpui_form(component(gpui_form_collection::input::Input::<String>))]
@@ -126,7 +127,7 @@ pub struct ComponentRequest {
 
 #[cfg(feature = "runtime")]
 #[derive(
-    Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
+    Clone, Debug, Default, Deserialize, Eq, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
 #[serde(transparent)]
 pub struct ComponentOnlyValue(String);
@@ -147,12 +148,12 @@ impl FromStr for ComponentOnlyValue {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, gpui_form::mcp::McpJsonSchema, PartialEq)]
 #[serde(transparent)]
 pub struct DecodeOnlyValue(String);
 
 #[derive(
-    Clone, Debug, Default, Deserialize, gpui_form::mcp::McpToolInput, PartialEq, Serialize,
+    Clone, Debug, Default, Deserialize, Eq, gpui_form::mcp::McpToolInput, PartialEq, Serialize,
 )]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationPreferences {
@@ -162,7 +163,7 @@ pub struct NotificationPreferences {
     topics: Vec<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SlashSeparatedTags(Vec<String>);
 
 impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
@@ -185,35 +186,35 @@ impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
 }
 
 #[cfg(feature = "runtime")]
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentNoSchemaRequest {
     #[gpui_form(component(gpui_form_collection::input::Input::<ComponentOnlyValue>))]
     title: ComponentOnlyValue,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq)]
 #[gpui_form(mcp)]
 pub struct DecodeOnlyRequest {
     #[gpui_form(hidden)]
     value: DecodeOnlyValue,
 }
 
-#[derive(Clone, Debug, GpuiForm, PartialEq)]
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
 #[gpui_form(mcp)]
 pub struct CustomToolValueRequest {
     #[gpui_form(hidden)]
     tags: SlashSeparatedTags,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ToolInputSchemaRequest {
     #[gpui_form(hidden)]
     preferences: NotificationPreferences,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct CustomSchemaRequest {
     #[gpui_form(hidden)]
@@ -222,7 +223,7 @@ pub struct CustomSchemaRequest {
     attempts: Attempts,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct TupleSchemaRequest {
     #[gpui_form(hidden)]
@@ -230,7 +231,7 @@ pub struct TupleSchemaRequest {
 }
 
 #[derive(
-    Clone, Debug, Default, Deserialize, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
+    Clone, Debug, Default, Deserialize, Eq, gpui_form::mcp::McpJsonSchema, PartialEq, Serialize,
 )]
 #[serde(rename_all = "kebab-case")]
 pub enum Priority {
@@ -240,14 +241,14 @@ pub enum Priority {
     HighPriority,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct EnumSchemaRequest {
     #[gpui_form(hidden)]
     priority: Priority,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct SkippedRequest {
     #[gpui_form(hidden)]
@@ -256,21 +257,21 @@ pub struct SkippedRequest {
     tenant_id: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct DirectRequest {
     #[gpui_form(hidden)]
     name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct AsyncRequest {
     #[gpui_form(hidden)]
     title: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct AsyncValueRequest {
     #[gpui_form(hidden)]
@@ -282,7 +283,7 @@ pub struct SubmitContext {
     prefix: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_context_request",
     title = "Submit context request",
@@ -309,21 +310,18 @@ impl gpui_form::mcp::McpContextSubmit<SubmitContext> for ContextRequest {
     type Response = ContextSubmitResponse;
     type Error = String;
 
-    fn submit_with_context(
+    async fn submit_with_context(
         self,
         context: SubmitContext,
-    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static
-    {
-        async move {
-            Ok(ContextSubmitResponse {
-                prefixed: format!("{}{}", context.prefix, self.title),
-                title: self.title,
-            })
-        }
+    ) -> Result<Self::Response, Self::Error> {
+        Ok(ContextSubmitResponse {
+            prefixed: format!("{}{}", context.prefix, self.title),
+            title: self.title,
+        })
     }
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_dynamic_context_request",
     title = "Submit dynamic context request",
@@ -391,16 +389,15 @@ where
     type Response = TraitSubmitResponse;
     type Error = String;
 
-    fn submit_with_context(
+    async fn submit_with_context(
         self,
         context: Self::Context,
-    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static
-    {
-        async move { Ok(self.trait_backed_output(context)) }
+    ) -> Result<Self::Response, Self::Error> {
+        Ok(self.trait_backed_output(context))
     }
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_trait_backed_context_request",
     title = "Submit trait-backed context request",
@@ -441,7 +438,7 @@ pub trait MappedTraitBackedSubmitter: Sized + Send + 'static {
     ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static;
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_mapped_trait_backed_context_request",
     title = "Submit mapped trait-backed context request",
@@ -463,17 +460,14 @@ impl MappedTraitBackedSubmitter for MappedTraitBackedContextRequest {
     type Response = TraitRawSubmitResponse;
     type Error = String;
 
-    fn submit_with_context(
+    async fn submit_with_context(
         self,
         context: Self::Context,
-    ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send + 'static
-    {
-        async move {
-            Ok(TraitRawSubmitResponse {
-                prefixed: format!("{}{}", context.prefix, self.title),
-                title: self.title,
-            })
-        }
+    ) -> Result<Self::Response, Self::Error> {
+        Ok(TraitRawSubmitResponse {
+            prefixed: format!("{}{}", context.prefix, self.title),
+            title: self.title,
+        })
     }
 }
 
@@ -487,7 +481,7 @@ fn map_trait_raw_response(
     .map_err(|error| error.to_string())
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(
     name = "submit_metadata_request",
     title = "Submit metadata request",
@@ -508,14 +502,14 @@ pub struct MetadataRequest {
     label: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ExplicitModelRequest {
     #[gpui_form(hidden)]
     title: String,
 }
 
-#[derive(Clone, Debug, Deserialize, GpuiForm, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp(name = "submit_explicit_holder_request"))]
 pub struct ExplicitHolderRequest {
     #[gpui_form(skip)]
@@ -1749,7 +1743,7 @@ fn async_editor_submit_does_not_close_session_if_revision_changes_before_success
     let patched = server.call_tool(
         &tools.patch,
         Some(json!({
-            "session_id": session_id.clone(),
+            "session_id": session_id,
             "expected_revision": 0,
             "values": {
                 "title": "Updated while submit runs"
@@ -1780,7 +1774,7 @@ fn async_editor_submit_does_not_close_session_if_revision_changes_before_success
     let read = server.call_tool(
         &tools.read,
         Some(json!({
-            "session_id": session_id.clone()
+            "session_id": session_id
         })),
     );
     assert_eq!(read.is_error, Some(false));
