@@ -48,9 +48,9 @@ semantic_fragment!(ConditionalFragment);
 /// `Divider` belong in the caller's [`FormLayout`] implementation rather than
 /// in the shared form-shape adapter output.
 const FRAGMENT_IMPORTS: &[ImportItem] = &[
-    ImportItem::path("gpui::InteractiveElement"),
+    ImportItem::aliased("gpui::InteractiveElement", Alias::Anonymous),
     ImportItem::aliased("gpui::ParentElement", Alias::Anonymous),
-    ImportItem::path("gpui::Styled"),
+    ImportItem::aliased("gpui::Styled", Alias::Anonymous),
 ];
 
 const FIELD_FRAGMENT_IMPORTS: &[ImportItem] = &[

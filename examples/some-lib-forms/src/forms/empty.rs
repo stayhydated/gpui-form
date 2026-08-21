@@ -1,5 +1,7 @@
-use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-use gpui::{InteractiveElement, ParentElement as _, Styled};
+use gpui::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+};
+use gpui::{InteractiveElement as _, ParentElement as _, Styled as _};
 use gpui_component::form::v_form;
 use gpui_component::separator::Separator;
 use gpui_component::v_flex;
@@ -8,6 +10,7 @@ const CONTEXT: &str = "EmptyForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct EmptyForm {
     _fields: EmptyFormFields,
     focus_handle: FocusHandle,
@@ -21,7 +24,7 @@ impl gpui_storybook::Story for EmptyForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<Empty>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

@@ -20,6 +20,7 @@ fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl FluentMessage) ->
 }
 
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct FilePickerStory {
     file_picker: Entity<FilePickerState>,
     directory_picker: Entity<FilePickerState>,
@@ -33,7 +34,7 @@ impl gpui_storybook::Story for FilePickerStory {
         "File Picker".into()
     }
 
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

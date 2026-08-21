@@ -1,6 +1,8 @@
 use gpui::prelude::FluentBuilder as _;
-use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
+use gpui::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+};
+use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use gpui_component::ActiveTheme as _;
 use gpui_component::Disableable as _;
 use gpui_component::form::field;
@@ -16,6 +18,7 @@ const CONTEXT: &str = "UserForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct UserForm {
     current_data: UserFormValueHolder,
     fields: UserFormFields,
@@ -31,7 +34,7 @@ impl gpui_storybook::Story for UserForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<User>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }
@@ -718,7 +721,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Username;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -737,8 +740,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -779,7 +781,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Email;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -798,8 +800,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -840,7 +841,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Age;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -859,8 +860,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -901,7 +901,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Balance;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -920,8 +920,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -962,7 +961,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::Debt;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -981,8 +980,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()
@@ -1289,7 +1287,7 @@ impl Render for UserForm {
                                     let message = UserDescriptionVariants::BirthDate;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -1308,8 +1306,7 @@ impl Render for UserForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()

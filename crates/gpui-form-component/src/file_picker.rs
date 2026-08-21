@@ -15,6 +15,7 @@ use gpui::{
 };
 use gpui_component::{
     ActiveTheme as _, Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledExt as _,
+    ThemeStyled as _,
     button::{Button, ButtonVariants as _},
     h_flex,
 };
@@ -512,7 +513,10 @@ impl RenderOnce for FilePicker {
                             .border_color(cx.theme().input)
                             .rounded(cx.theme().radius)
                             .when(cx.theme().shadow, |this| this.shadow_xs())
-                            .when(is_focused, |this| this.focused_border(cx))
+                            .when(is_focused, |this| this.border_color(cx.theme().ring))
+                    })
+                    .when(is_focused && appearance && !disabled, |this| {
+                        this.focus_ring_style(window, cx)
                     })
                     .input_text_size(size)
                     .input_size(size)

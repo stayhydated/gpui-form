@@ -532,10 +532,15 @@ pub fn generate_description_fn_tokens(
             })
         }
     } else {
+        let error_tokens = if options.has_additional_validation_message() {
+            quote! { (#error_tokens).or_else(|| #additional_error_tokens) }
+        } else {
+            error_tokens
+        };
         quote! {
             .description_fn({
                 let description = #description_tokens;
-                let error = (#error_tokens).or_else(|| #additional_error_tokens);
+                let error = #error_tokens;
                 let error_color = #error_color_tokens;
                 move |_, _| {
                     div()

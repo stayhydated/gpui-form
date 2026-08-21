@@ -20,6 +20,7 @@ fn localize(cx: &impl std::borrow::Borrow<App>, message: &impl FluentMessage) ->
 }
 
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct DatePickerStory {
     range_picker: Entity<DateRangePickerState>,
     long_picker: Entity<DatePickerState>,
@@ -33,7 +34,7 @@ impl gpui_storybook::Story for DatePickerStory {
         "Date Picker".into()
     }
 
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }

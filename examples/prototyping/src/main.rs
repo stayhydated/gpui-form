@@ -213,7 +213,7 @@ impl FormLayout for StorybookLayout {
 
         syn::parse2(quote! {
             #imports
-            use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
+            use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
             #disableable_import
             use gpui_component::separator::Separator;
             use gpui_component::form::v_form;
@@ -226,6 +226,7 @@ impl FormLayout for StorybookLayout {
             pub fn init(_cx: &mut App) {}
 
             #[gpui_storybook::story]
+            #[derive(gpui_storybook::StoryControls)]
             pub struct #form_ident {
                 #current_data_field
                 #form_fields_struct_field
@@ -244,7 +245,7 @@ impl FormLayout for StorybookLayout {
                     gpui_es_fluent::localize_label::<#struct_name_ident>(cx)
                 }
 
-                fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+                fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
                     cx.new(|cx| Self::new(window, cx))
                 }
             }

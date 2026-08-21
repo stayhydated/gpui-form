@@ -1,6 +1,8 @@
 use gpui::prelude::FluentBuilder as _;
-use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
+use gpui::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+};
+use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use gpui_component::ActiveTheme as _;
 use gpui_component::Disableable as _;
 use gpui_component::form::field;
@@ -16,6 +18,7 @@ const CONTEXT: &str = "ItemForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct ItemForm {
     current_data: ItemFormValueHolder,
     fields: ItemFormFields,
@@ -31,7 +34,7 @@ impl gpui_storybook::Story for ItemForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<Item>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }
@@ -154,7 +157,7 @@ impl Render for ItemForm {
                                     let message = ItemDescriptionVariants::Index;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                let error = ({
+                                let error = {
                                     if true {
                                         validation_errors
                                             .as_ref()
@@ -173,8 +176,7 @@ impl Render for ItemForm {
                                     } else {
                                         None
                                     }
-                                })
-                                    .or_else(|| None);
+                                };
                                 let error_color = cx.theme().danger;
                                 move |_, _| {
                                     div()

@@ -1,5 +1,7 @@
-use gpui::{App, AppContext, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
-use gpui::{InteractiveElement, ParentElement as _, Styled, Subscription, div};
+use gpui::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+};
+use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use gpui_component::Disableable as _;
 use gpui_component::form::field;
 use gpui_component::form::v_form;
@@ -14,6 +16,7 @@ const CONTEXT: &str = "LocationFormForm";
 #[gpui_storybook::story_init]
 pub fn init(_cx: &mut App) {}
 #[gpui_storybook::story]
+#[derive(gpui_storybook::StoryControls)]
 pub struct LocationFormForm {
     current_data: LocationFormFormValueHolder,
     fields: LocationFormFormFields,
@@ -29,7 +32,7 @@ impl gpui_storybook::Story for LocationFormForm {
     fn title(cx: &gpui::App) -> String {
         gpui_es_fluent::localize_label::<LocationForm>(cx)
     }
-    fn new_view(window: &mut Window, cx: &mut App) -> Entity<impl Render + Focusable> {
+    fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 }
