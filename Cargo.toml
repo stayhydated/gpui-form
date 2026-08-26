@@ -37,10 +37,10 @@ anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
 clap = "4.6"
-component-shape = { git = "https://github.com/stayhydated/component-shape", rev = "8b879b2150caea99284e98044cdf0488d613cbdb", version = "0.2.0" }
-component-shape-codegen = { git = "https://github.com/stayhydated/component-shape", rev = "8b879b2150caea99284e98044cdf0488d613cbdb", version = "0.2.0" }
-component-shape-gpui = { git = "https://github.com/stayhydated/component-shape", rev = "8b879b2150caea99284e98044cdf0488d613cbdb", version = "0.2.0" }
-component-shape-mcp = { git = "https://github.com/stayhydated/component-shape", rev = "8b879b2150caea99284e98044cdf0488d613cbdb", version = "0.2.0" }
+component-shape = { git = "https://github.com/stayhydated/component-shape", rev = "8dd9335217121c089793c0106339ca5a8f61f4f7", version = "0.2.0" }
+component-shape-codegen = { git = "https://github.com/stayhydated/component-shape", rev = "8dd9335217121c089793c0106339ca5a8f61f4f7", version = "0.2.0" }
+component-shape-gpui = { git = "https://github.com/stayhydated/component-shape", rev = "8dd9335217121c089793c0106339ca5a8f61f4f7", version = "0.2.0" }
+component-shape-mcp = { git = "https://github.com/stayhydated/component-shape", rev = "8dd9335217121c089793c0106339ca5a8f61f4f7", version = "0.2.0" }
 crabtime = "1.1"
 darling = "0.24"
 derive_more = "2.1"
@@ -65,7 +65,7 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.6.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.6.0" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.6.0" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.6.0" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "0cf64e41b329ddc226120e3f756baf119ff76f44", version = "0.5.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "e91f6b4b1970d7d61a04d8dd68478d8f00bb0310", version = "0.5.0" }
 gpui_platform = { branch = "linux-headless-renderer", features = [
   "font-kit",
   "x11",

@@ -222,6 +222,7 @@ Registration choices:
 | Default stdio server | `serve_stdio_blocking()` |
 | Existing MCP server | `register(&mut server)` |
 | Submit/editor/metadata profile | `register_with_options(...)` |
+| Shared MCP tool registry | `tool_registry()` or `tool_registry_with_options(...)` |
 | Shared context | `register_context_submitters(...)` |
 | Generated prompts | `register_prompt_templates(...)` |
 | One manual form | `form::<Form>(&mut server)` |
@@ -230,6 +231,8 @@ Editor sessions use `*_edit_open`, `*_edit_patch`, `*_edit_validate`,
 `*_edit_submit`, and `*_edit_close`. Retain revisions and send
 `expected_revision` for optimistic concurrency. Configure limits and idle
 expiry with `McpFormEditorOptions`. Sessions do not mutate live GPUI entities.
+MCP servers retain those sessions across calls; tool completion does not
+request shutdown.
 
 Registered forms publish descriptor, schema, and examples resources below
 `gpui-form://forms/{tool_name}/...`. Field schemas use `McpToolValue`; custom

@@ -3,6 +3,8 @@
 //! This crate intentionally keeps GPUI out of the submit execution path. It
 //! owns form holder/model decoding and validation while delegating shared MCP
 //! server and stdio serving mechanics to `component-shape-mcp`.
+//! MCP servers retain their shared form registry and editor sessions for the
+//! host lifetime; completing a call never requests shutdown.
 
 use std::{
     any::{Any, TypeId},
@@ -26,10 +28,10 @@ pub use component_shape_mcp::{
     McpRange, McpRangeBoundKind, McpResourceContents, McpResourceResult, McpRole, McpSchema,
     McpSchemaFn, McpSchemaProperties, McpServer, McpServerBuilder, McpToolAnnotations,
     McpToolArguments, McpToolCall, McpToolError, McpToolIcon, McpToolInput, McpToolMetadata,
-    McpToolValue, McpTypedTool, McpValidationIssue, McpValidationParam, McpValidationRule,
-    McpValidationScope, McpValidationTarget, McpValidationTypeArgMode, PromptDefinition,
-    ResourceDefinition, ResourceTemplateDefinition, ServeStdioResult, ToolCallResult,
-    ToolDefinition, object_schema, serde, serde_json, validation_issues_error,
+    McpToolRegistry, McpToolValue, McpTypedTool, McpValidationIssue, McpValidationParam,
+    McpValidationRule, McpValidationScope, McpValidationTarget, McpValidationTypeArgMode,
+    PromptDefinition, ResourceDefinition, ResourceTemplateDefinition, ServeStdioResult,
+    ToolCallResult, ToolDefinition, object_schema, serde, serde_json, validation_issues_error,
 };
 pub use rmcp;
 
@@ -3430,6 +3432,20 @@ fn required_missing_fields(
 /// editable form session tool.
 pub fn server() -> Result<McpServer, McpToolError> {
     builder().build()
+}
+
+/// Build the inventory-discovered form tool registry.
+pub fn tool_registry() -> Result<McpToolRegistry, McpToolError> {
+    tool_registry_with_options(McpFormRegistrationOptions::all())
+}
+
+/// Build the inventory-discovered form tool registry for a registration profile.
+pub fn tool_registry_with_options(
+    options: McpFormRegistrationOptions,
+) -> Result<McpToolRegistry, McpToolError> {
+    let mut server = McpServer::new(DEFAULT_SERVER_NAME, env!("CARGO_PKG_VERSION"));
+    register_with_options(&mut server, options)?;
+    Ok(server.into_tool_registry())
 }
 
 /// Serve every inventory-discovered form submit handler and editable form

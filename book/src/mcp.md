@@ -98,6 +98,10 @@ context, response, error, and submit method.
 Use per-form registration helpers when one form needs a manual handler or
 editor policy.
 
+The MCP server retains editor sessions across calls until EOF, cancellation,
+idle expiry, or another application-owned shutdown signal. Tool completion
+does not request shutdown.
+
 ## Edit a holder through MCP
 
 Generated editor tools use an optimistic revision:

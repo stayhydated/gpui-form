@@ -91,6 +91,9 @@ pub struct Profile {
   runtime state.
 - Generated editor sessions are headless holder state, not live GPUI entity
   mutation.
+- Retain MCP servers for the host lifetime so editor sessions span calls.
+  Tool completion does not request shutdown; EOF, cancellation, idle expiry,
+  or application policy ends the host explicitly.
 
 ## Reference selection
 

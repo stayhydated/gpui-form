@@ -20,6 +20,12 @@ handler with `#[gpui_form::mcp_submit]`, then serve the generated tools with
 `gpui_form::mcp::serve_stdio_blocking()` or compose them into an existing MCP
 server.
 
+Use `gpui_form::mcp::tool_registry()` or
+`tool_registry_with_options(...)` when the host assembles the same
+inventory-discovered MCP definitions and handlers independently from a
+server. MCP servers retain editor sessions across calls; completing a call
+does not request shutdown.
+
 See [MCP form tools](https://stayhydated.github.io/gpui-form/book/mcp.html) for
 submit handlers, context-backed forms, editor sessions, resources, prompts,
 schemas, and troubleshooting. Full APIs are on

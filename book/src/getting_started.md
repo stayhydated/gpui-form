@@ -6,7 +6,7 @@ application owns the holder and component entities needed to render the form.
 
 ## Prerequisites
 
-- Rust 1.96 or newer.
+- Rust 1.98 or newer.
 - A GPUI application that calls `gpui_component::init(cx)`.
 - A `gpui_component::Root` around each first-level window view.
 - `gpui` and `gpui-component` revisions compatible with `gpui-form`.

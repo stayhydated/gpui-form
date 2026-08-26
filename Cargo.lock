@@ -1532,7 +1532,7 @@ dependencies = [
 [[package]]
 name = "component-shape"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "derive_more",
  "heck 0.5.0",
@@ -1544,7 +1544,7 @@ dependencies = [
 [[package]]
 name = "component-shape-codegen"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "attribute-dsl",
  "component-shape",
@@ -1556,7 +1556,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1566,7 +1566,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui-macros"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -1579,7 +1579,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "chrono",
  "component-shape",
@@ -1596,7 +1596,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp-macros"
 version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=8b879b2150caea99284e98044cdf0488d613cbdb#8b879b2150caea99284e98044cdf0488d613cbdb"
+source = "git+https://github.com/stayhydated/component-shape?rev=8dd9335217121c089793c0106339ca5a8f61f4f7#8dd9335217121c089793c0106339ca5a8f61f4f7"
 dependencies = [
  "proc-macro-crate 3.5.0",
  "proc-macro2",
@@ -4615,7 +4615,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "gpui",
  "gpui-es-fluent",
@@ -4635,7 +4635,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -4644,7 +4644,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -4677,7 +4677,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "darling 0.24.1",
  "heck 0.5.0",
@@ -4689,7 +4689,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-preferences"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "fluent-langneg",
  "schemars",
@@ -4707,7 +4707,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=0cf64e41b329ddc226120e3f756baf119ff76f44#0cf64e41b329ddc226120e3f756baf119ff76f44"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=e91f6b4b1970d7d61a04d8dd68478d8f00bb0310#e91f6b4b1970d7d61a04d8dd68478d8f00bb0310"
 dependencies = [
  "serde",
  "toml 1.1.4+spec-1.1.0",

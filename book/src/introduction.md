@@ -5,7 +5,7 @@ Derive `GpuiForm`, give each field one form intent, and use the generated
 holder to validate and reconstruct the model.
 
 This guide is for Rust application developers who already use
-`gpui-component` in a GPUI application. The workspace supports Rust 1.96.
+`gpui-component` in a GPUI application. The workspace supports Rust 1.98.
 Keep the application's `gpui` and `gpui-component` dependencies aligned with
 the versions in [Getting started](getting_started.md).
 
