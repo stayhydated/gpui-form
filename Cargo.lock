@@ -966,7 +966,7 @@ version = "3.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6dee98b0db6a962de883bf5d20362dee4d7ca0d12fe39a7c6c73c844e1cd7c1f"
 dependencies = [
- "darling 0.23.0",
+ "darling 0.21.3",
  "ident_case",
  "prettyplease 0.2.37",
  "proc-macro2",
@@ -1491,7 +1491,7 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "gpui_util",
  "indexmap",
@@ -2080,16 +2080,6 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ae13da2f202d56bd7f91c25fba009e7717a1e4a1cc98a76d844b65ae912e9d"
-dependencies = [
- "darling_core 0.23.0",
- "darling_macro 0.23.0",
-]
-
-[[package]]
-name = "darling"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
@@ -2119,18 +2109,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1247195ecd7e3c85f83c8d2a366e4210d588e802133e1e355180a9870b517ea4"
 dependencies = [
  "fnv",
- "ident_case",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9865a50f7c335f53564bb694ef660825eb8610e0a53d3e11bf1b0d3df31e03b0"
-dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
@@ -2169,17 +2147,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d38308df82d1080de0afee5d069fa14b0326a88c14f15c5ccda35b4a6c414c81"
 dependencies = [
  "darling_core 0.21.3",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3984ec7bd6cfa798e62b4a642426a5be0e68f9401cfc2a01e3fa9ea2fcdb8d"
-dependencies = [
- "darling_core 0.23.0",
  "quote",
  "syn 2.0.119",
 ]
@@ -2301,7 +2268,7 @@ dependencies = [
 [[package]]
 name = "derive_refineable"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4209,7 +4176,7 @@ dependencies = [
 [[package]]
 name = "gpui"
 version = "0.2.2"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -4381,7 +4348,7 @@ dependencies = [
 [[package]]
 name = "gpui-es-fluent"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/gpui-es-fluent?rev=bf549faa89b1981b0564f677f5a32e365be56ad5#bf549faa89b1981b0564f677f5a32e365be56ad5"
+source = "git+https://github.com/stayhydated/gpui-es-fluent?rev=b3cec2eebc2e5d53b7dbd4ab77271c272a1ac07e#b3cec2eebc2e5d53b7dbd4ab77271c272a1ac07e"
 dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
@@ -4595,7 +4562,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "gpui",
  "gpui-es-fluent",
@@ -4615,7 +4582,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-components"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "gpui",
  "gpui-component",
@@ -4624,7 +4591,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -4657,7 +4624,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "darling 0.24.1",
  "heck 0.5.0",
@@ -4669,7 +4636,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-preferences"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "fluent-langneg",
  "schemars",
@@ -4687,7 +4654,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.5.0"
-source = "git+https://github.com/stayhydated/gpui-storybook?rev=af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb#af98f95a03acea5e5024c4f9ba1f8afb2ec6fecb"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=ce3de8ce53edd28055e8f8922e4f0d7c7cd26700#ce3de8ce53edd28055e8f8922e4f0d7c7cd26700"
 dependencies = [
  "serde",
  "toml 1.1.4+spec-1.1.0",
@@ -4696,7 +4663,7 @@ dependencies = [
 [[package]]
 name = "gpui_apple"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "block",
@@ -4719,7 +4686,7 @@ dependencies = [
 [[package]]
 name = "gpui_linux"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "accesskit",
  "accesskit_unix",
@@ -4765,7 +4732,7 @@ dependencies = [
 [[package]]
 name = "gpui_macos"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -4811,7 +4778,7 @@ dependencies = [
 [[package]]
 name = "gpui_macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -4822,7 +4789,7 @@ dependencies = [
 [[package]]
 name = "gpui_platform"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "console_error_panic_hook",
  "gpui",
@@ -4836,7 +4803,7 @@ dependencies = [
 [[package]]
 name = "gpui_shared_string"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "schemars",
  "serde",
@@ -4846,7 +4813,7 @@ dependencies = [
 [[package]]
 name = "gpui_tokio"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "gpui",
@@ -4857,7 +4824,7 @@ dependencies = [
 [[package]]
 name = "gpui_util"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "log",
@@ -4867,7 +4834,7 @@ dependencies = [
 [[package]]
 name = "gpui_web"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -4891,7 +4858,7 @@ dependencies = [
 [[package]]
 name = "gpui_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4917,7 +4884,7 @@ dependencies = [
 [[package]]
 name = "gpui_windows"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -5259,7 +5226,7 @@ dependencies = [
 [[package]]
 name = "http_client"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -6775,7 +6742,7 @@ dependencies = [
 [[package]]
 name = "media"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -7847,7 +7814,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "perf"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "collections",
  "serde",
@@ -8806,7 +8773,7 @@ dependencies = [
 [[package]]
 name = "refineable"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "derive_refineable",
 ]
@@ -9305,7 +9272,7 @@ dependencies = [
 [[package]]
 name = "scheduler"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "async-task",
  "backtrace",
@@ -10095,7 +10062,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "sum_tree"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "heapless",
  "log",
@@ -11245,7 +11212,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "util_macros"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "perf",
  "quote",
@@ -13167,7 +13134,7 @@ dependencies = [
 [[package]]
 name = "zlog"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "anyhow",
  "chrono",
@@ -13184,7 +13151,7 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 [[package]]
 name = "ztracing"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -13195,7 +13162,7 @@ dependencies = [
 [[package]]
 name = "ztracing_macro"
 version = "0.1.0"
-source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#7dd9163ca7ac75fce5efd4b59b395cf6a64d3e6a"
+source = "git+https://github.com/stayhydated/zed?branch=linux-headless-renderer#013aa8fcc5bde703a128370f0aadfbb6b12aa2dc"
 
 [[package]]
 name = "zune-core"
