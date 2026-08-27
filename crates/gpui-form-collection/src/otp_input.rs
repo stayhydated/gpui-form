@@ -3,7 +3,7 @@ use std::str::FromStr;
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui::{App, Context, Entity, IntoElement, RenderOnce, Window};
-use gpui_component::input::{InputEvent, OtpInput as GpuiOtpInput, OtpState};
+use gpui_component::input::{OtpEvent, OtpInput as GpuiOtpInput, OtpState};
 
 #[derive(IntoElement)]
 pub struct OtpInputField {
@@ -41,7 +41,7 @@ component_shape! {
         where
             T: FromStr + ToString + 'static,
         {
-            type Event = InputEvent;
+            type Event = OtpEvent;
 
             fn seed_value_binding_state(
                 state: &mut Self::State,
@@ -55,7 +55,7 @@ component_shape! {
 
             fn value_change(state: &Self::State, event: &Self::Event) -> ValueChange<T> {
                 match event {
-                    InputEvent::Change => {
+                    OtpEvent::Change => {
                         let value = state.value();
                         if value.is_empty() {
                             ValueChange::Clear

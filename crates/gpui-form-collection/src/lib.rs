@@ -50,7 +50,7 @@ mod tests {
     };
     use gpui_component::{
         combobox::{ComboboxEvent, ComboboxState},
-        input::{InputEvent, OtpState},
+        input::{OtpEvent, OtpState},
         select::SelectItem,
         slider::SliderValue,
     };
@@ -283,7 +283,7 @@ mod tests {
             otp.read_with(cx, |state, _| {
                 <OtpInput<i32> as GpuiComponentValueBinding<i32>>::value_change(
                     state,
-                    &InputEvent::Change,
+                    &OtpEvent::Change,
                 )
             }),
             ValueChange::Set(123_456)
@@ -292,7 +292,7 @@ mod tests {
             otp.read_with(cx, |state, _| {
                 <OtpInput<i32> as GpuiComponentValueBinding<i32>>::value_change(
                     state,
-                    &InputEvent::Blur,
+                    &OtpEvent::Blur,
                 )
             }),
             ValueChange::Unchanged
