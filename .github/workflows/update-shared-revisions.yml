@@ -5,11 +5,12 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   update:
     uses: stayhydated/shared/.github/workflows/update-shared-revisions.yml@master
+    with:
+      app_client_id: ${{ vars.SHARED_REVISION_APP_CLIENT_ID }}
     secrets:
-      pull_request_token: ${{ secrets.SHARED_REVISION_PR_TOKEN }}
+      app_private_key: ${{ secrets.SHARED_REVISION_APP_PRIVATE_KEY }}
