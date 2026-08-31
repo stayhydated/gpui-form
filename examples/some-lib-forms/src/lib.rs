@@ -1,5 +1,5 @@
 use gpui::Application;
-use gpui_storybook::{ConsumerId, Gallery, StorybookOptions};
+use gpui_storybook::{ConsumerId, StorybookOptions, StorybookWindow};
 use some_lib::i18n::{self, Languages};
 
 pub mod forms;
@@ -19,7 +19,7 @@ fn storybook_options() -> Result<StorybookOptions<Languages>, gpui_storybook::Co
     Ok(options)
 }
 
-pub fn run_storybook(app: Application, selected_story: Option<String>) {
+pub fn run_storybook(app: Application) {
     app.run(move |app_cx| {
         let options = match storybook_options() {
             Ok(options) => options,
@@ -50,7 +50,7 @@ pub fn run_storybook(app: Application, selected_story: Option<String>) {
 
                 cx.update(|app_cx| {
                     app_cx.activate(true);
-                    gpui_storybook::create_new_window(
+                    gpui_storybook::create_storybook_window(
                         &format!("{} - Stories", env!("CARGO_PKG_NAME")),
                         move |window, cx| {
                             let stories = gpui_storybook::generate_stories(window, cx);
@@ -58,7 +58,7 @@ pub fn run_storybook(app: Application, selected_story: Option<String>) {
                                 !stories.is_empty(),
                                 "generated-form Storybook requires linked stories"
                             );
-                            Gallery::view(stories, selected_story.as_deref(), window, cx)
+                            StorybookWindow::new(stories)
                         },
                         app_cx,
                     );

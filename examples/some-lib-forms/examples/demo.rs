@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
-    some_lib_forms::run_storybook(gpui_platform::application().with_assets(Assets), None);
+    some_lib_forms::run_storybook(gpui_platform::application().with_assets(Assets));
 }
 
 #[cfg(target_family = "wasm")]
@@ -14,7 +14,7 @@ fn main() {
 pub fn run() -> Result<(), JsValue> {
     gpui_platform::web_init();
     let app = keep_web_application_alive(gpui_platform::single_threaded_web()).with_assets(Assets);
-    some_lib_forms::run_storybook(app, None);
+    some_lib_forms::run_storybook(app);
     Ok(())
 }
 
