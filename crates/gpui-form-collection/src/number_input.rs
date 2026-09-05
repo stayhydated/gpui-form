@@ -2,13 +2,14 @@ use std::str::FromStr;
 
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{
-    App, AppContext as _, Context, Entity, EventEmitter, IntoElement, RenderOnce, Subscription,
-    Window,
-};
-use gpui_component::input::{
+use gpui_kit as gpui;
+use gpui_kit::component::input::{
     InputEvent, InputState, NumberInput as GpuiNumberInput,
     NumberInputEvent as GpuiNumberInputEvent, StepAction,
+};
+use gpui_kit::{
+    App, AppContext as _, Context, Entity, EventEmitter, IntoElement, RenderOnce, Subscription,
+    Window,
 };
 
 #[derive(Clone, Debug)]
@@ -109,7 +110,7 @@ impl RenderOnce for NumberInputField {
 }
 
 component_shape! {
-    /// Form component for a `gpui_component::input::NumberInput` backed by `InputState`.
+    /// Form component for a `gpui_kit::component::input::NumberInput` backed by `InputState`.
     pub struct NumberInput<T = String>
     where
         T: FromStr + ToString + 'static,

@@ -16,7 +16,7 @@ pub enum Languages {}
 /// Applies Storybook's resolved locale to the component gallery's GPUI manager.
 pub fn apply_locale(
     language: Languages,
-    cx: &mut gpui::App,
+    cx: &mut gpui_kit::App,
 ) -> Result<(), gpui_es_fluent::EmbeddedInitError> {
     let _linked_module = &GPUI_FORM_COMPONENT_STORY_I18N_MODULE;
     gpui_es_fluent::replace_with_language(cx, language)
@@ -39,9 +39,10 @@ pub(crate) enum FilePickerComponentText {
 #[cfg(test)]
 mod tests {
     use super::{DatePickerComponentText, Languages, apply_locale};
+    use gpui_kit as gpui;
 
-    #[gpui::test]
-    fn gpui_adapter_links_and_applies_component_resources(cx: &mut gpui::TestAppContext) {
+    #[gpui_kit::test]
+    fn gpui_adapter_links_and_applies_component_resources(cx: &mut gpui_kit::TestAppContext) {
         cx.update(|cx| {
             apply_locale(Languages::FrFr, cx)
                 .expect("French component story resources should initialize");

@@ -18,8 +18,8 @@ the public catalog.
 
 ## Project Summary
 
-`gpui-form` is a Rust form-generation ecosystem built on top of `gpui` and
-`gpui-component`, centered on `#[derive(GpuiForm)]`.
+`gpui-form` is a Rust form-generation ecosystem built on GPUI Kit, centered on
+`#[derive(GpuiForm)]`.
 
 Its priorities are:
 
@@ -101,7 +101,7 @@ those generated publication artifacts by hand.
 
 - `crates/gpui-form-collection`
   Role: curated component shapes and value bindings for common
-  `gpui-component` widgets.
+  GPUI Kit widgets.
 
 - `crates/gpui-form-collection-derive`
   Role: proc macros such as `SelectItem` that pair with

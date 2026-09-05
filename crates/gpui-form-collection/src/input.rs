@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Window};
-use gpui_component::input::{InputEvent, InputState};
+use gpui_kit::component::input::{InputEvent, InputState};
+use gpui_kit::{Context, Window};
 
 /// Configuration for [`ParsedInput`].
 ///
@@ -42,7 +42,7 @@ pub trait ParsedInputConfig<T>: 'static {
 }
 
 component_shape! {
-    /// Form component for a parsed `gpui_component::input::Input`.
+    /// Form component for a parsed `gpui_kit::component::input::Input`.
     ///
     /// `ParsedInput<T, C>` uses [`ParsedInputConfig`] for display formatting,
     /// parsing, placeholder text, empty-as-clear behavior, and optional
@@ -54,7 +54,7 @@ component_shape! {
     {
         state = InputState;
         new = |window, cx| ParsedInput::<T, C>::new_state(window, cx);
-        component = gpui_component::input::Input;
+        component = gpui_kit::component::input::Input;
         value = T;
         field_suffix = "input";
         value_binding;
@@ -126,7 +126,7 @@ impl_form_component_shape!(
 );
 
 component_shape! {
-    /// Form component for a `gpui_component::input::Input` backed by `InputState`.
+    /// Form component for a `gpui_kit::component::input::Input` backed by `InputState`.
     ///
     /// Use `Input::<_>` in `#[gpui_form(component(...))]` so the derive
     /// resolves `_` to the field's form-side type.
@@ -137,7 +137,7 @@ component_shape! {
         state = InputState;
         new = |window, cx| InputState::new(window, cx)
             .validate(|value, _| value.parse::<T>().is_ok());
-        component = gpui_component::input::Input;
+        component = gpui_kit::component::input::Input;
         value = T;
         field_suffix = "input";
         value_binding;
@@ -194,10 +194,10 @@ mod tests {
     use super::{ParsedInput, ParsedInputConfig};
     use component_shape::ValueChange;
     use component_shape_gpui::{GpuiComponentShape, GpuiComponentValueBinding};
-    use gpui_component::input::{InputEvent, InputState};
     use gpui_form_runtime::shape::{
         DirectValueStorage, GpuiComponentShapeFor, GpuiFormComponentShapePolicy,
     };
+    use gpui_kit::component::input::{InputEvent, InputState};
     use std::num::ParseIntError;
 
     #[derive(Debug, Eq, PartialEq)]

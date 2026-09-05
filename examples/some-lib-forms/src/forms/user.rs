@@ -1,17 +1,17 @@
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
-    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
-};
-use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
-use gpui_component::ActiveTheme as _;
-use gpui_component::Disableable as _;
-use gpui_component::form::field;
-use gpui_component::form::v_form;
-use gpui_component::separator::Separator;
-use gpui_component::v_flex;
 use gpui_form::runtime::shape::{
     GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::Disableable as _;
+use gpui_kit::component::form::field;
+use gpui_kit::component::form::v_form;
+use gpui_kit::component::separator::Separator;
+use gpui_kit::component::v_flex;
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+};
+use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
@@ -31,7 +31,7 @@ impl Focusable for UserForm {
     }
 }
 impl gpui_storybook::Story for UserForm {
-    fn title(cx: &gpui::App) -> String {
+    fn title(cx: &gpui_kit::App) -> String {
         gpui_es_fluent::localize_label::<User>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
@@ -215,13 +215,16 @@ impl UserForm {
     fn on_brand_color_color_picker_event(
         &mut self,
         state: &Entity<GpuiComponentStateOf<gpui_form_collection::color_picker::ColorPicker>>,
-        event: &GpuiComponentEventOf<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>,
+        event: &GpuiComponentEventOf<
+            gpui_form_collection::color_picker::ColorPicker,
+            gpui_kit::Hsla,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
         let form_change = {
             let state = state.read(_cx);
-            value_change::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
+            value_change::<gpui_form_collection::color_picker::ColorPicker, gpui_kit::Hsla>(
                 state, event,
             )
         };
@@ -560,12 +563,10 @@ impl UserForm {
             );
         });
         brand_color.update(cx, |state, cx| {
-            seed_value_binding_state::<gpui_form_collection::color_picker::ColorPicker, gpui::Hsla>(
-                state,
-                current_data.brand_color.as_ref(),
-                window,
-                cx,
-            );
+            seed_value_binding_state::<
+                gpui_form_collection::color_picker::ColorPicker,
+                gpui_kit::Hsla,
+            >(state, current_data.brand_color.as_ref(), window, cx);
         });
         otp_code.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::otp_input::OtpInput<String>, String>(
@@ -658,11 +659,11 @@ impl UserForm {
     fn submit_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
+        label: impl Into<gpui_kit::SharedString>,
         on_submit: impl Fn(Result<UserFormValueHolder, String>, &mut Window, &mut Context<Self>)
         + 'static,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-submit-button", "user-form"))
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-submit-button", "user-form"))
             .label(label)
             .disabled(self.current_data.validate().is_err())
             .on_click(cx.listener(move |this, _, window, cx| {
@@ -672,9 +673,9 @@ impl UserForm {
     fn reset_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-reset-button", "user-form"))
+        label: impl Into<gpui_kit::SharedString>,
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-reset-button", "user-form"))
             .label(label)
             .on_click(cx.listener(|this, _, window, cx| {
                 this.reset_form(window, cx);

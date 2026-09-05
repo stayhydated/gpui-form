@@ -70,7 +70,7 @@ pub struct User {
     pub attention_level: f32,
 
     #[gpui_form(component(gpui_form_collection::color_picker::ColorPicker))]
-    pub brand_color: Option<gpui::Hsla>,
+    pub brand_color: Option<gpui_kit::Hsla>,
 
     #[gpui_form(component(gpui_form_collection::otp_input::OtpInput::<_>))]
     pub otp_code: String,

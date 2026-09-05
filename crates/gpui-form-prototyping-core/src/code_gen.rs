@@ -52,22 +52,22 @@ semantic_fragment!(ConditionalFragment);
 /// `Divider` belong in the caller's [`FormLayout`] implementation rather than
 /// in the shared form-shape adapter output.
 const FRAGMENT_IMPORTS: &[ImportItem] = &[
-    ImportItem::aliased("gpui::InteractiveElement", Alias::Anonymous),
-    ImportItem::aliased("gpui::ParentElement", Alias::Anonymous),
-    ImportItem::aliased("gpui::Styled", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::InteractiveElement", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::ParentElement", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::Styled", Alias::Anonymous),
 ];
 
 const FIELD_FRAGMENT_IMPORTS: &[ImportItem] = &[
-    ImportItem::path("gpui::div"),
-    ImportItem::path("gpui_component::form::field"),
+    ImportItem::path("gpui_kit::div"),
+    ImportItem::path("gpui_kit::component::form::field"),
 ];
 
 const VALIDATION_FRAGMENT_IMPORTS: &[ImportItem] = &[
-    ImportItem::aliased("gpui::prelude::FluentBuilder", Alias::Anonymous),
-    ImportItem::aliased("gpui_component::ActiveTheme", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::prelude::FluentBuilder", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::component::ActiveTheme", Alias::Anonymous),
 ];
 
-const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui::Subscription")];
+const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui_kit::Subscription")];
 
 struct GeneratedField<'a> {
     imports: Vec<ImportItem>,

@@ -6,21 +6,18 @@
 # gpui-form
 
 `gpui-form` generates typed form state for
-[GPUI](https://github.com/zed-industries/zed) applications that use
-[`gpui-component`](https://github.com/longbridge/gpui-component). Add
+[GPUI Kit](https://github.com/longbridge/gpui-kit) applications. Add
 `#[derive(GpuiForm)]` to an application model, assign each field a form intent,
 and use the generated holder and component types to render, validate, and
 reconstruct the model.
 
 ## Install
 
-Keep `gpui` and `gpui-component` aligned with the revisions used by
-`gpui-form`:
+Use the published GPUI Kit facade:
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component" }
+gpui-kit = "0.6.0"
 gpui-form = "0.6"
 gpui-form-collection = "0.6"
 ```
@@ -46,7 +43,7 @@ constructors, and `ProfileFormValueHolder`. Every field uses exactly one
 | Crate | Use it for |
 |---|---|
 | `gpui-form` | The public derive, facade, generated runtime paths, schema access, and optional MCP integration |
-| `gpui-form-collection` | Ready-made form shapes for common `gpui-component` controls |
+| `gpui-form-collection` | Ready-made form shapes for common GPUI Kit controls |
 | `gpui-form-component` | Localized date and file pickers plus cascading infinite-select support |
 | `gpui-form-prototyping-core` | Generating GPUI form scaffolds from inventory metadata |
 

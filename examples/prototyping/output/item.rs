@@ -1,14 +1,14 @@
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
-use gpui_component::ActiveTheme as _;
-use gpui_component::Disableable as _;
-use gpui_component::form::field;
-use gpui_component::form::v_form;
-use gpui_component::separator::Separator;
-use gpui_component::v_flex;
+use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::Disableable as _;
+use gpui_kit::component::form::field;
+use gpui_kit::component::form::v_form;
+use gpui_kit::component::separator::Separator;
+use gpui_kit::component::v_flex;
 use gpui_form::runtime::shape::{
     GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
@@ -31,7 +31,7 @@ impl Focusable for ItemForm {
     }
 }
 impl gpui_storybook::Story for ItemForm {
-    fn title(cx: &gpui::App) -> String {
+    fn title(cx: &gpui_kit::App) -> String {
         gpui_es_fluent::localize_label::<Item>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
@@ -96,10 +96,10 @@ impl ItemForm {
     fn submit_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
+        label: impl Into<gpui_kit::SharedString>,
         on_submit: impl Fn(Result<Option<Item>, String>, &mut Window, &mut Context<Self>) + 'static,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-submit-button", "item-form"))
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-submit-button", "item-form"))
             .label(label)
             .disabled(self.current_data.validate().is_err())
             .on_click(cx.listener(move |this, _, window, cx| {
@@ -109,9 +109,9 @@ impl ItemForm {
     fn reset_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-reset-button", "item-form"))
+        label: impl Into<gpui_kit::SharedString>,
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-reset-button", "item-form"))
             .label(label)
             .on_click(cx.listener(|this, _, window, cx| {
                 this.reset_form(window, cx);

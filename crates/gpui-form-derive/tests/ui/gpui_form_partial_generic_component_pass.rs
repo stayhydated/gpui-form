@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 struct InputState<T>(PhantomData<T>);
 
 impl<T> InputState<T> {
-    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
         Self(PhantomData)
     }
 }

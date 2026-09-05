@@ -7,7 +7,7 @@ use gpui_form_runtime::shape::{
 struct State;
 
 impl State {
-    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
         Self
     }
 }
@@ -20,7 +20,7 @@ impl GpuiComponentShape for ManualShape {
     type State = State;
     type RenderComponent = NoGpuiRenderComponent;
 
-    fn new(window: &mut gpui::Window, cx: &mut gpui::Context<'_, Self::State>) -> Self::State {
+    fn new(window: &mut gpui_kit::Window, cx: &mut gpui_kit::Context<'_, Self::State>) -> Self::State {
         State::new(window, cx)
     }
 }

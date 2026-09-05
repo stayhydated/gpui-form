@@ -7,7 +7,7 @@ widget or construction behavior you need.
 
 ## Choose the package
 
-- Use `gpui-form-collection` for common `gpui-component` controls.
+- Use `gpui-form-collection` for common GPUI Kit controls.
 - Use `gpui-form-component` for localized date and file pickers or cascading
   infinite selects.
 - Use `component-shape-gpui` and `gpui-form-runtime` when a crate defines its
@@ -29,8 +29,8 @@ Applications that only consume existing shapes use the
 | Several enum-like values | `combobox::Combobox::<Item>` |
 | Boolean value | `checkbox::Checkbox` or `switch::Switch` |
 | Numeric text input | `number_input::NumberInput::<T>` |
-| `f32` or `gpui_component::slider::SliderValue` | `slider::Slider` |
-| `gpui::Hsla` | `color_picker::ColorPicker` |
+| `f32` or `gpui_kit::component::slider::SliderValue` | `slider::Slider` |
+| `gpui_kit::Hsla` | `color_picker::ColorPicker` |
 | `chrono::NaiveDate` or a date pair | `date_picker::DatePicker` or `DateRangePicker` |
 | One-time-password value | `otp_input::OtpInput::<T>` |
 

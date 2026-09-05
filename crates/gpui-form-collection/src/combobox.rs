@@ -1,18 +1,18 @@
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Window};
-use gpui_component::{
+use gpui_kit::component::{
     IndexPath,
     combobox::{ComboboxEvent, ComboboxState},
     searchable_list::SearchableListDelegate,
     select::SelectItem,
 };
+use gpui_kit::{Context, Window};
 use strum::IntoEnumIterator;
 
 component_shape! {
-    /// Form component for a `gpui_component::combobox::Combobox` backed by `ComboboxState`.
+    /// Form component for a `gpui_kit::component::combobox::Combobox` backed by `ComboboxState`.
     ///
-    /// The enum type `T` must implement `gpui_component::select::SelectItem`,
+    /// The enum type `T` must implement `gpui_kit::component::select::SelectItem`,
     /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
     pub struct Combobox<T, D = Vec<T>>
     where
@@ -21,7 +21,7 @@ component_shape! {
     {
         state = ComboboxState<D>;
         new = Self::new_default;
-        component = gpui_component::combobox::Combobox<_>;
+        component = gpui_kit::component::combobox::Combobox<_>;
         value = Vec<T>;
         field_suffix = "combobox";
         value_binding;

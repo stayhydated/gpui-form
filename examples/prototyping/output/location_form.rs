@@ -1,12 +1,12 @@
-use gpui::{
+use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
-use gpui_component::Disableable as _;
-use gpui_component::form::field;
-use gpui_component::form::v_form;
-use gpui_component::separator::Separator;
-use gpui_component::v_flex;
+use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
+use gpui_kit::component::Disableable as _;
+use gpui_kit::component::form::field;
+use gpui_kit::component::form::v_form;
+use gpui_kit::component::separator::Separator;
+use gpui_kit::component::v_flex;
 use gpui_form::runtime::shape::{
     GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
@@ -29,7 +29,7 @@ impl Focusable for LocationFormForm {
     }
 }
 impl gpui_storybook::Story for LocationFormForm {
-    fn title(cx: &gpui::App) -> String {
+    fn title(cx: &gpui_kit::App) -> String {
         gpui_es_fluent::localize_label::<LocationForm>(cx)
     }
     fn new_view(window: &mut Window, cx: &mut App) -> Entity<Self> {
@@ -133,10 +133,10 @@ impl LocationFormForm {
     fn submit_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
+        label: impl Into<gpui_kit::SharedString>,
         on_submit: impl Fn(Option<LocationForm>, &mut Window, &mut Context<Self>) + 'static,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-submit-button", "location_form-form"))
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-submit-button", "location_form-form"))
             .label(label)
             .disabled(false)
             .on_click(cx.listener(move |this, _, window, cx| {
@@ -146,9 +146,9 @@ impl LocationFormForm {
     fn reset_button(
         &self,
         cx: &mut Context<Self>,
-        label: impl Into<gpui::SharedString>,
-    ) -> gpui_component::button::Button {
-        gpui_component::button::Button::new(format!("{}-reset-button", "location_form-form"))
+        label: impl Into<gpui_kit::SharedString>,
+    ) -> gpui_kit::component::button::Button {
+        gpui_kit::component::button::Button::new(format!("{}-reset-button", "location_form-form"))
             .label(label)
             .on_click(cx.listener(|this, _, window, cx| {
                 this.reset_form(window, cx);

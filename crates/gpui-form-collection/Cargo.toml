@@ -16,13 +16,12 @@ bon = { workspace = true }
 chrono = { workspace = true }
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
-gpui = { workspace = true }
-gpui-component = { workspace = true }
+gpui-kit = { workspace = true }
 gpui-form-runtime = { workspace = true }
 strum = { workspace = true }
 
 [dev-dependencies]
-gpui = { features = [ "test-support" ], workspace = true }
+gpui-kit = { features = [ "test-support" ], workspace = true }
 
 [lints]
 workspace = true

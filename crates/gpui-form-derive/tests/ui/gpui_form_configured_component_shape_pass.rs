@@ -6,7 +6,7 @@ struct SelectState<T> {
 }
 
 impl<T> SelectState<T> {
-    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
         Self {
             searchable: false,
             _marker: PhantomData,
@@ -56,8 +56,8 @@ where
 {
     fn build(
         self,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<'_, SelectState<T>>,
+        _window: &mut gpui_kit::Window,
+        _cx: &mut gpui_kit::Context<'_, SelectState<T>>,
     ) -> SelectState<T> {
         SelectState {
             searchable: self.searchable,

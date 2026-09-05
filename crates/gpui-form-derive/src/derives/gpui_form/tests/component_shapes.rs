@@ -22,7 +22,7 @@ fn test_component_shape_generates_shape_based_state_and_constructor() {
     let compact = compact_tokens(&expanded.to_string());
 
     assert!(
-        compact.contains("pubbio:::gpui::Entity<")
+        compact.contains("pubbio:::gpui_kit::Entity<")
             && compact.contains(
                 "<crate::ui::BioInputas::gpui_form::runtime::shape::GpuiComponentShape>::State"
             ),
@@ -89,7 +89,7 @@ fn test_component_shape_generates_fields() {
     let compact = compact_tokens(&expanded.to_string());
 
     assert!(
-        compact.contains("pubemail:::gpui::Entity<"),
+        compact.contains("pubemail:::gpui_kit::Entity<"),
         "explicit component shape syntax should generate a source-named entity field: {compact}"
     );
     assert!(
@@ -210,7 +210,7 @@ fn test_component_shape_infers_field_type_generic() {
         "component shape `_` should be resolved to the field type in FormFields: {compact}"
     );
     assert!(
-        compact.contains("pubaccount_no:::gpui::Entity<"),
+        compact.contains("pubaccount_no:::gpui_kit::Entity<"),
         "generated FormFields identifiers should use the source field name: {compact}"
     );
     assert!(
@@ -248,7 +248,7 @@ fn test_component_shape_generates_multiword_component_suffix() {
     let compact = compact_tokens(&expanded.to_string());
 
     assert!(
-        compact.contains("pubbirth_date:::gpui::Entity<"),
+        compact.contains("pubbirth_date:::gpui_kit::Entity<"),
         "multiword shape names should not affect generated component entity fields: {compact}"
     );
     assert!(

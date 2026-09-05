@@ -123,10 +123,10 @@ impl FormLayout for StorybookLayout {
                 fn submit_button(
                     &self,
                     cx: &mut Context<Self>,
-                    label: impl Into<gpui::SharedString>,
+                    label: impl Into<gpui_kit::SharedString>,
                     on_submit: impl Fn(#submit_payload_type, &mut Window, &mut Context<Self>) + 'static,
-                ) -> gpui_component::button::Button {
-                    gpui_component::button::Button::new(format!("{}-submit-button", #form_id_literal))
+                ) -> gpui_kit::component::button::Button {
+                    gpui_kit::component::button::Button::new(format!("{}-submit-button", #form_id_literal))
                         .label(label)
                         .disabled(#submit_disabled)
                         .on_click(cx.listener(move |this, _, window, cx| {
@@ -137,9 +137,9 @@ impl FormLayout for StorybookLayout {
                 fn reset_button(
                     &self,
                     cx: &mut Context<Self>,
-                    label: impl Into<gpui::SharedString>,
-                ) -> gpui_component::button::Button {
-                    gpui_component::button::Button::new(format!("{}-reset-button", #form_id_literal))
+                    label: impl Into<gpui_kit::SharedString>,
+                ) -> gpui_kit::component::button::Button {
+                    gpui_kit::component::button::Button::new(format!("{}-reset-button", #form_id_literal))
                         .label(label)
                         .on_click(cx.listener(|this, _, window, cx| {
                             this.reset_form(window, cx);
@@ -178,7 +178,7 @@ impl FormLayout for StorybookLayout {
         let disableable_import = if *is_empty {
             quote! {}
         } else {
-            quote! { use gpui_component::Disableable as _; }
+            quote! { use gpui_kit::component::Disableable as _; }
         };
 
         let form_action_import = if *is_empty {
@@ -213,11 +213,11 @@ impl FormLayout for StorybookLayout {
 
         syn::parse2(quote! {
             #imports
-            use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
+            use gpui_kit::{App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window};
             #disableable_import
-            use gpui_component::separator::Separator;
-            use gpui_component::form::v_form;
-            use gpui_component::v_flex;
+            use gpui_kit::component::separator::Separator;
+            use gpui_kit::component::form::v_form;
+            use gpui_kit::component::v_flex;
             #form_action_import
 
             const CONTEXT: &str = #context_str;
@@ -241,7 +241,7 @@ impl FormLayout for StorybookLayout {
             }
 
             impl gpui_storybook::Story for #form_ident {
-                fn title(cx: &gpui::App) -> String {
+                fn title(cx: &gpui_kit::App) -> String {
                     gpui_es_fluent::localize_label::<#struct_name_ident>(cx)
                 }
 

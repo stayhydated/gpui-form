@@ -418,7 +418,7 @@ fn required_imports_only_include_subscription_when_needed() {
     let compact = compact(&parts.imports.to_string());
 
     assert!(
-        !compact.contains("usegpui::Subscription;"),
+        !compact.contains("usegpui_kit::Subscription;"),
         "subscription import should be omitted when no generated subscriptions exist: {compact}"
     );
 }

@@ -1,7 +1,7 @@
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Hsla, Window};
-use gpui_component::color_picker::{ColorPickerEvent, ColorPickerState};
+use gpui_kit::component::color_picker::{ColorPickerEvent, ColorPickerState};
+use gpui_kit::{Context, Hsla, Window};
 
 fn color_picker_value_change(event: &ColorPickerEvent) -> ValueChange<Hsla> {
     match event {
@@ -11,10 +11,10 @@ fn color_picker_value_change(event: &ColorPickerEvent) -> ValueChange<Hsla> {
 }
 
 component_shape! {
-    /// Form component for a `gpui_component::color_picker::ColorPicker` backed by `ColorPickerState`.
+    /// Form component for a `gpui_kit::component::color_picker::ColorPicker` backed by `ColorPickerState`.
     pub struct ColorPicker {
         state = ColorPickerState;
-        component = gpui_component::color_picker::ColorPicker;
+        component = gpui_kit::component::color_picker::ColorPicker;
         value = Hsla;
         field_suffix = "color_picker";
         value_binding;

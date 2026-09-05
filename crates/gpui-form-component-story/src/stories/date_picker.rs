@@ -1,9 +1,9 @@
 use es_fluent::FluentMessage;
-use gpui::{
+use gpui_kit::component::form::v_form;
+use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable, IntoElement, ParentElement as _, Render,
     SharedString, Styled as _, Subscription, Window, div,
 };
-use gpui_component::form::v_form;
 use jiff::civil::{Date as JiffDate, date};
 
 use gpui_form_component::date_picker::{
@@ -30,7 +30,7 @@ pub struct DatePickerStory {
 }
 
 impl gpui_storybook::Story for DatePickerStory {
-    fn title(_: &gpui::App) -> String {
+    fn title(_: &gpui_kit::App) -> String {
         "Date Picker".into()
     }
 
@@ -40,7 +40,7 @@ impl gpui_storybook::Story for DatePickerStory {
 }
 
 impl Focusable for DatePickerStory {
-    fn focus_handle(&self, cx: &App) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &App) -> gpui_kit::FocusHandle {
         self.range_picker.read(cx).focus_handle(cx)
     }
 }

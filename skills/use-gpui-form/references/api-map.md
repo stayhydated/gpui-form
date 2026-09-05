@@ -15,12 +15,11 @@ Use this reference for application code that consumes `gpui-form`.
 
 ## Dependencies
 
-Keep `gpui` and `gpui-component` aligned with the repository guidance:
+Use the published GPUI Kit facade:
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component" }
+gpui-kit = "0.6.0"
 gpui-form = "0.6"
 gpui-form-collection = "0.6"
 gpui-form-collection-derive = "0.6"
@@ -120,7 +119,7 @@ Prototyping-only helper names use the shape's field suffix.
 | `bool` | `checkbox::Checkbox` or `switch::Switch` |
 | Numeric text with step controls | `number_input::NumberInput::<_>` |
 | `f32` or `SliderValue` | `slider::Slider` |
-| `gpui::Hsla` | `color_picker::ColorPicker` |
+| `gpui_kit::Hsla` | `color_picker::ColorPicker` |
 | `chrono::NaiveDate` or date pair | Collection `DatePicker` or `DateRangePicker` |
 | OTP value | `otp_input::OtpInput::<_>` |
 | Localized date or date pair | Component `DatePicker` or `DateRangePicker` |

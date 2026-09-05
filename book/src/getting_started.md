@@ -7,9 +7,9 @@ application owns the holder and component entities needed to render the form.
 ## Prerequisites
 
 - Rust 1.98 or newer.
-- A GPUI application that calls `gpui_component::init(cx)`.
-- A `gpui_component::Root` around each first-level window view.
-- `gpui` and `gpui-component` revisions compatible with `gpui-form`.
+- A GPUI application that calls `gpui_kit::init(cx)`.
+- A `gpui_kit::component::Root` around each first-level window view.
+- `gpui-kit` 0.6.0.
 
 ## Add the dependencies
 
@@ -18,8 +18,7 @@ ready-made collection shapes and the collection select derive:
 
 ```toml
 [dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "b077f41a9f26ae5ed7fadfea55a501d34afb25de" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component" }
+gpui-kit = "0.6.0"
 gpui-form = "0.6"
 gpui-form-collection = "0.6"
 gpui-form-collection-derive = "0.6"
@@ -88,7 +87,7 @@ let fields = UserProfileFormFields {
 
 The constructors create widget state. A complete view must also:
 
-1. Retain each `gpui::Subscription` on the owning GPUI entity.
+1. Retain each `gpui_kit::Subscription` on the owning GPUI entity.
 2. Map component events through
    `gpui_form::runtime::shape::value_change` into the holder.
 3. Seed widget state with
@@ -126,5 +125,5 @@ intent, and every selected shape supports its form-side value type.
 |---|---|
 | `field ... must choose a gpui_form field intent` | Add `component(...)`, `hidden`, or `skip` to the named field. |
 | A `gpui_form_component` shape is unavailable | Enable that crate's `component-shape` feature; infinite-select enums also need its `derive` feature. |
-| GPUI types from two dependencies do not match | Align `gpui` and `gpui-component` with the dependency block above. |
+| GPUI types from two dependencies do not match | Depend on `gpui-kit` alone, as shown above. |
 | The widget renders but the holder never changes | Retain the subscription and map its event into the holder, or generate the wiring through the prototyping workflow. |

@@ -744,8 +744,8 @@ pub fn from(input: TokenStream) -> TokenStream {
 
             fn variant_label(
                 &self,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> gpui::SharedString {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> gpui_kit::SharedString {
                 let _ = cx;
                 match self {
                     #(#variant_label_arms)*
@@ -772,8 +772,8 @@ pub fn from(input: TokenStream) -> TokenStream {
 
             fn child_variant_labels(
                 &self,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Vec<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Vec<gpui_kit::SharedString> {
                 match self {
                     #(#child_variant_label_arms)*
                 }
@@ -839,8 +839,8 @@ pub fn from(input: TokenStream) -> TokenStream {
 
             fn inner_child_variant_labels(
                 &self,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Vec<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Vec<gpui_kit::SharedString> {
                 match self {
                     #(#inner_child_variant_label_arms)*
                 }
@@ -866,23 +866,23 @@ pub fn from(input: TokenStream) -> TokenStream {
 
             fn type_label(
                 &self,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> gpui::SharedString {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> gpui_kit::SharedString {
                 #type_label_impl
             }
 
             fn type_description(
                 &self,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> gpui::SharedString {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> gpui_kit::SharedString {
                 #type_description_impl
             }
 
             fn inner_child_label_at_depth(
                 &self,
                 depth: usize,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Option<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Option<gpui_kit::SharedString> {
                 match self {
                     #(#inner_child_label_arms)*
                 }
@@ -891,8 +891,8 @@ pub fn from(input: TokenStream) -> TokenStream {
             fn inner_child_description_at_depth(
                 &self,
                 depth: usize,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Option<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Option<gpui_kit::SharedString> {
                 match self {
                     #(#inner_child_description_arms)*
                 }
@@ -901,8 +901,8 @@ pub fn from(input: TokenStream) -> TokenStream {
             fn child_label_at_depth(
                 &self,
                 depth: usize,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Option<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Option<gpui_kit::SharedString> {
                 if depth == 0 {
                     match self {
                         #(#child_label_immediate_arms)*
@@ -915,8 +915,8 @@ pub fn from(input: TokenStream) -> TokenStream {
             fn child_description_at_depth(
                 &self,
                 depth: usize,
-                cx: &impl std::borrow::Borrow<gpui::App>,
-            ) -> Option<gpui::SharedString> {
+                cx: &impl std::borrow::Borrow<gpui_kit::App>,
+            ) -> Option<gpui_kit::SharedString> {
                 if depth == 0 {
                     match self {
                         #(#child_description_immediate_arms)*

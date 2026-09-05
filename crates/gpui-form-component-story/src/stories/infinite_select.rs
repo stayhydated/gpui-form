@@ -1,10 +1,10 @@
 use es_fluent::{EsFluentLabel, EsFluentVariants};
-use gpui::{
+use gpui_kit::component::IndexPath;
+use gpui_kit::component::form::v_form;
+use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable, IntoElement, ParentElement as _, Render,
     Styled as _, Subscription, Window, div,
 };
-use gpui_component::IndexPath;
-use gpui_component::form::v_form;
 
 use gpui_form_component::InfiniteSelect;
 use gpui_form_component::infinite_select::{
@@ -109,7 +109,7 @@ pub struct InfiniteSelectStory {
 }
 
 impl gpui_storybook::Story for InfiniteSelectStory {
-    fn title(_: &gpui::App) -> String {
+    fn title(_: &gpui_kit::App) -> String {
         "Infinite Select".into()
     }
 
@@ -119,7 +119,7 @@ impl gpui_storybook::Story for InfiniteSelectStory {
 }
 
 impl Focusable for InfiniteSelectStory {
-    fn focus_handle(&self, cx: &App) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &App) -> gpui_kit::FocusHandle {
         self.select_state.focus_handle(cx)
     }
 }
@@ -319,6 +319,7 @@ mod tests {
 
     use es_fluent::FluentLabel as _;
     use gpui_form_component::infinite_select::InfiniteSelectValue as _;
+    use gpui_kit as gpui;
 
     use super::{DeploymentTarget, DeploymentTargetLabelVariants, WebRegionLabelVariants};
 
@@ -401,8 +402,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn infinite_select_runtime_uses_strict_fluent_labels(cx: &mut gpui::TestAppContext) {
+    #[gpui_kit::test]
+    fn infinite_select_runtime_uses_strict_fluent_labels(cx: &mut gpui_kit::TestAppContext) {
         cx.update(|cx| {
             crate::i18n::apply_locale(crate::i18n::Languages::default(), cx)
                 .expect("story Fluent resources should initialize");

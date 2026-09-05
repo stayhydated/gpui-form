@@ -1,11 +1,11 @@
 use std::path::{Path, PathBuf};
 
 use es_fluent::FluentMessage;
-use gpui::{
+use gpui_kit::component::form::v_form;
+use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable, IntoElement, ParentElement as _, Render,
     SharedString, Styled as _, Subscription, Window, div,
 };
-use gpui_component::form::v_form;
 
 use gpui_form_component::file_picker::{
     FilePicker, FilePickerEvent, FilePickerMode, FilePickerState,
@@ -30,7 +30,7 @@ pub struct FilePickerStory {
 }
 
 impl gpui_storybook::Story for FilePickerStory {
-    fn title(_: &gpui::App) -> String {
+    fn title(_: &gpui_kit::App) -> String {
         "File Picker".into()
     }
 
@@ -40,7 +40,7 @@ impl gpui_storybook::Story for FilePickerStory {
 }
 
 impl Focusable for FilePickerStory {
-    fn focus_handle(&self, cx: &App) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &App) -> gpui_kit::FocusHandle {
         self.file_picker.read(cx).focus_handle().clone()
     }
 }

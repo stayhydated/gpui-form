@@ -1,25 +1,26 @@
 //! Runtime file picker support backed by GPUI's native path prompt.
 //!
-//! This module intentionally uses `gpui::App::prompt_for_paths` from the
-//! pinned GPUI git dependency instead of adding a second native-dialog
-//! dependency. The rendered control follows `gpui-component` styling and emits
+//! This module intentionally uses `gpui_kit::App::prompt_for_paths` from the
+//! GPUI Kit facade instead of adding a second native-dialog dependency. The
+//! rendered control follows GPUI Kit styling and emits
 //! form-friendly change events.
 
 use std::path::PathBuf;
 
-use gpui::{
-    App, ClickEvent, Context, ElementId, Entity, EventEmitter, FocusHandle, Focusable,
-    InteractiveElement as _, IntoElement, ParentElement as _, PathPromptOptions, Render,
-    RenderOnce, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window,
-    div, prelude::FluentBuilder as _,
-};
-use gpui_component::{
+use gpui_es_fluent::localize_message;
+use gpui_kit as gpui;
+use gpui_kit::component::{
     ActiveTheme as _, Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledExt as _,
     ThemeStyled as _,
     button::{Button, ButtonVariants as _},
     h_flex,
 };
-use gpui_es_fluent::localize_message;
+use gpui_kit::{
+    App, ClickEvent, Context, ElementId, Entity, EventEmitter, FocusHandle, Focusable,
+    InteractiveElement as _, IntoElement, ParentElement as _, PathPromptOptions, Render,
+    RenderOnce, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window,
+    div, prelude::FluentBuilder as _,
+};
 
 use crate::i18n::FilePickerText;
 #[cfg(feature = "component-shape")]
@@ -302,11 +303,11 @@ impl FilePickerState {
 
 impl Render for FilePickerState {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        gpui::Empty
+        gpui_kit::Empty
     }
 }
 
-/// A native file picker element using `gpui-component` visual primitives.
+/// A native file picker element using GPUI Kit visual primitives.
 #[cfg_attr(
     feature = "component-shape",
     derive(component_shape_gpui::GpuiComponentShape)

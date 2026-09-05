@@ -1,17 +1,17 @@
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentShapeBuilder, GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Window};
-use gpui_component::{
+use gpui_kit::component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
+use gpui_kit::{Context, Window};
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 
 component_shape! {
-    /// Form component for a `gpui_component::select::Select` backed by enum variants.
+    /// Form component for a `gpui_kit::component::select::Select` backed by enum variants.
     ///
-    /// The enum type `T` must implement `gpui_component::select::SelectItem`,
+    /// The enum type `T` must implement `gpui_kit::component::select::SelectItem`,
     /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
     pub struct Select<T, D = Vec<T>>
     where
@@ -20,7 +20,7 @@ component_shape! {
     {
         state = SelectState<D>;
         new = Self::new_default;
-        component = gpui_component::select::Select<_>;
+        component = gpui_kit::component::select::Select<_>;
         value = T;
         field_suffix = "select";
         value_binding;
@@ -131,7 +131,7 @@ where
 mod tests {
     use super::{Select, SelectArgs};
     use component_shape_gpui::GpuiComponentShapeBuilder;
-    use gpui_component::select::{SelectDelegate, SelectItem};
+    use gpui_kit::component::select::{SelectDelegate, SelectItem};
     use strum::IntoEnumIterator;
 
     #[test]

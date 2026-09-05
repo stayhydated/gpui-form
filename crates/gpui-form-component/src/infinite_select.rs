@@ -19,15 +19,16 @@ use state_helpers::{
 };
 pub use value::{InfiniteSelectItem, InfiniteSelectValue, to_select_items};
 
-use gpui::{
-    App, AppContext as _, Context, Empty, Entity, EventEmitter, FocusHandle, Focusable,
-    IntoElement, ParentElement as _, Render, RenderOnce, SharedString, Styled as _, Subscription,
-    Window, div,
-};
-use gpui_component::{
+use gpui_kit as gpui;
+use gpui_kit::component::{
     IndexPath,
     form::{Field, field},
     select::{Select as GpuiSelect, SelectDelegate, SelectEvent, SelectItem, SelectState},
+};
+use gpui_kit::{
+    App, AppContext as _, Context, Empty, Entity, EventEmitter, FocusHandle, Focusable,
+    IntoElement, ParentElement as _, Render, RenderOnce, SharedString, Styled as _, Subscription,
+    Window, div,
 };
 
 /// Options for the runtime `Select`.
@@ -156,7 +157,7 @@ where
         self.selected_key.as_deref()
     }
 
-    /// Builds a `gpui_component::form::Field` for this select level.
+    /// Builds a `gpui_kit::component::form::Field` for this select level.
     pub fn to_form_field(&self) -> Field {
         let label = self.label.clone();
         let description = self.description.clone();

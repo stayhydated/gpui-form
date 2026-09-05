@@ -11,7 +11,7 @@ pub struct CratePaths {
 impl CratePaths {
     pub fn resolve() -> Self {
         Self {
-            gpui: resolve_crate_path("gpui", "::gpui"),
+            gpui: resolve_crate_path("gpui-kit", "::gpui_kit"),
             gpui_form: resolve_crate_path("gpui-form", "::gpui_form"),
             gpui_form_runtime: resolve_crate_path("gpui-form-runtime", "::gpui_form_runtime"),
         }

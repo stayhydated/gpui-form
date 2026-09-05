@@ -1,6 +1,4 @@
 #[cfg(feature = "component-shape")]
-use gpui_component::select::{SelectDelegate, SelectItem as _};
-#[cfg(feature = "component-shape")]
 use gpui_form_component::infinite_select::{
     InfiniteSelect as InfiniteSelectComponent, InfiniteSelectItem, InfiniteSelectOptions,
 };
@@ -9,6 +7,10 @@ use gpui_form_component::infinite_select::{
     InfiniteSelectPathSegment, InfiniteSelectValue as _, build_from_key_path, build_from_path,
 };
 use gpui_form_component_derive::InfiniteSelect;
+#[cfg(feature = "component-shape")]
+use gpui_kit as gpui;
+#[cfg(feature = "component-shape")]
+use gpui_kit::component::select::{SelectDelegate, SelectItem as _};
 
 #[derive(Clone, Debug, Default, InfiniteSelect, PartialEq)]
 enum CaliforniaCity {
@@ -344,8 +346,10 @@ fn index_and_key_paths_support_mutation_and_empty_round_trips() {
 }
 
 #[cfg(feature = "component-shape")]
-#[gpui::test]
-fn infinite_select_items_expose_labels_values_and_child_selection(cx: &mut gpui::TestAppContext) {
+#[gpui_kit::test]
+fn infinite_select_items_expose_labels_values_and_child_selection(
+    cx: &mut gpui_kit::TestAppContext,
+) {
     cx.update(|cx| {
         let item = InfiniteSelectItem::from_variant(Country::default(), cx);
         assert_eq!(item.title().as_ref(), "Usa");

@@ -31,6 +31,8 @@ pub mod switch;
 
 #[cfg(test)]
 mod tests {
+    use gpui_kit as gpui;
+
     use super::{
         checkbox::{Checkbox, CheckboxEvent, CheckboxField, CheckboxState},
         color_picker::ColorPicker,
@@ -44,19 +46,19 @@ mod tests {
     };
     use chrono::NaiveDate;
     use component_shape::{DeclaredComponentShape, ValueChange};
-    use gpui::{
-        AppContext as _, Context, Empty, Entity, EventEmitter, Hsla, IntoElement, Render,
-        SharedString, TestAppContext, Window,
+    use gpui_form_runtime::shape::{
+        GpuiComponentEventOf, GpuiComponentShape, GpuiComponentShapeFor, GpuiComponentStateOf,
+        GpuiComponentValueBinding, GpuiFormComponentShapePolicy,
     };
-    use gpui_component::{
+    use gpui_kit::component::{
         combobox::{ComboboxEvent, ComboboxState},
         input::{OtpEvent, OtpState},
         select::SelectItem,
         slider::SliderValue,
     };
-    use gpui_form_runtime::shape::{
-        GpuiComponentEventOf, GpuiComponentShape, GpuiComponentShapeFor, GpuiComponentStateOf,
-        GpuiComponentValueBinding, GpuiFormComponentShapePolicy,
+    use gpui_kit::{
+        AppContext as _, Context, Empty, Entity, EventEmitter, Hsla, IntoElement, Render,
+        SharedString, TestAppContext, Window,
     };
     use strum::IntoEnumIterator;
 
@@ -165,11 +167,11 @@ mod tests {
         assert_value_binding::<Slider, f32>();
     }
 
-    #[gpui::test]
+    #[gpui_kit::test]
     fn gpui_state_constructors_and_value_bindings_round_trip_without_rendering(
         cx: &mut TestAppContext,
     ) {
-        cx.update(gpui_component::init);
+        cx.update(gpui_kit::component::init);
         let window = cx.add_window(|window, cx| StateHarness {
             checkbox: cx.new(|cx| <Checkbox as GpuiComponentShape>::new(window, cx)),
             combobox: cx.new(|cx| <Combobox<Choice> as GpuiComponentShape>::new(window, cx)),

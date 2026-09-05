@@ -1,5 +1,5 @@
-use gpui::{IntoElement, ParentElement as _, SharedString, Styled as _, div, px};
-use gpui_component::form::{Field, field};
+use gpui_kit::component::form::{Field, field};
+use gpui_kit::{IntoElement, ParentElement as _, SharedString, Styled as _, div, px};
 
 pub(super) fn story_panel(
     title: impl Into<SharedString>,

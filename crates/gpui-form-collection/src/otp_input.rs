@@ -2,8 +2,9 @@ use std::str::FromStr;
 
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{App, Context, Entity, IntoElement, RenderOnce, Window};
-use gpui_component::input::{OtpEvent, OtpInput as GpuiOtpInput, OtpState};
+use gpui_kit as gpui;
+use gpui_kit::component::input::{OtpEvent, OtpInput as GpuiOtpInput, OtpState};
+use gpui_kit::{App, Context, Entity, IntoElement, RenderOnce, Window};
 
 #[derive(IntoElement)]
 pub struct OtpInputField {
@@ -25,7 +26,7 @@ impl RenderOnce for OtpInputField {
 }
 
 component_shape! {
-    /// Form component for a `gpui_component::input::OtpInput` backed by `OtpState`.
+    /// Form component for a `gpui_kit::component::input::OtpInput` backed by `OtpState`.
     pub struct OtpInput<T = String>
     where
         T: FromStr + ToString + 'static,

@@ -1,4 +1,4 @@
-use gpui::Application;
+use gpui_kit::Application;
 use gpui_storybook::{ConsumerId, StorybookOptions, StorybookWindow};
 use some_lib::i18n::{self, Languages};
 
@@ -71,6 +71,7 @@ pub fn run_storybook(app: Application) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gpui_kit as gpui;
     use some_lib::structs::user::User;
 
     #[test]
@@ -102,8 +103,10 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    async fn startup_applies_preferences_before_the_first_window(cx: &mut gpui::TestAppContext) {
+    #[gpui_kit::test]
+    async fn startup_applies_preferences_before_the_first_window(
+        cx: &mut gpui_kit::TestAppContext,
+    ) {
         cx.executor().allow_parking();
         let readiness = cx.update(|cx| {
             let consumer =

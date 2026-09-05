@@ -10,7 +10,7 @@ license.workspace = true
 publish.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = [ "gpui", "gpui-component", "form", "mcp" ]
+keywords = [ "gpui", "gpui-kit", "form", "mcp" ]
 
 [features]
 chrono = [ "component-shape-mcp/chrono" ]

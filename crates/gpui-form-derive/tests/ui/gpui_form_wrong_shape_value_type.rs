@@ -3,7 +3,7 @@ use gpui_form_derive::GpuiForm;
 struct State;
 
 impl State {
-    fn new(_window: &mut gpui::Window, _cx: &mut gpui::Context<'_, Self>) -> Self {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
         Self
     }
 }

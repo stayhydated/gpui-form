@@ -8,7 +8,7 @@ use gpui_form_component_story;
 const CONSUMER_ID: &str = "gpui-form-component-story";
 
 fn main() {
-    let app = gpui_platform::application().with_assets(Assets);
+    let app = gpui_kit::application().with_assets(Assets);
     app.run(move |app_cx| {
         let consumer_id = match ConsumerId::new(CONSUMER_ID) {
             Ok(consumer_id) => consumer_id,
@@ -57,6 +57,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gpui_kit as gpui;
 
     #[test]
     fn startup_contract_uses_a_stable_consumer_and_typed_adapter() {
@@ -67,8 +68,10 @@ mod tests {
         assert_eq!(options.fallback_language, Languages::default());
     }
 
-    #[gpui::test]
-    async fn startup_applies_preferences_before_the_first_window(cx: &mut gpui::TestAppContext) {
+    #[gpui_kit::test]
+    async fn startup_applies_preferences_before_the_first_window(
+        cx: &mut gpui_kit::TestAppContext,
+    ) {
         cx.executor().allow_parking();
         let readiness = cx.update(|cx| {
             let consumer = ConsumerId::new("gpui-form-component-story-test")

@@ -1,14 +1,15 @@
 use chrono::{Datelike as _, Duration, Local, NaiveDate};
-use gpui::{
+use gpui_kit as gpui;
+use gpui_kit::component::{
+    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable, Size, StyledExt as _,
+    button::{Button, ButtonVariants as _},
+    h_flex, v_flex,
+};
+use gpui_kit::{
     App, ClickEvent, Context, Div, ElementId, Empty, Entity, EventEmitter, FocusHandle,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, RenderOnce, SharedString,
     Stateful, StatefulInteractiveElement as _, StyleRefinement, Styled, Window,
     prelude::FluentBuilder as _, px, relative,
-};
-use gpui_component::{
-    ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable, Size, StyledExt as _,
-    button::{Button, ButtonVariants as _},
-    h_flex, v_flex,
 };
 use icu_calendar::{
     Date as IcuDate, Gregorian,

@@ -32,10 +32,10 @@ pub(super) fn jiff_date_range_from_chrono(
 }
 
 pub(super) fn active_locale() -> Locale {
-    let raw = gpui_component::locale();
+    let raw = gpui_kit::component::locale();
     let normalized = raw.deref().replace('_', "-");
     Locale::from_str(&normalized).unwrap_or_else(|error| {
-        panic!("gpui-component locale `{normalized}` is not a valid ICU locale: {error}")
+        panic!("GPUI Kit component locale `{normalized}` is not a valid ICU locale: {error}")
     })
 }
 

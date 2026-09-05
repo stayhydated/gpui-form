@@ -10,7 +10,7 @@ license.workspace = true
 publish.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = [ "gpui", "gpui-component", "form" ]
+keywords = [ "gpui", "gpui-kit", "form" ]
 
 [features]
 chrono = [ "gpui-form-mcp?/chrono" ]
@@ -32,7 +32,7 @@ strum = { features = [ "derive" ], optional = true, workspace = true }
 
 [dev-dependencies]
 chrono = { workspace = true }
-gpui = { workspace = true }
+gpui-kit = { features = [ "test-support" ], workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { features = [ "component-shape" ], workspace = true }
 koruma = { workspace = true }

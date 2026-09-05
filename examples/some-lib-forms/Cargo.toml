@@ -21,14 +21,12 @@ path = "examples/demo.rs"
 
 [dependencies]
 chrono = { workspace = true }
-gpui = { workspace = true }
-gpui-component = { workspace = true }
+gpui-kit = { workspace = true }
 gpui-es-fluent = { workspace = true }
 gpui-form = { workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
-gpui_platform = { workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
 
@@ -36,7 +34,7 @@ some-lib = { path = "../some-lib" }
 wasm-bindgen = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
-gpui = { features = [ "test-support" ], workspace = true }
+gpui-kit = { features = [ "test-support" ], workspace = true }
 
 [lints]
 workspace = true

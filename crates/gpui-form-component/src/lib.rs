@@ -2,7 +2,7 @@
 //!
 //! This crate provides:
 //! - `date_picker` for localized runtime date and date-range pickers
-//! - `file_picker` for native GPUI path selection with gpui-component styling
+//! - `file_picker` for native GPUI path selection with GPUI Kit styling
 //! - `infinite_select` for cascading selects over nested enums
 
 #[cfg(feature = "derive")]
@@ -38,11 +38,11 @@ mod tests {
     use std::path::PathBuf;
 
     use component_shape::DeclaredComponentShape;
-    use gpui::EventEmitter;
     use gpui_form_runtime::shape::{
         GpuiComponentEventOf, GpuiComponentShape, GpuiComponentShapeFor, GpuiComponentStateOf,
         GpuiComponentValueBinding, GpuiFormComponentShapePolicy,
     };
+    use gpui_kit::EventEmitter;
 
     use crate::{
         date_picker::{DatePicker, DateRangePicker},

@@ -21,8 +21,7 @@ quote = { workspace = true }
 syn = { features = [ "full" ], workspace = true }
 
 [dev-dependencies]
-gpui = { workspace = true }
-gpui-component = { workspace = true }
+gpui-kit = { workspace = true }
 trybuild = "1.0"
 
 [lints]

@@ -1,4 +1,4 @@
-use gpui_component::select::SelectItem as _;
+use gpui_kit::component::select::SelectItem as _;
 use gpui_form_collection_derive::SelectItem;
 
 #[derive(Clone, PartialEq, SelectItem)]
@@ -11,6 +11,6 @@ where
 }
 
 fn main() {
-    let _: gpui::SharedString = Choice::Known(String::from("stored")).title();
-    let _: gpui::SharedString = Choice::<String>::Empty.title();
+    let _: gpui_kit::SharedString = Choice::Known(String::from("stored")).title();
+    let _: gpui_kit::SharedString = Choice::<String>::Empty.title();
 }

@@ -16,7 +16,7 @@ pub enum Languages {}
 /// Applies Storybook's resolved locale to the example domain's GPUI manager.
 pub fn apply_locale(
     language: Languages,
-    cx: &mut gpui::App,
+    cx: &mut gpui_kit::App,
 ) -> Result<(), gpui_es_fluent::EmbeddedInitError> {
     let _linked_module = &SOME_LIB_I18N_MODULE;
     gpui_es_fluent::replace_with_language(cx, language)
@@ -27,6 +27,7 @@ mod tests {
     use super::{Languages, apply_locale};
     use crate::structs::{empty::Empty, user::User};
     use es_fluent::FluentLabel as _;
+    use gpui_kit as gpui;
 
     #[test]
     fn resolves_form_labels() {
@@ -48,8 +49,8 @@ mod tests {
         assert_eq!(Empty::localize_label(&i18n), "空");
     }
 
-    #[gpui::test]
-    fn gpui_adapter_links_and_applies_domain_resources(cx: &mut gpui::TestAppContext) {
+    #[gpui_kit::test]
+    fn gpui_adapter_links_and_applies_domain_resources(cx: &mut gpui_kit::TestAppContext) {
         cx.update(|cx| {
             apply_locale(Languages::FrFr, cx).expect("French domain resources should initialize");
             assert_eq!(gpui_es_fluent::localize_label::<User>(cx), "Utilisateur");

@@ -1,11 +1,11 @@
 use chrono::NaiveDate;
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Window};
-use gpui_component::{
+use gpui_kit::component::{
     calendar::Date,
     date_picker::{DatePickerEvent, DatePickerState},
 };
+use gpui_kit::{Context, Window};
 
 fn date_picker_value_change(event: &DatePickerEvent) -> ValueChange<NaiveDate> {
     match event {
@@ -26,10 +26,10 @@ fn date_range_picker_value_change(event: &DatePickerEvent) -> ValueChange<(Naive
 }
 
 component_shape! {
-    /// Form component for a `gpui_component::date_picker::DatePicker`.
+    /// Form component for a `gpui_kit::component::date_picker::DatePicker`.
     pub struct DatePicker {
         state = DatePickerState;
-        component = gpui_component::date_picker::DatePicker;
+        component = gpui_kit::component::date_picker::DatePicker;
         value = NaiveDate;
         field_suffix = "date_picker";
         value_binding;
@@ -56,11 +56,11 @@ component_shape! {
 impl_form_component_shape!(DatePicker, gpui_form_runtime::shape::RequiredValueStorage);
 
 component_shape! {
-    /// Form component for a range-mode `gpui_component::date_picker::DatePicker`.
+    /// Form component for a range-mode `gpui_kit::component::date_picker::DatePicker`.
     pub struct DateRangePicker {
         state = DatePickerState;
         new = DatePickerState::range;
-        component = gpui_component::date_picker::DatePicker;
+        component = gpui_kit::component::date_picker::DatePicker;
         value = (NaiveDate, NaiveDate);
         field_suffix = "date_range_picker";
         value_binding;

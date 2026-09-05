@@ -1,7 +1,7 @@
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui::{Context, Window};
-use gpui_component::slider::{SliderEvent, SliderState, SliderValue};
+use gpui_kit::component::slider::{SliderEvent, SliderState, SliderValue};
+use gpui_kit::{Context, Window};
 
 fn slider_value_change(event: &SliderEvent) -> ValueChange<SliderValue> {
     match event {
@@ -19,11 +19,11 @@ fn scalar_slider_value_change(event: &SliderEvent) -> ValueChange<f32> {
 }
 
 component_shape! {
-    /// Form component for a `gpui_component::slider::Slider` backed by `SliderState`.
+    /// Form component for a `gpui_kit::component::slider::Slider` backed by `SliderState`.
     pub struct Slider {
         state = SliderState;
         new = |_window, _cx| SliderState::new();
-        component = gpui_component::slider::Slider;
+        component = gpui_kit::component::slider::Slider;
         values(SliderValue, f32);
         field_suffix = "slider";
         value_binding;

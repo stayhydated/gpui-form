@@ -1,19 +1,20 @@
 use std::{ops::Deref as _, str::FromStr as _};
 
 use chrono::{Datelike as _, NaiveDate};
-use gpui::{
-    App, AppContext as _, ClickEvent, Context, ElementId, Empty, Entity, EventEmitter, FocusHandle,
-    Focusable, InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Render,
-    RenderOnce, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
-    Subscription, Window, anchored, deferred, div, prelude::FluentBuilder as _, px,
-};
-use gpui_component::{
+use gpui_es_fluent::localize_message;
+use gpui_kit as gpui;
+use gpui_kit::component::{
     ActiveTheme as _, Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledExt as _,
     ThemeStyled as _,
     button::{Button, ButtonVariants as _},
     h_flex,
 };
-use gpui_es_fluent::localize_message;
+use gpui_kit::{
+    App, AppContext as _, ClickEvent, Context, ElementId, Empty, Entity, EventEmitter, FocusHandle,
+    Focusable, InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Render,
+    RenderOnce, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
+    Subscription, Window, anchored, deferred, div, prelude::FluentBuilder as _, px,
+};
 use icu_calendar::{Date as IcuDate, Gregorian};
 use icu_datetime::{FixedCalendarDateTimeFormatter, fieldsets};
 use icu_locale_core::Locale;
