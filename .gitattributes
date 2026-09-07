@@ -1,5 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-**/__crate_paths/** linguist-vendored
+* text=auto eol=lf
 examples/** linguist-vendored
 **/output/** linguist-vendored
+web/** linguist-vendored
