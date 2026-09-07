@@ -1,4 +1,4 @@
-use gpui_kit::Application;
+use gpui_kit::App;
 use gpui_storybook::{ConsumerId, StorybookOptions, StorybookWindow};
 use some_lib::i18n::{self, Languages};
 
@@ -19,53 +19,51 @@ fn storybook_options() -> Result<StorybookOptions<Languages>, gpui_storybook::Co
     Ok(options)
 }
 
-pub fn run_storybook(app: Application) {
-    app.run(move |app_cx| {
-        let options = match storybook_options() {
-            Ok(options) => options,
-            Err(error) => {
-                eprintln!("invalid generated-form Storybook consumer id: {error}");
-                app_cx.quit();
-                return;
-            },
-        };
-        let readiness = match gpui_storybook::init(app_cx, options) {
-            Ok(readiness) => readiness,
-            Err(error) => {
-                eprintln!("failed to initialize generated-form Storybook: {error}");
-                app_cx.quit();
-                return;
-            },
-        };
+pub fn launch_storybook(app_cx: &mut App) {
+    let options = match storybook_options() {
+        Ok(options) => options,
+        Err(error) => {
+            eprintln!("invalid generated-form Storybook consumer id: {error}");
+            app_cx.quit();
+            return;
+        },
+    };
+    let readiness = match gpui_storybook::init(app_cx, options) {
+        Ok(readiness) => readiness,
+        Err(error) => {
+            eprintln!("failed to initialize generated-form Storybook: {error}");
+            app_cx.quit();
+            return;
+        },
+    };
 
-        app_cx
-            .spawn(async move |cx| {
-                let ready = readiness.await;
-                if !ready.diagnostics.is_empty() {
-                    eprintln!(
-                        "generated-form Storybook preferences initialized with diagnostics: {:?}",
-                        ready.diagnostics
-                    );
-                }
+    app_cx
+        .spawn(async move |cx| {
+            let ready = readiness.await;
+            if !ready.diagnostics.is_empty() {
+                eprintln!(
+                    "generated-form Storybook preferences initialized with diagnostics: {:?}",
+                    ready.diagnostics
+                );
+            }
 
-                cx.update(|app_cx| {
-                    app_cx.activate(true);
-                    gpui_storybook::create_storybook_window(
-                        &format!("{} - Stories", env!("CARGO_PKG_NAME")),
-                        move |window, cx| {
-                            let stories = gpui_storybook::generate_stories(window, cx);
-                            assert!(
-                                !stories.is_empty(),
-                                "generated-form Storybook requires linked stories"
-                            );
-                            StorybookWindow::new(stories)
-                        },
-                        app_cx,
-                    );
-                });
-            })
-            .detach();
-    });
+            cx.update(|app_cx| {
+                app_cx.activate(true);
+                gpui_storybook::create_storybook_window(
+                    &format!("{} - Stories", env!("CARGO_PKG_NAME")),
+                    move |window, cx| {
+                        let stories = gpui_storybook::generate_stories(window, cx);
+                        assert!(
+                            !stories.is_empty(),
+                            "generated-form Storybook requires linked stories"
+                        );
+                        StorybookWindow::new(stories)
+                    },
+                    app_cx,
+                );
+            });
+        })
+        .detach();
 }
 
 #[cfg(test)]

@@ -37,6 +37,7 @@ anyhow = "1.0"
 bon = "3.9"
 chrono = "0.4"
 clap = "4.6"
+console_error_panic_hook = "0.1"
 component-shape = { git = "https://github.com/stayhydated/component-shape", rev = "04cfd9a021dc3a9a2ee0dfadbf5242783ab54777", version = "0.2.0" }
 component-shape-codegen = { git = "https://github.com/stayhydated/component-shape", rev = "04cfd9a021dc3a9a2ee0dfadbf5242783ab54777", version = "0.2.0" }
 component-shape-gpui = { git = "https://github.com/stayhydated/component-shape", rev = "04cfd9a021dc3a9a2ee0dfadbf5242783ab54777", version = "0.2.0" }
