@@ -42,7 +42,7 @@ gpui-form = { default-features = false, features = [
   "derive",
   "mcp",
   "runtime",
-], path = "../gpui-form" }
+], path = "../gpui-form", version = "0.6.0" }
 gpui-form-runtime = { workspace = true }
 insta = { workspace = true }
 koruma = { workspace = true }

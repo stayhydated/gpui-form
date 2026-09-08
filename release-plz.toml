@@ -1,0 +1,6 @@
+[workspace]
+repo_url = "https://github.com/stayhydated/gpui-form"
+release_always = false
+semver_check = true
+pr_labels = ["release"]
+publish_timeout = "30m"

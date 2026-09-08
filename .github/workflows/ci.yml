@@ -109,6 +109,9 @@ jobs:
 
   package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - uses: actions/checkout@v7
@@ -125,6 +128,15 @@ jobs:
 
       - name: Check package contents
         run: cargo package --workspace --list
+
+      - name: Validate release plan
+        uses: release-plz/action@aec534bbd8631793b9b3b8f1ee6cd886c322e17f # v0.5.133
+        with:
+          command: release
+          dry_run: true
+          version: 0.3.162
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   machete:
     runs-on: ubuntu-latest
