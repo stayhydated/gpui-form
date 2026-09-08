@@ -140,7 +140,7 @@ jobs:
           git switch -c release-plz-dry-run
           git branch --set-upstream-to="origin/${BASE_REF}"
 
-      - name: Validate release plan
+      - name: Check release eligibility
         uses: release-plz/action@aec534bbd8631793b9b3b8f1ee6cd886c322e17f # v0.5.133
         with:
           command: release
@@ -148,6 +148,14 @@ jobs:
           version: 0.3.162
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Validate release updates
+        env:
+          GIT_TOKEN: ${{ github.token }}
+        run: >-
+          release-plz update --no-changelog
+          --repo-url "https://github.com/${GITHUB_REPOSITORY}"
+          --config release-plz.toml
 
   machete:
     runs-on: ubuntu-latest
