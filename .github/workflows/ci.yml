@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
       - name: Check FTL files
@@ -128,6 +131,13 @@ jobs:
 
       - name: Check package contents
         run: cargo package --workspace --list
+
+      - name: Configure release validation branch
+        env:
+          BASE_REF: ${{ github.base_ref || github.ref_name }}
+        run: |
+          git switch -c release-plz-dry-run
+          git branch --set-upstream-to="origin/${BASE_REF}"
 
       - name: Validate release plan
         uses: release-plz/action@aec534bbd8631793b9b3b8f1ee6cd886c322e17f # v0.5.133
