@@ -136,6 +136,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref || github.ref_name }}
         run: |
+          git fetch --no-tags --depth=1 origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"
           git switch -c release-plz-dry-run
           git branch --set-upstream-to="origin/${BASE_REF}"
 
