@@ -1,0 +1,3 @@
+[workspace]
+repo_url = "https://github.com/stayhydated/gpui-form"
+release_always = true
