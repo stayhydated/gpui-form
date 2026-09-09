@@ -5,6 +5,9 @@ on:
   push:
     branches: [master]
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
   SCCACHE_GHA_ENABLED: true
@@ -176,3 +179,41 @@ jobs:
         shell: bash
         run: |
           rm -f codecov codecov.SHA256SUM codecov.SHA256SUM.sig
+
+  release:
+    name: release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [es-fluent, test, fmt, clippy, docs, package, machete, rust-coverage]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: read
+    concurrency:
+      group: release-${{ github.repository }}
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: "v0.16.0"
+
+      - name: Install Linux dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Publish unpublished crate versions
+        uses: release-plz/action@v0.5.133
+        with:
+          command: release
+          version: 0.3.162
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
