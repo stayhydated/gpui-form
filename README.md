@@ -1,5 +1,6 @@
 [![Build Status](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml/badge.svg)](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg)](https://codecov.io/github/stayhydated/gpui-form)
+[![Book](https://img.shields.io/badge/docs-book-black)](https://stayhydated.github.io/gpui-form/book/)
 [![Docs](https://docs.rs/gpui-form/badge.svg)](https://docs.rs/gpui-form/)
 [![Crates.io](https://img.shields.io/crates/v/gpui-form.svg)](https://crates.io/crates/gpui-form)
 
