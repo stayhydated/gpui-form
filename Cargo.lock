@@ -604,6 +604,17 @@ dependencies = [
 [[package]]
 name = "attribute-dsl"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "118ba8d18025376ad3d22d745ee7a6edb0adce34f26cfdb7eb3b2dd429f36a5d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.5",
+]
+
+[[package]]
+name = "attribute-dsl"
+version = "0.2.0"
 source = "git+https://github.com/stayhydated/attribute-dsl?rev=503bebaa926e750005e80b03ee4a801052b79d47#503bebaa926e750005e80b03ee4a801052b79d47"
 dependencies = [
  "proc-macro2",
@@ -1445,8 +1456,9 @@ dependencies = [
 
 [[package]]
 name = "component-shape"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ea38a119114527b93dc7d44518df0b66dc7cfa7bde6d664ca10cbcb62944300"
 dependencies = [
  "derive_more",
  "heck 0.5.0",
@@ -1457,10 +1469,11 @@ dependencies = [
 
 [[package]]
 name = "component-shape-codegen"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ed23ba5d5a1dda78ee479194705e1ee3874e3f7ae9a127ed36a517def4cc8c1"
 dependencies = [
- "attribute-dsl",
+ "attribute-dsl 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "component-shape",
  "proc-macro2",
  "quote",
@@ -1469,8 +1482,9 @@ dependencies = [
 
 [[package]]
 name = "component-shape-gpui"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47b9c69d32e7a2e87f3232592bcda639f1965485c530b93605d47075bb946295"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1479,8 +1493,9 @@ dependencies = [
 
 [[package]]
 name = "component-shape-gpui-macros"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0c48b7337afbcca9d7e4dcba60ca93bef9a61caa549230a89914c147c1dccba"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -1492,8 +1507,9 @@ dependencies = [
 
 [[package]]
 name = "component-shape-mcp"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b6d31f0e8b684c67df05b3a07713e94207d971456238148ab09a2b4e7e5d73c"
 dependencies = [
  "chrono",
  "component-shape",
@@ -1509,8 +1525,9 @@ dependencies = [
 
 [[package]]
 name = "component-shape-mcp-macros"
-version = "0.2.0"
-source = "git+https://github.com/stayhydated/component-shape?rev=04cfd9a021dc3a9a2ee0dfadbf5242783ab54777#04cfd9a021dc3a9a2ee0dfadbf5242783ab54777"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2e1dd79fd66459527e0eaf77d9b5d98960353ca512a35cdfe8463b33536d3f6"
 dependencies = [
  "proc-macro-crate 3.5.0",
  "proc-macro2",
@@ -6250,7 +6267,7 @@ name = "koruma-derive-core"
 version = "0.11.0"
 source = "git+https://github.com/stayhydated/koruma?rev=2ff495d8dc04794f0bcb2eb3c1a4a3c28e55a274#2ff495d8dc04794f0bcb2eb3c1a4a3c28e55a274"
 dependencies = [
- "attribute-dsl",
+ "attribute-dsl 0.2.0 (git+https://github.com/stayhydated/attribute-dsl?rev=503bebaa926e750005e80b03ee4a801052b79d47)",
  "heck 0.5.0",
  "proc-macro2",
  "quote",
@@ -6262,7 +6279,7 @@ name = "koruma-derive-core"
 version = "0.11.0"
 source = "git+https://github.com/stayhydated/koruma?rev=b462d649a26289ad98ca6959ac4cea37739ed8d3#b462d649a26289ad98ca6959ac4cea37739ed8d3"
 dependencies = [
- "attribute-dsl",
+ "attribute-dsl 0.2.0 (git+https://github.com/stayhydated/attribute-dsl?rev=503bebaa926e750005e80b03ee4a801052b79d47)",
  "heck 0.5.0",
  "proc-macro2",
  "quote",
