@@ -4215,7 +4215,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bon",
  "chrono",
@@ -4237,7 +4237,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-codegen"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape-codegen",
  "derive_more",
@@ -4249,7 +4249,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-collection"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bon",
  "chrono",
@@ -4262,7 +4262,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-collection-derive"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "darling 0.24.1",
  "gpui-form-codegen",
@@ -4274,7 +4274,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-component"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bon",
  "chrono",
@@ -4298,7 +4298,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-component-derive"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "darling 0.24.1",
  "gpui-form-codegen",
@@ -4309,7 +4309,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-component-story"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "es-fluent",
  "es-fluent-build",
@@ -4326,14 +4326,14 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape",
 ]
 
 [[package]]
 name = "gpui-form-derive"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -4359,7 +4359,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-mcp"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "chrono",
  "component-shape-mcp",
@@ -4373,7 +4373,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-prototyping-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape-codegen",
  "derive_more",
@@ -4390,7 +4390,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-runtime"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape",
  "component-shape-gpui",
@@ -4398,7 +4398,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-form-schema"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "component-shape",
  "gpui-form-core",
@@ -11615,7 +11615,7 @@ dependencies = [
 
 [[package]]
 name = "web"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "dioxus",
  "stayhydated-dioxus",
@@ -12776,7 +12776,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xtask"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "clap",
