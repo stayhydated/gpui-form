@@ -65,7 +65,7 @@ gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.0" }
 gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.0" }
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.0" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.0" }
-gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "924b0ec6c61c960854e9a978536b72bc09122fea", version = "0.6.0" }
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "39537aa", version = "0.6.0" }
 heck = "0.5.0"
 icu_calendar = "2.3.0"
 icu_datetime = "2.3.0"
@@ -100,11 +100,6 @@ unicode-segmentation = "1.13"
 wasm-bindgen = "0.2"
 web = { path = "web" }
 web-sys = { features = [ "Location", "Window" ], version = "0.3" }
-
-[patch.crates-io]
-gpui-pre = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed" }
-gpui-pre-platform = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed" }
-gpui-pre-web = { branch = "linux-headless-renderer", git = "https://github.com/stayhydated/zed" }
 
 [profile.dev]
 codegen-units = 16
