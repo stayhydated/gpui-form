@@ -9,7 +9,7 @@ application owns the holder and component entities needed to render the form.
 - Rust 1.98 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
-- `gpui-kit` 0.6.0.
+- `gpui-kit` 0.6.1.
 
 ## Add the dependencies
 
@@ -18,10 +18,10 @@ ready-made collection shapes and the collection select derive:
 
 ```toml
 [dependencies]
-gpui-kit = "0.6.0"
-gpui-form = "0.6"
-gpui-form-collection = "0.6"
-gpui-form-collection-derive = "0.6"
+gpui-kit = "0.6.1"
+gpui-form = "0.7"
+gpui-form-collection = "0.7"
+gpui-form-collection-derive = "0.7"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
@@ -102,9 +102,9 @@ from the same shape metadata.
 
 | Need | Configuration |
 |---|---|
-| Inventory metadata | `gpui-form = { version = "0.6", features = ["inventory"] }` |
-| MCP tools in a GPUI application | `gpui-form = { version = "0.6", features = ["mcp"] }` |
-| Headless MCP forms | `gpui-form = { version = "0.6", default-features = false, features = ["derive", "mcp"] }` |
+| Inventory metadata | `gpui-form = { version = "0.7", features = ["inventory"] }` |
+| MCP tools in a GPUI application | `gpui-form = { version = "0.7", features = ["mcp"] }` |
+| Headless MCP forms | `gpui-form = { version = "0.7", default-features = false, features = ["derive", "mcp"] }` |
 | MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 

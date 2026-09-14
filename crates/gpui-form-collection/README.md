@@ -4,8 +4,8 @@ Ready-made `gpui-form` shapes for common GPUI Kit controls.
 
 ```toml
 [dependencies]
-gpui-form = "0.6"
-gpui-form-collection = "0.6"
+gpui-form = "0.7"
+gpui-form-collection = "0.7"
 ```
 
 Use a shape as the field's component intent:

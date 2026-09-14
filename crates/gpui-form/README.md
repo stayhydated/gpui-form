@@ -9,7 +9,7 @@ types, core helpers, and the runtime paths referenced by generated code.
 
 ```toml
 [dependencies]
-gpui-form = "0.6"
+gpui-form = "0.7"
 ```
 
 Default features enable the derive and GPUI runtime. Additional features are:
