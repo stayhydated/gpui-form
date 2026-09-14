@@ -17,9 +17,9 @@ Use the published GPUI Kit facade:
 
 ```toml
 [dependencies]
-gpui-kit = "0.6.0"
-gpui-form = "0.6"
-gpui-form-collection = "0.6"
+gpui-kit = "0.6.1"
+gpui-form = "0.7"
+gpui-form-collection = "0.7"
 ```
 
 ## Define a form

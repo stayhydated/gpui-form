@@ -64,7 +64,7 @@ Enable the form-shape implementations and derives you use:
 
 ```toml
 [dependencies]
-gpui-form-component = { version = "0.6", features = ["component-shape", "derive"] }
+gpui-form-component = { version = "0.7", features = ["component-shape", "derive"] }
 ```
 
 | Need | Shape | Requirement |

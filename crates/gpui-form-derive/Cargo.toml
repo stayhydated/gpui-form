@@ -38,16 +38,6 @@ mcp = [ "inventory" ]
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
 gpui-kit = { workspace = true }
-gpui-form = { default-features = false, features = [
-  "derive",
-  "mcp",
-  "runtime",
-], path = "../gpui-form" }
-gpui-form-runtime = { workspace = true }
-insta = { workspace = true }
 koruma = { workspace = true }
 koruma-collection = { workspace = true }
-prettyplease = { workspace = true }
-serde = { features = [ "derive" ], workspace = true }
 strum = { workspace = true }
-trybuild = "1.0"

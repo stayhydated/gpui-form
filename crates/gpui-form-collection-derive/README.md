@@ -5,7 +5,7 @@ Collection-oriented procedural macros for `gpui-form`. This crate provides
 
 ```toml
 [dependencies]
-gpui-form-collection-derive = "0.6"
+gpui-form-collection-derive = "0.7"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
