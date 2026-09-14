@@ -18,10 +18,10 @@ jobs:
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
       - name: Check FTL files
-        uses: stayhydated/es-fluent/crates/es-fluent-cli@master
+        uses: stayhydated/es-fluent/crates/es-fluent-cli@94efb551ede72c9e7da4bbdf97d5eecb5ea09982
         with:
           path: .
-          all: true
+          all_locales: true
           ignore: |
             some-lib
 
