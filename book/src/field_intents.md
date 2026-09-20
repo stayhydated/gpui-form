@@ -2,7 +2,7 @@
 
 Field intents decide which values render, which values stay in the generated
 holder, and which values the application must supply during reconstruction.
-Every non-empty-form field must choose exactly one intent.
+Every field in a non-empty form must choose exactly one intent.
 
 | Intent | Generated component | Stored in holder | Reconstruction |
 |---|---:|---:|---|
@@ -31,8 +31,10 @@ country: Country,
 ```
 
 Put `default = ...` inside `component(...)` when the holder should start with a
-field-specific value. A component shape also defines how a non-optional field
-stores an empty value; see [Component shapes](component_shapes.md#storage-policy).
+field-specific value. The default has the source field's base type; when
+`value(...)` changes the form-side type, the derive applies `from_source` to the
+default before storing it. A component shape also defines how a non-optional
+field stores an empty value; see [Component shapes](component_shapes.md#storage-policy).
 
 ## Hidden fields
 
@@ -86,9 +88,9 @@ conversion are required. Use `into_source` for an infallible reverse conversion
 or `try_into_source` for a function returning `Result<Source, Error>` where the
 error implements `Debug`.
 
-For a struct-level `#[koruma(newtype)]`, `value(koruma_newtype)` edits the inner
-value and reconstructs the validated wrapper through Koruma's public newtype
-traits.
+When the source field type is a wrapper declared with `#[koruma(newtype)]`,
+`value(koruma_newtype)` edits its inner value and reconstructs the validated
+wrapper through Koruma's public newtype traits.
 
 ## Generated types
 

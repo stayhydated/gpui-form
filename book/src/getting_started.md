@@ -1,8 +1,8 @@
 # Getting started
 
-This tutorial adds a typed form model to an existing GPUI application. At the
-end, `cargo check` recognizes the generated `UserProfileForm*` types and the
-application owns the holder and component entities needed to render the form.
+Add a typed form model to an existing GPUI application and construct its
+generated holder and widget state. The final checklist covers the subscriptions
+and rendering needed to connect that state to a view.
 
 ## Prerequisites
 
@@ -62,15 +62,20 @@ struct UserProfile {
 ```
 
 The default belongs to the component intent and seeds the generated holder.
-Optional fields start as `None`. Direct-storage fields without an explicit
-default use the form-side type's `Default` implementation.
+Optional fields without an explicit default start as `None`. Direct-storage
+fields without an explicit default use the form-side type's `Default`
+implementation.
 
 ## Own the generated state
 
 Create the holder and component entities in the GPUI entity that renders the
-form:
+form. Here `window` is `&mut gpui_kit::Window` and `cx` is the owning
+view's `&mut gpui_kit::Context<Self>`; import `gpui_kit::AppContext` to use
+`cx.new(...)`:
 
 ```rust,ignore
+use gpui_kit::AppContext as _;
+
 let holder = UserProfileFormValueHolder::default();
 let username = cx.new(|cx| UserProfileFormComponents::username(window, cx));
 let age = cx.new(|cx| UserProfileFormComponents::age(window, cx));

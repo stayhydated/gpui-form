@@ -1,19 +1,17 @@
 # gpui-form-mcp
 
-MCP submit, metadata, and headless editor integration for generated
-`gpui-form` holders.
+[![Codecov: gpui-form-mcp][codecov-badge]][codecov]
+[![crates.io: gpui-form-mcp][crate-badge]][crate]
 
-Application crates should normally enable the facade feature:
+`gpui-form-mcp` provides MCP submit, metadata, and headless editor integration
+for generated `gpui-form` holders.
 
-```toml
-[dependencies]
-gpui-form = { version = "0.7", default-features = false, features = ["derive", "mcp"] }
-serde = { version = "1", features = ["derive"] }
-```
+## Overview
 
-Keep the default `gpui-form` features when the same crate also renders GPUI
-forms. Enable `chrono` or `rust_decimal` alongside `mcp` when exposed fields or
-responses use those value types.
+Application crates enable `gpui-form/mcp`. Keep the default features when the
+same crate renders GPUI forms; for a headless server, disable default features
+and enable `derive` and `mcp`. Enable `chrono` or `rust_decimal` alongside `mcp`
+when exposed fields or responses use those value types.
 
 Concrete forms opt in with `#[gpui_form(mcp)]`. Register an application-owned
 handler with `#[gpui_form::mcp_submit]`, then serve the generated tools with
@@ -22,11 +20,10 @@ server.
 
 Use `gpui_form::mcp::tool_registry()` or
 `tool_registry_with_options(...)` when the host assembles the same
-inventory-discovered MCP definitions and handlers independently from a
-server. MCP servers retain editor sessions across calls; completing a call
-does not request shutdown.
+inventory-discovered definitions and handlers independently. MCP servers retain
+editor sessions across calls.
 
-See [MCP form tools](https://stayhydated.github.io/gpui-form/book/mcp.html) for
-submit handlers, context-backed forms, editor sessions, resources, prompts,
-schemas, and troubleshooting. Full APIs are on
-[docs.rs](https://docs.rs/gpui-form-mcp/).
+[codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-mcp
+[codecov]: https://codecov.io/github/stayhydated/gpui-form
+[crate-badge]: https://img.shields.io/crates/v/gpui-form-mcp.svg?label=gpui-form-mcp
+[crate]: https://crates.io/crates/gpui-form-mcp

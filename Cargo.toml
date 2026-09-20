@@ -30,7 +30,7 @@ publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
 rust-version = "1.98"
-version = "0.7.0"
+version = "0.7.1"
 
 [workspace.dependencies]
 anyhow = "1.0"
@@ -52,19 +52,19 @@ es-fluent-lang = "0.19.0"
 es-fluent-manager-embedded = "0.19.0"
 gpui-kit = "0.6.1"
 gpui-es-fluent = "0.2.0"
-gpui-form = { path = "crates/gpui-form", version = "0.7.0" }
-gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.0" }
-gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.0" }
-gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.0" }
-gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.0" }
-gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.0" }
-gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.0" }
-gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.0" }
-gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.0" }
-gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.0" }
-gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.0" }
-gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.0" }
-gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.0" }
+gpui-form = { path = "crates/gpui-form", version = "0.7.1" }
+gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.1" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.1" }
+gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.1" }
+gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.1" }
+gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.1" }
+gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.1" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.1" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.1" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.1" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.1" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.1" }
+gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.1" }
 gpui-storybook = "0.6.0"
 heck = "0.5.0"
 icu_calendar = "2.3.0"
@@ -140,3 +140,7 @@ type_complexity = "allow"
 uninlined_format_args = "allow"
 unused_trait_names = "warn"
 useless_conversion = "warn"
+
+# Consume the gpui-storybook wasm font fix ahead of its next registry release.
+[patch.crates-io]
+gpui-storybook = { git = "https://github.com/stayhydated/gpui-storybook", rev = "4af7c0cc1a428baf25e80202cef099655556787a" }

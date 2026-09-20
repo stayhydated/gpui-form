@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form-component-shapes
-description: "Use when adding, reviewing, or refactoring gpui-form integration for an application-owned or third-party GPUI component shape: #[gpui_form(component(...))], shape/value compatibility, gpui-form-runtime storage policy, configured builders, generated holder behavior, MCP input metadata, or inventory prototyping. Use use-gpui-form for existing built-in shapes."
+description: "Integrate application-owned or third-party GPUI component shapes with gpui-form: value compatibility, holder storage, builders, and metadata. Use use-gpui-form when consuming built-in shapes."
 ---
 
 # Use GPUI Form Component Shapes
@@ -11,10 +11,11 @@ Apply this skill after deciding that an existing `gpui-form-collection` or
 `gpui-form-component` shape is insufficient, or when integrating an existing
 custom shape into `#[derive(GpuiForm)]`.
 
-Use `use-gpui-form` for ordinary forms with built-in shapes. Use
-`use-component-shape` for framework-neutral metadata and
-`use-component-shape-gpui` for shape declaration, rendering, construction, and
-value-binding syntax.
+Use the bundled `use-gpui-form` skill for ordinary forms with built-in shapes.
+For declaration and rendering details, consult `component-shape-gpui`
+rustdocs and existing declarations in the consuming workspace. The
+`use-component-shape` and `use-component-shape-gpui` skills provide additional
+guidance when installed.
 
 ## Workflow
 
@@ -23,7 +24,7 @@ value-binding syntax.
 2. Reuse an existing shape when it supports that contract.
 3. For a new shape, declare it through
    `#[derive(component_shape_gpui::GpuiComponentShape)]` or
-   `component_shape_gpui::component_shape!` using the component-shape skills.
+   `component_shape_gpui::component_shape!`.
 4. Publish compatibility with the form-side value through declared value
    metadata, `GpuiComponentShapeFor<Value>`, or shape value binding.
 5. Implement `GpuiFormComponentShapePolicy` and choose direct or required
@@ -70,8 +71,14 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for EmailInputShape 
 - Use `DirectValueStorage` when a required field always stores `T`. Provide an
   intent-scoped default or require form-side `T: Default`.
 - Use `RequiredValueStorage` when the holder must represent missing input as
-  `Option<T>`. Conversion is fallible while the value is absent, and generated
-  Koruma validation reports the missing field.
+  `Option<T>`. Without a declared field default, conversion is fallible while
+  the value is absent, and generated Koruma validation reports the missing
+  field.
+
+A non-optional component field without a declared default uses checked holder
+conversion,
+even with `DirectValueStorage`. The direct policy always supplies a value; the
+method name is chosen from the derive-time field contract.
 
 Value compatibility and storage are separate decisions. Compatibility answers
 whether the shape can edit `T`; storage answers how a non-optional source field
@@ -106,11 +113,9 @@ value through the generated `ComponentShapeFor<Value>` implementation.
 Fix missing metadata at the shape declaration. Do not compensate with
 placeholder generator output or per-form compatibility wrappers.
 
-## Routing
+## Validate the integration
 
-- Existing collection/component shape: `use-gpui-form`
-- Generic component metadata and suffixes: `use-component-shape`
-- GPUI declaration, rendering, builders, and value binding:
-  `use-component-shape-gpui`
-- Form intents, holders, validation, inventory use, and MCP submission:
-  `use-gpui-form`
+Check a consuming form with the new shape, including optionality and any
+intent-scoped default or conversion. For inventory or MCP changes, exercise the
+consumer that reads the metadata so a successful trait implementation alone
+does not stand in for working generated code.

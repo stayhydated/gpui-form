@@ -1,28 +1,34 @@
-[![Build Status](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml/badge.svg)](https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml)
-[![Codecov](https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg)](https://codecov.io/github/stayhydated/gpui-form)
-[![Docs](https://docs.rs/gpui-form/badge.svg)](https://docs.rs/gpui-form/)
-[![Crates.io](https://img.shields.io/crates/v/gpui-form.svg)](https://crates.io/crates/gpui-form)
-
 # gpui-form
 
-`gpui-form` generates typed form state for
-[GPUI Kit](https://github.com/longbridge/gpui-kit) applications. Add
-`#[derive(GpuiForm)]` to an application model, assign each field a form intent,
-and use the generated holder and component types to render, validate, and
-reconstruct the model.
+[![CI][ci-badge]][ci]
+[![Codecov][codecov-badge]][codecov]
+[![Book][book-badge]][book]
+[![crates.io: gpui-form][gpui-form-badge]][gpui-form-crate]
 
-## Install
+`gpui-form` generates typed form state for [GPUI Kit][gpui-kit] applications.
+Application developers annotate model fields once, then use generated holders
+and components to render, validate, and reconstruct those models.
 
-Use the published GPUI Kit facade:
+## Overview
 
-```toml
-[dependencies]
-gpui-kit = "0.6.1"
-gpui-form = "0.7"
-gpui-form-collection = "0.7"
-```
+The `GpuiForm` derive generates typed field identities, GPUI entity storage,
+component constructors, and a form value holder. Every field uses exactly one
+`component(...)`, `hidden`, or `skip` intent.
 
-## Define a form
+## Crates
+
+| Crate | Purpose | Source |
+| --- | --- | --- |
+| `gpui-form` | Public derive, facade, generated runtime paths, schema access, and optional MCP integration | [README][gpui-form-readme] |
+| `gpui-form-collection` | Ready-made form shapes for common GPUI Kit controls | [README][collection-readme] |
+| `gpui-form-component` | Localized date and file pickers plus cascading infinite-select support | [README][component-readme] |
+| `gpui-form-prototyping-core` | GPUI form scaffolds generated from inventory metadata | [README][prototyping-readme] |
+
+Most applications start with `gpui-form` and add only the component crates they
+use. The [workspace examples][examples] demonstrate complete form views,
+component galleries, scaffold generation, and MCP servers.
+
+## Example
 
 ```rust
 use gpui_form::GpuiForm;
@@ -34,26 +40,17 @@ pub struct Profile {
 }
 ```
 
-The derive generates typed field identities, GPUI entity storage, component
-constructors, and `ProfileFormValueHolder`. Every field uses exactly one
-`component(...)`, `hidden`, or `skip` intent.
-
-## Choose a crate
-
-| Crate | Use it for |
-|---|---|
-| `gpui-form` | The public derive, facade, generated runtime paths, schema access, and optional MCP integration |
-| `gpui-form-collection` | Ready-made form shapes for common GPUI Kit controls |
-| `gpui-form-component` | Localized date and file pickers plus cascading infinite-select support |
-| `gpui-form-prototyping-core` | Generating GPUI form scaffolds from inventory metadata |
-
-Most applications should start with `gpui-form` and add only the component
-crates they use.
-
-## Documentation
-
-- [User guide](https://stayhydated.github.io/gpui-form/book/)
-- [API documentation](https://docs.rs/gpui-form/)
-- [Workspace examples](examples/README.md)
-
-Licensed under MIT or Apache-2.0.
+[ci-badge]: https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml/badge.svg?branch=master
+[ci]: https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml
+[codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master
+[codecov]: https://codecov.io/github/stayhydated/gpui-form
+[book-badge]: https://img.shields.io/badge/Book-mdBook-blue
+[book]: https://stayhydated.github.io/gpui-form/book/
+[gpui-form-badge]: https://img.shields.io/crates/v/gpui-form.svg?label=gpui-form
+[gpui-form-crate]: https://crates.io/crates/gpui-form
+[gpui-kit]: https://github.com/longbridge/gpui-kit
+[gpui-form-readme]: crates/gpui-form/README.md
+[collection-readme]: crates/gpui-form-collection/README.md
+[component-readme]: crates/gpui-form-component/README.md
+[prototyping-readme]: crates/gpui-form-prototyping-core/README.md
+[examples]: examples/README.md
