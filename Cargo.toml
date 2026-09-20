@@ -50,7 +50,7 @@ es-fluent = "0.19.0"
 es-fluent-build = "0.19.0"
 es-fluent-lang = "0.19.0"
 es-fluent-manager-embedded = "0.19.0"
-gpui-kit = "0.6.1"
+gpui-kit = "0.6.4"
 gpui-es-fluent = "0.2.0"
 gpui-form = { path = "crates/gpui-form", version = "0.7.1" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.1" }
@@ -86,9 +86,9 @@ rmcp = "3.3"
 rust_decimal = "1.43"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "809946144fe13b04a57ba17677c4c699143f4786" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "809946144fe13b04a57ba17677c4c699143f4786" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "809946144fe13b04a57ba17677c4c699143f4786" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "95347afe0081cbb4aabbb668dbf5289b471e848c" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "95347afe0081cbb4aabbb668dbf5289b471e848c" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "95347afe0081cbb4aabbb668dbf5289b471e848c" }
 strum = "0.28"
 syn = "3.0"
 syn-cfg-attr = "0.3.0"
