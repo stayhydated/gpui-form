@@ -8,7 +8,6 @@
 use std::path::PathBuf;
 
 use gpui_es_fluent::localize_message;
-use gpui_kit as gpui;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledExt as _,
     ThemeStyled as _,

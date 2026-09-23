@@ -39,7 +39,6 @@ pub(crate) enum FilePickerComponentText {
 #[cfg(test)]
 mod tests {
     use super::{DatePickerComponentText, Languages, apply_locale};
-    use gpui_kit as gpui;
 
     #[gpui_kit::test]
     fn gpui_adapter_links_and_applies_component_resources(cx: &mut gpui_kit::TestAppContext) {

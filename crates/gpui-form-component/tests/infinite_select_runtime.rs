@@ -8,7 +8,6 @@ use gpui_form_component::infinite_select::{
 };
 use gpui_form_component_derive::InfiniteSelect;
 #[cfg(feature = "component-shape")]
-use gpui_kit as gpui;
 #[cfg(feature = "component-shape")]
 use gpui_kit::component::select::{SelectDelegate, SelectItem as _};
 
