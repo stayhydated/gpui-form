@@ -50,7 +50,7 @@ es-fluent = "0.19.0"
 es-fluent-build = "0.19.0"
 es-fluent-lang = "0.19.0"
 es-fluent-manager-embedded = "0.19.0"
-gpui-kit = "0.6.4"
+gpui-kit = "0.6.6"
 gpui-es-fluent = "0.2.0"
 gpui-form = { path = "crates/gpui-form", version = "0.7.1" }
 gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.1" }
