@@ -1,12 +1,13 @@
 # gpui-form-runtime
 
-GPUI component-shape and value-storage contracts referenced by generated
-`gpui-form` code.
+[![Codecov: gpui-form-runtime][codecov-badge]][codecov]
+[![crates.io: gpui-form-runtime][crate-badge]][crate]
 
-Normal applications use these contracts through
-`gpui_form::runtime::shape` and do not need a direct dependency. Depend on this
-crate when defining reusable shapes, storage policy, or value binding in a
-lower-level integration crate.
+`gpui-form-runtime` provides GPUI component-shape and value-storage contracts
+for reusable shapes and lower-level integrations. Applications normally access
+them through `gpui_form::runtime::shape`.
+
+## Overview
 
 The public surface includes:
 
@@ -16,6 +17,7 @@ The public surface includes:
 - `DirectValueStorage` and `RequiredValueStorage`
 - helpers for seeding component state and converting events to `ValueChange<T>`
 
-See [Component shapes](https://stayhydated.github.io/gpui-form/book/component_shapes.html)
-for integration guidance and [docs.rs](https://docs.rs/gpui-form-runtime/) for
-the trait reference.
+[codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-runtime
+[codecov]: https://codecov.io/github/stayhydated/gpui-form
+[crate-badge]: https://img.shields.io/crates/v/gpui-form-runtime.svg?label=gpui-form-runtime
+[crate]: https://crates.io/crates/gpui-form-runtime

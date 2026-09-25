@@ -52,10 +52,12 @@ The workspace example is a complete generator. From this repository root, run:
 cargo run -p prototyping
 ```
 
-The command rewrites Rust scaffolds in
+The command removes stale Rust scaffolds and rewrites the generated files in
 `examples/some-lib-forms/src/forms` and mirrors them under
 `examples/prototyping/output`, then runs `rustfmt`. Success ends with
-`Form generation complete.` for each output directory.
+`Form generation complete.` for each output directory. Make lasting changes in
+the model metadata or `FormLayout`; edits to generated files are replaced on
+the next run.
 
 ## Keep registrations concrete
 

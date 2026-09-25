@@ -31,8 +31,6 @@ pub mod switch;
 
 #[cfg(test)]
 mod tests {
-    use gpui_kit as gpui;
-
     use super::{
         checkbox::{Checkbox, CheckboxEvent, CheckboxField, CheckboxState},
         color_picker::ColorPicker,

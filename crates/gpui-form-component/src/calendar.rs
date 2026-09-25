@@ -1,5 +1,4 @@
 use chrono::{Datelike as _, Duration, Local, NaiveDate};
-use gpui_kit as gpui;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable, Size, StyledExt as _,
     button::{Button, ButtonVariants as _},

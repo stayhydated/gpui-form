@@ -319,7 +319,6 @@ mod tests {
 
     use es_fluent::FluentLabel as _;
     use gpui_form_component::infinite_select::InfiniteSelectValue as _;
-    use gpui_kit as gpui;
 
     use super::{DeploymentTarget, DeploymentTargetLabelVariants, WebRegionLabelVariants};
 

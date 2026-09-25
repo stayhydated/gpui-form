@@ -19,7 +19,6 @@ use state_helpers::{
 };
 pub use value::{InfiniteSelectItem, InfiniteSelectValue, to_select_items};
 
-use gpui_kit as gpui;
 use gpui_kit::component::{
     IndexPath,
     form::{Field, field},

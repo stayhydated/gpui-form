@@ -69,7 +69,6 @@ pub fn launch_storybook(app_cx: &mut App) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui_kit as gpui;
     use some_lib::structs::user::User;
 
     #[test]

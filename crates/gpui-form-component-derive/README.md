@@ -1,15 +1,19 @@
 # gpui-form-component-derive
 
-The `#[derive(InfiniteSelect)]` procedural macro for nested enum trees used by
-`gpui-form-component`.
+[![Codecov: gpui-form-component-derive][codecov-badge]][codecov]
+[![crates.io: gpui-form-component-derive][crate-badge]][crate]
 
-Most applications should enable the `derive` feature on
-[`gpui-form-component`](../gpui-form-component/README.md), which re-exports the
-macro as `gpui_form_component::InfiniteSelect`. Depend on this crate directly
-only when the separate proc-macro dependency is useful.
+`gpui-form-component-derive` provides `#[derive(InfiniteSelect)]` for nested enum
+trees used by `gpui-form-component`.
 
-Derived enum trees must implement `Clone + Default + PartialEq + 'static`;
-nested payload types must also implement `Default`.
+Most applications enable the `derive` feature on
+[`gpui-form-component`][gpui-form-component], which re-exports the macro as
+`gpui_form_component::InfiniteSelect`. Derived enum trees must implement
+`Clone + Default + PartialEq + 'static`; nested payload types must also
+implement `Default`.
 
-See the [API documentation](https://docs.rs/gpui-form-component-derive/) for
-variant keys, skipped variants, and Fluent metadata.
+[codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-component-derive
+[codecov]: https://codecov.io/github/stayhydated/gpui-form
+[crate-badge]: https://img.shields.io/crates/v/gpui-form-component-derive.svg?label=gpui-form-component-derive
+[crate]: https://crates.io/crates/gpui-form-component-derive
+[gpui-form-component]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form-component/README.md

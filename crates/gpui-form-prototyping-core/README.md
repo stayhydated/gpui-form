@@ -1,28 +1,20 @@
 # gpui-form-prototyping-core
 
-Generate GPUI form scaffolds from concrete `GpuiFormShape` inventory
-registrations.
+[![Codecov: gpui-form-prototyping-core][codecov-badge]][codecov]
+[![crates.io: gpui-form-prototyping-core][crate-badge]][crate]
 
-```toml
-[dependencies]
-gpui-form = { version = "0.7", features = ["inventory"] }
-gpui-form-prototyping-core = "0.7"
-```
+`gpui-form-prototyping-core` generates GPUI form scaffolds from concrete
+`GpuiFormShape` inventory registrations for application-owned layouts.
 
-Implement `FormLayout` for the target view, then adapt each registered shape:
-
-```rust,ignore
-use gpui_form::schema::registry::{GpuiFormShape, inventory};
-use gpui_form_prototyping_core::FormShapeAdapter;
-
-for shape in inventory::iter::<GpuiFormShape>() {
-    FormShapeAdapter::new(shape).generate_file(&layout)?;
-}
-```
+Enable `gpui-form/inventory` and link the crate that owns the concrete forms
+into the generator. Implement `FormLayout` for the target view, then pass each
+registration to `FormShapeAdapter::generate_file(...)`.
 
 `FormShapeAdapter::parts()` exposes validated fragments for custom layouts,
-while `generate_file(...)` renders a complete file. Generators that write into
-another crate can remap source paths before rendering.
+while `generate_file(...)` renders a complete `syn::File`. Generators that write
+into another crate can remap source paths before rendering.
 
-See [Prototyping](https://stayhydated.github.io/gpui-form/book/prototyping.html)
-for the complete workflow and failure modes.
+[codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-prototyping-core
+[codecov]: https://codecov.io/github/stayhydated/gpui-form
+[crate-badge]: https://img.shields.io/crates/v/gpui-form-prototyping-core.svg?label=gpui-form-prototyping-core
+[crate]: https://crates.io/crates/gpui-form-prototyping-core

@@ -98,9 +98,9 @@ context, response, error, and submit method.
 Use per-form registration helpers when one form needs a manual handler or
 editor policy.
 
-The MCP server retains editor sessions across calls until EOF, cancellation,
-idle expiry, or another application-owned shutdown signal. Tool completion
-does not request shutdown.
+Retain the MCP server across calls so clients can continue editing the same
+session. The transport and application control server shutdown; editor-session
+expiry only removes the expired session.
 
 ## Edit a holder through MCP
 
@@ -113,9 +113,11 @@ Generated editor tools use an optimistic revision:
 5. Call `*_edit_submit` when the form has a submit handler.
 6. Close abandoned sessions with `*_edit_close`.
 
-Bulk patches are atomic. Sessions have a default count limit and idle timeout;
-configure them with `McpFormEditorOptions` and the corresponding
-`*_with_editor_options` registration helper.
+Bulk patches are atomic. Each form retains up to 128 sessions by default and
+expires sessions after 30 minutes without access. Opening a session beyond the
+limit evicts the oldest sessions; idle expiry is checked before editor
+operations. Configure these limits with `McpFormEditorOptions` and the
+corresponding `*_with_editor_options` registration helper.
 
 Editor sessions hold generated values on the MCP server. They do not mutate
 live GPUI entities; an application that shows remote edits must provide that
@@ -145,4 +147,5 @@ forms expose validation metadata and structured validation issues.
 | Editor tools exist but the submit tool is absent | Add a `#[gpui_form::mcp_submit]` handler or register a manual/context submitter. |
 | Registration reports a duplicate name or URI | Give each exposed form a unique `mcp(name = "...")` value. |
 | A field fails schema generation | Derive `McpJsonSchema` or implement `McpToolValue` for the custom value type. |
-| An editor patch reports a stale revision | Read the session again and retry against its current revision. |
+| An editor patch reports a stale revision | Call `*_edit_read`, reconcile the returned values with the intended edit, and retry with the returned revision. |
+| A session ID is rejected after an idle period or many opens | The session may have expired or been evicted. Open a new session and restore the intended values. |

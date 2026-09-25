@@ -8,7 +8,7 @@ value or a failed reverse conversion.
 | Form contract | Generated conversion |
 |---|---|
 | No skipped fields; reconstruction is statically infallible | `holder.into_original()` returns the model. |
-| No skipped fields; the derive emits a checked path | `holder.try_into_original()` returns `Result<Model, Error>`. This includes fallible conversions and shape-policy component fields without a declared field default. |
+| No skipped fields; the derive emits a checked path | `holder.try_into_original()` returns `Result<Model, Error>`. This includes fallible conversions and non-optional component fields without a declared field default. |
 | One or more skipped fields | `holder.into_original(skipped_value, ...)` accepts those values and returns either the model or `Result<Model, Error>`, depending on the remaining fields. |
 
 A non-optional shape-backed field can still start empty when its shape uses
@@ -16,10 +16,11 @@ required storage and no `default = ...` is declared. Fallible holder conversion
 reports that missing value. When the form enables Koruma integration, generated
 `validate()` reports it too.
 
-The derive emits the checked conversion method for any non-defaulted
-shape-policy component because the policy is resolved through the shape type.
-A direct-storage policy always supplies a value, so that checked conversion
-cannot fail at runtime unless another field has a fallible conversion.
+The derive emits the checked conversion method for any non-optional component
+without a declared default because the storage policy is resolved through the
+shape type. Direct storage always supplies a value for that field. Other
+required fields or fallible reverse conversions can still make the form
+conversion fail.
 
 ## Validate with Koruma
 

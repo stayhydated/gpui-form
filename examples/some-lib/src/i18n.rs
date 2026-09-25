@@ -27,7 +27,6 @@ mod tests {
     use super::{Languages, apply_locale};
     use crate::structs::{empty::Empty, user::User};
     use es_fluent::FluentLabel as _;
-    use gpui_kit as gpui;
 
     #[test]
     fn resolves_form_labels() {

@@ -1,6 +1,5 @@
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
-use gpui_kit as gpui;
 use gpui_kit::component::switch::Switch as GpuiSwitch;
 use gpui_kit::{App, Context, Entity, EventEmitter, IntoElement, RenderOnce, Window};
 

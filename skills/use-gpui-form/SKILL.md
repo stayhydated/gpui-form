@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Use when adding, reviewing, or refactoring application code that consumes gpui-form: #[derive(GpuiForm)], field intents, defaults and value conversions, generated fields/components/value holders, built-in shapes, SelectItem or InfiniteSelect enums, Koruma validation, inventory scaffolding, or MCP submit/editor tools. Route custom shape authoring to use-gpui-form-component-shapes."
+description: "Build, review, or refactor application forms with gpui-form, including field intents, generated state, validation, inventory scaffolding, and MCP tools. Use use-gpui-form-component-shapes to define custom shapes."
 ---
 
 # Use GPUI Form
@@ -47,8 +47,12 @@ for proc-macro internals, generators, releases, or repository maintenance.
 - Use `into_source` for infallible reverse conversion,
   `try_into_source` for `Result`, and `value(koruma_newtype)` for a Koruma
   newtype's inner value.
-- Use `try_into_original()` when a required value or reverse conversion can
-  fail. Use `into_original()` for statically infallible forms.
+- For forms without skipped fields, use `try_into_original()` when a reverse
+  conversion is fallible or a non-optional component has no declared default.
+  This includes direct-storage shapes. Use `into_original()` for statically
+  infallible forms; see the reference for skipped-field conversion.
+- Defaults are source-side values; `value(...)` applies `from_source` before
+  storing them in the holder.
 - Generic forms use `#[gpui_form(no_inventory)]` when inventory is enabled.
   MCP forms must be concrete and inventory-backed.
 
@@ -80,7 +84,7 @@ pub struct Profile {
 | Structured form tools | Enable `mcp` and use `#[gpui_form(mcp)]` plus an application-owned submit path |
 | App-owned widget or external state wrapper | Switch to `use-gpui-form-component-shapes` |
 
-## MCP guardrails
+## MCP integration
 
 - `#[gpui_form::mcp_submit]` applies to a free synchronous or asynchronous
   function with one owned source-model or generated-holder parameter.
@@ -91,9 +95,9 @@ pub struct Profile {
   runtime state.
 - Generated editor sessions are headless holder state, not live GPUI entity
   mutation.
-- Retain MCP servers for the host lifetime so editor sessions span calls.
-  Tool completion does not request shutdown; EOF, cancellation, idle expiry,
-  or application policy ends the host explicitly.
+- Retain the MCP server across calls so editor sessions survive between
+  requests. Session idle expiry removes session state; the host lifetime is
+  controlled by the transport and application shutdown policy.
 
 ## Reference selection
 

@@ -19,11 +19,11 @@ Use the published GPUI Kit facade:
 
 ```toml
 [dependencies]
-gpui-kit = "0.6.0"
-gpui-form = "0.6"
-gpui-form-collection = "0.6"
-gpui-form-collection-derive = "0.6"
-gpui-form-component = { version = "0.6", features = ["component-shape", "derive"] }
+gpui-kit = "0.6.6"
+gpui-form = "0.7"
+gpui-form-collection = "0.7"
+gpui-form-collection-derive = "0.7"
+gpui-form-component = { version = "0.7", features = ["component-shape", "derive"] }
 ```
 
 Select only the optional crates the form uses.
@@ -154,8 +154,16 @@ Choose conversion from the form contract:
 | Contract | Conversion |
 |---|---|
 | Statically infallible, no skipped fields | `holder.into_original()` |
-| Missing required values or fallible reverse conversion | `holder.try_into_original()` |
+| No skipped fields; fallible reverse conversion or non-optional component without a declared default | `holder.try_into_original()` |
 | Skipped source fields | `holder.into_original(skipped_value, ...)` |
+
+A non-optional component without a declared default uses the checked method even with
+`DirectValueStorage`; that policy always supplies a value. For skipped-field
+forms, `into_original(...)` returns `Result` when another field needs checked
+conversion.
+
+Defaults are source-side values. With `value(...)`, initialization applies
+`from_source` before storing the default in the holder.
 
 Use `holder.present_fields()` for app-owned debug or preview formatting when
 skipped fields prevent automatic reconstruction.
@@ -198,7 +206,14 @@ pub struct ContactRequest {
 async fn submit_contact(
     request: ContactRequest,
 ) -> Result<ContactResponse, String> {
-    // Application-owned submission.
+    Ok(ContactResponse {
+        accepted: !request.email.is_empty(),
+    })
+}
+
+#[derive(gpui_form::mcp::McpJsonSchema, serde::Serialize)]
+pub struct ContactResponse {
+    pub accepted: bool,
 }
 ```
 
@@ -249,5 +264,5 @@ Switch to `use-gpui-form-component-shapes` when the task:
 - selects direct versus required holder storage
 - publishes shape-specific MCP input or prototyping suffix metadata
 
-That skill routes generic declaration and rendering details to
-`use-component-shape` and `use-component-shape-gpui`.
+That skill covers form storage and points to the component-shape APIs for
+declaration and rendering.

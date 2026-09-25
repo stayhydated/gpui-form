@@ -102,10 +102,8 @@ A reusable shape defines:
 - a stable prototyping field suffix
 - MCP input metadata when the wire contract needs shape-specific guidance
 
-A shape declared only through a hand-written `GpuiComponentShape`
-implementation lacks the declaration marker required by `GpuiForm`. Use the
-derive or macro so the generated contract includes that marker and its
-metadata.
+Use the derive or macro to emit the declaration marker and metadata required
+by `GpuiForm`, along with the construction contract.
 
 ### Storage policy
 
@@ -113,8 +111,10 @@ metadata.
 from an intent-scoped default or the form-side type's `Default` implementation.
 
 `RequiredValueStorage` stores `Option<T>` so the form can represent missing
-input. Holder conversion reports an absent required value. Generated
-validation reports the same condition when Koruma integration is enabled.
+input. Without a declared field default, holder conversion reports an absent
+required value. Generated validation reports the same condition when Koruma
+integration is enabled. A declared field default supplies the value during
+reconstruction when storage is empty.
 
 ## Troubleshooting
 

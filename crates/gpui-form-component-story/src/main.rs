@@ -57,7 +57,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui_kit as gpui;
 
     #[test]
     fn startup_contract_uses_a_stable_consumer_and_typed_adapter() {

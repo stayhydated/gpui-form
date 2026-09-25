@@ -1,6 +1,10 @@
 # MCP submit example
 
-A stdio MCP server that exposes generated `gpui-form` tools.
+`mcp-submit` is a stdio MCP server that demonstrates generated `gpui-form`
+submit and editor tools for application developers building headless form
+workflows.
+
+## Overview
 
 The example covers:
 
@@ -9,13 +13,11 @@ The example covers:
 - holder submission for a form with skipped application context
 - generated editor sessions, resources, and prompt templates
 
-Run it from the workspace root:
+## Example
+
+Run the server from the workspace root, then connect an MCP client over stdio
+and list tools to inspect the generated submit and `*_edit_*` tools.
 
 ```sh
 cargo run -p mcp-submit
 ```
-
-Connect an MCP client over stdio and list tools to inspect the generated submit
-and `*_edit_*` tools. See
-[MCP form tools](https://stayhydated.github.io/gpui-form/book/mcp.html) for the
-protocol workflow and registration choices.
