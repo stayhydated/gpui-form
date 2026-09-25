@@ -14,24 +14,52 @@ where
 {
 }
 
+struct FacadeShapeState;
+
+impl FacadeShapeState {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
+        Self
+    }
+}
+
+component_shape_gpui::component_shape! {
+    struct FacadeBooleanShape {
+        state = FacadeShapeState;
+        value = bool;
+    }
+}
+
+impl gpui_form::runtime::shape::GpuiFormComponentShapePolicy for FacadeBooleanShape {
+    type ValueStoragePolicy = gpui_form::runtime::shape::DirectValueStorage;
+}
+
+component_shape_gpui::component_shape! {
+    struct FacadeDateShape {
+        state = FacadeShapeState;
+        value = chrono::NaiveDate;
+    }
+}
+
+impl gpui_form::runtime::shape::GpuiFormComponentShapePolicy for FacadeDateShape {
+    type ValueStoragePolicy = gpui_form::runtime::shape::DirectValueStorage;
+}
+
 #[test]
-fn facade_runtime_accepts_curated_collection_shapes() {
-    assert_form_shape::<gpui_form_collection::checkbox::Checkbox, bool>();
+fn facade_runtime_accepts_declared_boolean_shape() {
+    assert_form_shape::<FacadeBooleanShape, bool>();
 
     assert_eq!(
-        <gpui_form_collection::checkbox::Checkbox as ComponentShapeMetadata>::MCP_INPUT
-            .input_shape(),
+        <FacadeBooleanShape as ComponentShapeMetadata>::MCP_INPUT.input_shape(),
         McpInputShape::Scalar(McpPrimitiveKind::Boolean)
     );
 }
 
 #[test]
-fn component_package_feature_publishes_shape_metadata() {
-    assert_form_shape::<gpui_form_component::date_picker::DatePicker, chrono::NaiveDate>();
+fn facade_runtime_accepts_declared_date_shape() {
+    assert_form_shape::<FacadeDateShape, chrono::NaiveDate>();
 
     assert_eq!(
-        <gpui_form_component::date_picker::DatePicker as ComponentShapeMetadata>::MCP_INPUT
-            .input_shape(),
+        <FacadeDateShape as ComponentShapeMetadata>::MCP_INPUT.input_shape(),
         McpInputShape::Scalar(McpPrimitiveKind::Date)
     );
 }

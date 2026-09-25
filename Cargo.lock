@@ -4226,8 +4226,6 @@ dependencies = [
  "bon",
  "chrono",
  "component-shape-gpui",
- "gpui-form-collection",
- "gpui-form-component",
  "gpui-form-core",
  "gpui-form-derive",
  "gpui-form-mcp",

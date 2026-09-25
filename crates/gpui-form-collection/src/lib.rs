@@ -43,7 +43,10 @@ mod tests {
         switch::{Switch, SwitchEvent, SwitchField, SwitchState},
     };
     use chrono::NaiveDate;
-    use component_shape::{DeclaredComponentShape, ValueChange};
+    use component_shape::{
+        ComponentShapeMetadata, DeclaredComponentShape, McpInputShape, McpPrimitiveKind,
+        ValueChange,
+    };
     use gpui_form_runtime::shape::{
         GpuiComponentEventOf, GpuiComponentShape, GpuiComponentShapeFor, GpuiComponentStateOf,
         GpuiComponentValueBinding, GpuiFormComponentShapePolicy,
@@ -302,5 +305,13 @@ mod tests {
         let _ = SwitchField::new(&switch);
         let _ = NumberInputField::new(&number);
         let _ = super::otp_input::OtpInputField::new(&otp);
+    }
+
+    #[test]
+    fn checkbox_publishes_boolean_mcp_input() {
+        assert_eq!(
+            <Checkbox as ComponentShapeMetadata>::MCP_INPUT.input_shape(),
+            McpInputShape::Scalar(McpPrimitiveKind::Boolean)
+        );
     }
 }

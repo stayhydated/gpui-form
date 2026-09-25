@@ -34,8 +34,6 @@ strum = { features = [ "derive" ], optional = true, workspace = true }
 chrono = { workspace = true }
 component-shape-gpui = { workspace = true }
 gpui-kit = { features = [ "test-support" ], workspace = true }
-gpui-form-collection = { workspace = true }
-gpui-form-component = { features = [ "component-shape" ], workspace = true }
 gpui-form-derive = { workspace = true }
 gpui-form-runtime = { workspace = true }
 koruma = { workspace = true }

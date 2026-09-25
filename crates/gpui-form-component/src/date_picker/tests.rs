@@ -60,3 +60,16 @@ fn formats_partial_ranges_and_all_display_widths() {
         format_display_range(None, None, &locale!("en-US"), DateDisplayStyle::Medium).is_none()
     );
 }
+
+#[cfg(feature = "component-shape")]
+#[test]
+fn date_picker_publishes_date_mcp_input() {
+    use component_shape::{ComponentShapeMetadata, McpInputShape, McpPrimitiveKind};
+
+    use super::DatePicker;
+
+    assert_eq!(
+        <DatePicker as ComponentShapeMetadata>::MCP_INPUT.input_shape(),
+        McpInputShape::Scalar(McpPrimitiveKind::Date)
+    );
+}

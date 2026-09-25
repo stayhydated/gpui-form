@@ -115,11 +115,43 @@ pub struct NewtypeConvertedRequest {
     code: RequestCode,
 }
 
+/// Minimal locally-declared component shape used to exercise the facade's
+/// component-backed MCP paths without dev-depending on `gpui-form-collection`.
+#[cfg(feature = "runtime")]
+struct TestInputState;
+
+#[cfg(feature = "runtime")]
+impl TestInputState {
+    fn new(_window: &mut gpui_kit::Window, _cx: &mut gpui_kit::Context<'_, Self>) -> Self {
+        Self
+    }
+}
+
+#[cfg(feature = "runtime")]
+component_shape_gpui::component_shape! {
+    struct TestInput<T = String>
+    where
+        T: 'static,
+    {
+        state = TestInputState;
+        value = T;
+        field_suffix = "input";
+    }
+}
+
+#[cfg(feature = "runtime")]
+impl<T> gpui_form::runtime::shape::GpuiFormComponentShapePolicy for TestInput<T>
+where
+    T: 'static,
+{
+    type ValueStoragePolicy = gpui_form::runtime::shape::DirectValueStorage;
+}
+
 #[cfg(feature = "runtime")]
 #[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentRequest {
-    #[gpui_form(component(gpui_form_collection::input::Input::<String>))]
+    #[gpui_form(component(TestInput::<String>))]
     title: String,
 }
 
@@ -187,7 +219,7 @@ impl gpui_form::mcp::McpToolValue for SlashSeparatedTags {
 #[derive(Clone, Debug, Deserialize, Eq, GpuiForm, PartialEq, Serialize)]
 #[gpui_form(mcp)]
 pub struct ComponentNoSchemaRequest {
-    #[gpui_form(component(gpui_form_collection::input::Input::<ComponentOnlyValue>))]
+    #[gpui_form(component(TestInput::<ComponentOnlyValue>))]
     title: ComponentOnlyValue,
 }
 
