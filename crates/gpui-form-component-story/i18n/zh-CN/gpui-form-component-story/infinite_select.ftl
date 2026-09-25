@@ -43,15 +43,21 @@ deployment_target_label_variants-Web = 网页
 ## DesktopPlatformDescriptionVariants
 
 desktop_platform_description_variants_label = 桌面平台
+# es-fluent: same-as-fallback
 desktop_platform_description_variants-Linux = Linux
+# es-fluent: same-as-fallback
 desktop_platform_description_variants-MacOs = macOS
+# es-fluent: same-as-fallback
 desktop_platform_description_variants-Windows = Windows
 
 ## DesktopPlatformLabelVariants
 
 desktop_platform_label_variants_label = 桌面平台
+# es-fluent: same-as-fallback
 desktop_platform_label_variants-Linux = Linux
+# es-fluent: same-as-fallback
 desktop_platform_label_variants-MacOs = macOS
+# es-fluent: same-as-fallback
 desktop_platform_label_variants-Windows = Windows
 
 ## WebRegionDescriptionVariants
