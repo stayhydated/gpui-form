@@ -19,7 +19,7 @@ Use the published GPUI Kit facade:
 
 ```toml
 [dependencies]
-gpui-kit = "0.6.4"
+gpui-kit = "0.6.6"
 gpui-form = "0.7"
 gpui-form-collection = "0.7"
 gpui-form-collection-derive = "0.7"
