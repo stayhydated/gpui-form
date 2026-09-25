@@ -279,7 +279,7 @@ impl FormLayout for StorybookLayout {
                     v_flex()
                         .key_context(CONTEXT)
                         .id(#form_id_literal)
-                        .size_full()
+                        .w_full()
                         .p_4()
                         .justify_start()
                         .gap_3()

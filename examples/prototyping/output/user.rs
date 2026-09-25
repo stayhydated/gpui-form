@@ -1,17 +1,17 @@
-use gpui_kit::prelude::FluentBuilder as _;
-use gpui_kit::{
-    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+use gpui_form::runtime::shape::{
+    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::Disableable as _;
 use gpui_kit::component::form::field;
 use gpui_kit::component::form::v_form;
 use gpui_kit::component::separator::Separator;
 use gpui_kit::component::v_flex;
-use gpui_form::runtime::shape::{
-    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
+use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
@@ -215,7 +215,10 @@ impl UserForm {
     fn on_brand_color_color_picker_event(
         &mut self,
         state: &Entity<GpuiComponentStateOf<gpui_form_collection::color_picker::ColorPicker>>,
-        event: &GpuiComponentEventOf<gpui_form_collection::color_picker::ColorPicker, gpui_kit::Hsla>,
+        event: &GpuiComponentEventOf<
+            gpui_form_collection::color_picker::ColorPicker,
+            gpui_kit::Hsla,
+        >,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
@@ -560,12 +563,10 @@ impl UserForm {
             );
         });
         brand_color.update(cx, |state, cx| {
-            seed_value_binding_state::<gpui_form_collection::color_picker::ColorPicker, gpui_kit::Hsla>(
-                state,
-                current_data.brand_color.as_ref(),
-                window,
-                cx,
-            );
+            seed_value_binding_state::<
+                gpui_form_collection::color_picker::ColorPicker,
+                gpui_kit::Hsla,
+            >(state, current_data.brand_color.as_ref(), window, cx);
         });
         otp_code.update(cx, |state, cx| {
             seed_value_binding_state::<gpui_form_collection::otp_input::OtpInput<String>, String>(
@@ -703,7 +704,7 @@ impl Render for UserForm {
         v_flex()
             .key_context(CONTEXT)
             .id("user-form")
-            .size_full()
+            .w_full()
             .p_4()
             .justify_start()
             .gap_3()

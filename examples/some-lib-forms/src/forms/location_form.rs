@@ -175,7 +175,7 @@ impl Render for LocationFormForm {
         v_flex()
             .key_context(CONTEXT)
             .id("location_form-form")
-            .size_full()
+            .w_full()
             .p_4()
             .justify_start()
             .gap_3()

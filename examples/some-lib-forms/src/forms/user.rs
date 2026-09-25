@@ -704,7 +704,7 @@ impl Render for UserForm {
         v_flex()
             .key_context(CONTEXT)
             .id("user-form")
-            .size_full()
+            .w_full()
             .p_4()
             .justify_start()
             .gap_3()

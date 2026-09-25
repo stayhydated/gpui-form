@@ -1,10 +1,10 @@
+use gpui_kit::component::form::v_form;
+use gpui_kit::component::separator::Separator;
+use gpui_kit::component::v_flex;
 use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
 use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _};
-use gpui_kit::component::form::v_form;
-use gpui_kit::component::separator::Separator;
-use gpui_kit::component::v_flex;
 use some_lib::structs::empty::*;
 const CONTEXT: &str = "EmptyForm";
 #[gpui_storybook::story_init]
@@ -41,7 +41,7 @@ impl Render for EmptyForm {
         v_flex()
             .key_context(CONTEXT)
             .id("empty-form")
-            .size_full()
+            .w_full()
             .p_4()
             .justify_start()
             .gap_3()

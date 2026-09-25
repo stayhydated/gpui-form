@@ -1,17 +1,17 @@
-use gpui_kit::prelude::FluentBuilder as _;
-use gpui_kit::{
-    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
+use gpui_form::runtime::shape::{
+    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::Disableable as _;
 use gpui_kit::component::form::field;
 use gpui_kit::component::form::v_form;
 use gpui_kit::component::separator::Separator;
 use gpui_kit::component::v_flex;
-use gpui_form::runtime::shape::{
-    GpuiComponentEventOf, GpuiComponentStateOf, ValueChange, seed_value_binding_state, value_change,
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
+    App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
+use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
 const CONTEXT: &str = "ItemForm";
@@ -139,7 +139,7 @@ impl Render for ItemForm {
         v_flex()
             .key_context(CONTEXT)
             .id("item-form")
-            .size_full()
+            .w_full()
             .p_4()
             .justify_start()
             .gap_3()
