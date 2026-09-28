@@ -28,6 +28,7 @@ pub mod otp_input;
 pub mod select;
 pub mod slider;
 pub mod switch;
+pub mod time_field;
 
 #[cfg(test)]
 mod tests {
@@ -41,8 +42,9 @@ mod tests {
         otp_input::OtpInput,
         slider::Slider,
         switch::{Switch, SwitchEvent, SwitchField, SwitchState},
+        time_field::TimeField,
     };
-    use chrono::NaiveDate;
+    use chrono::{NaiveDate, NaiveTime};
     use component_shape::{
         ComponentShapeMetadata, DeclaredComponentShape, McpInputShape, McpPrimitiveKind,
         ValueChange,
@@ -147,6 +149,10 @@ mod tests {
         assert_declared_shape::<DateRangePicker>();
         assert_shape_for::<DateRangePicker, (NaiveDate, NaiveDate)>();
         assert_value_binding::<DateRangePicker, (NaiveDate, NaiveDate)>();
+
+        assert_declared_shape::<TimeField>();
+        assert_shape_for::<TimeField, NaiveTime>();
+        assert_value_binding::<TimeField, NaiveTime>();
 
         assert_declared_shape::<Input<String>>();
         assert_shape_for::<Input<String>, String>();

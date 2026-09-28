@@ -9,19 +9,21 @@ use gpui_kit::{Context, Window};
 
 fn date_picker_value_change(event: &DatePickerEvent) -> ValueChange<NaiveDate> {
     match event {
-        DatePickerEvent::Change(Date::Single(Some(date))) => ValueChange::Set(*date),
-        DatePickerEvent::Change(Date::Single(None)) => ValueChange::Clear,
-        DatePickerEvent::Change(Date::Range(_, _)) => ValueChange::Unchanged,
+        DatePickerEvent::Change(value) => match value.date() {
+            Date::Single(Some(date)) => ValueChange::Set(date),
+            Date::Single(None) => ValueChange::Clear,
+            Date::Range(_, _) => ValueChange::Unchanged,
+        },
     }
 }
 
 fn date_range_picker_value_change(event: &DatePickerEvent) -> ValueChange<(NaiveDate, NaiveDate)> {
     match event {
-        DatePickerEvent::Change(Date::Range(Some(start), Some(end))) => {
-            ValueChange::Set((*start, *end))
+        DatePickerEvent::Change(value) => match value.date() {
+            Date::Range(Some(start), Some(end)) => ValueChange::Set((start, end)),
+            Date::Range(_, _) => ValueChange::Clear,
+            Date::Single(_) => ValueChange::Unchanged,
         },
-        DatePickerEvent::Change(Date::Range(_, _)) => ValueChange::Clear,
-        DatePickerEvent::Change(Date::Single(_)) => ValueChange::Unchanged,
     }
 }
 
@@ -99,6 +101,11 @@ impl_form_component_shape!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gpui_kit::component::date_picker::DateTime;
+
+    fn at(date: NaiveDate) -> chrono::NaiveDateTime {
+        date.and_hms_opt(0, 0, 0).unwrap()
+    }
 
     #[test]
     fn date_picker_events_preserve_single_and_range_modes() {
@@ -106,37 +113,39 @@ mod tests {
         let end = NaiveDate::from_ymd_opt(2026, 7, 18).unwrap();
 
         assert_eq!(
-            date_picker_value_change(&DatePickerEvent::Change(Date::Single(Some(start)))),
+            date_picker_value_change(&DatePickerEvent::Change(DateTime::Single(Some(at(start))))),
             ValueChange::Set(start)
         );
         assert_eq!(
-            date_picker_value_change(&DatePickerEvent::Change(Date::Single(None))),
+            date_picker_value_change(&DatePickerEvent::Change(DateTime::Single(None))),
             ValueChange::Clear
         );
         assert_eq!(
-            date_picker_value_change(&DatePickerEvent::Change(Date::Range(
-                Some(start),
-                Some(end)
+            date_picker_value_change(&DatePickerEvent::Change(DateTime::Range(
+                Some(at(start)),
+                Some(at(end))
             ))),
             ValueChange::Unchanged
         );
 
         assert_eq!(
-            date_range_picker_value_change(&DatePickerEvent::Change(Date::Range(
-                Some(start),
-                Some(end),
+            date_range_picker_value_change(&DatePickerEvent::Change(DateTime::Range(
+                Some(at(start)),
+                Some(at(end)),
             ))),
             ValueChange::Set((start, end))
         );
         assert_eq!(
-            date_range_picker_value_change(&DatePickerEvent::Change(Date::Range(
-                Some(start),
+            date_range_picker_value_change(&DatePickerEvent::Change(DateTime::Range(
+                Some(at(start)),
                 None
             ))),
             ValueChange::Clear
         );
         assert_eq!(
-            date_range_picker_value_change(&DatePickerEvent::Change(Date::Single(Some(start)))),
+            date_range_picker_value_change(&DatePickerEvent::Change(DateTime::Single(Some(at(
+                start
+            ))))),
             ValueChange::Unchanged
         );
     }

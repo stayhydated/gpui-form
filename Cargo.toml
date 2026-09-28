@@ -30,7 +30,7 @@ publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
 rust-version = "1.98"
-version = "0.7.1"
+version = "0.7.2"
 
 [workspace.dependencies]
 anyhow = "1.0"
@@ -38,10 +38,10 @@ bon = "3.10"
 chrono = "0.4"
 clap = "4.6"
 console_error_panic_hook = "0.1"
-component-shape = "0.3.2"
-component-shape-codegen = "0.3.2"
-component-shape-gpui = "0.3.2"
-component-shape-mcp = "0.3.2"
+component-shape = "0.3.3"
+component-shape-codegen = "0.3.3"
+component-shape-gpui = "0.3.3"
+component-shape-mcp = "0.3.3"
 crabtime = "1.1"
 darling = "0.24"
 derive_more = "2.1"
@@ -50,22 +50,22 @@ es-fluent = "0.20.3"
 es-fluent-build = "0.20.3"
 es-fluent-lang = "0.20.3"
 es-fluent-manager-embedded = "0.20.3"
-gpui-kit = "0.6.6"
-gpui-es-fluent = "0.2.2"
-gpui-form = { path = "crates/gpui-form", version = "0.7.1" }
-gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.1" }
-gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.1" }
-gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.1" }
-gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.1" }
-gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.1" }
-gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.1" }
-gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.1" }
-gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.1" }
-gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.1" }
-gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.1" }
-gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.1" }
-gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.1" }
-gpui-storybook = "0.6.2"
+gpui-kit = "0.7.0"
+gpui-es-fluent = "0.2.3"
+gpui-form = { path = "crates/gpui-form", version = "0.7.2" }
+gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.2" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.2" }
+gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.2" }
+gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.2" }
+gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.2" }
+gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.2" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.2" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.2" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.2" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.2" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.2" }
+gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.2" }
+gpui-storybook = "0.6.3"
 heck = "0.5.0"
 icu_calendar = "2.3.0"
 icu_datetime = "2.3.0"
@@ -82,13 +82,13 @@ prettyplease = "0.3"
 proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
-rmcp = "3.4.1"
+rmcp = "3.5.0"
 rust_decimal = "1.43"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "14df45a56f8fa847f816cf297c7b36dffb77ea1e" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "14df45a56f8fa847f816cf297c7b36dffb77ea1e" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "14df45a56f8fa847f816cf297c7b36dffb77ea1e" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
 strum = "0.28"
 syn = "3.0"
 syn-cfg-attr = "0.3.1"

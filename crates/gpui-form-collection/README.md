@@ -17,6 +17,7 @@ model fields.
 | `number_input` and `slider` | Numeric controls |
 | `color_picker` | `gpui_kit::Hsla` selection |
 | `date_picker` | Single-date and date-range selection |
+| `time_field` | Time-of-day selection |
 | `otp_input` | One-time-password input |
 
 Use [`gpui-form-collection-derive`][collection-derive] for
