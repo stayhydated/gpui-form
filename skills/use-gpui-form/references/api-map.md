@@ -121,6 +121,7 @@ Prototyping-only helper names use the shape's field suffix.
 | `f32` or `SliderValue` | `slider::Slider` |
 | `gpui_kit::Hsla` | `color_picker::ColorPicker` |
 | `chrono::NaiveDate` or date pair | Collection `DatePicker` or `DateRangePicker` |
+| `chrono::NaiveTime` | Collection `TimeField` |
 | OTP value | `otp_input::OtpInput::<_>` |
 | Localized date or date pair | Component `DatePicker` or `DateRangePicker` |
 | `Vec<PathBuf>` | `gpui_form_component::file_picker::FilePicker` |
