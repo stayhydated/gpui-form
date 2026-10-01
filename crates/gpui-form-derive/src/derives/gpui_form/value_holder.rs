@@ -307,6 +307,18 @@ pub(super) fn generate_value_holder(
         })
         .collect();
 
+    // Reconstruction supplies one argument per skipped source field, plus self.
+    let skipped_field_arity_expectation = if skipped_params.len() >= 7 {
+        quote! {
+            #[expect(
+                clippy::too_many_arguments,
+                reason = "form reconstruction takes each skipped source field from its application owner"
+            )]
+        }
+    } else {
+        quote! {}
+    };
+
     let into_original_fields: Vec<TokenStream> = holder_plan
         .original_fields()
         .iter()
@@ -335,6 +347,7 @@ pub(super) fn generate_value_holder(
                         entries
                     }
 
+                    #skipped_field_arity_expectation
                     pub fn into_original(
                         self,
                         #(#skipped_params),*
