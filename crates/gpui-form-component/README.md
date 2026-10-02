@@ -19,8 +19,15 @@ The `derive` feature re-exports `#[derive(InfiniteSelect)]`. The
 `DateRangePicker`, and `FilePicker` available in
 `#[gpui_form(component(...))]` declarations.
 
+`InfiniteSelectState` setters update the selection without emitting
+`InfiniteSelectEvent`. Confirmed select changes report the previous and current
+values and paths.
+
 Initialize the application `gpui-es-fluent` resources before using localized
-date, file, or annotated infinite-select text.
+date, file, or annotated infinite-select text. Render application messages
+with `gpui_es_fluent::localize_message(cx, &message)` and type labels with
+`gpui_es_fluent::localize_label::<MyType>(cx)`. An explicit localizer uses
+`i18n.localize_message(&message)` and `MyType::localize_label(&i18n)`.
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-component
 [codecov]: https://codecov.io/github/stayhydated/gpui-form

@@ -5,6 +5,11 @@
 //! server and stdio serving mechanics to `component-shape-mcp`.
 //! MCP servers retain their shared form registry and editor sessions for the
 //! host lifetime; completing a call never requests shutdown.
+//!
+//! Editor snapshots preserve decoded drafts that fail form validation. Their
+//! value schemas describe the underlying types, while field descriptors retain
+//! the input constraints; clients should inspect `valid` and `errors` before
+//! submitting a draft.
 
 mod contracts;
 mod descriptors;

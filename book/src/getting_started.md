@@ -19,9 +19,9 @@ ready-made collection shapes and the collection select derive:
 ```toml
 [dependencies]
 gpui-kit = "0.6.6"
-gpui-form = "0.7"
-gpui-form-collection = "0.7"
-gpui-form-collection-derive = "0.7"
+gpui-form = "0.8"
+gpui-form-collection = "0.8"
+gpui-form-collection-derive = "0.8"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
@@ -107,9 +107,9 @@ from the same shape metadata.
 
 | Need | Configuration |
 |---|---|
-| Inventory metadata | `gpui-form = { version = "0.7", features = ["inventory"] }` |
-| MCP tools in a GPUI application | `gpui-form = { version = "0.7", features = ["mcp"] }` |
-| Headless MCP forms | `gpui-form = { version = "0.7", default-features = false, features = ["derive", "mcp"] }` |
+| Inventory metadata | `gpui-form = { version = "0.8", features = ["inventory"] }` |
+| MCP tools in a GPUI application | `gpui-form = { version = "0.8", features = ["mcp"] }` |
+| Headless MCP forms | `gpui-form = { version = "0.8", default-features = false, features = ["derive", "mcp"] }` |
 | MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 

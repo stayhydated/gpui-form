@@ -15,6 +15,10 @@ The public surface includes:
 - `ComponentSuffix` and suffix validation
 - signed and unsigned numeric text validation
 
+Numeric validation supports incomplete text while a user edits a field.
+`require_parse` checks completed input against the target type; empty text and
+the signed `-` prefix remain accepted editing states.
+
 ## Example
 
 ```rust

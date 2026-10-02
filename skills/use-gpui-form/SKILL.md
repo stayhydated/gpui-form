@@ -53,6 +53,9 @@ for proc-macro internals, generators, releases, or repository maintenance.
   infallible forms; see the reference for skipped-field conversion.
 - Defaults are source-side values; `value(...)` applies `from_source` before
   storing them in the holder.
+- Render application text with `gpui_es_fluent::localize_message(cx, &message)`
+  and `gpui_es_fluent::localize_label::<MyType>(cx)`. With an explicit localizer,
+  use `i18n.localize_message(&message)` and `MyType::localize_label(&i18n)`.
 - Generic forms use `#[gpui_form(no_inventory)]` when inventory is enabled.
   MCP forms must be concrete and inventory-backed.
 

@@ -488,17 +488,14 @@ where
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let previous_value = self.value.clone();
-        let previous_path = self.path.clone();
-        let previous_key_path = self.key_path.clone();
         let new_path = path_from_value(&value);
         let new_key_path = key_path_from_value(&value);
         let changed_depth =
-            changed_depth.unwrap_or_else(|| first_changed_depth(&previous_path, &new_path));
+            changed_depth.unwrap_or_else(|| first_changed_depth(&self.path, &new_path));
 
-        self.value = value.clone();
-        self.path = new_path.clone();
-        self.key_path = new_key_path.clone();
+        let previous_value = std::mem::replace(&mut self.value, value);
+        let previous_path = std::mem::replace(&mut self.path, new_path);
+        let previous_key_path = std::mem::replace(&mut self.key_path, new_key_path);
         self.sync_master_select(window, cx);
         self.rebuild_child_selects(window, cx);
         if emit {
@@ -506,9 +503,9 @@ where
                 previous_value,
                 previous_path,
                 previous_key_path,
-                value,
-                path: new_path,
-                key_path: new_key_path,
+                value: self.value.clone(),
+                path: self.path.clone(),
+                key_path: self.key_path.clone(),
                 changed_depth,
             });
         }

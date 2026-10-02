@@ -20,10 +20,10 @@ Use the published GPUI Kit facade:
 ```toml
 [dependencies]
 gpui-kit = "0.6.6"
-gpui-form = "0.7"
-gpui-form-collection = "0.7"
-gpui-form-collection-derive = "0.7"
-gpui-form-component = { version = "0.7", features = ["component-shape", "derive"] }
+gpui-form = "0.8"
+gpui-form-collection = "0.8"
+gpui-form-collection-derive = "0.8"
+gpui-form-component = { version = "0.8", features = ["component-shape", "derive"] }
 ```
 
 Select only the optional crates the form uses.

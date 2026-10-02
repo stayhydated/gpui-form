@@ -208,3 +208,90 @@ fn generated_mcp_fields_publish_inferred_and_explicit_metadata() {
         "Number of retry attempts to allow."
     );
 }
+
+#[test]
+fn editor_output_schemas_preserve_invalid_drafts_without_relaxing_input_constraints() {
+    let mut server = test_server();
+    form::<ConstrainedRequest>(&mut server)
+        .editor()
+        .expect("editor tools should register");
+    let names = editor_tool_names(ConstrainedRequest::descriptor());
+    let draft = json!({ "title": "", "retries": 0 });
+    let opened = server.call_tool(&names.open, Some(json!({ "values": draft })));
+    assert_eq!(opened.is_error, Some(false));
+    let opened = opened
+        .structured_content
+        .expect("invalid draft should remain editable");
+    assert_eq!(opened["valid"], false);
+    assert_eq!(opened["values"], draft);
+    assert_eq!(opened["submit_arguments"], draft);
+    assert!(!opened["errors"].as_array().unwrap().is_empty());
+
+    let definitions = server.list_tools();
+    for name in [
+        &names.open,
+        &names.read,
+        &names.patch,
+        &names.validate,
+        &names.list,
+    ] {
+        let tool = definitions
+            .iter()
+            .find(|tool| tool.name.as_ref() == name)
+            .unwrap();
+        let output = Value::Object(tool.output_schema.as_ref().unwrap().as_ref().clone());
+        let snapshot = if name == &names.list {
+            &output["properties"]["sessions"]["items"]
+        } else {
+            &output
+        };
+        assert_draft_snapshot_schema(snapshot, &opened);
+    }
+    for name in [&names.open, &names.patch] {
+        let tools = server.list_tools();
+        let tool = tools
+            .iter()
+            .find(|tool| tool.name.as_ref() == name)
+            .unwrap();
+        assert_eq!(
+            tool.input_schema["properties"]["values"]["properties"]["title"]["minLength"],
+            2
+        );
+        assert_eq!(
+            tool.input_schema["properties"]["values"]["properties"]["retries"]["minimum"],
+            1
+        );
+    }
+}
+
+fn assert_draft_snapshot_schema(schema: &Value, opened: &Value) {
+    for key in ["values", "submit_arguments"] {
+        let values = &schema["properties"][key];
+        assert_eq!(values["additionalProperties"], false);
+        assert_eq!(values["properties"]["title"]["type"], "string");
+        assert!(values["properties"]["title"].get("minLength").is_none());
+        assert!(values["properties"]["title"].get("maxLength").is_none());
+        assert_eq!(values["properties"]["retries"]["type"], "integer");
+        assert!(
+            values["properties"]["retries"]
+                .get("exclusiveMaximum")
+                .is_none()
+        );
+        assert_ne!(values["properties"]["retries"]["minimum"], json!(1));
+    }
+    let fields = schema["properties"]["fields"]["items"]["oneOf"]
+        .as_array()
+        .unwrap();
+    for (index, field) in fields.iter().enumerate() {
+        let properties = &field["properties"];
+        assert_eq!(
+            properties["schema"]["const"],
+            opened["fields"][index]["schema"]
+        );
+        let value = &properties["value"]["anyOf"][0];
+        assert!(value.get("minLength").is_none());
+        assert!(value.get("exclusiveMaximum").is_none());
+    }
+    assert_eq!(opened["fields"][0]["schema"]["minLength"], 2);
+    assert_eq!(opened["fields"][1]["schema"]["minimum"], 1);
+}
