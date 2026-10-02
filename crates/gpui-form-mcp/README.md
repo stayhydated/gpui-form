@@ -21,7 +21,9 @@ server.
 Use `gpui_form::mcp::tool_registry()` or
 `tool_registry_with_options(...)` when the host assembles the same
 inventory-discovered definitions and handlers independently. MCP servers retain
-editor sessions across calls.
+editor sessions across calls. Draft snapshots preserve decoded values that fail
+form validation and report `valid: false` with errors. Field descriptors retain
+the input constraints so clients can explain and repair those drafts.
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-mcp
 [codecov]: https://codecov.io/github/stayhydated/gpui-form

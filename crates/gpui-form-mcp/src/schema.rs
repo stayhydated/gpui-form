@@ -82,13 +82,10 @@ pub(crate) fn edit_session_snapshot_output_schema(fields: &[McpField]) -> McpSch
         "errors".to_string(),
         component_shape_mcp::array_schema(validation_issue_schema()),
     );
-    properties.insert(
-        "values".to_string(),
-        optional_input_schema_for_fields(fields),
-    );
+    properties.insert("values".to_string(), draft_values_output_schema(fields));
     properties.insert(
         "submit_arguments".to_string(),
-        optional_input_schema_for_fields(fields),
+        draft_values_output_schema(fields),
     );
     properties.insert("cleanup".to_string(), edit_session_cleanup_schema());
 
@@ -251,7 +248,7 @@ pub(crate) fn edit_session_field_output_schema(field: McpField) -> McpSchema {
     properties.insert("has_value".to_string(), McpSchema::boolean());
     properties.insert(
         "value".to_string(),
-        component_shape_mcp::nullable_schema(schema_for_field(field)),
+        component_shape_mcp::nullable_schema(draft_value_schema_for_field(field)),
     );
     properties.insert("missing".to_string(), McpSchema::boolean());
     properties.insert(
@@ -351,13 +348,33 @@ pub(crate) fn session_idle_timeout_schema() -> McpSchema {
     ))
 }
 
-pub(crate) fn schema_for_field(field: McpField) -> McpSchema {
+// Editor snapshots preserve decoded values even when form validation fails.
+// Domain constraints belong in the input/descriptor schemas and error feedback,
+// rather than assertions on the returned draft values.
+fn draft_values_output_schema(fields: &[McpField]) -> McpSchema {
+    let properties = fields
+        .iter()
+        .map(|field| {
+            (
+                field.name().to_string(),
+                draft_value_schema_for_field(*field),
+            )
+        })
+        .collect();
+    component_shape_mcp::object_schema(properties, std::iter::empty::<&str>())
+}
+
+fn draft_value_schema_for_field(field: McpField) -> McpSchema {
     let base = (field.tool_value_schema())();
-    let mut schema = if field.presence().optional() {
+    if field.presence().optional() {
         component_shape_mcp::nullable_schema(base)
     } else {
         base
-    };
+    }
+}
+
+pub(crate) fn schema_for_field(field: McpField) -> McpSchema {
+    let mut schema = draft_value_schema_for_field(field);
 
     if let Some(object) = schema.as_object_mut() {
         object.insert(

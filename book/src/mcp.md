@@ -113,6 +113,12 @@ Generated editor tools use an optimistic revision:
 5. Call `*_edit_submit` when the form has a submit handler.
 6. Close abandoned sessions with `*_edit_close`.
 
+Editor snapshots preserve decoded draft values even when form validation
+fails. Inspect `valid` and `errors` before submitting: `values`,
+`submit_arguments`, and each field's `value` may violate the form's Koruma
+constraints. Their output schemas describe the underlying value types; each
+field's `schema` still publishes the input constraints and validation metadata.
+
 Bulk patches are atomic. Each form retains up to 128 sessions by default and
 expires sessions after 30 minutes without access. Opening a session beyond the
 limit evicts the oldest sessions; idle expiry is checked before editor

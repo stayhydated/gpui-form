@@ -19,6 +19,10 @@ The `derive` feature re-exports `#[derive(InfiniteSelect)]`. The
 `DateRangePicker`, and `FilePicker` available in
 `#[gpui_form(component(...))]` declarations.
 
+`InfiniteSelectState` setters update the selection without emitting
+`InfiniteSelectEvent`. Confirmed select changes report the previous and current
+values and paths.
+
 Initialize the application `gpui-es-fluent` resources before using localized
 date, file, or annotated infinite-select text.
 

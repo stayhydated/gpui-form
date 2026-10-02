@@ -69,6 +69,8 @@ Use the smallest applicable check from the repository workflows:
 |---|---|
 | Library behavior | `cargo test -p <owning-package>` |
 | Generated form API or diagnostics | `cargo test -p gpui-form --test ui` |
+| MCP schemas, submit handlers, or editor sessions | `cargo test -p gpui-form --test mcp_submit --all-features --locked` |
+| Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
 | Holder conversion | `cargo test -p gpui-form --test holder_conversion` |
 | Scaffold generation | `cargo test -p gpui-form-prototyping-core` and `cargo run -p prototyping` |
 | Markdown | `rumdl check <changed-paths>` |
