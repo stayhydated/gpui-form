@@ -27,6 +27,7 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 chrono = { workspace = true }
+proptest = { default-features = false, features = [ "std" ], version = "1.11" }
 rust_decimal = { workspace = true }
 
 [lints]

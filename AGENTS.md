@@ -68,6 +68,8 @@ Use the smallest applicable check from the repository workflows:
 | Change | Check |
 |---|---|
 | Library behavior | `cargo test -p <owning-package>` |
+| Numeric property tests | `cargo test -p gpui-form-core --test numeric_properties --locked` |
+| Editor session property tests | `cargo test -p gpui-form-mcp --all-features --locked session_properties` |
 | Generated form API or diagnostics | `cargo test -p gpui-form --test ui` |
 | MCP schemas, submit handlers, or editor sessions | `cargo test -p gpui-form --test mcp_submit --all-features --locked` |
 | Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
@@ -82,6 +84,11 @@ For book validation, set `MDBOOK_BUILD__CREATE_MISSING=false` so missing
 navigation targets are reported without creating chapters. For broader Rust
 changes, use the matching `justfile` recipes; `just fmt` rewrites files.
 CI runs tests with all features across Linux, macOS, and Windows.
+
+Keep property inputs bounded and expected results independent of production
+parsers or storage algorithms. Numeric editing prefixes are not completed
+numbers. Session properties use a FIFO model and explicit expiry instants;
+avoid sleeps and GPUI setup for these headless contracts.
 
 Report checks that ran, failures, and checks skipped with their reasons. When
 outputs change, state whether they were regenerated from their owning sources.

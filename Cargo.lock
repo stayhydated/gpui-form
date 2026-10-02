@@ -4336,6 +4336,7 @@ name = "gpui-form-core"
 version = "0.7.3"
 dependencies = [
  "component-shape",
+ "proptest",
 ]
 
 [[package]]
@@ -4366,6 +4367,7 @@ dependencies = [
  "component-shape-mcp",
  "gpui-form-schema",
  "inventory",
+ "proptest",
  "rmcp",
  "rust_decimal",
  "serde",
