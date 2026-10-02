@@ -86,9 +86,9 @@ rmcp = "3.5.0"
 rust_decimal = "1.43"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "125e20e910e17d23a874399f6b88084830ac679d" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
 strum = "0.28"
 syn = "3.0"
 syn-cfg-attr = "0.3.1"

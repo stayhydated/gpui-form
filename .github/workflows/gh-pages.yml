@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   deploy:
-    uses: stayhydated/shared/.github/workflows/deploy-pages.yml@master
+    uses: stayhydated/shared/.github/workflows/deploy-pages.yml@ab491dd907051b743033ecdae96d4668a7708f0d
     with:
       build-command: |
         env -u RUSTC_WRAPPER cargo xtask build gpui-demo
