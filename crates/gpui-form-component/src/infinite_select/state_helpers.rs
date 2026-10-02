@@ -22,10 +22,10 @@ where
         }
 
         let selected_row = path.get(level + 1).unwrap_or(0).min(items.len() - 1);
-        let child_select = cx.new(|cx| {
-            build_select_state::<T, D>(items.clone(), Some(selected_row), searchable, window, cx)
-        });
         current_value = items[selected_row].get_value().clone();
+        let child_select = cx.new(|cx| {
+            build_select_state::<T, D>(items, Some(selected_row), searchable, window, cx)
+        });
         selects.push(child_select);
     }
 

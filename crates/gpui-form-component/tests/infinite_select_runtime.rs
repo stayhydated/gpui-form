@@ -427,3 +427,101 @@ where
     let _ = InfiniteSelectComponent::<Country, D>::from(InfiniteSelectOptions::new(true, Some(3)));
     let _ = InfiniteSelectComponent::<Country, D>::searchable(true);
 }
+
+#[gpui_kit::test]
+fn selection_updates_preserve_paths_and_event_payloads(cx: &mut gpui_kit::TestAppContext) {
+    use gpui_form_component::infinite_select::{
+        InfiniteSelectEvent, InfiniteSelectItem, InfiniteSelectState,
+    };
+    use gpui_kit::component::select::SelectEvent;
+    use gpui_kit::{AppContext as _, Empty, VisualTestContext};
+    use std::{cell::RefCell, rc::Rc};
+
+    cx.update(gpui_kit::component::init);
+    let window = cx.add_window(|_, _| Empty);
+    let mut visual = VisualTestContext::from_window(window.into(), cx);
+    let state = visual.update(|window, cx| {
+        cx.new(|cx| InfiniteSelectState::<Country>::new(Country::default(), window, cx))
+    });
+    let events = Rc::new(RefCell::new(Vec::<InfiniteSelectEvent<Country>>::new()));
+    let observed_events = events.clone();
+    let subscription = visual.cx.update(|cx| {
+        cx.subscribe(&state, move |_, event: &InfiniteSelectEvent<Country>, _| {
+            observed_events.borrow_mut().push(event.clone());
+        })
+    });
+
+    visual.update(|window, cx| {
+        state.update(cx, |state, cx| {
+            state.set_value(Country::Usa(UsaState::Texas(TexasCity::Dallas)), window, cx);
+            assert_eq!(state.path().indices(), &[0, 1, 1]);
+            state
+                .set_path(&InfiniteSelectPath::with_indices(vec![1, 0, 0]), window, cx)
+                .unwrap();
+            assert_eq!(state.key_path().to_string(), "Canada/Ontario/Toronto");
+            state
+                .set_key_path(&"Canada/Ontario/Ottawa".parse().unwrap(), window, cx)
+                .unwrap();
+            assert_eq!(state.path().indices(), &[1, 0, 1]);
+            assert!(
+                state
+                    .set_path(&InfiniteSelectPath::with_indices(vec![1, 99]), window, cx)
+                    .is_err()
+            );
+            assert_eq!(state.key_path().to_string(), "Canada/Ontario/Ottawa");
+            let children = state.child_selects();
+            assert_eq!(children.len(), 2);
+            assert_eq!(children[0].read(cx).selected_index(cx).unwrap().row, 0);
+            assert_eq!(children[1].read(cx).selected_index(cx).unwrap().row, 1);
+        });
+    });
+    assert!(
+        events.borrow().is_empty(),
+        "programmatic updates are silent"
+    );
+
+    let selected = Country::Canada {
+        province: CanadaProvince::Quebec(QuebecCity::Montreal),
+    };
+    visual.update(|_, cx| {
+        let child = state.read(cx).child_selects()[0].clone();
+        child.update(cx, |_, cx| {
+            cx.emit(SelectEvent::<Vec<InfiniteSelectItem<Country>>>::Confirm(
+                Some(selected.clone()),
+            ));
+        });
+    });
+    {
+        let events = events.borrow();
+        let [event] = events.as_slice() else {
+            panic!("a confirmed selection must emit one change event");
+        };
+        assert_eq!(
+            event.previous_value(),
+            &Country::Canada {
+                province: CanadaProvince::Ontario(OntarioCity::Ottawa),
+            }
+        );
+        assert_eq!(event.previous_path().indices(), &[1, 0, 1]);
+        assert_eq!(
+            event.previous_key_path().to_string(),
+            "Canada/Ontario/Ottawa"
+        );
+        assert_eq!(event.value(), &selected);
+        assert_eq!(event.path().indices(), &[1, 1, 0]);
+        assert_eq!(event.key_path().to_string(), "Canada/Quebec/Montreal");
+        assert_eq!(event.changed_depth(), 1);
+    }
+    state.read_with(&visual.cx, |state, cx| {
+        assert_eq!(state.value(), &selected);
+        assert_eq!(state.path().indices(), &[1, 1, 0]);
+        let children = state.child_selects();
+        assert_eq!(children.len(), 2);
+        assert_eq!(children[0].read(cx).selected_index(cx).unwrap().row, 1);
+        assert_eq!(children[1].read(cx).selected_index(cx).unwrap().row, 0);
+    });
+    drop(subscription);
+    drop(state);
+    drop(visual);
+    cx.run_until_parked();
+}

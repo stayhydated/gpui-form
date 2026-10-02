@@ -117,9 +117,7 @@ impl<Holder> EditSessions<Holder> {
     }
 
     pub(crate) fn close_all(&mut self) -> Vec<String> {
-        let session_ids = self.sessions.keys().cloned().collect();
-        self.sessions.clear();
-        session_ids
+        std::mem::take(&mut self.sessions).into_keys().collect()
     }
 
     pub(crate) fn session_limit(&self) -> Option<usize> {
@@ -134,16 +132,12 @@ impl<Holder> EditSessions<Holder> {
         let Some(timeout) = self.options.session_idle_timeout() else {
             return Vec::new();
         };
-        let expired = self
-            .sessions
-            .iter()
-            .filter(|&(_, session)| now.duration_since(session.last_accessed_at) >= timeout)
-            .map(|(session_id, _)| session_id.clone())
-            .collect::<Vec<_>>();
-        for session_id in &expired {
-            self.sessions.remove(session_id);
-        }
-        expired
+        self.sessions
+            .extract_if(.., |_, session| {
+                now.duration_since(session.last_accessed_at) >= timeout
+            })
+            .map(|(session_id, _)| session_id)
+            .collect()
     }
 
     pub(crate) fn enforce_session_limit(&mut self) -> Vec<String> {
@@ -174,3 +168,61 @@ impl<Holder> EditSessions<Holder> {
 }
 
 pub(crate) type SharedEditSessions<Holder> = Arc<Mutex<EditSessions<Holder>>>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sessions_without_timeout() -> EditSessions<usize> {
+        let mut sessions =
+            EditSessions::new(McpFormEditorOptions::default().without_session_idle_timeout());
+        for holder in 1..=12 {
+            sessions.open(holder, BTreeSet::new(), Map::new());
+        }
+        sessions
+    }
+
+    #[test]
+    fn close_all_returns_key_order_and_keeps_store_reusable() {
+        let mut sessions = sessions_without_timeout();
+        assert_eq!(
+            sessions.close_all(),
+            [
+                "1", "10", "11", "12", "2", "3", "4", "5", "6", "7", "8", "9"
+            ],
+        );
+        assert!(sessions.sessions.is_empty());
+        assert!(sessions.close_all().is_empty());
+        let opened = sessions.open(13, BTreeSet::new(), Map::new());
+        assert_eq!(opened.session_id, "13");
+        assert_eq!(sessions.get("13").unwrap().holder, 13);
+    }
+
+    #[test]
+    fn expiration_removes_only_expired_sessions_in_key_order() {
+        let mut sessions = sessions_without_timeout();
+        let timeout = Duration::from_secs(60);
+        sessions.options = sessions.options.with_session_idle_timeout(timeout);
+        let now = Instant::now();
+        for session in sessions.sessions.values_mut() {
+            session.last_accessed_at = now;
+        }
+        for id in ["2", "10", "12"] {
+            sessions.sessions.get_mut(id).unwrap().last_accessed_at = now - timeout;
+        }
+        sessions.sessions.get_mut("1").unwrap().last_accessed_at = now - Duration::from_secs(59);
+
+        assert_eq!(sessions.expire_idle_sessions(now), ["10", "12", "2"]);
+        assert_eq!(
+            sessions
+                .sessions
+                .keys()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            ["1", "11", "3", "4", "5", "6", "7", "8", "9"],
+        );
+        assert_eq!(sessions.sessions["1"].holder, 1);
+        assert_eq!(sessions.sessions["11"].holder, 11);
+        assert!(sessions.expire_idle_sessions(now).is_empty());
+    }
+}
