@@ -9,6 +9,8 @@
 Application developers annotate model fields once, then use generated holders
 and components to render, validate, and reconstruct those models.
 
+Requires Rust 1.99 or newer. The workspace and CI use Rust 1.99.0.
+
 ## Overview
 
 The `GpuiForm` derive generates typed field identities, GPUI entity storage,

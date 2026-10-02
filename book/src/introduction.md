@@ -5,7 +5,7 @@ Derive `GpuiForm`, give each field one form intent, and use the generated
 holder to validate and reconstruct the model.
 
 This guide is for Rust application developers who use GPUI Kit. The workspace
-supports Rust 1.98. Use the published facade version shown in
+supports Rust 1.99. Use the published facade version shown in
 [Getting started](getting_started.md).
 
 ## Mental model

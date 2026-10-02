@@ -6,7 +6,7 @@ and rendering needed to connect that state to a view.
 
 ## Prerequisites
 
-- Rust 1.98 or newer.
+- Rust 1.99 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
 - `gpui-kit` 0.6.6.
