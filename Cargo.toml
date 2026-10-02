@@ -29,7 +29,7 @@ license = "MIT OR Apache-2.0"
 publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
-rust-version = "1.98"
+rust-version = "1.99"
 version = "0.7.3"
 
 [workspace.dependencies]
