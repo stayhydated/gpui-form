@@ -23,6 +23,7 @@ jobs:
       - name: Check FTL files
         uses: stayhydated/es-fluent/crates/es-fluent-cli@es-fluent-cli-v0.20.3
         with:
+          toolchain: "1.99.0"
           path: .
           all_locales: true
           ignore: |
