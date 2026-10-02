@@ -1,27 +1,9 @@
-use es_fluent::{EsFluent, FluentLabel, FluentLocalizer, FluentLocalizerExt as _, FluentMessage};
+use es_fluent::EsFluent;
 use es_fluent_manager_embedded as i18n_manager;
 
 es_fluent_manager_embedded::define_i18n_module!();
 
 pub use i18n_manager::{EmbeddedI18n, EmbeddedInitError, LocalizationError};
-
-/// Renders a Fluent message through an explicit caller-owned localizer.
-pub fn localize_message<L, T>(localizer: &L, message: &T) -> String
-where
-    L: FluentLocalizer + ?Sized,
-    T: FluentMessage + ?Sized,
-{
-    localizer.localize_message(message)
-}
-
-/// Renders a Fluent type label through an explicit caller-owned localizer.
-pub fn localize_label<L, T>(localizer: &L) -> String
-where
-    L: FluentLocalizer + ?Sized,
-    T: FluentLabel,
-{
-    T::localize_label(localizer)
-}
 
 #[derive(Clone, Debug, EsFluent)]
 #[fluent(namespace = "date_picker")]

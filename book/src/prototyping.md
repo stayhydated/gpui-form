@@ -12,8 +12,8 @@ models:
 
 ```toml
 [dependencies]
-gpui-form = { version = "0.7", features = ["inventory"] }
-gpui-form-prototyping-core = "0.7"
+gpui-form = { version = "0.8", features = ["inventory"] }
+gpui-form-prototyping-core = "0.8"
 ```
 
 The registry describes each concrete form, its field intents, component shapes,

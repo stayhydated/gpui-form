@@ -30,18 +30,18 @@ publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
 rust-version = "1.99"
-version = "0.7.3"
+version = "0.8.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
 bon = "3.10"
 chrono = "0.4"
 clap = "4.6"
-console_error_panic_hook = "0.1"
 component-shape = "0.3.3"
 component-shape-codegen = "0.3.3"
 component-shape-gpui = "0.3.3"
 component-shape-mcp = "0.3.3"
+console_error_panic_hook = "0.1"
 crabtime = "1.1"
 darling = "0.24"
 derive_more = "2.1"
@@ -50,21 +50,21 @@ es-fluent = "0.20.3"
 es-fluent-build = "0.20.3"
 es-fluent-lang = "0.20.3"
 es-fluent-manager-embedded = "0.20.3"
-gpui-kit = "0.7.0"
 gpui-es-fluent = "0.2.3"
-gpui-form = { path = "crates/gpui-form", version = "0.7.3" }
-gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.3" }
-gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.3" }
-gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.3" }
-gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.3" }
-gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.3" }
-gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.3" }
-gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.3" }
-gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.3" }
-gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.3" }
-gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.3" }
-gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.3" }
-gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.3" }
+gpui-form = { path = "crates/gpui-form", version = "0.8.0" }
+gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.8.0" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.8.0" }
+gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.8.0" }
+gpui-form-component = { path = "crates/gpui-form-component", version = "0.8.0" }
+gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.8.0" }
+gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.8.0" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.8.0" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.8.0" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.8.0" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.8.0" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.8.0" }
+gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.8.0" }
+gpui-kit = "0.7.0"
 gpui-storybook = "0.6.4"
 heck = "0.5.0"
 icu_calendar = "2.3.0"
