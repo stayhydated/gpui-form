@@ -30,53 +30,53 @@ publish = true
 readme = "README.md"
 repository = "https://github.com/stayhydated/gpui-form"
 rust-version = "1.99"
-version = "0.7.3"
+version = "0.8.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
 bon = "3.10"
 chrono = "0.4"
 clap = "4.6"
-component-shape = "0.3.3"
-component-shape-codegen = "0.3.3"
-component-shape-gpui = "0.3.3"
-component-shape-mcp = "0.3.3"
+component-shape = "0.3.4"
+component-shape-codegen = "0.3.4"
+component-shape-gpui = "0.3.4"
+component-shape-mcp = "0.3.4"
 console_error_panic_hook = "0.1"
 crabtime = "1.1"
 darling = "0.24"
 derive_more = "2.1"
 dioxus = { default-features = false, version = "0.7" }
-es-fluent = "0.20.3"
-es-fluent-build = "0.20.3"
-es-fluent-lang = "0.20.3"
-es-fluent-manager-embedded = "0.20.3"
-gpui-es-fluent = "0.2.3"
-gpui-form = { path = "crates/gpui-form", version = "0.7.3" }
-gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.7.3" }
-gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.7.3" }
-gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.7.3" }
-gpui-form-component = { path = "crates/gpui-form-component", version = "0.7.3" }
-gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.7.3" }
-gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.7.3" }
-gpui-form-core = { path = "crates/gpui-form-core", version = "0.7.3" }
-gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.7.3" }
-gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.7.3" }
-gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.7.3" }
-gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.7.3" }
-gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.7.3" }
+es-fluent = "0.21.0"
+es-fluent-build = "0.21.0"
+es-fluent-lang = "0.21.0"
+es-fluent-manager-embedded = "0.21.0"
+gpui-es-fluent = "0.3.0"
+gpui-form = { path = "crates/gpui-form", version = "0.8.0" }
+gpui-form-codegen = { path = "crates/gpui-form-codegen", version = "0.8.0" }
+gpui-form-collection = { path = "crates/gpui-form-collection", version = "0.8.0" }
+gpui-form-collection-derive = { path = "crates/gpui-form-collection-derive", version = "0.8.0" }
+gpui-form-component = { path = "crates/gpui-form-component", version = "0.8.0" }
+gpui-form-component-derive = { path = "crates/gpui-form-component-derive", version = "0.8.0" }
+gpui-form-component-story = { path = "crates/gpui-form-component-story", version = "0.8.0" }
+gpui-form-core = { path = "crates/gpui-form-core", version = "0.8.0" }
+gpui-form-derive = { path = "crates/gpui-form-derive", version = "0.8.0" }
+gpui-form-mcp = { path = "crates/gpui-form-mcp", version = "0.8.0" }
+gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", version = "0.8.0" }
+gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.8.0" }
+gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.8.0" }
 gpui-kit = "0.7.0"
-gpui-storybook = "0.6.4"
+gpui-storybook = "0.7.0"
 heck = "0.5.0"
 icu_calendar = "2.3.0"
 icu_datetime = "2.3.0"
 icu_locale_core = "2.3.0"
-insta = "1.48"
+insta = "1.49"
 inventory = "0.3"
 itertools = "0.15"
 jiff = "0.2.37"
-koruma = "0.12.2"
-koruma-collection = "0.12.2"
-koruma-derive-core = "0.12.2"
+koruma = "0.13.0"
+koruma-collection = "0.13.0"
+koruma-derive-core = "0.13.0"
 log = "0.4"
 prettyplease = "0.3"
 proc-macro-crate = "3.5"
@@ -86,12 +86,12 @@ rmcp = "3.5.0"
 rust_decimal = "1.43"
 serde = "1.0"
 serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "ab491dd907051b743033ecdae96d4668a7708f0d" }
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
 strum = "0.28"
 syn = "3.0"
-syn-cfg-attr = "0.3.1"
+syn-cfg-attr = "0.3.2"
 thiserror = "2.0"
 tokio = "1.53"
 tracing-subscriber = "0.3"

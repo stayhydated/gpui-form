@@ -21,7 +21,7 @@ jobs:
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
       - name: Check FTL files
-        uses: stayhydated/es-fluent/crates/es-fluent-cli@es-fluent-cli-v0.20.3
+        uses: stayhydated/es-fluent/crates/es-fluent-cli@es-fluent-cli-v0.21.0
         with:
           toolchain: "1.99.0"
           path: .
