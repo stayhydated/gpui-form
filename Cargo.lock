@@ -4339,6 +4339,7 @@ dependencies = [
  "es-fluent-build",
  "es-fluent-manager-embedded",
  "gpui-es-fluent",
+ "gpui-form",
  "gpui-form-component-derive",
  "gpui-form-runtime",
  "gpui-kit",

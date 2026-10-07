@@ -42,8 +42,10 @@ serde = { workspace = true }
 es-fluent-build = { workspace = true }
 
 [dev-dependencies]
+gpui-form = { workspace = true }
 gpui-kit = { features = [ "test-support" ], workspace = true }
 gpui-form-component-derive = { workspace = true }
+serde = { features = [ "derive" ], workspace = true }
 serde_json = { workspace = true }
 unic-langid = { workspace = true }
 

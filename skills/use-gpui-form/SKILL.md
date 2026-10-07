@@ -85,6 +85,7 @@ pub struct Profile {
 | Validation | Add `#[gpui_form(koruma)]` or `koruma(fluent)` and validate the holder |
 | Generated GPUI wiring | Enable `inventory` and use `gpui-form-prototyping-core` |
 | Structured form tools | Enable `mcp` and use `#[gpui_form(mcp)]` plus an application-owned submit path |
+| Ordered typed row collection | Use `gpui-form-component::row_editor::RowEditor<Row, Config>` and accept its controlled requests after caller validation |
 | App-owned widget or external state wrapper | Switch to `use-gpui-form-component-shapes` |
 
 ## MCP integration

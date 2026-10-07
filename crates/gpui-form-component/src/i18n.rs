@@ -25,6 +25,20 @@ pub(crate) enum FilePickerText {
     PathsSelected { count: usize },
 }
 
+#[derive(Clone, Debug, EsFluent)]
+#[fluent(namespace = "row_editor")]
+pub(crate) enum RowEditorText {
+    InsertRow,
+    RowActions,
+    Duplicate,
+    Remove,
+    MoveUp,
+    MoveDown,
+    NoRows,
+    Readonly,
+    InvalidIdentity,
+}
+
 #[cfg(test)]
 mod tests {
     use es_fluent::unic_langid::langid;
