@@ -21,11 +21,11 @@ path = "examples/demo.rs"
 
 [dependencies]
 chrono = { workspace = true }
-gpui-kit = { workspace = true }
 gpui-es-fluent = { workspace = true }
 gpui-form = { workspace = true }
 gpui-form-collection = { workspace = true }
 gpui-form-component = { workspace = true }
+gpui-kit = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
 rust_decimal = { workspace = true }
 some-lib = { path = "../some-lib" }
