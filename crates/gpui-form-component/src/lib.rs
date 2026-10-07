@@ -4,9 +4,13 @@
 //! - `date_picker` for localized runtime date and date-range pickers
 //! - `file_picker` for native GPUI path selection with GPUI Kit styling
 //! - `infinite_select` for cascading selects over nested enums
+//! - `row_editor` for controlled ordered collections of typed rows
 
 #[cfg(feature = "derive")]
 pub use gpui_form_component_derive::InfiniteSelect;
+
+/// Controlled ordered collections of caller-owned typed rows.
+pub mod row_editor;
 
 mod calendar;
 mod calendar_navigation;

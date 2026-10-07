@@ -17,6 +17,12 @@ rustdocs and existing declarations in the consuming workspace. The
 `use-component-shape` and `use-component-shape-gpui` skills provide additional
 guidance when installed.
 
+For ordered typed rows, reuse `gpui-form-component::row_editor::RowEditor`
+with a `RowEditorConfig<Row>` implementation before declaring a custom shape.
+Its event requests a complete `Vec<Row>`; the caller validates and accepts it
+with `set_rows` or shape seeding. Preserve stable nonempty row IDs and apply the
+row context's disabled and readonly flags to custom fields.
+
 ## Workflow
 
 1. Confirm the field's source type, form-side type, optionality, and desired
