@@ -36,7 +36,9 @@ field rendering. Subscribe to `RowEditorEvent<Row>` and validate its complete
 requested collection before accepting it with `RowEditorState::set_rows`.
 Programmatic updates preserve row identity and emit no change event. Apply the
 row context's disabled and readonly flags to custom fields; the editor rejects
-editing requests in both states.
+editing requests in both states. Use `can_insert` and `can_duplicate` to expose
+caller-controlled availability consistently in controls and requested changes,
+without allocating a row or invoking its factory.
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-component
 [codecov]: https://codecov.io/github/stayhydated/gpui-form

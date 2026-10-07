@@ -109,8 +109,17 @@ pub trait RowEditorConfig<Row: Clone + 'static>: Default + Sized + 'static {
     fn row_id(&self, row: &Row) -> SharedString;
     /// Creates a row for insertion, or declines the request.
     fn create_row(&mut self) -> Option<Row>;
+    /// Checks insertion availability without creating a row or allocating an ID.
+    /// The editor applies the same check to its toolbar and requested changes.
+    fn can_insert(&self, _rows: &[Row]) -> bool {
+        true
+    }
     /// Copies a row with a fresh stable ID, or declines the request.
     fn duplicate_row(&mut self, row: &Row) -> Option<Row>;
+    /// Checks duplication availability without invoking the row factory.
+    fn can_duplicate(&self, _row: &Row, _rows: &[Row]) -> bool {
+        true
+    }
     /// Returns an accessible row header label. The default is the stable ID.
     fn row_label(&self, row: &Row) -> SharedString {
         self.row_id(row)
@@ -325,10 +334,24 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> RowEditorState<Row, Con
         self.readonly
     }
     /// Sets disabled state for commands and caller-rendered fields.
+    ///
+    /// Availability also observes the caller's insertion and duplication checks.
     pub fn set_disabled(&mut self, disabled: bool, cx: &mut Context<Self>) {
         self.disabled = disabled;
         self.pending_focus = None;
         cx.notify();
+    }
+    /// Whether insertion is available under the current caller and interaction policy.
+    pub fn can_insert(&self) -> bool {
+        !self.disabled && !self.readonly && self.config.can_insert(&self.rows)
+    }
+    /// Whether duplication of this stable ID is currently available.
+    pub fn can_duplicate(&self, id: &str) -> bool {
+        !self.disabled
+            && !self.readonly
+            && self
+                .position(id)
+                .is_some_and(|ix| self.config.can_duplicate(&self.rows[ix], &self.rows))
     }
     /// Sets readonly state for commands and caller-rendered fields.
     pub fn set_readonly(&mut self, readonly: bool, cx: &mut Context<Self>) {
@@ -491,7 +514,7 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> RowEditorState<Row, Con
         after: Option<&str>,
         cx: &mut Context<Self>,
     ) -> Result<(), RowEditorIdentityError> {
-        if self.disabled || self.readonly {
+        if !self.can_insert() {
             return Ok(());
         }
         let ix = match after {
@@ -550,7 +573,7 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> RowEditorState<Row, Con
         id: &str,
         cx: &mut Context<Self>,
     ) -> Result<(), RowEditorIdentityError> {
-        if self.disabled || self.readonly {
+        if !self.can_duplicate(id) {
             return Ok(());
         }
         let Some(ix) = self.position(id) else {
@@ -712,6 +735,7 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> Render for RowEditorSta
         let disabled = state.disabled;
         let readonly = state.readonly;
         let locked = disabled || readonly;
+        let can_insert = state.can_insert();
         let selected_ix = state.selected.as_ref().and_then(|id| state.position(id));
         let has_selection = selected_ix.is_some();
         let can_up = selected_ix.is_some_and(|ix| ix > 0);
@@ -833,7 +857,7 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> Render for RowEditorSta
                             .small()
                             .outline()
                             .label(insert_label)
-                            .disabled(locked)
+                            .disabled(!can_insert)
                             .on_click(window.listener_for(&editor, |state, _, _, cx| {
                                 state.insert_selected(cx)
                             })),
@@ -849,10 +873,14 @@ impl<Row: Clone + 'static, Config: RowEditorConfig<Row>> Render for RowEditorSta
                                 // Each request rechecks these flags before emitting a change.
                                 let state = menu_state.read(cx);
                                 let locked = state.disabled || state.readonly;
+                                let can_duplicate = state
+                                    .selected
+                                    .as_ref()
+                                    .is_some_and(|id| state.can_duplicate(id));
                                 menu.menu_with_disabled(
                                     duplicate_label.clone(),
                                     Box::new(action::DuplicateRow),
-                                    locked,
+                                    !can_duplicate,
                                 )
                                 .menu_with_disabled(
                                     up_label.clone(),

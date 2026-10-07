@@ -24,11 +24,15 @@ struct Record {
 #[derive(Clone)]
 struct Fields {
     next: Rc<Cell<u64>>,
+    insert_available: Rc<Cell<bool>>,
+    duplicate_available: Rc<Cell<bool>>,
 }
 impl Default for Fields {
     fn default() -> Self {
         Self {
             next: Rc::new(Cell::new(100)),
+            insert_available: Rc::new(Cell::new(true)),
+            duplicate_available: Rc::new(Cell::new(true)),
         }
     }
 }
@@ -56,8 +60,14 @@ impl RowEditorConfig<Record> for Fields {
     fn create_row(&mut self) -> Option<Record> {
         Some(self.fresh("New".into()))
     }
+    fn can_insert(&self, _: &[Record]) -> bool {
+        self.insert_available.get()
+    }
     fn duplicate_row(&mut self, row: &Record) -> Option<Record> {
         Some(self.fresh(row.name.clone()))
+    }
+    fn can_duplicate(&self, row: &Record, _: &[Record]) -> bool {
+        self.duplicate_available.get() && row.name != "Locked"
     }
     fn render_row(
         &self,
@@ -128,14 +138,22 @@ struct Collection {
 }
 impl Collection {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        #[cfg(feature = "component-shape")]
-        let editor = cx.new(|cx| {
-            <RowEditor<Record, Fields> as gpui_form::runtime::shape::GpuiComponentShape>::new(
-                window, cx,
-            )
-        });
-        #[cfg(not(feature = "component-shape"))]
-        let editor = cx.new(|cx| RowEditorState::new(window, cx));
+        Self::with_config(None, window, cx)
+    }
+    fn with_config(config: Option<Fields>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let editor = if let Some(config) = config {
+            cx.new(|cx| RowEditorState::with_config(config, cx))
+        } else {
+            #[cfg(feature = "component-shape")]
+            let editor = cx.new(|cx| {
+                <RowEditor<Record, Fields> as gpui_form::runtime::shape::GpuiComponentShape>::new(
+                    window, cx,
+                )
+            });
+            #[cfg(not(feature = "component-shape"))]
+            let editor = cx.new(|cx| RowEditorState::new(window, cx));
+            editor
+        };
         let rows = vec![
             Record {
                 id: "row-a".into(),
@@ -224,6 +242,100 @@ fn ids(collection: &Entity<Collection>, cx: &App) -> Vec<String> {
         .iter()
         .map(|row| row.id.clone())
         .collect()
+}
+
+#[gpui_kit::test]
+fn caller_availability_blocks_pointer_keyboard_and_imperative_factories(cx: &mut TestAppContext) {
+    cx.update(gpui_kit::init);
+    cx.update(|cx| gpui_es_fluent::init_with_language(cx, unic_langid::langid!("en")).unwrap());
+    let config = Fields::default();
+    config.insert_available.set(false);
+    config.duplicate_available.set(false);
+    let mut collection = None;
+    let handle = cx.open_window(size(px(700.), px(650.)), |window, cx| {
+        let view = cx.new(|cx| Collection::with_config(Some(config.clone()), window, cx));
+        collection = Some(view.clone());
+        Root::new(view, window, cx)
+    });
+    let collection = collection.unwrap();
+    cx.update_window(handle.into(), |_, window, cx| {
+        window.render_frame(cx);
+        window
+            .within("editor")
+            .within("row-a")
+            .click("select-row", cx);
+        window.within("editor").click("insert-row", cx);
+        window.press("insert", cx);
+        window.press("secondary-d", cx);
+        let editor = collection.read(cx).editor.clone();
+        editor.update(cx, |state, cx| {
+            assert!(!state.can_insert());
+            assert!(!state.can_duplicate("row-a"));
+            state.request_insert(None, cx).unwrap();
+            state.request_duplicate("row-a", cx).unwrap();
+        });
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle.into(), |_, window, cx| {
+        assert_eq!(ids(&collection, cx), ["row-a", "row-b"]);
+        assert!(collection.read(cx).events.is_empty());
+        assert_eq!(
+            config.next.get(),
+            100,
+            "availability must not probe a factory"
+        );
+        config.insert_available.set(true);
+        config.duplicate_available.set(true);
+        let editor = collection.read(cx).editor.clone();
+        editor.update(cx, |_, cx| cx.notify());
+        window.render_frame(cx);
+        window.within("editor").click("insert-row", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle.into(), |_, window, cx| {
+        window.render_frame(cx);
+        assert_eq!(ids(&collection, cx), ["row-a", "row-100", "row-b"]);
+        window.press("secondary-d", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle.into(), |_, window, cx| {
+        assert_eq!(collection.read(cx).events.len(), 2);
+        assert_eq!(config.next.get(), 102);
+        let editor = collection.read(cx).editor.clone();
+        editor.update(cx, |state, cx| {
+            state
+                .set_rows(
+                    vec![
+                        Record {
+                            id: "row-a".into(),
+                            name: "Alpha".into(),
+                        },
+                        Record {
+                            id: "row-b".into(),
+                            name: "Locked".into(),
+                        },
+                    ],
+                    window,
+                    cx,
+                )
+                .unwrap();
+            state.select_row("row-b", window, cx);
+            assert!(!state.can_duplicate("row-b"));
+        });
+        window.render_frame(cx);
+        window.press("secondary-d", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    cx.update_window(handle.into(), |_, _, cx| {
+        assert_eq!(ids(&collection, cx), ["row-a", "row-b"]);
+        assert_eq!(collection.read(cx).events.len(), 2);
+        assert_eq!(config.next.get(), 102);
+    })
+    .unwrap();
 }
 
 #[gpui_kit::test]
