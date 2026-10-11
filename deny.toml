@@ -1,6 +1,9 @@
 # Advisory and source checks use the complete, locked workspace graph.
 # No repository-wide license acceptance policy has been established.
 [advisories]
+# Limit unmaintained notices to immediate workspace dependencies. Vulnerability,
+# yanked and source checks still cover the complete dependency graph.
+unmaintained = "workspace"
 
 [sources]
 allow-git = [ "https://github.com/DioxusLabs/components", "https://github.com/stayhydated/shared" ]

@@ -9,6 +9,7 @@ fmt:
     taplo fmt
     rumdl fmt .
 
+# Use actionlint 1.7.12 locally, matching the CI image.
 quality:
     cargo fmt --all --check
     rustfmt --check --edition 2024 .github/feature-smoke.rs

@@ -90,6 +90,10 @@ navigation targets are reported without creating chapters. For broader Rust
 changes, use the matching `justfile` recipes; `just fmt` rewrites files.
 CI runs tests with all features across Linux, macOS, and Windows.
 
+Dependency advisory and source checks inspect the complete locked graph.
+Unmaintained notices apply to immediate workspace dependencies. Local workflow
+checks use actionlint 1.7.12, matching the CI image.
+
 Keep property inputs bounded and expected results independent of production
 parsers or storage algorithms. Numeric editing prefixes are not completed
 numbers. Session properties use a FIFO model and explicit expiry instants;
