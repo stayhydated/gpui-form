@@ -282,7 +282,7 @@ jobs:
       - uses: cargo-bins/cargo-binstall@3be4ad2b146f3302f92e5956c54fedbb6ae8cccc # main
       - name: Install publication tools
         run: |
-          cargo binstall dioxus-cli --version 0.7.9 --locked --no-confirm
+          cargo binstall dioxus-cli --version 0.7.10 --locked --no-confirm
           cargo binstall trunk --version 0.21.14 --locked --no-confirm
       - name: Build demo, book, LLM documentation and assembled site
         run: |
