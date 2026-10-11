@@ -9,6 +9,16 @@ fmt:
     taplo fmt
     rumdl fmt .
 
+quality:
+    cargo fmt --all --check
+    rustfmt --check --edition 2024 .github/feature-smoke.rs
+    cargo sort-derives --check
+    taplo fmt --check
+    rumdl check .
+    typos
+    actionlint
+    git ls-files -z '*.sh' '*.bash' | xargs -0 --no-run-if-empty shellcheck
+
 clippy:
     cargo clippy --workspace --all-features --all-targets --locked --exclude some-lib-forms -- -D warnings
 

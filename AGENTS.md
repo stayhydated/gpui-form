@@ -75,7 +75,7 @@ Use the smallest applicable check from the repository workflows:
 | Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
 | Holder conversion | `cargo test -p gpui-form --test holder_conversion` |
 | Scaffold generation | `cargo test -p gpui-form-prototyping-core` and `cargo run -p prototyping` |
-| Repository formatting, spelling, workflow and shell checks | `bash .github/scripts/check-quality.sh` (use the pinned tool versions in CI) |
+| Repository formatting, spelling, workflow and shell checks | `just quality` (use the pinned tool versions in CI) |
 | Isolated public feature combinations | `bash .github/scripts/check-features.sh` |
 | Scaffold drift and repeatability | `bash .github/scripts/check-scaffolds.sh` |
 | Publishable release graph | `cargo publish --workspace --dry-run --locked` |
