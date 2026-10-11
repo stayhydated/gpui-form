@@ -16,8 +16,8 @@ bon = { workspace = true }
 chrono = { workspace = true }
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
-gpui-kit = { workspace = true }
 gpui-form-runtime = { workspace = true }
+gpui-kit = { workspace = true }
 strum = { workspace = true }
 
 [dev-dependencies]

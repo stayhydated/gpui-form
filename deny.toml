@@ -1,0 +1,8 @@
+# Advisory and source checks use the complete, locked workspace graph.
+# No repository-wide license acceptance policy has been established.
+[advisories]
+
+[sources]
+allow-git = [ "https://github.com/DioxusLabs/components", "https://github.com/stayhydated/shared" ]
+unknown-git = "deny"
+unknown-registry = "deny"
