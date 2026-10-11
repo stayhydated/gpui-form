@@ -1,3 +1,6 @@
+# Cargo package verification generates manifests outside the source tree.
+exclude = [ "**/target/**" ]
+
 [formatting]
 align_entries = false
 column_width = 100
