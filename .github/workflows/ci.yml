@@ -167,6 +167,8 @@ jobs:
         uses: ./.github/actions/install-linux-deps
 
       - uses: cargo-bins/cargo-binstall@3be4ad2b146f3302f92e5956c54fedbb6ae8cccc # main
+        with:
+          version: 1.25.1
 
       - name: Install cargo-llvm-cov
         shell: bash
@@ -201,6 +203,8 @@ jobs:
           toolchain: 1.99.0
           components: rustfmt
       - uses: cargo-bins/cargo-binstall@3be4ad2b146f3302f92e5956c54fedbb6ae8cccc # main
+        with:
+          version: 1.25.1
       - name: Install pinned quality tools
         shell: bash
         run: |
@@ -228,6 +232,8 @@ jobs:
         with:
           toolchain: 1.99.0
       - uses: cargo-bins/cargo-binstall@3be4ad2b146f3302f92e5956c54fedbb6ae8cccc # main
+        with:
+          version: 1.25.1
       - name: Install cargo-deny
         run: cargo binstall cargo-deny --version 0.20.2 --locked --no-confirm
       - name: Check dependency advisories and approved sources
@@ -280,6 +286,8 @@ jobs:
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
       - uses: cargo-bins/cargo-binstall@3be4ad2b146f3302f92e5956c54fedbb6ae8cccc # main
+        with:
+          version: 1.25.1
       - name: Install publication tools
         run: |
           cargo binstall dioxus-cli --version 0.7.10 --locked --no-confirm
