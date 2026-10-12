@@ -1,0 +1,9 @@
+row_editor_text-InsertRow = 插入行
+row_editor_text-RowActions = 行操作
+row_editor_text-Duplicate = 复制
+row_editor_text-Remove = 移除
+row_editor_text-MoveUp = 上移
+row_editor_text-MoveDown = 下移
+row_editor_text-NoRows = 没有行
+row_editor_text-Readonly = 只读
+row_editor_text-InvalidIdentity = 每行都需要唯一且非空的标识。

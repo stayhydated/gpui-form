@@ -1,0 +1,9 @@
+row_editor_text-InsertRow = Insert row
+row_editor_text-RowActions = Row actions
+row_editor_text-Duplicate = Duplicate
+row_editor_text-Remove = Remove
+row_editor_text-MoveUp = Move up
+row_editor_text-MoveDown = Move down
+row_editor_text-NoRows = No rows
+row_editor_text-Readonly = Readonly
+row_editor_text-InvalidIdentity = Each row needs a unique, nonempty ID.

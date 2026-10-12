@@ -23,7 +23,7 @@ component constructors, and a form value holder. Every field uses exactly one
 | --- | --- | --- |
 | `gpui-form` | Public derive, facade, generated runtime paths, schema access, and optional MCP integration | [README][gpui-form-readme] |
 | `gpui-form-collection` | Ready-made form shapes for common GPUI Kit controls | [README][collection-readme] |
-| `gpui-form-component` | Localized date and file pickers plus cascading infinite-select support | [README][component-readme] |
+| `gpui-form-component` | Localized date/file pickers, cascading infinite selects, and controlled ordered row editors | [README][component-readme] |
 | `gpui-form-prototyping-core` | GPUI form scaffolds generated from inventory metadata | [README][prototyping-readme] |
 
 Most applications start with `gpui-form` and add only the component crates they

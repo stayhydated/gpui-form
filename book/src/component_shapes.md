@@ -8,8 +8,8 @@ widget or construction behavior you need.
 ## Choose the package
 
 - Use `gpui-form-collection` for common GPUI Kit controls.
-- Use `gpui-form-component` for localized date and file pickers or cascading
-  infinite selects.
+- Use `gpui-form-component` for localized date and file pickers, cascading
+  infinite selects or controlled ordered row editors.
 - Use `component-shape-gpui` and `gpui-form-runtime` when a crate defines its
   own reusable shape.
 
@@ -72,6 +72,7 @@ gpui-form-component = { version = "0.8", features = ["component-shape", "derive"
 |---|---|---|
 | Localized date or date range | `gpui_form_component::date_picker::DatePicker` or `DateRangePicker` | Initialize application `gpui-es-fluent` resources |
 | Native file or directory selection | `gpui_form_component::file_picker::FilePicker` | Initialize application `gpui-es-fluent` resources |
+| Ordered typed rows | `gpui_form_component::row_editor::RowEditor::<Row, Config>` | Implement `RowEditorConfig<Row>`; accept requested values in the caller |
 | Cascading enum choices | `gpui_form_component::infinite_select::InfiniteSelect::<T>` | Derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static` throughout the enum tree |
 
 Use `gpui_es_fluent::localize_message(cx, &message)` for application text and
@@ -92,6 +93,43 @@ Replace `gpui_form_component::i18n::localize_message(&i18n, &message)` with
 `gpui_form_component::i18n::localize_label::<_, MyType>(&i18n)` with
 `MyType::localize_label(&i18n)`. Both replacements keep the caller's localizer
 and missing-message policy.
+
+### Ordered row collections
+
+`RowEditor<Row, Config>` binds `Vec<Row>` through the existing shape value
+contract and stores a required collection directly. Each row keeps its
+caller-supplied ID across insertion, reordering and field updates. Creation and
+duplication return a fresh ID; invalid IDs reject the requested collection.
+
+Implement `RowEditorConfig<Row>` for creation, duplication, labels and field
+rendering. Keep custom field state keyed by the editor and row IDs, and seed
+those controls from accepted row values when the caller updates them. Apply
+`RowEditorRowContext::is_disabled()` and `is_readonly()` to those fields.
+
+```rust,ignore
+#[derive(Clone, Debug, gpui_form::GpuiForm)]
+struct Collection {
+    #[gpui_form(component(
+        gpui_form_component::row_editor::RowEditor::<Row, Fields>,
+        default = Vec::new()
+    ))]
+    rows: Vec<Row>,
+}
+```
+
+The editor is controlled: its event carries a complete proposed collection,
+while `rows()` stays at the accepted value. An event handler uses
+`value_change::<RowEditor<Row, Fields>, Vec<Row>>` to update the typed holder,
+then calls `set_rows` or `seed_value_binding_state` after caller validation to
+accept the collection. A rejected request leaves values and focus intact.
+Programmatic updates emit no event. `identity_error()` reports invalid IDs,
+including an invalid collection rejected during shape seeding.
+
+Insert/Delete, secondary-D and Alt-Up/Down operate in the header and toolbar
+region. Up/Down navigate rows in readonly mode. Caller-rendered fields keep
+normal text-editing shortcuts. Removal transfers focus to the next row, the
+previous row or the editor when the collection becomes empty. The caller owns
+the surrounding scroll region.
 
 ## Define an application-owned shape
 

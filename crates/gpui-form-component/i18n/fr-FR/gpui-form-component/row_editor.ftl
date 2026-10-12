@@ -1,0 +1,9 @@
+row_editor_text-InsertRow = Insérer une ligne
+row_editor_text-RowActions = Actions de ligne
+row_editor_text-Duplicate = Dupliquer
+row_editor_text-Remove = Retirer
+row_editor_text-MoveUp = Monter
+row_editor_text-MoveDown = Descendre
+row_editor_text-NoRows = Aucune ligne
+row_editor_text-Readonly = Lecture seule
+row_editor_text-InvalidIdentity = Chaque ligne doit avoir un identifiant unique et non vide.

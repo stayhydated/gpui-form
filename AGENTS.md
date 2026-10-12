@@ -18,7 +18,7 @@ Paths below are relative to `crates/` unless stated otherwise.
 | `gpui-form-schema` | Public schema, inventory, and resolved generator metadata |
 | `gpui-form-runtime` | Public shape storage policy and value-binding contracts |
 | `gpui-form-collection` and `gpui-form-collection-derive` | Built-in form shapes and `SelectItem` derive |
-| `gpui-form-component` and `gpui-form-component-derive` | Date/file pickers, infinite selects, and `InfiniteSelect` derive |
+| `gpui-form-component` and `gpui-form-component-derive` | Date/file pickers, controlled ordered row editors, infinite selects, and `InfiniteSelect` derive |
 | `gpui-form-mcp` | Submit handlers, editor sessions, schemas, resources, and registration |
 | `gpui-form-prototyping-core` | Scaffold generation from `GpuiFormShape` inventory |
 | `gpui-form-component-story` | Interactive component gallery and its localization assets |
@@ -72,6 +72,7 @@ Use the smallest applicable check from the repository workflows:
 | Editor session property tests | `cargo test -p gpui-form-mcp --all-features --locked session_properties` |
 | Generated form API or diagnostics | `cargo test -p gpui-form --test ui` |
 | MCP schemas, submit handlers, or editor sessions | `cargo test -p gpui-form --test mcp_submit --all-features --locked` |
+| Ordered row editor interaction and shape binding | `cargo test -p gpui-form-component --test row_editor --all-features --locked` |
 | Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
 | Holder conversion | `cargo test -p gpui-form --test holder_conversion` |
 | Scaffold generation | `cargo test -p gpui-form-prototyping-core` and `cargo run -p prototyping` |
