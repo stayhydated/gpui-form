@@ -75,6 +75,11 @@ Use the smallest applicable check from the repository workflows:
 | Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
 | Holder conversion | `cargo test -p gpui-form --test holder_conversion` |
 | Scaffold generation | `cargo test -p gpui-form-prototyping-core` and `cargo run -p prototyping` |
+| Repository formatting, spelling, workflow and shell checks | `just quality` (use the pinned tool versions in CI) |
+| Isolated public feature combinations | `bash .github/scripts/check-features.sh` |
+| Scaffold drift and repeatability | `bash .github/scripts/check-scaffolds.sh` |
+| Publishable release graph | `cargo publish --workspace --dry-run --locked` |
+| Dependency advisories and approved sources | `cargo deny --locked --all-features check advisories sources` |
 | Markdown | `rumdl check <changed-paths>` |
 | User guide | `cargo xtask build book` and `cargo xtask build llms-txt` |
 | API documentation | `cargo doc --workspace --all-features --no-deps --locked` |
@@ -84,6 +89,10 @@ For book validation, set `MDBOOK_BUILD__CREATE_MISSING=false` so missing
 navigation targets are reported without creating chapters. For broader Rust
 changes, use the matching `justfile` recipes; `just fmt` rewrites files.
 CI runs tests with all features across Linux, macOS, and Windows.
+
+Dependency advisory and source checks inspect the complete locked graph.
+Unmaintained notices apply to immediate workspace dependencies. Local workflow
+checks use actionlint 1.7.12, matching the CI image.
 
 Keep property inputs bounded and expected results independent of production
 parsers or storage algorithms. Numeric editing prefixes are not completed

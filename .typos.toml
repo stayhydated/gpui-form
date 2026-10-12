@@ -2,3 +2,7 @@
 
 [files]
 extend-exclude = [ "*.ftl" ]
+
+# Whitespace-stripped Rust token assertion: `if self`, not a prose typo.
+[default.extend-words]
+ifself = "ifself"
