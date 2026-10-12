@@ -14,9 +14,8 @@ Variant names provide fallback labels. Add `#[select_item(display)]` when
 
 ## Example
 
-This complete example uses GPUI Kit's `SelectItem` trait to inspect the title
-emitted by the derive. It needs no GPUI window; the [maintained consumer
-fixture][example] exercises the same declaration.
+This [enum example][example] uses GPUI Kit's `SelectItem` trait to inspect
+titles emitted by the derive. It needs no GPUI window.
 
 ```rust
 use gpui_kit::component::select::SelectItem as _;
