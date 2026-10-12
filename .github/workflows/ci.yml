@@ -221,7 +221,7 @@ jobs:
       - name: Prevent checkout-controlled typos executable reuse
         run: test ! -e typos && test ! -L typos
       - name: Check spelling
-        uses: crate-ci/typos@v1.42.3
+        uses: crate-ci/typos@v1.51.1
         with:
           write_changes: false
       - uses: cargo-bins/cargo-binstall@v1.25.3
@@ -350,7 +350,7 @@ jobs:
         uses: ./.github/actions/install-linux-deps
 
       - name: Publish unpublished crate versions
-        uses: release-plz/action@v0.5.133
+        uses: release-plz/action@v0.5.140
         with:
           command: release
           version: 0.3.162
