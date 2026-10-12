@@ -4,28 +4,34 @@
 [![crates.io: gpui-form-mcp][crate-badge]][crate]
 
 `gpui-form-mcp` provides MCP submit, metadata, and headless editor integration
-for generated `gpui-form` holders.
+for generated `gpui-form` holders. Applications normally enable `mcp` on
+the [`gpui-form` facade][gpui-form]; depend directly on this experimental crate
+when composing an existing MCP host.
+
+Requires Rust 1.99 or newer.
 
 ## Overview
 
-Application crates enable `gpui-form/mcp`. Keep the default features when the
-same crate renders GPUI forms; for a headless server, disable default features
-and enable `derive` and `mcp`. Enable `chrono` or `rust_decimal` alongside `mcp`
-when exposed fields or responses use those value types.
+Concrete forms opt in with `#[gpui_form(mcp)]`; application-owned submit
+handlers and persistent editor sessions are served or composed through the
+[public MCP API][api]. The [complete server example][example] demonstrates
+registration and stdio transport.
 
-Concrete forms opt in with `#[gpui_form(mcp)]`. Register an application-owned
-handler with `#[gpui_form::mcp_submit]`, then serve the generated tools with
-`gpui_form::mcp::serve_stdio_blocking()` or compose them into an existing MCP
-server.
+## Features
 
-Use `gpui_form::mcp::tool_registry()` or
-`tool_registry_with_options(...)` when the host assembles the same
-inventory-discovered definitions and handlers independently. MCP servers retain
-editor sessions across calls. Draft snapshots preserve decoded values that fail
-form validation and report `valid: false` with errors. Field descriptors retain
-the input constraints so clients can explain and repair those drafts.
+No features are enabled by default. Facade consumers select the corresponding
+`gpui-form` features alongside `mcp`.
+
+| Feature | Default | Purpose |
+| --- | --- | --- |
+| `chrono` | No | Enable Chrono schemas through `component-shape-mcp/chrono`. |
+| `default` | Yes | Enable no optional value-type schemas. |
+| `rust_decimal` | No | Enable Decimal schemas through `component-shape-mcp/rust_decimal`. |
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-mcp
 [codecov]: https://codecov.io/github/stayhydated/gpui-form
 [crate-badge]: https://img.shields.io/crates/v/gpui-form-mcp.svg?label=gpui-form-mcp
 [crate]: https://crates.io/crates/gpui-form-mcp
+[gpui-form]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form/README.md
+[api]: https://docs.rs/gpui-form-mcp/latest/gpui_form_mcp/
+[example]: https://github.com/stayhydated/gpui-form/blob/master/examples/mcp-submit/README.md

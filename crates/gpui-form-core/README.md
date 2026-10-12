@@ -7,6 +7,8 @@
 lower-level integrations. Application crates normally use these APIs through
 the [`gpui-form` facade][gpui-form].
 
+Requires Rust 1.99 or newer.
+
 ## Overview
 
 The public surface includes:
@@ -21,10 +23,13 @@ the signed `-` prefix remain accepted editing states.
 
 ## Example
 
+Validate completed signed input without initializing a GPUI application.
+
 ```rust
 use gpui_form_core::numeric::validate_signed_numeric;
 
 assert!(validate_signed_numeric::<i32>("-42", true));
+assert!(!validate_signed_numeric::<i32>("01", true));
 ```
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-core

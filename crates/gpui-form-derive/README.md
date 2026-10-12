@@ -6,15 +6,22 @@
 `gpui-form-derive` provides the procedural macros behind `gpui-form` for
 derive-only and lower-level integrations.
 
-The crate exports:
+Requires Rust 1.99 or newer.
 
-- `#[derive(GpuiForm)]`
-- `#[gpui_form_derive::mcp_submit]` with the `mcp` feature
+Most applications enable `derive` on the [`gpui-form` facade][gpui-form],
+which re-exports the macros and generated runtime paths. Depend directly on this
+crate only when managing those integration paths yourself.
 
-Most applications use the [`gpui-form` facade][gpui-form], which re-exports the
-applicable macros and the runtime paths generated code expects. The `inventory`
-feature emits concrete form registrations; `mcp` adds MCP form expansion and
-enables `inventory`.
+## Features
+
+No features are enabled by default. `GpuiForm` is always exported; the `mcp`
+feature also exports `#[gpui_form_derive::mcp_submit]`.
+
+| Feature | Default | Purpose |
+| --- | --- | --- |
+| `default` | Yes | Enable no optional macro expansion. |
+| `inventory` | No | Emit inventory registrations for concrete forms. |
+| `mcp` | No | Enable `inventory`, MCP form expansion, and submit-handler macros. |
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-derive
 [codecov]: https://codecov.io/github/stayhydated/gpui-form
