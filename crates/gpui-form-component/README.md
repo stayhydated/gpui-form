@@ -4,7 +4,12 @@
 [![crates.io: gpui-form-component][crate-badge]][crate]
 
 `gpui-form-component` provides reusable GPUI runtime components and form shapes
-for localized date and file selection and cascading enum choices.
+for localized date and file selection and cascading enum choices. Depend on
+it directly for widgets; use it alongside the [`gpui-form` facade][gpui-form]
+with `component-shape` enabled for derived forms.
+
+Requires Rust 1.99 or newer and GPUI Kit 0.7. Initialize the application
+`gpui-es-fluent` resources before rendering localized component text.
 
 ## Overview
 
@@ -14,22 +19,23 @@ for localized date and file selection and cascading enum choices.
 | `date_picker` | Localized single-date and date-range pickers |
 | `file_picker` | Native file and directory selection |
 
-The `derive` feature re-exports `#[derive(InfiniteSelect)]`. The
-`component-shape` feature makes `InfiniteSelect<T>`, `DatePicker`,
-`DateRangePicker`, and `FilePicker` available in
-`#[gpui_form(component(...))]` declarations.
+## Features
 
-`InfiniteSelectState` setters update the selection without emitting
-`InfiniteSelectEvent`. Confirmed select changes report the previous and current
-values and paths.
+No features are enabled by default.
 
-Initialize the application `gpui-es-fluent` resources before using localized
-date, file, or annotated infinite-select text. Render application messages
-with `gpui_es_fluent::localize_message(cx, &message)` and type labels with
-`gpui_es_fluent::localize_label::<MyType>(cx)`. An explicit localizer uses
-`i18n.localize_message(&message)` and `MyType::localize_label(&i18n)`.
+| Feature | Default | Purpose |
+| --- | --- | --- |
+| `component-shape` | No | Integrate `InfiniteSelect<T>`, `DatePicker`, `DateRangePicker`, and `FilePicker` with derived forms. |
+| `default` | Yes | Enable no optional integrations. |
+| `derive` | No | Re-export `#[derive(InfiniteSelect)]` for nested enum trees. |
+
+The [API reference][api] owns component initialization, events, and state
+semantics. The [component gallery][gallery] demonstrates localized widgets.
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-component
 [codecov]: https://codecov.io/github/stayhydated/gpui-form
 [crate-badge]: https://img.shields.io/crates/v/gpui-form-component.svg?label=gpui-form-component
 [crate]: https://crates.io/crates/gpui-form-component
+[gpui-form]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form/README.md
+[api]: https://docs.rs/gpui-form-component/latest/gpui_form_component/
+[gallery]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form-component-story/README.md
