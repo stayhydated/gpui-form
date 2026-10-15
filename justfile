@@ -12,7 +12,7 @@ fmt:
 # Use actionlint 1.7.12 locally, matching the CI image.
 quality:
     cargo fmt --all --check
-    rustfmt --check --edition 2024 .github/feature-smoke.rs
+    rustfmt --check --edition 2024 .github/feature-smoke.rs .github/reconstruction-lints.rs
     cargo sort-derives --check
     taplo fmt --check
     rumdl check .

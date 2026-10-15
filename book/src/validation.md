@@ -9,7 +9,7 @@ value or a failed reverse conversion.
 |---|---|
 | No skipped fields; reconstruction is statically infallible | `holder.into_original()` returns the model. |
 | No skipped fields; the derive emits a checked path | `holder.try_into_original()` returns `Result<Model, Error>`. This includes fallible conversions and non-optional component fields without a declared field default. |
-| One or more skipped fields | `holder.into_original(skipped_value, ...)` accepts those values and returns either the model or `Result<Model, Error>`, depending on the remaining fields. |
+| One or more skipped fields | `holder.into_original(skipped_value, ...)` accepts those values in source declaration order and returns `Result<Model, Error>`. |
 
 A non-optional shape-backed field can still start empty when its shape uses
 required storage and no `default = ...` is declared. Fallible holder conversion
