@@ -33,19 +33,19 @@ rust-version = "1.99"
 version = "0.8.0"
 
 [workspace.dependencies]
-anyhow = "1.0"
-bon = "3.10"
-chrono = "0.4"
-clap = "4.6"
+anyhow = "1.0.104"
+bon = "3.10.2"
+chrono = "0.4.45"
+clap = "4.6.7"
 component-shape = "0.3.4"
 component-shape-codegen = "0.3.4"
 component-shape-gpui = "0.3.4"
 component-shape-mcp = "0.3.4"
-console_error_panic_hook = "0.1"
-crabtime = "1.1"
-darling = "0.24"
-derive_more = "2.1"
-dioxus = { default-features = false, version = "0.7" }
+console_error_panic_hook = "0.1.7"
+crabtime = "1.1.4"
+darling = "0.24.1"
+derive_more = "2.1.1"
+dioxus = { default-features = false, version = "0.7.10" }
 es-fluent = "0.21.0"
 es-fluent-build = "0.21.0"
 es-fluent-lang = "0.21.0"
@@ -65,41 +65,41 @@ gpui-form-prototyping-core = { path = "crates/gpui-form-prototyping-core", versi
 gpui-form-runtime = { path = "crates/gpui-form-runtime", version = "0.8.0" }
 gpui-form-schema = { path = "crates/gpui-form-schema", version = "0.8.0" }
 gpui-kit = "0.7.3"
-gpui-storybook = "0.7.0"
+gpui-storybook = "0.7.1"
 heck = "0.5.0"
 icu_calendar = "2.3.0"
 icu_datetime = "2.3.0"
 icu_locale_core = "2.3.0"
-insta = "1.49"
-inventory = "0.3"
-itertools = "0.15"
-jiff = "0.2.37"
+insta = "1.49.0"
+inventory = "0.3.25"
+itertools = "0.15.0"
+jiff = "0.2.38"
 koruma = "0.13.0"
 koruma-collection = "0.13.0"
 koruma-derive-core = "0.13.0"
-log = "0.4"
-prettyplease = "0.3"
-proc-macro-crate = "3.5"
-proc-macro2 = "1.0"
-quote = "1.0"
-rmcp = "3.5.0"
-rust_decimal = "1.43"
-serde = "1.0"
-serde_json = "1.0"
-stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
-stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
-stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "d9c54bbb850b58b822458a6a15eb75ba64034a31" }
-strum = "0.28"
-syn = "3.0"
+log = "0.4.34"
+prettyplease = "0.3.0"
+proc-macro-crate = "3.5.0"
+proc-macro2 = "1.0.107"
+quote = "1.0.47"
+rmcp = "3.5.1"
+rust_decimal = "1.43.0"
+serde = "1.0.229"
+serde_json = "1.0.154"
+stayhydated-dioxus = { git = "https://github.com/stayhydated/shared", rev = "3136b369bb54312096ad83ba74735aab29109835" }
+stayhydated-site = { git = "https://github.com/stayhydated/shared", rev = "3136b369bb54312096ad83ba74735aab29109835" }
+stayhydated-xtask = { git = "https://github.com/stayhydated/shared", rev = "3136b369bb54312096ad83ba74735aab29109835" }
+strum = "0.28.0"
+syn = "3.0.9"
 syn-cfg-attr = "0.3.2"
-thiserror = "2.0"
-tokio = "1.53"
-tracing-subscriber = "0.3"
-unic-langid = "0.9"
-unicode-segmentation = "1.13"
-wasm-bindgen = "0.2"
+thiserror = "2.0.21"
+tokio = "1.53.3"
+tracing-subscriber = "0.3.23"
+unic-langid = "0.9.6"
+unicode-segmentation = "1.13.3"
+wasm-bindgen = "0.2.129"
 web = { path = "web" }
-web-sys = { features = [ "Location", "Window" ], version = "0.3" }
+web-sys = { features = [ "Location", "Window" ], version = "0.3.106" }
 
 [profile.dev]
 codegen-units = 16

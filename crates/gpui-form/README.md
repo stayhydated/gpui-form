@@ -19,7 +19,6 @@ and `mcp` with defaults disabled.
 | Feature | Default | Purpose |
 | --- | --- | --- |
 | `chrono` | No | Forward Chrono MCP schema support when `mcp` is also enabled. |
-| `default` | Yes | Enable `derive` and `runtime`. |
 | `derive` | Yes | Re-export `GpuiForm` and provide generated derive support. |
 | `inventory` | No | Emit concrete form registrations when `derive` is enabled. |
 | `mcp` | No | Expose MCP runtime APIs, enable `inventory`, and extend enabled derives with MCP support. |

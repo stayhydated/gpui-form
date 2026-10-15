@@ -26,7 +26,6 @@ No features are enabled by default.
 | Feature | Default | Purpose |
 | --- | --- | --- |
 | `component-shape` | No | Integrate `InfiniteSelect<T>`, `DatePicker`, `DateRangePicker`, and `FilePicker` with derived forms. |
-| `default` | Yes | Enable no optional integrations. |
 | `derive` | No | Re-export `#[derive(InfiniteSelect)]` for nested enum trees. |
 
 The [API reference][api] owns component initialization, events, and state

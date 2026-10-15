@@ -19,7 +19,6 @@ feature also exports `#[gpui_form_derive::mcp_submit]`.
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `default` | Yes | Enable no optional macro expansion. |
 | `inventory` | No | Emit inventory registrations for concrete forms. |
 | `mcp` | No | Enable `inventory`, MCP form expansion, and submit-handler macros. |
 

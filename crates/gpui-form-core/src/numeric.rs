@@ -10,8 +10,11 @@
 /// - Multiple "-" signs
 /// - "-" anywhere except the first character
 ///
-/// When `require_parse` is true, also validates that the value can be parsed
-/// to the target type T.
+/// Empty text and `"-"` are accepted editing states even when `require_parse`
+/// is true. Other input must parse as `T` when that flag is enabled. Without
+/// parsing, decimal points are unrestricted after the first character, so
+/// values such as `"1..2"` may be accepted while editing. Parse the completed
+/// value before submission.
 pub fn validate_signed_numeric<T: std::str::FromStr>(value: &str, require_parse: bool) -> bool {
     if value.is_empty() || value == "-" {
         return true;
@@ -51,8 +54,9 @@ pub fn validate_signed_numeric<T: std::str::FromStr>(value: &str, require_parse:
 /// - Leading zeros before digits (e.g., "00", "01", "001")
 /// - Any non-digit characters (including "-")
 ///
-/// When `require_parse` is true, also validates that the value can be parsed
-/// to the target type T.
+/// Empty text is accepted as an editing state even when `require_parse` is
+/// true. Other input must parse as `T` when that flag is enabled. Parse the
+/// completed value before submission.
 pub fn validate_unsigned_numeric<T: std::str::FromStr>(value: &str, require_parse: bool) -> bool {
     let [first, rest @ ..] = value.as_bytes() else {
         return true;

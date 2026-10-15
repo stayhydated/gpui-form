@@ -25,7 +25,6 @@ No features are enabled by default. Facade consumers select the corresponding
 | Feature | Default | Purpose |
 | --- | --- | --- |
 | `chrono` | No | Enable Chrono schemas through `component-shape-mcp/chrono`. |
-| `default` | Yes | Enable no optional value-type schemas. |
 | `rust_decimal` | No | Enable Decimal schemas through `component-shape-mcp/rust_decimal`. |
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-mcp

@@ -24,7 +24,6 @@ No features are enabled by default.
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `default` | Yes | Enable no optional rendering integration. |
 | `fluent` | No | Generate `gpui-es-fluent` calls for field labels and validation messages. |
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-prototyping-core
