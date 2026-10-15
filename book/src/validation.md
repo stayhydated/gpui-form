@@ -22,6 +22,23 @@ shape type. Direct storage always supplies a value for that field. Other
 required fields or fallible reverse conversions can still make the form
 conversion fail.
 
+## Validate numeric editing text
+
+The UI-neutral helpers in `gpui_form::core::numeric` (also available from
+`gpui-form-core`) validate text while the user edits a numeric field. They do
+not establish that a completed value is ready to submit:
+
+- `validate_signed_numeric::<T>` accepts empty text and `-`, even with
+  `require_parse = true`.
+- `validate_unsigned_numeric::<T>` accepts empty text with either flag value.
+- Other input must parse as `T` when `require_parse` is true, including fitting
+  the target type's range. With parsing disabled, signed input can contain
+  multiple decimal points, such as `1..2`.
+
+Parse completed text into the intended value type before submission, and use
+holder validation and conversion for the model's remaining constraints. Both
+helpers reject leading zeros before another digit and non-ASCII digits.
+
 ## Validate with Koruma
 
 Koruma validation can run directly against form-side values:

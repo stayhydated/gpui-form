@@ -15,7 +15,7 @@ readme = "README.md"
 component-shape = { workspace = true }
 
 [dev-dependencies]
-proptest = { default-features = false, features = [ "std" ], version = "1.11" }
+proptest = { default-features = false, features = [ "std" ], version = "1.12.0" }
 
 [lints]
 workspace = true
