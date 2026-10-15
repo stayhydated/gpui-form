@@ -25,6 +25,20 @@ pub(crate) enum FilePickerText {
     PathsSelected { count: usize },
 }
 
+#[derive(Clone, Debug, EsFluent)]
+#[fluent(namespace = "row_editor")]
+pub(crate) enum RowEditorText {
+    InsertRow,
+    RowActions,
+    Duplicate,
+    Remove,
+    MoveUp,
+    MoveDown,
+    NoRows,
+    Readonly,
+    InvalidIdentity,
+}
+
 #[cfg(test)]
 mod tests {
     use es_fluent::unic_langid::langid;
@@ -47,6 +61,10 @@ mod tests {
         );
         assert_eq!(i18n.localize_message(&FilePickerText::Browse), "Browse");
         assert_eq!(
+            i18n.localize_message(&RowEditorText::InsertRow),
+            "Insert row"
+        );
+        assert_eq!(
             strip_fluent_isolates(
                 &i18n.localize_message(&FilePickerText::PathsSelected { count: 2 })
             ),
@@ -60,6 +78,10 @@ mod tests {
         );
         assert_eq!(i18n.localize_message(&FilePickerText::Browse), "Parcourir");
         assert_eq!(
+            i18n.localize_message(&RowEditorText::InsertRow),
+            "Insérer une ligne"
+        );
+        assert_eq!(
             strip_fluent_isolates(
                 &i18n.localize_message(&FilePickerText::PathsSelected { count: 2 })
             ),
@@ -72,6 +94,7 @@ mod tests {
             "选择日期"
         );
         assert_eq!(i18n.localize_message(&FilePickerText::Browse), "浏览");
+        assert_eq!(i18n.localize_message(&RowEditorText::InsertRow), "插入行");
         assert_eq!(
             strip_fluent_isolates(
                 &i18n.localize_message(&FilePickerText::PathsSelected { count: 2 })

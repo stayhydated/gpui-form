@@ -4,7 +4,8 @@
 [![crates.io: gpui-form-component][crate-badge]][crate]
 
 `gpui-form-component` provides reusable GPUI runtime components and form shapes
-for localized date and file selection and cascading enum choices. Depend on
+for localized date and file selection, cascading enum choices, and controlled
+ordered row editing. Depend on
 it directly for widgets; use it alongside the [`gpui-form` facade][gpui-form]
 with `component-shape` enabled for derived forms.
 
@@ -18,6 +19,7 @@ Requires Rust 1.99 or newer and GPUI Kit 0.7. Initialize the application
 | `infinite_select` | Cascading selects over nested enum trees |
 | `date_picker` | Localized single-date and date-range pickers |
 | `file_picker` | Native file and directory selection |
+| `row_editor` | Controlled typed rows with stable IDs, insertion, removal, duplication, and reordering |
 
 ## Features
 
@@ -25,7 +27,7 @@ No features are enabled by default.
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `component-shape` | No | Integrate `InfiniteSelect<T>`, `DatePicker`, `DateRangePicker`, and `FilePicker` with derived forms. |
+| `component-shape` | No | Integrate `InfiniteSelect<T>`, `DatePicker`, `DateRangePicker`, `FilePicker`, and `RowEditor<Row, Config>` with derived forms. |
 | `derive` | No | Re-export `#[derive(InfiniteSelect)]` for nested enum trees. |
 
 The [API reference][api] owns component initialization, events, and state

@@ -26,7 +26,7 @@ component constructors, and a form value holder. Every field uses exactly one
 | [`gpui-form-codegen`][gpui-form-codegen-readme] | Parsing and token-generation helpers for macro implementations. |
 | [`gpui-form-collection`][gpui-form-collection-readme] | Ready-made form shapes for common GPUI Kit controls. |
 | [`gpui-form-collection-derive`][gpui-form-collection-derive-readme] | `SelectItem` derive for enum choices used by collection shapes. |
-| [`gpui-form-component`][gpui-form-component-readme] | Localized date/file pickers and cascading infinite selects. |
+| [`gpui-form-component`][gpui-form-component-readme] | Localized date/file pickers, cascading infinite selects, and controlled ordered row editors. |
 | [`gpui-form-component-derive`][gpui-form-component-derive-readme] | `InfiniteSelect` derive, normally re-exported by `gpui-form-component`. |
 | [`gpui-form-component-story`][gpui-form-component-story-readme] | Internal interactive component gallery and localization examples. |
 | [`gpui-form-core`][gpui-form-core-readme] | UI-neutral field identities, suffix checks, and numeric editing validation. |

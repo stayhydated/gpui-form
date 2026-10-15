@@ -73,7 +73,7 @@ jobs:
           cargo fmt --check
 
       - name: Check consumer fixture formatting
-        run: rustfmt --check --edition 2024 .github/feature-smoke.rs
+        run: rustfmt --check --edition 2024 .github/feature-smoke.rs .github/reconstruction-lints.rs
 
   clippy:
     runs-on: ubuntu-latest
@@ -265,6 +265,8 @@ jobs:
       - uses: ./.github/actions/install-linux-deps
       - name: Check isolated facade consumers
         run: bash .github/scripts/check-features.sh
+      - name: Check reconstruction lint policy in consumers
+        run: bash .github/scripts/check-reconstruction-lints.sh
 
   scaffolds:
     runs-on: ubuntu-latest
