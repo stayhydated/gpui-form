@@ -109,7 +109,18 @@ rendering. Keep custom field state keyed by the editor and row IDs, and seed
 those controls from accepted row values when the caller updates them. Apply
 `RowEditorRowContext::is_disabled()` and `is_readonly()` to those fields.
 
+The standalone editor requires `Row: Clone`. In the derived-form example
+below, the collection's declared default also requires `Row: PartialEq`, and
+the form's `Debug` derive requires `Row: Debug`. `Fields` implements
+`RowEditorConfig<Row>` for this row type.
+
 ```rust,ignore
+#[derive(Clone, Debug, PartialEq)]
+struct Row {
+    id: u64,
+    title: String,
+}
+
 #[derive(Clone, Debug, gpui_form::GpuiForm)]
 struct Collection {
     #[gpui_form(component(
