@@ -1398,6 +1398,7 @@ dependencies = [
 [[package]]
 name = "component-shape"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "derive_more",
  "heck 0.5.0",
@@ -1409,6 +1410,7 @@ dependencies = [
 [[package]]
 name = "component-shape-codegen"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "attribute-dsl",
  "component-shape",
@@ -1420,6 +1422,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "component-shape",
  "component-shape-gpui-macros",
@@ -1429,6 +1432,7 @@ dependencies = [
 [[package]]
 name = "component-shape-gpui-macros"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "component-shape",
  "component-shape-codegen",
@@ -1441,6 +1445,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "chrono",
  "component-shape",
@@ -1459,6 +1464,7 @@ dependencies = [
 [[package]]
 name = "component-shape-mcp-macros"
 version = "0.3.4"
+source = "git+https://github.com/stayhydated/component-shape?rev=520e91ec37b52b3ef48a098fb7b12a52453366fe#520e91ec37b52b3ef48a098fb7b12a52453366fe"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -4130,6 +4136,7 @@ dependencies = [
 [[package]]
 name = "gpui-es-fluent"
 version = "0.3.0"
+source = "git+https://github.com/stayhydated/gpui-es-fluent?rev=031353b82729dcf84023c84205a2f462a670f1a5#031353b82729dcf84023c84205a2f462a670f1a5"
 dependencies = [
  "es-fluent",
  "es-fluent-manager-embedded",
@@ -5180,6 +5187,7 @@ checksum = "4b0d73e1bc02eef886a5947f41b8512708792e9e5d3053d181843311a487f96f"
 [[package]]
 name = "gpui-storybook"
 version = "0.7.1"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=df5dd9b9595621448c0cce746b5ba1996b8ca84c#df5dd9b9595621448c0cce746b5ba1996b8ca84c"
 dependencies = [
  "gpui-es-fluent",
  "gpui-kit",
@@ -5198,6 +5206,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-core"
 version = "0.7.1"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=df5dd9b9595621448c0cce746b5ba1996b8ca84c#df5dd9b9595621448c0cce746b5ba1996b8ca84c"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -5227,6 +5236,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-macros"
 version = "0.7.1"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=df5dd9b9595621448c0cce746b5ba1996b8ca84c#df5dd9b9595621448c0cce746b5ba1996b8ca84c"
 dependencies = [
  "darling 0.24.1",
  "heck 0.5.0",
@@ -5238,6 +5248,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-preferences"
 version = "0.7.1"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=df5dd9b9595621448c0cce746b5ba1996b8ca84c#df5dd9b9595621448c0cce746b5ba1996b8ca84c"
 dependencies = [
  "fluent-langneg 0.14.2",
  "schemars",
@@ -5255,6 +5266,7 @@ dependencies = [
 [[package]]
 name = "gpui-storybook-toml"
 version = "0.7.1"
+source = "git+https://github.com/stayhydated/gpui-storybook?rev=df5dd9b9595621448c0cce746b5ba1996b8ca84c#df5dd9b9595621448c0cce746b5ba1996b8ca84c"
 dependencies = [
  "serde",
  "toml 1.1.8+spec-1.1.0",
@@ -13379,99 +13391,3 @@ dependencies = [
  "syn 3.0.9",
  "winnow 1.0.4",
 ]
-
-[[patch.unused]]
-name = "gpui-table"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-component"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-core"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-derive"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-mcp"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-prototyping-core"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-runtime"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-schema"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-storybook-duplicate-fixture"
-version = "0.0.0"
-
-[[patch.unused]]
-name = "gpui-storybook-launch"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-storybook-mcp"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-storybook-test"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-storybook-duplicate-fixture"
-version = "0.0.0"
-
-[[patch.unused]]
-name = "gpui-storybook-launch"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-storybook-mcp"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-storybook-test"
-version = "0.7.1"
-
-[[patch.unused]]
-name = "gpui-table"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-component"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-core"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-derive"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-mcp"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-prototyping-core"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-runtime"
-version = "0.8.0"
-
-[[patch.unused]]
-name = "gpui-table-schema"
-version = "0.8.0"

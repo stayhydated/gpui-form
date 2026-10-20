@@ -6,6 +6,12 @@
 unmaintained = "workspace"
 
 [sources]
-allow-git = [ "https://github.com/DioxusLabs/components", "https://github.com/stayhydated/shared" ]
+allow-git = [
+  "https://github.com/DioxusLabs/components",
+  "https://github.com/stayhydated/shared",
+  "https://github.com/stayhydated/component-shape",
+  "https://github.com/stayhydated/gpui-es-fluent",
+  "https://github.com/stayhydated/gpui-storybook",
+]
 unknown-git = "deny"
 unknown-registry = "deny"
