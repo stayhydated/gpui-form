@@ -8,7 +8,7 @@ for localized date and file selection and cascading enum choices. Depend on
 it directly for widgets; use it alongside the [`gpui-form` facade][gpui-form]
 with `component-shape` enabled for derived forms.
 
-Requires Rust 1.99 or newer and GPUI Kit 0.7. Initialize the application
+Requires Rust 1.99 or newer and GPUI Kit 0.8.0. Initialize the application
 `gpui-es-fluent` resources before rendering localized component text.
 
 ## Overview
