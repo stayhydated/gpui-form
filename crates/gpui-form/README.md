@@ -6,7 +6,7 @@
 re-exports `GpuiForm`, schema types, core helpers, and the runtime paths used by
 generated code.
 
-Requires Rust 1.99 or newer. Component-backed GPUI forms use GPUI Kit 0.7.
+Requires Rust 1.99 or newer. Component-backed GPUI forms use GPUI Kit 0.8.0.
 Headless MCP consumers can disable default features to omit this crate's
 `runtime` integration.
 

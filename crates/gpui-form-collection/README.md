@@ -7,7 +7,7 @@
 controls, letting application developers assign typed UI behavior directly to
 model fields. Use this crate alongside the [`gpui-form` facade][gpui-form].
 
-Requires Rust 1.99 or newer and GPUI Kit 0.7.
+Requires Rust 1.99 or newer and GPUI Kit 0.8.0.
 
 ## Overview
 

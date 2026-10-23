@@ -8,7 +8,7 @@ for reusable shapes and lower-level integrations. Applications normally access
 them through the [`gpui-form` facade][gpui-form] with `runtime` enabled,
 using `gpui_form::runtime::shape`.
 
-Requires Rust 1.99 or newer and GPUI Kit 0.7.
+Requires Rust 1.99 or newer and GPUI Kit 0.8.0.
 
 ## Overview
 

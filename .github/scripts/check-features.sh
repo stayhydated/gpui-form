@@ -36,8 +36,28 @@ gpui-form = { path = "$repo_root/crates/gpui-form", default-features = $defaults
 chrono = { version = "0.4", optional = true }
 rust_decimal = { version = "1.43", optional = true }
 EOF
-    # Seed each independent graph with workspace versions. Metadata only adjusts
-    # the root package and prunes unused dependencies; offline mode prevents upgrades.
+    # Each temporary workspace is a Cargo root, so dependency source patches
+    # must accompany the lockfile rather than being inherited from the facade.
+    python3 - "$repo_root/Cargo.toml" >> "$consumer_dir/Cargo.toml" <<'PYTHON'
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+manifest = Path(sys.argv[1])
+workspace = tomllib.loads(manifest.read_text())
+for source, dependencies in workspace.get("patch", {}).items():
+    print(f"\n[patch.{json.dumps(source)}]")
+    for package, specification in dependencies.items():
+        specification = dict(specification)
+        if "path" in specification:
+            specification["path"] = str((manifest.parent / specification["path"]).resolve())
+        fields = ", ".join(f"{key} = {json.dumps(value)}" for key, value in specification.items())
+        print(f"{json.dumps(package)} = {{ {fields} }}")
+PYTHON
+    # Seed each independent graph with workspace versions and matching sources.
+    # Resolve its root and feature closure from fetched dependencies offline;
+    # the subsequent check keeps that consumer's resolved lockfile fixed.
     cp Cargo.lock "$consumer_dir/Cargo.lock"
     cargo metadata --manifest-path "$consumer_dir/Cargo.toml" --offline --format-version 1 > /dev/null
     echo "Checking isolated $name consumer"

@@ -10,7 +10,7 @@ Application developers annotate model fields once, then use generated holders
 and components to render, validate, and reconstruct those models.
 
 All workspace packages require Rust 1.99 or newer. GPUI integrations use
-GPUI Kit 0.7; headless MCP consumers can disable the facade's `runtime` feature.
+GPUI Kit 0.8.0; headless MCP consumers can disable the facade's `runtime` feature.
 
 ## Overview
 

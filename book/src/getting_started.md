@@ -9,7 +9,7 @@ and rendering needed to connect that state to a view.
 - Rust 1.99 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
-- `gpui-kit` 0.7.3.
+- `gpui-kit` 0.8.0.
 
 ## Add the dependencies
 
@@ -18,7 +18,7 @@ ready-made collection shapes and the collection select derive:
 
 ```toml
 [dependencies]
-gpui-kit = "0.7.3"
+gpui-kit = "0.8.0"
 gpui-form = "0.8"
 gpui-form-collection = "0.8"
 gpui-form-collection-derive = "0.8"
