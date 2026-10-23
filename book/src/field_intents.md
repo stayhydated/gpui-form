@@ -60,8 +60,11 @@ created_by: UserId,
 ```
 
 Reconstruct a skipped-field model by passing those values to
-`holder.into_original(created_by, ...)`. If another field can fail conversion,
-the same method returns `Result<Model, Error>`. `holder.present_fields()`
+`holder.into_original(created_by, ...)` in source declaration order. The generated
+reconstruction method accepts each skipped value separately, including forms
+with many application-owned fields; it locally permits Clippy
+`too_many_arguments` without changing the caller's lint policy. The method returns
+`Result<Model, Error>` and checks required values and reverse conversions. `holder.present_fields()`
 provides a typed snapshot of the editable fields for preview or diagnostic UI.
 
 Do not combine `skip` with `component` or `hidden` on the same field.
