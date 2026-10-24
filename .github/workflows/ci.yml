@@ -22,7 +22,7 @@ jobs:
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
       - name: Check FTL files
-        uses: stayhydated/es-fluent/crates/es-fluent-cli@es-fluent-cli-v0.21.1
+        uses: stayhydated/es-fluent/crates/es-fluent-cli@es-fluent-cli-v0.21.0
         with:
           toolchain: stable
           path: .
@@ -142,7 +142,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.26.0
         with:
           version: "1.25.1"
       - name: Install cargo-machete
@@ -168,7 +168,7 @@ jobs:
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
 
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.26.0
         with:
           version: 1.25.1
 
@@ -204,7 +204,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Install Taplo and ShellCheck
-        uses: taiki-e/install-action@v2.87.27
+        uses: taiki-e/install-action@v2.87.30
         with:
           tool: "taplo@0.10.0,shellcheck@0.11.0"
           checksum: true
@@ -212,7 +212,7 @@ jobs:
       - name: Check TOML formatting
         run: taplo fmt --check
       - name: Check Markdown
-        uses: rvben/rumdl@v0.2.79
+        uses: rvben/rumdl@v0.3.0
         with:
           version: "0.2.78"
           command: check
@@ -221,10 +221,10 @@ jobs:
       - name: Prevent checkout-controlled typos executable reuse
         run: test ! -e typos && test ! -L typos
       - name: Check spelling
-        uses: crate-ci/typos@v1.42.3
+        uses: crate-ci/typos@v1.51.1
         with:
           write_changes: false
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.26.0
         with:
           version: "1.25.1"
       - name: Install derive sorter
@@ -301,7 +301,7 @@ jobs:
         run: |
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.26.0
         with:
           version: 1.25.1
       - name: Install publication tools
@@ -350,7 +350,7 @@ jobs:
         uses: ./.github/actions/install-linux-deps
 
       - name: Publish unpublished crate versions
-        uses: release-plz/action@v0.5.133
+        uses: release-plz/action@v0.5.144
         with:
           command: release
           version: 0.3.162
