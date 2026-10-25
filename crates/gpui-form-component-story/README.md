@@ -1,7 +1,7 @@
 # gpui-form-component-story
 
 `gpui-form-component-story` is the workspace's interactive gallery for the
-reusable date-picker, file-picker, and infinite-select components from
+reusable date-picker, file-picker, infinite-select, and row-editor components from
 [`gpui-form-component`][gpui-form-component]. It exercises the component APIs,
 localization resources, and interactive states used by the project examples.
 

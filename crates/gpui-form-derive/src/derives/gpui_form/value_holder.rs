@@ -335,6 +335,12 @@ pub(super) fn generate_value_holder(
                         entries
                     }
 
+                    // Arity follows application-owned source fields. Consumers may
+                    // configure Clippy's threshold, so this cannot be an expectation.
+                    #[allow(
+                        clippy::too_many_arguments,
+                        reason = "form reconstruction takes each skipped source field from its application owner"
+                    )]
                     pub fn into_original(
                         self,
                         #(#skipped_params),*
