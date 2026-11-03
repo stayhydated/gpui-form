@@ -23,10 +23,11 @@ gpui-kit = "0.9.0"
 gpui-form = "0.9"
 gpui-form-collection = "0.9"
 gpui-form-collection-derive = "0.9"
-gpui-form-example-component = { version = "0.9", features = ["component-shape", "derive"] }
 ```
 
-Select only the optional crates the form uses.
+Select only the optional crates the form uses. Custom controls belong in an
+application-owned integration crate. Consult unpublished `examples/components`
+for file-picker and cascading-selector declarations.
 
 | Need | `gpui-form` configuration |
 |---|---|

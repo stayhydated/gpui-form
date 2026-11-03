@@ -8,8 +8,8 @@ widget or construction behavior you need.
 ## Choose the package
 
 - Use `gpui-form-collection` for common GPUI Kit controls.
-- Use `gpui-form-example-component` for localized date and file pickers or cascading
-  infinite selects.
+- Own custom file pickers and cascading selectors in the application. The
+  unpublished `examples/components` package demonstrates those extensions.
 - Use `component-shape-gpui` and `gpui-form-runtime` when a crate defines its
   own reusable shape.
 
@@ -59,39 +59,17 @@ Use `Shape.from(options)` when the shape publishes a completed options type.
 Configuration changes construction for that field while preserving the base
 shape's value compatibility, rendering, storage, and metadata.
 
-## Component-owned shapes
+## Application component examples
 
-Enable the form-shape implementations and derives you use:
+The unpublished `examples/components` and `examples/component-derive` packages
+show native file selection and cascading enum choices. Their form-shape
+implementations use the same public contracts as application-owned controls.
+The runnable `examples/some-lib-forms` gallery consumes these reference widgets.
+Use the collection’s date shapes for standard GPUI Kit date controls.
 
-```toml
-[dependencies]
-gpui-form-example-component = { version = "0.9", features = ["component-shape", "derive"] }
-```
-
-| Need | Shape | Requirement |
-|---|---|---|
-| Localized date or date range | `gpui_form_example_component::date_picker::DatePicker` or `DateRangePicker` | Initialize application `gpui-es-fluent` resources |
-| Native file or directory selection | `gpui_form_example_component::file_picker::FilePicker` | Initialize application `gpui-es-fluent` resources |
-| Cascading enum choices | `gpui_form_example_component::infinite_select::InfiniteSelect::<T>` | Derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static` throughout the enum tree |
-
-Use `gpui_es_fluent::localize_message(cx, &message)` for application text and
-`gpui_es_fluent::localize_label::<MyType>(cx)` for type labels. With an explicit
-localizer, call `i18n.localize_message(&message)` and
-`MyType::localize_label(&i18n)`. Import `FluentLocalizerExt` for a generic
-localizer and `FluentLabel` for type labels.
-
-Nested infinite-select payload types must implement `Default`. Use
-`InfiniteSelect::<_>.searchable(true)` for search or
-`InfiniteSelect::<_>.from(InfiniteSelectOptions::new(true, Some(3)))` for
-search plus a maximum depth.
-
-### Migrate localization calls to 0.8
-
-Replace `gpui_form_example_component::i18n::localize_message(&i18n, &message)` with
-`i18n.localize_message(&message)`. Replace
-`gpui_form_example_component::i18n::localize_label::<_, MyType>(&i18n)` with
-`MyType::localize_label(&i18n)`. Both replacements keep the caller's localizer
-and missing-message policy.
+Initialize each owning crate’s `gpui-es-fluent` resources. Render application
+messages with `gpui_es_fluent::localize_message(cx, &message)` and type labels
+with `gpui_es_fluent::localize_label::<MyType>(cx)`.
 
 ## Define an application-owned shape
 

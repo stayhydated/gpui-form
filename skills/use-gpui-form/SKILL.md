@@ -20,8 +20,9 @@ for proc-macro internals, generators, releases, or repository maintenance.
 1. Inspect the consuming crate's `Cargo.toml`, model, existing form code, and
    GPUI initialization.
 2. Depend on `gpui-form` as the facade. Add `gpui-form-collection`,
-   `gpui-form-collection-derive`, or `gpui-form-example-component` only for shapes and
-   derives the form uses.
+   `gpui-form-collection-derive` only for shapes and derives the form uses.
+   Own custom widgets in the application; `examples/components` contains
+   unpublished reference integrations.
 3. Derive `GpuiForm` on the application model. Give every field exactly one
    `component(...)`, `hidden`, or `skip` intent.
 4. Choose a shape compatible with the form-side value. Put `default = ...` and
@@ -79,7 +80,7 @@ pub struct Profile {
 | Task | Guidance |
 |---|---|
 | Text, select, combobox, toggle, numeric, slider, color, date, or OTP field | Choose a `gpui-form-collection` shape |
-| Localized date/file field or cascading enum tree | Use `gpui-form-example-component` |
+| File field or cascading enum tree | Use application-owned shapes; consult `examples/components` |
 | Custom parsing or formatting in a normal input | Implement `ParsedInputConfig<T>` and use `ParsedInput::<_, Config>` |
 | Field-side type differs from the model | Use intent-scoped `value(type = ..., from_source = ..., into_source/try_into_source = ...)` |
 | Validation | Add `#[gpui_form(koruma)]` or `koruma(fluent)` and validate the holder |

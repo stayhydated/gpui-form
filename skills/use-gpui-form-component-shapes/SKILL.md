@@ -7,9 +7,9 @@ description: "Integrate application-owned or third-party GPUI component shapes w
 
 ## Scope
 
-Apply this skill after deciding that an existing `gpui-form-collection` or
-`gpui-form-example-component` shape is insufficient, or when integrating an existing
-custom shape into `#[derive(GpuiForm)]`.
+Apply this skill when a `gpui-form-collection` shape is insufficient or when
+integrating an existing custom shape into `#[derive(GpuiForm)]`. The unpublished
+`examples/components` package demonstrates extension contracts.
 
 Use the bundled `use-gpui-form` skill for ordinary forms with built-in shapes.
 For declaration and rendering details, consult `component-shape-gpui`
