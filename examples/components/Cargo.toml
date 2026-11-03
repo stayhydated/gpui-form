@@ -1,0 +1,49 @@
+[package]
+name = "gpui-form-example-component"
+description = """
+GPUI component runtimes for gpui-form, including InfiniteSelect for nested enum support
+"""
+version.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+repository.workspace = true
+readme = "README.md"
+
+[features]
+component-shape = [
+  "dep:bon",
+  "dep:component-shape",
+  "dep:component-shape-gpui",
+  "dep:gpui-form-runtime",
+]
+default = [  ]
+derive = [ "dep:gpui-form-example-component-derive" ]
+
+[dependencies]
+bon = { optional = true, workspace = true }
+component-shape = { optional = true, workspace = true }
+component-shape-gpui = { optional = true, workspace = true }
+es-fluent = { workspace = true }
+es-fluent-manager-embedded = { workspace = true }
+gpui-kit = { workspace = true }
+gpui-es-fluent = { workspace = true }
+gpui-form-example-component-derive = { optional = true, workspace = true }
+gpui-form-runtime = { optional = true, workspace = true }
+serde = { workspace = true }
+
+[build-dependencies]
+es-fluent-build = { workspace = true }
+
+[dev-dependencies]
+gpui-kit = { features = [ "test-support" ], workspace = true }
+gpui-form-example-component-derive = { workspace = true }
+serde_json = { workspace = true }
+unic-langid = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = [ "component-shape" ]
+
+[lints]
+workspace = true

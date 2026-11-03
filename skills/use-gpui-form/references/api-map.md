@@ -23,7 +23,7 @@ gpui-kit = "0.9.0"
 gpui-form = "0.9"
 gpui-form-collection = "0.9"
 gpui-form-collection-derive = "0.9"
-gpui-form-component = { version = "0.9", features = ["component-shape", "derive"] }
+gpui-form-example-component = { version = "0.9", features = ["component-shape", "derive"] }
 ```
 
 Select only the optional crates the form uses.
@@ -124,8 +124,8 @@ Prototyping-only helper names use the shape's field suffix.
 | `chrono::NaiveTime` | Collection `TimeField` |
 | OTP value | `otp_input::OtpInput::<_>` |
 | Localized date or date pair | Component `DatePicker` or `DateRangePicker` |
-| `Vec<PathBuf>` | `gpui_form_component::file_picker::FilePicker` |
-| Cascading enum tree | `gpui_form_component::infinite_select::InfiniteSelect::<_>` |
+| `Vec<PathBuf>` | `gpui_form_example_component::file_picker::FilePicker` |
+| Cascading enum tree | `gpui_form_example_component::infinite_select::InfiniteSelect::<_>` |
 
 Select values normally derive `SelectItem` and `EnumIter`. Cascading enum trees
 derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static`;
@@ -140,7 +140,7 @@ Configure one field through a shape builder:
 ```
 
 Use `Shape.from(options)` for a completed options value. Use
-`use-gpui-form-component-shapes` for an app-owned shape or construction
+`use-gpui-form-example-component-shapes` for an app-owned shape or construction
 behavior outside a built-in builder.
 
 ## Validation and conversion
@@ -257,7 +257,7 @@ structured issues.
 
 ## Custom shape routing
 
-Switch to `use-gpui-form-component-shapes` when the task:
+Switch to `use-gpui-form-example-component-shapes` when the task:
 
 - defines an application-owned rendered component as a form shape
 - wraps state or a component from another crate

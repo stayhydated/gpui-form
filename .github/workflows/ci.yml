@@ -55,6 +55,10 @@ jobs:
         if: runner.os == 'Linux'
         uses: ./.github/actions/install-linux-deps
 
+      - name: Check skipped-field reconstruction lint boundary
+        if: runner.os == 'Linux'
+        run: bash .github/scripts/check-reconstruction-lints.sh
+
       - name: Run tests
         run: cargo test --workspace --all-features --locked
 
@@ -180,7 +184,7 @@ jobs:
         shell: bash
         run: |
           cargo llvm-cov clean --workspace
-          cargo llvm-cov --workspace --all-features --locked --cobertura --output-path=target/cobertura.xml --exclude gpui-form-component-story --exclude some-lib-forms --exclude prototyping
+          cargo llvm-cov --workspace --all-features --locked --cobertura --output-path=target/cobertura.xml --exclude some-lib-forms --exclude prototyping
 
       - name: Codecov publish
         uses: codecov/codecov-action@v7

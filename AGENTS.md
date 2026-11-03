@@ -18,10 +18,10 @@ Paths below are relative to `crates/` unless stated otherwise.
 | `gpui-form-schema` | Public schema, inventory, and resolved generator metadata |
 | `gpui-form-runtime` | Public shape storage policy and value-binding contracts |
 | `gpui-form-collection` and `gpui-form-collection-derive` | Built-in form shapes and `SelectItem` derive |
-| `gpui-form-component` and `gpui-form-component-derive` | Date/file pickers, infinite selects, and `InfiniteSelect` derive |
+| `gpui-form-example-component` and `gpui-form-example-component-derive` | Unpublished file-picker and cascading-selector extension examples |
 | `gpui-form-mcp` | Submit handlers, editor sessions, schemas, resources, and registration |
 | `gpui-form-prototyping-core` | Scaffold generation from `GpuiFormShape` inventory |
-| `gpui-form-component-story` | Interactive component gallery and its localization assets |
+| `gpui-form-example-component-story` | Interactive component gallery and its localization assets |
 
 At the workspace root:
 
@@ -32,7 +32,7 @@ At the workspace root:
 - `examples/mcp-submit` demonstrates a stdio form server.
 - `book/src` contains the user guide; start with `SUMMARY.md`.
 - `skills/use-gpui-form` covers application usage;
-  `skills/use-gpui-form-component-shapes` covers custom shape integration.
+  `skills/use-gpui-form-example-component-shapes` covers custom shape integration.
 - `web/src/lib.rs` owns the public catalog and destinations; `xtask` owns the
   book, language-model documentation, demo, and site build commands.
 
@@ -53,7 +53,7 @@ At the workspace root:
   Keep token snapshots under
   `crates/gpui-form-prototyping-core/src/implementations/snapshots` aligned.
 - For localization changes in `examples/some-lib`,
-  `crates/gpui-form-component`, or `crates/gpui-form-component-story`, align the
+  `examples/components`, or `examples/components-story`, align the
   package's `i18n.toml`, `i18n/` resources, typed messages, and usage examples.
 - Build publication assets under `web/public` through `cargo xtask`; edit
   `book/src`, `web/src`, or the gallery sources that produce them.
@@ -72,7 +72,7 @@ Use the smallest applicable check from the repository workflows:
 | Editor session property tests | `cargo test -p gpui-form-mcp --all-features --locked session_properties` |
 | Generated form API or diagnostics | `cargo test -p gpui-form --test ui` |
 | MCP schemas, submit handlers, or editor sessions | `cargo test -p gpui-form --test mcp_submit --all-features --locked` |
-| Infinite-select runtime behavior | `cargo test -p gpui-form-component --test infinite_select_runtime --all-features --locked` |
+| Infinite-select runtime behavior | `cargo test -p gpui-form-example-component --test infinite_select_runtime --all-features --locked` |
 | Holder conversion | `cargo test -p gpui-form --test holder_conversion` |
 | Scaffold generation | `cargo test -p gpui-form-prototyping-core` and `cargo run -p prototyping` |
 | Repository formatting, spelling, workflow and shell checks | `just quality` (use the pinned tool versions in CI) |

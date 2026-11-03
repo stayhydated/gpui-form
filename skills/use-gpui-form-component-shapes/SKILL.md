@@ -1,5 +1,5 @@
 ---
-name: use-gpui-form-component-shapes
+name: use-gpui-form-example-component-shapes
 description: "Integrate application-owned or third-party GPUI component shapes with gpui-form: value compatibility, holder storage, builders, and metadata. Use use-gpui-form when consuming built-in shapes."
 ---
 
@@ -8,7 +8,7 @@ description: "Integrate application-owned or third-party GPUI component shapes w
 ## Scope
 
 Apply this skill after deciding that an existing `gpui-form-collection` or
-`gpui-form-component` shape is insufficient, or when integrating an existing
+`gpui-form-example-component` shape is insufficient, or when integrating an existing
 custom shape into `#[derive(GpuiForm)]`.
 
 Use the bundled `use-gpui-form` skill for ordinary forms with built-in shapes.

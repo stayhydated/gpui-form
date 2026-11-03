@@ -65,10 +65,12 @@ impl LocationFormForm {
     fn on_location_infinite_select_event(
         &mut self,
         state: &Entity<
-            GpuiComponentStateOf<gpui_form_component::infinite_select::InfiniteSelect<Country>>,
+            GpuiComponentStateOf<
+                gpui_form_example_component::infinite_select::InfiniteSelect<Country>,
+            >,
         >,
         event: &GpuiComponentEventOf<
-            gpui_form_component::infinite_select::InfiniteSelect<Country>,
+            gpui_form_example_component::infinite_select::InfiniteSelect<Country>,
             Country,
         >,
         _window: &mut Window,
@@ -76,16 +78,17 @@ impl LocationFormForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            value_change::<gpui_form_component::infinite_select::InfiniteSelect<Country>, Country>(
-                state, event,
-            )
+            value_change::<
+                gpui_form_example_component::infinite_select::InfiniteSelect<Country>,
+                Country,
+            >(state, event)
         };
         match form_change {
             ValueChange::Set(value) => {
                 self.current_data.location = value;
             },
             ValueChange::Clear => {
-                self.current_data.location = <<gpui_form_component::infinite_select::InfiniteSelect<
+                self.current_data.location = <<gpui_form_example_component::infinite_select::InfiniteSelect<
                     Country,
                 > as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     Country,
@@ -112,7 +115,7 @@ impl LocationFormForm {
         });
         location.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_component::infinite_select::InfiniteSelect<Country>,
+                gpui_form_example_component::infinite_select::InfiniteSelect<Country>,
                 Country,
             >(state, Some(&current_data.location), window, cx);
         });
@@ -231,10 +234,10 @@ impl Render for LocationFormForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_component::infinite_select::InfiniteSelect<
+                                <<gpui_form_example_component::infinite_select::InfiniteSelect<
                                     Country,
                                 > as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
-                                    <gpui_form_component::infinite_select::InfiniteSelect<
+                                    <gpui_form_example_component::infinite_select::InfiniteSelect<
                                         Country,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.location),

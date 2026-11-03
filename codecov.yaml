@@ -29,15 +29,15 @@ component_management:
       paths:
         - crates/gpui-form-collection-derive/**
 
-    - component_id: gpui-form-component
-      name: "gpui-form-component"
+    - component_id: gpui-form-example-component
+      name: "gpui-form-example-component"
       paths:
-        - crates/gpui-form-component/**
+        - examples/components/**
 
-    - component_id: gpui-form-component-derive
-      name: "gpui-form-component-derive"
+    - component_id: gpui-form-example-component-derive
+      name: "gpui-form-example-component-derive"
       paths:
-        - crates/gpui-form-component-derive/**
+        - examples/component-derive/**
 
     - component_id: gpui-form-derive
       name: "gpui-form-derive"

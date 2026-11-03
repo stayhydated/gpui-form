@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Build, review, or refactor application forms with gpui-form, including field intents, generated state, validation, inventory scaffolding, and MCP tools. Use use-gpui-form-component-shapes to define custom shapes."
+description: "Build, review, or refactor application forms with gpui-form, including field intents, generated state, validation, inventory scaffolding, and MCP tools. Use use-gpui-form-example-component-shapes to define custom shapes."
 ---
 
 # Use GPUI Form
@@ -11,7 +11,7 @@ Apply this skill to consumer-side form work. Keep application code centered on
 its models, generated form state, selected component shapes, and submission
 logic.
 
-Use `use-gpui-form-component-shapes` when the task defines or adapts an
+Use `use-gpui-form-example-component-shapes` when the task defines or adapts an
 application-owned or third-party component shape. Use the workspace guidance
 for proc-macro internals, generators, releases, or repository maintenance.
 
@@ -20,7 +20,7 @@ for proc-macro internals, generators, releases, or repository maintenance.
 1. Inspect the consuming crate's `Cargo.toml`, model, existing form code, and
    GPUI initialization.
 2. Depend on `gpui-form` as the facade. Add `gpui-form-collection`,
-   `gpui-form-collection-derive`, or `gpui-form-component` only for shapes and
+   `gpui-form-collection-derive`, or `gpui-form-example-component` only for shapes and
    derives the form uses.
 3. Derive `GpuiForm` on the application model. Give every field exactly one
    `component(...)`, `hidden`, or `skip` intent.
@@ -79,13 +79,13 @@ pub struct Profile {
 | Task | Guidance |
 |---|---|
 | Text, select, combobox, toggle, numeric, slider, color, date, or OTP field | Choose a `gpui-form-collection` shape |
-| Localized date/file field or cascading enum tree | Use `gpui-form-component` |
+| Localized date/file field or cascading enum tree | Use `gpui-form-example-component` |
 | Custom parsing or formatting in a normal input | Implement `ParsedInputConfig<T>` and use `ParsedInput::<_, Config>` |
 | Field-side type differs from the model | Use intent-scoped `value(type = ..., from_source = ..., into_source/try_into_source = ...)` |
 | Validation | Add `#[gpui_form(koruma)]` or `koruma(fluent)` and validate the holder |
 | Generated GPUI wiring | Enable `inventory` and use `gpui-form-prototyping-core` |
 | Structured form tools | Enable `mcp` and use `#[gpui_form(mcp)]` plus an application-owned submit path |
-| App-owned widget or external state wrapper | Switch to `use-gpui-form-component-shapes` |
+| App-owned widget or external state wrapper | Switch to `use-gpui-form-example-component-shapes` |
 
 ## MCP integration
 

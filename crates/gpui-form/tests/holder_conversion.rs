@@ -125,6 +125,89 @@ pub struct KorumaNewtypeConvertedDemo {
     value: ValidatedCode,
 }
 
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+pub struct SixSkippedFields {
+    #[gpui_form(hidden)]
+    value: String,
+    #[gpui_form(skip)]
+    first: u64,
+    #[gpui_form(skip)]
+    second: u64,
+    #[gpui_form(skip)]
+    third: u64,
+    #[gpui_form(skip)]
+    fourth: u64,
+    #[gpui_form(skip)]
+    fifth: u64,
+    #[gpui_form(skip)]
+    sixth: u64,
+}
+
+#[derive(Clone, Debug, Eq, GpuiForm, PartialEq)]
+pub struct SevenSkippedFields {
+    #[gpui_form(hidden)]
+    value: String,
+    #[gpui_form(skip)]
+    first: u64,
+    #[gpui_form(skip)]
+    second: u64,
+    #[gpui_form(skip)]
+    third: u64,
+    #[gpui_form(skip)]
+    fourth: u64,
+    #[gpui_form(skip)]
+    fifth: u64,
+    #[gpui_form(skip)]
+    sixth: u64,
+    #[gpui_form(skip)]
+    seventh: u64,
+}
+
+#[test]
+fn reconstructs_edited_holder_with_six_application_owned_fields() {
+    let model = SixSkippedFieldsFormValueHolder {
+        value: "edited".to_string(),
+    }
+    .into_original(1, 2, 3, 4, 5, 6)
+    .expect("edited value and supplied source fields must reconstruct");
+
+    assert_eq!(
+        model,
+        SixSkippedFields {
+            value: "edited".to_string(),
+            first: 1,
+            second: 2,
+            third: 3,
+            fourth: 4,
+            fifth: 5,
+            sixth: 6,
+        }
+    );
+}
+
+#[test]
+fn reconstructs_edited_holder_with_seven_application_owned_fields() {
+    let model = SevenSkippedFieldsFormValueHolder {
+        value: "edited".to_string(),
+    }
+    .into_original(1, 2, 3, 4, 5, 6, 7)
+    .expect("edited value and supplied source fields must reconstruct");
+
+    assert_eq!(
+        model,
+        SevenSkippedFields {
+            value: "edited".to_string(),
+            first: 1,
+            second: 2,
+            third: 3,
+            fourth: 4,
+            fifth: 5,
+            sixth: 6,
+            seventh: 7,
+        }
+    );
+}
+
 #[test]
 fn missing_required_shape_value_reports_field_name() {
     let err = RequiredDemoFormValueHolder { value: None }

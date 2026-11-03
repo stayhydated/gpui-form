@@ -31,7 +31,6 @@ test:
 
 cov:
     cargo llvm-cov --workspace --all-features --all-targets \
-        --exclude gpui-form-component-story \
         --exclude prototyping \
         --exclude some-lib-forms \
         --exclude xtask \

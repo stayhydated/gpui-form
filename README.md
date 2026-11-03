@@ -12,9 +12,6 @@ and components to render, validate, and reconstruct those models.
 All workspace packages require Rust 1.99 or newer. GPUI integrations use
 GPUI Kit 0.9.0; headless MCP consumers can disable the facade's `runtime` feature.
 
-The gpui-form 0.9 line uses GPUI Kit 0.9 and Storybook 0.8.
-The 0.8 line targets Kit 0.8; keep these public GPUI type families together.
-
 ## Overview
 
 The `GpuiForm` derive generates typed field identities, GPUI entity storage,
@@ -29,9 +26,6 @@ component constructors, and a form value holder. Every field uses exactly one
 | [`gpui-form-codegen`][gpui-form-codegen-readme] | Parsing and token-generation helpers for macro implementations. |
 | [`gpui-form-collection`][gpui-form-collection-readme] | Ready-made form shapes for common GPUI Kit controls. |
 | [`gpui-form-collection-derive`][gpui-form-collection-derive-readme] | `SelectItem` derive for enum choices used by collection shapes. |
-| [`gpui-form-component`][gpui-form-component-readme] | Localized date/file pickers and cascading infinite selects. |
-| [`gpui-form-component-derive`][gpui-form-component-derive-readme] | `InfiniteSelect` derive, normally re-exported by `gpui-form-component`. |
-| [`gpui-form-component-story`][gpui-form-component-story-readme] | Internal interactive component gallery and localization examples. |
 | [`gpui-form-core`][gpui-form-core-readme] | UI-neutral field identities, suffix checks, and numeric editing validation. |
 | [`gpui-form-derive`][gpui-form-derive-readme] | Procedural macros, normally re-exported by the facade. |
 | [`gpui-form-mcp`][gpui-form-mcp-readme] | Experimental submit handlers, metadata, and headless editor sessions. |
@@ -40,8 +34,9 @@ component constructors, and a form value holder. Every field uses exactly one
 | [`gpui-form-schema`][gpui-form-schema-readme] | Form inventory and validated metadata for generators and integrations. |
 
 Most applications start with [`gpui-form`][gpui-form-readme] and add only the
-component crates they use. The [workspace examples][examples] demonstrate complete form views,
-component galleries, scaffold generation, and MCP servers.
+collection shapes they use. Application-owned controls implement the runtime shape
+contracts. The [workspace examples][examples] demonstrate form views, unpublished
+custom controls, scaffold generation, and MCP servers.
 
 [ci-badge]: https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml/badge.svg?branch=master
 [ci]: https://github.com/stayhydated/gpui-form/actions/workflows/ci.yml
@@ -57,9 +52,6 @@ component galleries, scaffold generation, and MCP servers.
 [gpui-form-codegen-readme]: crates/gpui-form-codegen/README.md
 [gpui-form-collection-readme]: crates/gpui-form-collection/README.md
 [gpui-form-collection-derive-readme]: crates/gpui-form-collection-derive/README.md
-[gpui-form-component-readme]: crates/gpui-form-component/README.md
-[gpui-form-component-derive-readme]: crates/gpui-form-component-derive/README.md
-[gpui-form-component-story-readme]: crates/gpui-form-component-story/README.md
 [gpui-form-core-readme]: crates/gpui-form-core/README.md
 [gpui-form-derive-readme]: crates/gpui-form-derive/README.md
 [gpui-form-mcp-readme]: crates/gpui-form-mcp/README.md

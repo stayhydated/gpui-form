@@ -265,9 +265,9 @@ impl UserForm {
     }
     fn on_uploaded_files_file_picker_event(
         &mut self,
-        state: &Entity<GpuiComponentStateOf<gpui_form_component::file_picker::FilePicker>>,
+        state: &Entity<GpuiComponentStateOf<gpui_form_example_component::file_picker::FilePicker>>,
         event: &GpuiComponentEventOf<
-            gpui_form_component::file_picker::FilePicker,
+            gpui_form_example_component::file_picker::FilePicker,
             Vec<std::path::PathBuf>,
         >,
         _window: &mut Window,
@@ -275,7 +275,7 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            value_change::<gpui_form_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
+            value_change::<gpui_form_example_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
                 state, event,
             )
         };
@@ -284,7 +284,7 @@ impl UserForm {
                 self.current_data.uploaded_files = value;
             },
             ValueChange::Clear => {
-                self.current_data.uploaded_files = <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
+                self.current_data.uploaded_files = <<gpui_form_example_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiFormComponentShapePolicy>::ValueStoragePolicy as gpui_form::runtime::shape::DefaultValueStorage<
                     Vec<std::path::PathBuf>,
                 >>::default_storage();
             },
@@ -578,7 +578,7 @@ impl UserForm {
         });
         uploaded_files.update(cx, |state, cx| {
             seed_value_binding_state::<
-                gpui_form_component::file_picker::FilePicker,
+                gpui_form_example_component::file_picker::FilePicker,
                 Vec<std::path::PathBuf>,
             >(state, Some(&current_data.uploaded_files), window, cx);
         });
@@ -1139,8 +1139,8 @@ impl Render for UserForm {
                                 }
                             })
                             .child(
-                                <<gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
-                                    <gpui_form_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
+                                <<gpui_form_example_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
+                                    <gpui_form_example_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.uploaded_files),
                             ),
                     )

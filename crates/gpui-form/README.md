@@ -30,7 +30,7 @@ and `mcp` with defaults disabled.
 With the default `derive` and `runtime` features, a hidden field needs no
 widget or GPUI window. This complete example round-trips application data
 through its generated holder; component-backed models use shapes from
-[`gpui-form-collection`][collection] or [`gpui-form-component`][component].
+[`gpui-form-collection`][collection] or application-owned controls.
 
 ```rust
 use gpui_form::GpuiForm;
@@ -53,6 +53,5 @@ GPUI views. The [API reference][api] describes the facade exports.
 [crate-badge]: https://img.shields.io/crates/v/gpui-form.svg?label=gpui-form
 [crate]: https://crates.io/crates/gpui-form
 [collection]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form-collection/README.md
-[component]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form-component/README.md
 [gallery]: https://github.com/stayhydated/gpui-form/blob/master/examples/README.md
 [api]: https://docs.rs/gpui-form/latest/gpui_form/

@@ -8,7 +8,7 @@ widget or construction behavior you need.
 ## Choose the package
 
 - Use `gpui-form-collection` for common GPUI Kit controls.
-- Use `gpui-form-component` for localized date and file pickers or cascading
+- Use `gpui-form-example-component` for localized date and file pickers or cascading
   infinite selects.
 - Use `component-shape-gpui` and `gpui-form-runtime` when a crate defines its
   own reusable shape.
@@ -65,14 +65,14 @@ Enable the form-shape implementations and derives you use:
 
 ```toml
 [dependencies]
-gpui-form-component = { version = "0.9", features = ["component-shape", "derive"] }
+gpui-form-example-component = { version = "0.9", features = ["component-shape", "derive"] }
 ```
 
 | Need | Shape | Requirement |
 |---|---|---|
-| Localized date or date range | `gpui_form_component::date_picker::DatePicker` or `DateRangePicker` | Initialize application `gpui-es-fluent` resources |
-| Native file or directory selection | `gpui_form_component::file_picker::FilePicker` | Initialize application `gpui-es-fluent` resources |
-| Cascading enum choices | `gpui_form_component::infinite_select::InfiniteSelect::<T>` | Derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static` throughout the enum tree |
+| Localized date or date range | `gpui_form_example_component::date_picker::DatePicker` or `DateRangePicker` | Initialize application `gpui-es-fluent` resources |
+| Native file or directory selection | `gpui_form_example_component::file_picker::FilePicker` | Initialize application `gpui-es-fluent` resources |
+| Cascading enum choices | `gpui_form_example_component::infinite_select::InfiniteSelect::<T>` | Derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static` throughout the enum tree |
 
 Use `gpui_es_fluent::localize_message(cx, &message)` for application text and
 `gpui_es_fluent::localize_label::<MyType>(cx)` for type labels. With an explicit
@@ -87,9 +87,9 @@ search plus a maximum depth.
 
 ### Migrate localization calls to 0.8
 
-Replace `gpui_form_component::i18n::localize_message(&i18n, &message)` with
+Replace `gpui_form_example_component::i18n::localize_message(&i18n, &message)` with
 `i18n.localize_message(&message)`. Replace
-`gpui_form_component::i18n::localize_label::<_, MyType>(&i18n)` with
+`gpui_form_example_component::i18n::localize_label::<_, MyType>(&i18n)` with
 `MyType::localize_label(&i18n)`. Both replacements keep the caller's localizer
 and missing-message policy.
 
@@ -135,7 +135,7 @@ reconstruction when storage is empty.
 
 | Symptom | Action |
 |---|---|
-| A component-owned type cannot be used in `component(...)` | Enable `gpui-form-component`'s `component-shape` feature. |
+| A component-owned type cannot be used in `component(...)` | Enable `gpui-form-example-component`'s `component-shape` feature. |
 | The derive rejects an application-owned shape as undeclared | Declare it with the `GpuiComponentShape` derive or `component_shape!` macro. |
 | A configured shape expression fails its bound | Use a builder produced for the same base shape, or pass its completed options through `Shape.from(...)`. |
 | Prototyping reports missing capabilities | Add the missing render, value-binding, shape-path, or storage metadata to the owning shape and regenerate. |

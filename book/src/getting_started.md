@@ -114,7 +114,7 @@ from the same shape metadata.
 | MCP tools in a GPUI application | `gpui-form = { version = "0.9", features = ["mcp"] }` |
 | Headless MCP forms | `gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }` |
 | MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
-| Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
+| Localized date, file, or infinite-select shapes | Add `gpui-form-example-component` with `component-shape` and, for the derive, `derive` |
 
 ## Check the result
 
@@ -132,6 +132,6 @@ intent, and every selected shape supports its form-side value type.
 | Symptom | Action |
 |---|---|
 | `field ... must choose a gpui_form field intent` | Add `component(...)`, `hidden`, or `skip` to the named field. |
-| A `gpui_form_component` shape is unavailable | Enable that crate's `component-shape` feature; infinite-select enums also need its `derive` feature. |
+| A `gpui_form_example_component` shape is unavailable | Enable that crate's `component-shape` feature; infinite-select enums also need its `derive` feature. |
 | GPUI types from two dependencies do not match | Depend on `gpui-kit` alone, as shown above. |
 | The widget renders but the holder never changes | Retain the subscription and map its event into the holder, or generate the wiring through the prototyping workflow. |

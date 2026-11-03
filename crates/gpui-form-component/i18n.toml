@@ -1,3 +1,0 @@
-assets_dir = "i18n"
-fallback_language = "en"
-namespaces = [ "date_picker", "file_picker" ]
