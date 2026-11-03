@@ -140,7 +140,7 @@ Configure one field through a shape builder:
 ```
 
 Use `Shape.from(options)` for a completed options value. Use
-`use-gpui-form-example-component-shapes` for an app-owned shape or construction
+`use-gpui-form-component-shapes` for an app-owned shape or construction
 behavior outside a built-in builder.
 
 ## Validation and conversion
@@ -257,7 +257,7 @@ structured issues.
 
 ## Custom shape routing
 
-Switch to `use-gpui-form-example-component-shapes` when the task:
+Switch to `use-gpui-form-component-shapes` when the task:
 
 - defines an application-owned rendered component as a form shape
 - wraps state or a component from another crate

@@ -1,5 +1,5 @@
 ---
-name: use-gpui-form-example-component-shapes
+name: use-gpui-form-component-shapes
 description: "Integrate application-owned or third-party GPUI component shapes with gpui-form: value compatibility, holder storage, builders, and metadata. Use use-gpui-form when consuming built-in shapes."
 ---
 

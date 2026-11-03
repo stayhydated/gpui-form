@@ -1,6 +1,6 @@
 ---
 name: use-gpui-form
-description: "Build, review, or refactor application forms with gpui-form, including field intents, generated state, validation, inventory scaffolding, and MCP tools. Use use-gpui-form-example-component-shapes to define custom shapes."
+description: "Build, review, or refactor application forms with gpui-form, including field intents, generated state, validation, inventory scaffolding, and MCP tools. Use use-gpui-form-component-shapes to define custom shapes."
 ---
 
 # Use GPUI Form
@@ -11,7 +11,7 @@ Apply this skill to consumer-side form work. Keep application code centered on
 its models, generated form state, selected component shapes, and submission
 logic.
 
-Use `use-gpui-form-example-component-shapes` when the task defines or adapts an
+Use `use-gpui-form-component-shapes` when the task defines or adapts an
 application-owned or third-party component shape. Use the workspace guidance
 for proc-macro internals, generators, releases, or repository maintenance.
 
@@ -85,7 +85,7 @@ pub struct Profile {
 | Validation | Add `#[gpui_form(koruma)]` or `koruma(fluent)` and validate the holder |
 | Generated GPUI wiring | Enable `inventory` and use `gpui-form-prototyping-core` |
 | Structured form tools | Enable `mcp` and use `#[gpui_form(mcp)]` plus an application-owned submit path |
-| App-owned widget or external state wrapper | Switch to `use-gpui-form-example-component-shapes` |
+| App-owned widget or external state wrapper | Switch to `use-gpui-form-component-shapes` |
 
 ## MCP integration
 

@@ -18,10 +18,9 @@ Paths below are relative to `crates/` unless stated otherwise.
 | `gpui-form-schema` | Public schema, inventory, and resolved generator metadata |
 | `gpui-form-runtime` | Public shape storage policy and value-binding contracts |
 | `gpui-form-collection` and `gpui-form-collection-derive` | Built-in form shapes and `SelectItem` derive |
-| `gpui-form-example-component` and `gpui-form-example-component-derive` | Unpublished file-picker and cascading-selector extension examples |
+| `../examples/components` and `../examples/component-derive` | Unpublished file-picker and cascading-selector extension examples |
 | `gpui-form-mcp` | Submit handlers, editor sessions, schemas, resources, and registration |
 | `gpui-form-prototyping-core` | Scaffold generation from `GpuiFormShape` inventory |
-| `gpui-form-example-component-story` | Interactive component gallery and its localization assets |
 
 At the workspace root:
 
@@ -32,7 +31,7 @@ At the workspace root:
 - `examples/mcp-submit` demonstrates a stdio form server.
 - `book/src` contains the user guide; start with `SUMMARY.md`.
 - `skills/use-gpui-form` covers application usage;
-  `skills/use-gpui-form-example-component-shapes` covers custom shape integration.
+  `skills/use-gpui-form-component-shapes` covers custom shape integration.
 - `web/src/lib.rs` owns the public catalog and destinations; `xtask` owns the
   book, language-model documentation, demo, and site build commands.
 
@@ -53,7 +52,7 @@ At the workspace root:
   Keep token snapshots under
   `crates/gpui-form-prototyping-core/src/implementations/snapshots` aligned.
 - For localization changes in `examples/some-lib`,
-  `examples/components`, or `examples/components-story`, align the
+  `examples/components`, align the
   package's `i18n.toml`, `i18n/` resources, typed messages, and usage examples.
 - Build publication assets under `web/public` through `cargo xtask`; edit
   `book/src`, `web/src`, or the gallery sources that produce them.
