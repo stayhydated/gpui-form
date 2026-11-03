@@ -4,7 +4,7 @@ Add a typed form model to an existing GPUI application and construct its
 generated holder and widget state. The final checklist covers the subscriptions
 and rendering needed to connect that state to a view.
 
-The upcoming gpui-form 0.9 line uses GPUI Kit 0.9 and Storybook 0.8.
+The gpui-form 0.9 line uses GPUI Kit 0.9 and Storybook 0.8.
 The 0.8 line targets Kit 0.8; keep these public GPUI type families together.
 
 ## Prerequisites
