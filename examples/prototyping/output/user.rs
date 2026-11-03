@@ -11,7 +11,10 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
+use gpui_kit::{
+    InteractiveElement as _, ParentElement as _, StatefulInteractiveElement as _, Styled as _,
+    Subscription, TestSupportExt as _, div,
+};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::user::*;
 const CONTEXT: &str = "UserForm";
@@ -275,9 +278,10 @@ impl UserForm {
     ) {
         let form_change = {
             let state = state.read(_cx);
-            value_change::<gpui_form_example_component::file_picker::FilePicker, Vec<std::path::PathBuf>>(
-                state, event,
-            )
+            value_change::<
+                gpui_form_example_component::file_picker::FilePicker,
+                Vec<std::path::PathBuf>,
+            >(state, event)
         };
         match form_change {
             ValueChange::Set(value) => {
@@ -711,17 +715,20 @@ impl Render for UserForm {
             .child(Separator::horizontal())
             .child(
                 v_form()
-                    .child(
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Username;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Username;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Username;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -742,25 +749,49 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("username-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("username-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
@@ -769,19 +800,22 @@ impl Render for UserForm {
                                         String,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.username),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Email;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Email;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Email;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -802,25 +836,49 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("email-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("email-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
@@ -829,19 +887,22 @@ impl Render for UserForm {
                                         String,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.email),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Age;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Age;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Age;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -862,25 +923,49 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("age-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("age-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     u32,
@@ -889,19 +974,22 @@ impl Render for UserForm {
                                         u32,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.age),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Balance;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Balance;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Balance;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -922,25 +1010,49 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("balance-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("balance-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     rust_decimal::Decimal,
@@ -949,19 +1061,22 @@ impl Render for UserForm {
                                         rust_decimal::Decimal,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.balance),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Debt;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Debt;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Debt;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -982,25 +1097,49 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("debt-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("debt-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     rust_decimal::Decimal,
@@ -1009,27 +1148,29 @@ impl Render for UserForm {
                                         rust_decimal::Decimal,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.debt),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Rating;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Rating;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Rating;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::number_input::NumberInput<
                                     u32,
@@ -1038,77 +1179,83 @@ impl Render for UserForm {
                                         u32,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.rating),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::AttentionLevel;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::AttentionLevel;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::AttentionLevel;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::slider::Slider as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::slider::Slider as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.attention_level),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::BrandColor;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::BrandColor;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::BrandColor;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::color_picker::ColorPicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.brand_color),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::OtpCode;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::OtpCode;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::OtpCode;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::otp_input::OtpInput<
                                     String,
@@ -1117,127 +1264,137 @@ impl Render for UserForm {
                                         String,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.otp_code),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::UploadedFiles;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::UploadedFiles;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::UploadedFiles;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_example_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_example_component::file_picker::FilePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.uploaded_files),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::HolidayRange;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::HolidayRange;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::HolidayRange;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::date_picker::DateRangePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.holiday_range),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::SubscribeNewsletter;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::SubscribeNewsletter;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::SubscribeNewsletter;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::switch::Switch as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::switch::Switch as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.subscribe_newsletter),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::EnableNotifications;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::EnableNotifications;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::EnableNotifications;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::checkbox::Checkbox as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.enable_notifications),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Preferred;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Preferred;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Preferred;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::select::Select<
                                     PreferredLanguage,
@@ -1246,27 +1403,29 @@ impl Render for UserForm {
                                         PreferredLanguage,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.preferred),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::Country;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::Country;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::Country;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::select::Select<
                                     EnumCountry,
@@ -1275,19 +1434,22 @@ impl Render for UserForm {
                                         EnumCountry,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.country),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = UserLabelVariants::BirthDate;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = UserLabelVariants::BirthDate;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = UserDescriptionVariants::BirthDate;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -1308,31 +1470,55 @@ impl Render for UserForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("birth_date-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("birth_date-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                                     <gpui_form_collection::date_picker::DatePicker as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.birth_date),
-                            ),
-                    )
+                            )
+                    })
                     .child(
                         field()
                             .label_indent(false)

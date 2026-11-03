@@ -4,7 +4,10 @@ use gpui_kit::component::v_flex;
 use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _};
+use gpui_kit::{
+    InteractiveElement as _, ParentElement as _, StatefulInteractiveElement as _, Styled as _,
+    TestSupportExt as _,
+};
 use some_lib::structs::empty::*;
 const CONTEXT: &str = "EmptyForm";
 #[gpui_storybook::story_init]

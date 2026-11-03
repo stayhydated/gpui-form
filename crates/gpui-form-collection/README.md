@@ -51,3 +51,8 @@ pub struct Account {
 [gpui-form]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form/README.md
 [model]: https://github.com/stayhydated/gpui-form/blob/master/examples/some-lib/src/structs/user.rs
 [gallery]: https://github.com/stayhydated/gpui-form/blob/master/examples/README.md
+
+Enum selectors use `SelectItems<T>` to search the current application’s labels.
+Derive `SelectItem` with `#[select_item(fluent)]` to localize committed titles,
+popup rows, and search through the owning GPUI application. Custom items implement
+`select::ContextualSelectItem`; custom delegates can be supplied explicitly.

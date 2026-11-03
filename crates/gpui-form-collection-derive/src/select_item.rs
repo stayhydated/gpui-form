@@ -64,6 +64,31 @@ pub fn from(input: TokenStream) -> TokenStream {
         quote! { #fallback_title_token.into() }
     };
 
+    let collection = resolve_crate_path("gpui-form-collection", "::gpui_form_collection");
+    let (localized_render, localized_policy) = if args.fluent {
+        let i18n = resolve_crate_path("gpui-es-fluent", "::gpui_es_fluent");
+        (
+            quote! {
+                fn display_title(&self) -> Option<#gpui_kit_crate::AnyElement> {
+                    Some(#collection::select::contextual_title(self.clone()))
+                }
+                fn render(&self, _: &mut #gpui_kit_crate::Window, _: &mut #gpui_kit_crate::App) -> impl #gpui_kit_crate::IntoElement {
+                    #collection::select::contextual_title(self.clone())
+                }
+            },
+            quote! {
+                fn title_in(&self, cx: &#gpui_kit_crate::App) -> #gpui_kit_crate::SharedString {
+                    #i18n::localize_message(cx, self).into()
+                }
+                fn matches_in(&self, query: &str, cx: &#gpui_kit_crate::App) -> bool {
+                    self.title_in(cx).to_lowercase().contains(&query.to_lowercase())
+                }
+            },
+        )
+    } else {
+        (quote! {}, quote! {})
+    };
+
     let expanded = quote! {
         impl #impl_generics #gpui_kit_crate::component::select::SelectItem
             for #item_ident #ty_generics #where_clause
@@ -74,9 +99,15 @@ pub fn from(input: TokenStream) -> TokenStream {
                 #title_token
             }
 
+            #localized_render
+
             fn value(&self) -> &Self::Value {
                 self
             }
+        }
+        impl #impl_generics #collection::select::ContextualSelectItem
+            for #item_ident #ty_generics #where_clause {
+            #localized_policy
         }
     };
 

@@ -54,18 +54,21 @@ semantic_fragment!(ConditionalFragment);
 const FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::aliased("gpui_kit::InteractiveElement", Alias::Anonymous),
     ImportItem::aliased("gpui_kit::ParentElement", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::StatefulInteractiveElement", Alias::Anonymous),
     ImportItem::aliased("gpui_kit::Styled", Alias::Anonymous),
+    ImportItem::aliased("gpui_kit::TestSupportExt", Alias::Anonymous),
 ];
 
 const FIELD_FRAGMENT_IMPORTS: &[ImportItem] = &[
     ImportItem::path("gpui_kit::div"),
     ImportItem::path("gpui_kit::component::form::field"),
+    ImportItem::aliased("gpui_kit::prelude::FluentBuilder", Alias::Anonymous),
 ];
 
-const VALIDATION_FRAGMENT_IMPORTS: &[ImportItem] = &[
-    ImportItem::aliased("gpui_kit::prelude::FluentBuilder", Alias::Anonymous),
-    ImportItem::aliased("gpui_kit::component::ActiveTheme", Alias::Anonymous),
-];
+const VALIDATION_FRAGMENT_IMPORTS: &[ImportItem] = &[ImportItem::aliased(
+    "gpui_kit::component::ActiveTheme",
+    Alias::Anonymous,
+)];
 
 const SUBSCRIPTION_IMPORTS: &[ImportItem] = &[ImportItem::path("gpui_kit::Subscription")];
 

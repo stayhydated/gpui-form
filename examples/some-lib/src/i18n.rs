@@ -55,4 +55,74 @@ mod tests {
             assert_eq!(gpui_es_fluent::localize_label::<User>(cx), "Utilisateur");
         });
     }
+    #[gpui_kit::test]
+    fn enum_select_search_uses_the_current_locale(cx: &mut gpui_kit::TestAppContext) {
+        use crate::structs::user::PreferredLanguage;
+        use gpui_form_collection::select::{ContextualSelectItem as _, SelectItems};
+        use gpui_kit::component::{
+            Root,
+            select::{SelectDelegate as _, SelectItem as _},
+        };
+        use gpui_kit::{AppContext as _, px, size};
+
+        cx.update(|cx| {
+            gpui_kit::init(cx);
+            apply_locale(Languages::En, cx).unwrap();
+        });
+        struct EnumLabel;
+        impl gpui_kit::Render for EnumLabel {
+            fn render(
+                &mut self,
+                _: &mut gpui_kit::Window,
+                _: &mut gpui_kit::Context<Self>,
+            ) -> impl gpui_kit::IntoElement {
+                PreferredLanguage::English.display_title().unwrap()
+            }
+        }
+        use gpui_kit::test::{TestQueryExt as _, TestWindowExt as _};
+        let window = cx.open_window(size(px(400.), px(300.)), |window, cx| {
+            let view = cx.new(|_| EnumLabel);
+            Root::new(view, window, cx)
+        });
+        let mut choices = SelectItems::from(vec![
+            PreferredLanguage::English,
+            PreferredLanguage::French,
+            PreferredLanguage::Chinese,
+        ]);
+        cx.update_window(window.into(), |_, window, cx| {
+            apply_locale(Languages::FrFr, cx).unwrap();
+            let french = PreferredLanguage::English.title_in(cx);
+            assert_eq!(french.as_ref(), "Anglais");
+            window.render_frame(cx);
+            window.render_frame(cx);
+            assert_eq!(
+                window.find_by_label("Anglais").role(),
+                Some(gpui_kit::Role::Paragraph)
+            );
+            let _search = choices.perform_search("ANGLAIS", window, cx);
+            assert_eq!(choices.items_count(0), 1);
+            assert_eq!(
+                choices
+                    .item(gpui_kit::component::IndexPath::new(0))
+                    .unwrap()
+                    .value(),
+                &PreferredLanguage::English
+            );
+            apply_locale(Languages::En, cx).unwrap();
+            assert_eq!(PreferredLanguage::English.title_in(cx).as_ref(), "English");
+            window.render_frame(cx);
+            window.render_frame(cx);
+            assert_eq!(
+                window.find_by_label("English").role(),
+                Some(gpui_kit::Role::Paragraph)
+            );
+            let _search = choices.perform_search("anglais", window, cx);
+            assert_eq!(choices.items_count(0), 0);
+            let _search = choices.perform_search("english", window, cx);
+            assert_eq!(choices.items_count(0), 1);
+            let _search = choices.perform_search("", window, cx);
+            assert_eq!(choices.items_count(0), 3);
+        })
+        .unwrap();
+    }
 }

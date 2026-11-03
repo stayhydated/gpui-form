@@ -11,7 +11,10 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
+use gpui_kit::{
+    InteractiveElement as _, ParentElement as _, StatefulInteractiveElement as _, Styled as _,
+    Subscription, TestSupportExt as _, div,
+};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::new_type::*;
 const CONTEXT: &str = "ItemForm";
@@ -146,17 +149,20 @@ impl Render for ItemForm {
             .child(Separator::horizontal())
             .child(
                 v_form()
-                    .child(
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = ItemLabelVariants::Index;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = ItemLabelVariants::Index;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = ItemDescriptionVariants::Index;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
+                                let show_description = !description.trim().is_empty()
+                                    && description.trim() != label.trim();
                                 let error = {
                                     if true {
                                         validation_errors
@@ -177,25 +183,49 @@ impl Render for ItemForm {
                                         None
                                     }
                                 };
-                                let error_color = cx.theme().danger;
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
-                                        .when(
-                                            error.is_some(),
-                                            |this| {
-                                                this.child(
-                                                    div()
-                                                        .text_color(error_color)
-                                                        .child(error.clone().unwrap_or_default()),
-                                                )
-                                            },
-                                        )
+                                if !show_description && error.is_none() {
+                                    this
+                                } else {
+                                    let error_color = cx.theme().danger;
+                                    let field_label = label.to_string();
+                                    this.description_fn(move |_, _| {
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .when(
+                                                show_description,
+                                                |this| {
+                                                    this.child(
+                                                        div()
+                                                            .id("index-field-description")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(description.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .child(description.clone()),
+                                                    )
+                                                },
+                                            )
+                                            .when_some(
+                                                error.clone(),
+                                                |this, error| {
+                                                    this.child(
+                                                        div()
+                                                            .id("index-field-error")
+                                                            .test_support()
+                                                            .role(gpui_kit::Role::Paragraph)
+                                                            .aria_label(error.clone())
+                                                            .aria_description(field_label.clone())
+                                                            .text_color(error_color)
+                                                            .child(error),
+                                                    )
+                                                },
+                                            )
+                                    })
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     Age,
@@ -204,8 +234,8 @@ impl Render for ItemForm {
                                         Age,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.index),
-                            ),
-                    )
+                            )
+                    })
                     .child(
                         field()
                             .label_indent(false)

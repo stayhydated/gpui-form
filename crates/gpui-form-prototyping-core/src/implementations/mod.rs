@@ -390,16 +390,22 @@ pub fn render_standard_field(
     child_tokens: TokenStream,
     options: &FieldCodegenOptions<'_>,
 ) -> TokenStream {
-    let description_fn_tokens = generate_description_fn_tokens(field, component, options);
     let label_tokens = generate_label_tokens(field, component);
+    let description_fn_tokens = description_for_label(
+        field,
+        component,
+        options,
+        quote! { &__gpui_form_field_label },
+    );
 
     quote! {
-        .child(
+        .child({
+            let __gpui_form_field_label = #label_tokens;
             field()
-                .label(#label_tokens)
                 #description_fn_tokens
+                .label(__gpui_form_field_label)
                 .child(#child_tokens)
-        )
+        })
     }
 }
 
@@ -442,12 +448,30 @@ pub fn generate_label_tokens(
     }
 }
 
+/// Emits distinct support text and independently visible validation messages.
+/// Import `gpui_kit::prelude::FluentBuilder` when using this fragment directly.
 pub fn generate_description_fn_tokens(
     field: &ResolvedField<'_>,
     component: &GpuiFormShape,
     options: &FieldCodegenOptions<'_>,
 ) -> proc_macro2::TokenStream {
+    description_for_label(
+        field,
+        component,
+        options,
+        generate_label_tokens(field, component),
+    )
+}
+
+fn description_for_label(
+    field: &ResolvedField<'_>,
+    component: &GpuiFormShape,
+    options: &FieldCodegenOptions<'_>,
+    label_tokens: TokenStream,
+) -> TokenStream {
     let field_name_ident = field.field_ident();
+    let description_id = format!("{}-field-description", field.field_name());
+    let error_id = format!("{}-field-error", field.field_name());
 
     #[cfg(feature = "fluent")]
     let description_tokens = {
@@ -520,14 +544,13 @@ pub fn generate_description_fn_tokens(
 
     if !field_has_validations && !options.has_additional_validation_message() {
         quote! {
-            .description_fn({
+            .map(|this| {
+                let label = #label_tokens;
                 let description = #description_tokens;
-                move |_, _| {
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(div().child(description.clone()))
+                if description.trim().is_empty() || description.trim() == label.trim() {
+                    this
+                } else {
+                    this.description(description)
                 }
             })
         }
@@ -538,23 +561,46 @@ pub fn generate_description_fn_tokens(
             error_tokens
         };
         quote! {
-            .description_fn({
+            .map(|this| {
+                let label = #label_tokens;
                 let description = #description_tokens;
+                let show_description = !description.trim().is_empty()
+                    && description.trim() != label.trim();
                 let error = #error_tokens;
-                let error_color = #error_color_tokens;
-                move |_, _| {
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(div().child(description.clone()))
-                        .when(error.is_some(), |this| {
-                            this.child(
-                                div()
-                                    .text_color(error_color)
-                                    .child(error.clone().unwrap_or_default()),
-                            )
-                        })
+                if !show_description && error.is_none() {
+                    this
+                } else {
+                    let error_color = #error_color_tokens;
+                    let field_label = label.to_string();
+                    this.description_fn(move |_, _| {
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .when(show_description, |this| {
+                                this.child(
+                                    div()
+                                        .id(#description_id)
+                                        .test_support()
+                                        .role(gpui_kit::Role::Paragraph)
+                                        .aria_label(description.clone())
+                                        .aria_description(field_label.clone())
+                                        .child(description.clone())
+                                )
+                            })
+                            .when_some(error.clone(), |this, error| {
+                                this.child(
+                                    div()
+                                        .id(#error_id)
+                                        .test_support()
+                                        .role(gpui_kit::Role::Paragraph)
+                                        .aria_label(error.clone())
+                                        .aria_description(field_label.clone())
+                                        .text_color(error_color)
+                                        .child(error)
+                                )
+                            })
+                    })
                 }
             })
         }

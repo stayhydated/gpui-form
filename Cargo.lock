@@ -4476,6 +4476,7 @@ version = "0.9.0"
 dependencies = [
  "darling 0.24.1",
  "gpui-form-codegen",
+ "gpui-form-collection",
  "gpui-kit",
  "quote",
  "syn 3.0.9",
