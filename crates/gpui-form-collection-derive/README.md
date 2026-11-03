@@ -5,12 +5,16 @@
 
 `gpui-form-collection-derive` provides `#[derive(SelectItem)]` for enum values
 used by [`gpui-form-collection`][collection] selects. Depend on this macro
-crate directly when deriving select metadata for application enums.
+crate and `gpui-form-collection` directly when deriving select metadata for
+application enums.
 
 Requires Rust 1.99 or newer.
 
 Variant names provide fallback labels. Add `#[select_item(display)]` when
 `SelectItem::title()` should use the enum's `Display` implementation.
+Use `#[select_item(fluent)]` for typed Fluent messages. The generated
+`ContextualSelectItem` implementation reads the owning application's active
+localizer for rendered titles and `SelectItems<T>` searches.
 
 ## Example
 
