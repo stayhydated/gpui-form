@@ -1,4 +1,4 @@
-use chrono::{Datelike as _, Duration, Local, NaiveDate};
+use chrono::{Datelike as _, Duration, Local, Months, NaiveDate};
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable, Size, StyledExt as _,
     button::{Button, ButtonVariants as _},
@@ -128,6 +128,7 @@ pub struct CalendarState {
     date: Date,
     navigation: CalendarNavigation,
     today: NaiveDate,
+    keyboard_cursor: Option<NaiveDate>,
 }
 
 impl CalendarState {
@@ -144,6 +145,7 @@ impl CalendarState {
                 (today.year() - 50, today.year() + 50),
             ),
             today,
+            keyboard_cursor: None,
         }
     }
 
@@ -152,6 +154,7 @@ impl CalendarState {
         let date = date.into();
 
         self.date = date;
+        self.keyboard_cursor = None;
         match self.date {
             Date::Single(Some(date)) => {
                 self.navigation
@@ -165,6 +168,70 @@ impl CalendarState {
         }
 
         cx.notify()
+    }
+
+    // Navigation previews a day; only confirmation changes the selected value.
+    pub(super) fn begin_keyboard(&mut self, cx: &mut Context<Self>) {
+        let anchor = match self.date {
+            Date::Single(value) => value,
+            Date::Range(start, end) => end.or(start),
+        }
+        .unwrap_or(self.today);
+        self.keyboard_cursor = Some(anchor);
+        self.view_mode = ViewMode::Day;
+        self.navigation
+            .set_position(anchor.year(), anchor.month() as u8);
+        cx.notify();
+    }
+
+    pub(super) fn keyboard_key(
+        &mut self,
+        key: &str,
+        shift: bool,
+        locale: &Locale,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        if self.keyboard_cursor.is_none() {
+            self.begin_keyboard(cx);
+        }
+        let cursor = self.keyboard_cursor.expect("keyboard cursor initialized");
+        if matches!(key, "enter" | "space") {
+            let selection = self.date.select(cursor);
+            self.set_date(selection, window, cx);
+            self.keyboard_cursor = Some(cursor);
+            if selection.is_complete() {
+                cx.emit(CalendarEvent::Selected(selection));
+            }
+            return true;
+        }
+        let candidate = match key {
+            "left" => cursor.checked_sub_signed(Duration::days(1)),
+            "right" => cursor.checked_add_signed(Duration::days(1)),
+            "up" => cursor.checked_sub_signed(Duration::days(7)),
+            "down" => cursor.checked_add_signed(Duration::days(7)),
+            "home" | "end" => {
+                let first = i32::from(days_since_sunday(first_weekday(locale)));
+                let offset = (7 + cursor.weekday().num_days_from_sunday() as i32 - first) % 7;
+                let days = if key == "home" { -offset } else { 6 - offset };
+                cursor.checked_add_signed(Duration::days(i64::from(days)))
+            },
+            "pageup" => cursor.checked_sub_months(Months::new(if shift { 12 } else { 1 })),
+            "pagedown" => cursor.checked_add_months(Months::new(if shift { 12 } else { 1 })),
+            _ => return false,
+        };
+        // Pickers publish Jiff dates: an out-of-range preview must never
+        // become an accidental clear when converted at confirmation.
+        if let Some(next) =
+            candidate.filter(|date| date.to_string().parse::<jiff::civil::Date>().is_ok())
+        {
+            self.keyboard_cursor = Some(next);
+            self.navigation
+                .set_position(next.year(), next.month() as u8);
+            self.view_mode = ViewMode::Day;
+            cx.notify();
+        }
+        true
     }
 
     fn offset_year_month(&self, offset_month: usize) -> (i32, u32) {
@@ -266,7 +333,8 @@ impl Calendar {
 
         let date = *d;
         let is_today = *d == state.today;
-        let disabled = false;
+        let is_keyboard_cursor = state.keyboard_cursor == Some(date);
+        let disabled = d.to_string().parse::<jiff::civil::Date>().is_err();
 
         let date_id: SharedString = format!("{}_{}", date.format("%Y-%m-%d"), offset_month).into();
 
@@ -282,6 +350,9 @@ impl Calendar {
         )
         .when(is_today && !is_active, |this| {
             this.border_1().border_color(cx.theme().border)
+        })
+        .when(is_keyboard_cursor, |this| {
+            this.border_2().border_color(cx.theme().ring)
         })
         .when(!disabled, |this| {
             this.on_click(window.listener_for(
@@ -318,7 +389,12 @@ impl Calendar {
                     .icon(IconName::ArrowLeft)
                     .tab_stop(false)
                     .ghost()
-                    .disabled(disabled)
+                    .disabled(
+                        disabled
+                            || (view_mode.is_day()
+                                && current_year == -9999
+                                && state.navigation.current_month() == 1),
+                    )
                     .with_size(icon_size)
                     .when(view_mode.is_day(), |this| {
                         this.on_click(window.listener_for(&self.state, CalendarState::prev_month))
@@ -397,7 +473,12 @@ impl Calendar {
                     .icon(IconName::ArrowRight)
                     .ghost()
                     .tab_stop(false)
-                    .disabled(disabled)
+                    .disabled(
+                        disabled
+                            || (view_mode.is_day()
+                                && current_year == 9999
+                                && state.navigation.current_month() == 12),
+                    )
                     .with_size(icon_size)
                     .when(view_mode.is_day(), |this| {
                         this.on_click(window.listener_for(&self.state, CalendarState::next_month))
@@ -614,12 +695,16 @@ impl Styled for Calendar {
 impl EventEmitter<CalendarEvent> for CalendarState {}
 
 impl RenderOnce for Calendar {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let view_mode = self.state.read(cx).view_mode;
+    fn render(mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let state = self.state.read(cx);
+        let remaining = (9999 - state.navigation.current_year()) * 12 + 13
+            - i32::from(state.navigation.current_month());
+        self.number_of_months = self.number_of_months.min(remaining.max(1) as usize);
+        let view_mode = state.view_mode;
 
         v_flex()
             .id(self.id.clone())
-            .track_focus(&self.state.read(cx).focus_handle)
+            .track_focus(&self.state.read(cx).focus_handle.clone().tab_stop(false))
             .border_1()
             .border_color(cx.theme().border)
             .rounded(cx.theme().radius_lg)
@@ -744,7 +829,9 @@ fn format_day_name(date: &NaiveDate, locale: &Locale) -> SharedString {
     });
     let month = u8::try_from(date.month()).expect("chrono months fit ICU month values");
     let day = u8::try_from(date.day()).expect("chrono days fit ICU day values");
-    let icu_date = IcuDate::try_new_gregorian(date.year(), month, day).unwrap_or_else(|error| {
+    // Only the day number is displayed, including muted grid spillover outside
+    // the selectable civil range. A fixed leap year supports every month/day.
+    let icu_date = IcuDate::try_new_gregorian(2000, month, day).unwrap_or_else(|error| {
         panic!("invalid Gregorian date `{date}` for ICU formatting: {error:?}")
     });
 

@@ -75,6 +75,13 @@ gpui-form-component = { version = "0.8", features = ["component-shape", "derive"
 | Ordered typed rows | `gpui_form_component::row_editor::RowEditor::<Row, Config>` | Implement `RowEditorConfig<Row>`; accept requested values in the caller |
 | Cascading enum choices | `gpui_form_component::infinite_select::InfiniteSelect::<T>` | Derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static` throughout the enum tree |
 
+Date pickers support keyboard selection: Enter/Space/Down opens the focused
+picker; arrows preview days and weeks, Home/End follows the locale's week,
+and Page Up/Down changes month (Shift changes year). Enter/Space confirms.
+Range pickers confirm a start and then an end before emitting a change.
+Escape or Tab cancels the preview; Delete/Backspace requires cleanable.
+Disabled controls do not accept these edits.
+
 Use `gpui_es_fluent::localize_message(cx, &message)` for application text and
 `gpui_es_fluent::localize_label::<MyType>(cx)` for type labels. With an explicit
 localizer, call `i18n.localize_message(&message)` and

@@ -25,6 +25,13 @@ The `derive` feature re-exports `#[derive(InfiniteSelect)]`. The
 `InfiniteSelectEvent`. Confirmed select changes report the previous and current
 values and paths.
 
+Focused date and date-range pickers open with Enter, Space or Down. Arrow
+keys preview days or weeks, Home/End use the locale's week boundaries, and
+Page Up/Down move a month (Shift moves a year). Enter or Space confirms a
+day; ranges emit a change only after both endpoints are selected. Escape or
+Tab discards the preview. Delete/Backspace clears only a cleanable picker.
+Disabled pickers do not accept keyboard edits.
+
 Initialize the application `gpui-es-fluent` resources before using localized
 date, file, row editor or annotated infinite-select text. Render application
 messages with `gpui_es_fluent::localize_message(cx, &message)` and type labels with

@@ -3,13 +3,15 @@ use super::*;
 impl DatePickerState {
     /// Create a new date state.
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        init(cx);
         let calendar = cx.new(|cx| {
             let mut this = CalendarState::new(window, cx);
             this.set_date(CalendarDate::Single(None), window, cx);
             this
         });
 
-        let subscriptions = vec![cx.subscribe_in(
+        let focus_handle = cx.focus_handle();
+        let mut subscriptions = vec![cx.subscribe_in(
             &calendar,
             window,
             |this, _, ev: &CalendarEvent, window, cx| match ev {
@@ -20,9 +22,16 @@ impl DatePickerState {
                 CalendarEvent::Selected(CalendarDate::Range(_, _)) => {},
             },
         )];
+        subscriptions.push(
+            cx.on_focus_out(&focus_handle, window, |this, _, window, cx| {
+                if this.open {
+                    this.close_calendar(window, cx);
+                }
+            }),
+        );
 
         Self {
-            focus_handle: cx.focus_handle(),
+            focus_handle,
             date: None,
             open: false,
             calendar,
@@ -84,6 +93,13 @@ impl DatePickerState {
     pub(super) fn close_calendar(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.focus_back_if_need(window, cx);
         self.open = false;
+        self.calendar.update(cx, |calendar, cx| {
+            calendar.set_date(
+                CalendarDate::Single(self.date.and_then(chrono_date_from_jiff)),
+                window,
+                cx,
+            );
+        });
         cx.notify();
     }
 
@@ -107,24 +123,66 @@ impl DatePickerState {
     pub(super) fn toggle_calendar(
         &mut self,
         _: &ClickEvent,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.open = !self.open;
-        cx.notify();
+        if self.open {
+            self.close_calendar(window, cx);
+        } else {
+            self.open = true;
+            self.focus_handle.focus(window, cx);
+            cx.notify();
+        }
+    }
+
+    pub(super) fn on_keyboard_key(
+        &mut self,
+        key: &str,
+        shift: bool,
+        cleanable: bool,
+        locale: &Locale,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        match key {
+            "enter" | "space" | "down" if !self.open => {
+                self.open = true;
+                self.calendar
+                    .update(cx, |calendar, cx| calendar.begin_keyboard(cx));
+                cx.notify();
+            },
+            "escape" if self.open => self.close_calendar(window, cx),
+            "tab" if self.open => {
+                self.close_calendar(window, cx);
+                return false;
+            },
+            "delete" | "backspace" if cleanable => self.clean(&ClickEvent::default(), window, cx),
+            _ if self.open => {
+                let handled = self.calendar.update(cx, |calendar, cx| {
+                    calendar.keyboard_key(key, shift, locale, window, cx)
+                });
+                if !handled {
+                    return false;
+                }
+            },
+            _ => return false,
+        }
+        true
     }
 }
 
 impl DateRangePickerState {
     /// Create a new date range state.
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        init(cx);
         let calendar = cx.new(|cx| {
             let mut this = CalendarState::new(window, cx);
             this.set_date(CalendarDate::Range(None, None), window, cx);
             this
         });
 
-        let subscriptions = vec![cx.subscribe_in(
+        let focus_handle = cx.focus_handle();
+        let mut subscriptions = vec![cx.subscribe_in(
             &calendar,
             window,
             |this, _, ev: &CalendarEvent, window, cx| match ev {
@@ -141,9 +199,16 @@ impl DateRangePickerState {
                 CalendarEvent::Selected(CalendarDate::Single(_)) => {},
             },
         )];
+        subscriptions.push(
+            cx.on_focus_out(&focus_handle, window, |this, _, window, cx| {
+                if this.open {
+                    this.close_calendar(window, cx);
+                }
+            }),
+        );
 
         Self {
-            focus_handle: cx.focus_handle(),
+            focus_handle,
             start_date: None,
             end_date: None,
             open: false,
@@ -212,6 +277,16 @@ impl DateRangePickerState {
     pub(super) fn close_calendar(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.focus_back_if_need(window, cx);
         self.open = false;
+        self.calendar.update(cx, |calendar, cx| {
+            calendar.set_date(
+                CalendarDate::Range(
+                    self.start_date.and_then(chrono_date_from_jiff),
+                    self.end_date.and_then(chrono_date_from_jiff),
+                ),
+                window,
+                cx,
+            );
+        });
         cx.notify();
     }
 
@@ -235,10 +310,50 @@ impl DateRangePickerState {
     pub(super) fn toggle_calendar(
         &mut self,
         _: &ClickEvent,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.open = !self.open;
-        cx.notify();
+        if self.open {
+            self.close_calendar(window, cx);
+        } else {
+            self.open = true;
+            self.focus_handle.focus(window, cx);
+            cx.notify();
+        }
+    }
+
+    pub(super) fn on_keyboard_key(
+        &mut self,
+        key: &str,
+        shift: bool,
+        cleanable: bool,
+        locale: &Locale,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        match key {
+            "enter" | "space" | "down" if !self.open => {
+                self.open = true;
+                self.calendar
+                    .update(cx, |calendar, cx| calendar.begin_keyboard(cx));
+                cx.notify();
+            },
+            "escape" if self.open => self.close_calendar(window, cx),
+            "tab" if self.open => {
+                self.close_calendar(window, cx);
+                return false;
+            },
+            "delete" | "backspace" if cleanable => self.clean(&ClickEvent::default(), window, cx),
+            _ if self.open => {
+                let handled = self.calendar.update(cx, |calendar, cx| {
+                    calendar.keyboard_key(key, shift, locale, window, cx)
+                });
+                if !handled {
+                    return false;
+                }
+            },
+            _ => return false,
+        }
+        true
     }
 }

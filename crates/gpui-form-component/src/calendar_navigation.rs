@@ -98,6 +98,9 @@ impl CalendarNavigation {
     }
 
     pub(super) fn previous_month(&mut self) {
+        if self.current_year == -9999 && self.current_month == 1 {
+            return;
+        }
         if self.current_month == 1 {
             self.current_month = 12;
             self.current_year = self.current_year.saturating_sub(1);
@@ -108,6 +111,9 @@ impl CalendarNavigation {
     }
 
     pub(super) fn next_month(&mut self) {
+        if self.current_year == 9999 && self.current_month == 12 {
+            return;
+        }
         if self.current_month == 12 {
             self.current_month = 1;
             self.current_year = self.current_year.saturating_add(1);

@@ -24,6 +24,62 @@ use crate::i18n::DatePickerText;
 #[cfg(feature = "component-shape")]
 use gpui_form_runtime::shape::ValueChange;
 
+#[derive(Clone, gpui_kit::Action, PartialEq, Eq, serde::Deserialize)]
+#[action(namespace = gpui_form_date_picker, no_json)]
+struct KeyboardKey {
+    key: String,
+    shift: bool,
+}
+
+struct Keybindings;
+impl gpui_kit::Global for Keybindings {}
+
+fn init(cx: &mut App) {
+    if cx.try_global::<Keybindings>().is_some() {
+        return;
+    }
+    cx.set_global(Keybindings);
+    let keys = [
+        "enter",
+        "space",
+        "down",
+        "up",
+        "left",
+        "right",
+        "home",
+        "end",
+        "pageup",
+        "pagedown",
+        "escape",
+        "tab",
+        "delete",
+        "backspace",
+    ];
+    cx.bind_keys(
+        keys.into_iter()
+            .map(|key| {
+                gpui_kit::KeyBinding::new(
+                    key,
+                    KeyboardKey {
+                        key: key.to_owned(),
+                        shift: false,
+                    },
+                    Some("FormDatePicker"),
+                )
+            })
+            .chain(["pageup", "pagedown", "tab"].into_iter().map(|key| {
+                gpui_kit::KeyBinding::new(
+                    &format!("shift-{key}"),
+                    KeyboardKey {
+                        key: key.to_owned(),
+                        shift: true,
+                    },
+                    Some("FormDatePicker"),
+                )
+            })),
+    );
+}
+
 mod formatting;
 mod state;
 
@@ -377,7 +433,22 @@ impl RenderOnce for DatePicker {
 
         div()
             .id(self.id.clone())
-            .track_focus(&self.focus_handle(cx).tab_stop(true))
+            .track_focus(&self.focus_handle(cx).tab_stop(!self.disabled))
+            .key_context("FormDatePicker")
+            .on_action({
+                let disabled = self.disabled;
+                let cleanable = self.cleanable;
+                let locale = locale.clone();
+                window.listener_for(&self.state, move |state, key: &KeyboardKey, window, cx| {
+                    if disabled
+                        || !state.focus_handle.is_focused(window)
+                        || !state
+                            .on_keyboard_key(&key.key, key.shift, cleanable, &locale, window, cx)
+                    {
+                        cx.propagate();
+                    }
+                })
+            })
             .flex_none()
             .w_full()
             .relative()
@@ -508,7 +579,22 @@ impl RenderOnce for DateRangePicker {
 
         div()
             .id(self.id.clone())
-            .track_focus(&self.focus_handle(cx).tab_stop(true))
+            .track_focus(&self.focus_handle(cx).tab_stop(!self.disabled))
+            .key_context("FormDatePicker")
+            .on_action({
+                let disabled = self.disabled;
+                let cleanable = self.cleanable;
+                let locale = locale.clone();
+                window.listener_for(&self.state, move |state, key: &KeyboardKey, window, cx| {
+                    if disabled
+                        || !state.focus_handle.is_focused(window)
+                        || !state
+                            .on_keyboard_key(&key.key, key.shift, cleanable, &locale, window, cx)
+                    {
+                        cx.propagate();
+                    }
+                })
+            })
             .flex_none()
             .w_full()
             .relative()
