@@ -124,9 +124,8 @@ Prototyping-only helper names use the shape's field suffix.
 | `chrono::NaiveDate` or date pair | Collection `DatePicker` or `DateRangePicker` |
 | `chrono::NaiveTime` | Collection `TimeField` |
 | OTP value | `otp_input::OtpInput::<_>` |
-| Localized date or date pair | Component `DatePicker` or `DateRangePicker` |
-| `Vec<PathBuf>` | `gpui_form_example_component::file_picker::FilePicker` |
-| Cascading enum tree | `gpui_form_example_component::infinite_select::InfiniteSelect::<_>` |
+| `Vec<PathBuf>` | Application-owned file picker; see unpublished `examples/components` |
+| Cascading enum tree | Application-owned cascading selector; see unpublished `examples/components` |
 
 Select values normally derive `SelectItem` and `EnumIter`. Cascading enum trees
 derive `InfiniteSelect` and implement `Clone + Default + PartialEq + 'static`;
