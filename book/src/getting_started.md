@@ -4,12 +4,15 @@ Add a typed form model to an existing GPUI application and construct its
 generated holder and widget state. The final checklist covers the subscriptions
 and rendering needed to connect that state to a view.
 
+The upcoming gpui-form 0.9 line uses GPUI Kit 0.9 and Storybook 0.8.
+The 0.8 line targets Kit 0.8; keep these public GPUI type families together.
+
 ## Prerequisites
 
 - Rust 1.99 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
-- `gpui-kit` 0.8.0.
+- `gpui-kit` 0.9.0.
 
 ## Add the dependencies
 
@@ -18,10 +21,10 @@ ready-made collection shapes and the collection select derive:
 
 ```toml
 [dependencies]
-gpui-kit = "0.8.0"
-gpui-form = "0.8"
-gpui-form-collection = "0.8"
-gpui-form-collection-derive = "0.8"
+gpui-kit = "0.9.0"
+gpui-form = "0.9"
+gpui-form-collection = "0.9"
+gpui-form-collection-derive = "0.9"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
@@ -107,9 +110,9 @@ from the same shape metadata.
 
 | Need | Configuration |
 |---|---|
-| Inventory metadata | `gpui-form = { version = "0.8", features = ["inventory"] }` |
-| MCP tools in a GPUI application | `gpui-form = { version = "0.8", features = ["mcp"] }` |
-| Headless MCP forms | `gpui-form = { version = "0.8", default-features = false, features = ["derive", "mcp"] }` |
+| Inventory metadata | `gpui-form = { version = "0.9", features = ["inventory"] }` |
+| MCP tools in a GPUI application | `gpui-form = { version = "0.9", features = ["mcp"] }` |
+| Headless MCP forms | `gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }` |
 | MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 
