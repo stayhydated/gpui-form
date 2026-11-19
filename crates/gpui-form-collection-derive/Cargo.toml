@@ -21,6 +21,7 @@ quote = { workspace = true }
 syn = { features = [ "full" ], workspace = true }
 
 [dev-dependencies]
+gpui-form-collection = { workspace = true }
 gpui-kit = { workspace = true }
 trybuild = "1.0.122"
 
