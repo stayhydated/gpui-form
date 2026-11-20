@@ -4,16 +4,96 @@ use gpui_kit::component::{
     IndexPath,
     select::{SelectDelegate, SelectEvent, SelectItem, SelectState},
 };
-use gpui_kit::{Context, Window};
+use gpui_kit::{
+    AnyElement, App, Context, InteractiveElement as _, IntoElement as _, ParentElement as _,
+    RenderOnce, SharedString, StatefulInteractiveElement as _, Task, TestSupportExt as _, Window,
+    div,
+};
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
+
+/// Enum label and search policy evaluated in the owning GPUI application's context.
+/// `gpui-form-collection-derive::SelectItem` implements this contract.
+pub trait ContextualSelectItem: SelectItem {
+    fn title_in(&self, _cx: &App) -> SharedString {
+        self.title()
+    }
+    fn matches_in(&self, query: &str, _cx: &App) -> bool {
+        self.matches(query)
+    }
+}
+
+/// Searchable enum choices that preserve values while localizing in the current app.
+#[derive(Clone, Debug)]
+pub struct SelectItems<T> {
+    items: Vec<T>,
+    matched: Vec<usize>,
+}
+impl<T> From<Vec<T>> for SelectItems<T> {
+    fn from(items: Vec<T>) -> Self {
+        Self {
+            matched: (0..items.len()).collect(),
+            items,
+        }
+    }
+}
+impl<T: ContextualSelectItem + 'static> SelectDelegate for SelectItems<T> {
+    type Item = T;
+    fn items_count(&self, _: usize) -> usize {
+        self.matched.len()
+    }
+    fn item(&self, index: IndexPath) -> Option<&T> {
+        self.items.get(*self.matched.get(index.row)?)
+    }
+    fn position<V>(&self, value: &V) -> Option<IndexPath>
+    where
+        T: SelectItem<Value = V>,
+        V: PartialEq,
+    {
+        self.matched
+            .iter()
+            .position(|index| self.items[*index].value() == value)
+            .map(IndexPath::new)
+    }
+    fn perform_search(&mut self, query: &str, _: &mut Window, cx: &mut App) -> Task<()> {
+        self.matched = self
+            .items
+            .iter()
+            .enumerate()
+            .filter_map(|(index, item)| item.matches_in(query, cx).then_some(index))
+            .collect();
+        Task::ready(())
+    }
+}
+
+/// Render a contextual item title when its element reaches its owning window.
+/// Used by derived select items for both committed titles and popup rows.
+#[doc(hidden)]
+pub fn contextual_title<T: ContextualSelectItem + 'static>(item: T) -> AnyElement {
+    ContextualTitle(item).into_any_element()
+}
+#[derive(gpui_kit::IntoElement)]
+struct ContextualTitle<T: ContextualSelectItem + 'static>(T);
+impl<T: ContextualSelectItem + 'static> RenderOnce for ContextualTitle<T> {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl gpui_kit::IntoElement {
+        {
+            let title = self.0.title_in(cx);
+            div()
+                .id("contextual-select-label")
+                .test_support()
+                .role(gpui_kit::Role::Paragraph)
+                .aria_label(title.clone())
+                .child(gpui_kit::component::label::Label::new(title))
+        }
+    }
+}
 
 component_shape! {
     /// Form component for a `gpui_kit::component::select::Select` backed by enum variants.
     ///
     /// The enum type `T` must implement `gpui_kit::component::select::SelectItem`,
     /// usually via `#[derive(SelectItem)]` from `gpui-form-collection-derive`.
-    pub struct Select<T, D = Vec<T>>
+    pub struct Select<T, D = SelectItems<T>>
     where
         T: Clone + Default + IntoEnumIterator + PartialEq + SelectItem<Value = T> + 'static,
         D: SelectDelegate<Item = T> + From<Vec<T>> + 'static,
@@ -101,7 +181,7 @@ where
 }
 
 #[derive(bon::Builder, Clone, Copy, Debug, Eq, PartialEq)]
-pub struct SelectArgs<T, D = Vec<T>> {
+pub struct SelectArgs<T, D = SelectItems<T>> {
     #[builder(default)]
     searchable: bool,
     #[builder(skip)]

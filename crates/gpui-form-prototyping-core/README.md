@@ -31,3 +31,7 @@ No features are enabled by default.
 [crate-badge]: https://img.shields.io/crates/v/gpui-form-prototyping-core.svg?label=gpui-form-prototyping-core
 [crate]: https://crates.io/crates/gpui-form-prototyping-core
 [gpui-form]: https://github.com/stayhydated/gpui-form/blob/master/crates/gpui-form/README.md
+
+Generated fields omit blank descriptions and repetitions of the current label.
+Validation messages remain independently visible as readable paragraphs with
+the full message as their accessible name and the field caption as their description.

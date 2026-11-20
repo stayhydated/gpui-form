@@ -4,29 +4,31 @@ expression: pretty_tokens(tokens)
 ---
 fn __snapshot() {
     __snapshot
-        .child(
+        .child({
+            let __gpui_form_field_label = {
+                let message = DemoLabelVariants::Tags;
+                gpui_es_fluent::localize_message(cx, &message)
+            };
             field()
-                .label({
-                    let message = DemoLabelVariants::Tags;
-                    gpui_es_fluent::localize_message(cx, &message)
-                })
-                .description_fn({
+                .map(|this| {
+                    let label = &__gpui_form_field_label;
                     let description = {
                         let message = DemoDescriptionVariants::Tags;
                         gpui_es_fluent::localize_message(cx, &message)
                     };
-                    move |_, _| {
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap_1()
-                            .child(div().child(description.clone()))
+                    if description.trim().is_empty()
+                        || description.trim() == label.trim()
+                    {
+                        this
+                    } else {
+                        this.description(description)
                     }
                 })
+                .label(__gpui_form_field_label)
                 .child(
                     <<crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::GpuiComponentShape>::RenderComponent as gpui_form::runtime::shape::GpuiComponentRender<
                         <crate::shapes::TagsComboboxShape as gpui_form::runtime::shape::GpuiComponentShape>::State,
                     >>::new(&self.fields.tags),
-                ),
-        );
+                )
+        });
 }
