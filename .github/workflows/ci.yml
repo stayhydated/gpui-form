@@ -49,7 +49,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -88,7 +88,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -107,7 +107,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -126,7 +126,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -163,7 +163,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -261,7 +261,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: v0.16.0
+          version: v0.20.0
       - uses: ./.github/actions/install-linux-deps
       - name: Check isolated facade consumers
         run: bash .github/scripts/check-features.sh
@@ -277,7 +277,7 @@ jobs:
           components: rustfmt
       - uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: v0.16.0
+          version: v0.20.0
       - uses: ./.github/actions/install-linux-deps
       - name: Check deterministic scaffold regeneration
         run: bash .github/scripts/check-scaffolds.sh
@@ -344,7 +344,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
