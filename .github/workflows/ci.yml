@@ -49,7 +49,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -88,7 +88,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -107,7 +107,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -126,7 +126,7 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
@@ -142,11 +142,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.28.0
         with:
-          version: "1.25.1"
+          version: "1.28.0"
       - name: Install cargo-machete
-        run: cargo binstall cargo-machete --version '=0.9.2' --locked --no-confirm
+        run: cargo binstall cargo-machete --version '=0.10.1' --locked --no-confirm
       - name: Check unused dependencies
         run: cargo machete
 
@@ -163,18 +163,18 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
 
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.28.0
         with:
-          version: 1.25.1
+          version: 1.28.0
 
       - name: Install cargo-llvm-cov
         shell: bash
-        run: cargo binstall cargo-llvm-cov --version 0.9.1 --locked --no-confirm
+        run: cargo binstall cargo-llvm-cov --version 0.9.2 --locked --no-confirm
 
       - name: Run coverage
         shell: bash
@@ -204,7 +204,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Install Taplo and ShellCheck
-        uses: taiki-e/install-action@v2.87.27
+        uses: taiki-e/install-action@v2.90.8
         with:
           tool: "taplo@0.10.0,shellcheck@0.11.0"
           checksum: true
@@ -212,23 +212,23 @@ jobs:
       - name: Check TOML formatting
         run: taplo fmt --check
       - name: Check Markdown
-        uses: rvben/rumdl@v0.2.79
+        uses: rvben/rumdl@v0.3.5
         with:
-          version: "0.2.78"
+          version: "0.3.5"
           command: check
           path: "."
           fail-on-error: "true"
       - name: Prevent checkout-controlled typos executable reuse
         run: test ! -e typos && test ! -L typos
       - name: Check spelling
-        uses: crate-ci/typos@v1.42.3
+        uses: crate-ci/typos@v1.52.2
         with:
           write_changes: false
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.28.0
         with:
-          version: "1.25.1"
+          version: "1.28.0"
       - name: Install derive sorter
-        run: cargo binstall cargo-sort-derives --version '=0.13.0' --locked --no-confirm
+        run: cargo binstall cargo-sort-derives --version '=0.15.0' --locked --no-confirm
       - name: Check derive order
         run: cargo sort-derives --check
       - name: Check workflows
@@ -245,7 +245,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check dependency advisories and sources
-        uses: EmbarkStudios/cargo-deny-action@v2.1.1 # cargo-deny 0.20.2
+        uses: EmbarkStudios/cargo-deny-action@v2.1.3 # cargo-deny 0.22.0
         with:
           rust-version: stable
           arguments: "--workspace --all-features --locked"
@@ -261,7 +261,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: v0.16.0
+          version: v0.20.0
       - uses: ./.github/actions/install-linux-deps
       - name: Check isolated facade consumers
         run: bash .github/scripts/check-features.sh
@@ -277,7 +277,7 @@ jobs:
           components: rustfmt
       - uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: v0.16.0
+          version: v0.20.0
       - uses: ./.github/actions/install-linux-deps
       - name: Check deterministic scaffold regeneration
         run: bash .github/scripts/check-scaffolds.sh
@@ -301,12 +301,12 @@ jobs:
         run: |
           rustup toolchain install nightly --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly
-      - uses: cargo-bins/cargo-binstall@v1.25.3
+      - uses: cargo-bins/cargo-binstall@v1.28.0
         with:
-          version: 1.25.1
+          version: 1.28.0
       - name: Install publication tools
         run: |
-          cargo binstall dioxus-cli --version 0.7.9 --locked --no-confirm
+          cargo binstall dioxus-cli --version 0.7.10 --locked --no-confirm
           cargo binstall trunk --version 0.21.14 --locked --no-confirm
       - name: Check the committed dependency lockfile
         run: cargo metadata --locked --format-version 1 > /dev/null
@@ -344,13 +344,13 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          version: "v0.16.0"
+          version: "v0.20.0"
 
       - name: Install Linux dependencies
         uses: ./.github/actions/install-linux-deps
 
       - name: Publish unpublished crate versions
-        uses: release-plz/action@v0.5.133
+        uses: release-plz/action@v0.5.148
         with:
           command: release
           version: 0.3.162
