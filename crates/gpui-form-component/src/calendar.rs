@@ -907,6 +907,50 @@ mod tests {
         assert_eq!(fr_days[0][0], Some(CivilDate::new(2025, 9, 1).unwrap()));
         assert_eq!(fr_days[0][6], Some(CivilDate::new(2025, 9, 7).unwrap()));
     }
+    #[gpui_kit::test]
+    fn renders_adjacent_months_but_not_months_past_jiff_maximum(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::{
+            AppContext as _, Context, Entity, IntoElement, Render, VisualTestContext, Window,
+        };
+
+        use super::{Calendar, CalendarState};
+
+        struct CalendarView(Entity<CalendarState>);
+
+        impl Render for CalendarView {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                Calendar::new(&self.0)
+                    .number_of_months(2)
+                    .display_locale(locale!("fr-FR"))
+            }
+        }
+
+        cx.update(gpui_kit::component::init);
+        let window =
+            cx.add_window(|window, cx| CalendarView(cx.new(|cx| CalendarState::new(window, cx))));
+        let state = window.update(cx, |view, _, _| view.0.clone()).unwrap();
+        let mut visual = VisualTestContext::from_window(window.into(), cx);
+
+        for (selection, offsets) in [
+            (
+                Date::Range(
+                    Some(CivilDate::new(2024, 12, 30).unwrap()),
+                    Some(CivilDate::new(2025, 1, 3).unwrap()),
+                ),
+                vec![0, 1],
+            ),
+            (Date::from(CivilDate::MAX), vec![0]),
+        ] {
+            visual.update(|window, cx| {
+                state.update(cx, |state, cx| state.set_date(selection, window, cx));
+                let state = state.read(cx);
+                assert_eq!(state.date, selection);
+                assert_eq!(state.visible_offsets(2).collect::<Vec<_>>(), offsets);
+            });
+            visual.update(|window, cx| window.draw(cx).clear(cx));
+        }
+    }
+
     #[test]
     fn calendar_grid_keeps_representable_days_at_civil_boundaries() {
         let first = days_in_month(i32::from(CivilDate::MIN.year()), 1, Weekday::Sunday);

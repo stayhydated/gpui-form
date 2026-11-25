@@ -35,6 +35,7 @@ MCP setup is:
 [dependencies]
 gpui-form = { path = "../gpui-form/crates/gpui-form", default-features = false, features = ["derive", "mcp", "jiff"] }
 jiff = "1.0"
+serde = { version = "1", features = ["derive"] }
 ```
 
 If the checkout consumer also renders forms, use GPUI Kit 0.11 and keep
@@ -54,7 +55,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, GpuiForm, Serialize)]
 #[gpui_form(mcp(name = "submit_contact", title = "Submit contact request"))]
-struct ContactRequest {
+pub struct ContactRequest {
     #[gpui_form(hidden)]
     email: String,
 }

@@ -168,6 +168,24 @@ mod tests {
     }
 
     #[test]
+    fn month_navigation_stops_at_jiff_boundaries() {
+        use jiff::civil::Date;
+
+        let first_year = i32::from(Date::MIN.year());
+        let last_year = i32::from(Date::MAX.year());
+        let mut first = CalendarNavigation::new(first_year, 1, (first_year, first_year + 1));
+        first.previous_month();
+        assert_eq!(
+            (first.current_year(), first.current_month()),
+            (first_year, 1)
+        );
+
+        let mut last = CalendarNavigation::new(last_year, 12, (last_year, last_year + 1));
+        last.next_month();
+        assert_eq!((last.current_year(), last.current_month()), (last_year, 12));
+    }
+
+    #[test]
     fn year_pages_track_the_selected_year_and_stop_at_boundaries() {
         let mut navigation = CalendarNavigation::new(2025, 6, (2000, 2050));
         assert_eq!(
