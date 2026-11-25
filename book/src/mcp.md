@@ -7,7 +7,8 @@ session management.
 
 ## Add MCP support
 
-For a crate that also renders GPUI forms:
+These registry examples use the published Form 0.9 line. If the application
+also renders GPUI forms, use it with GPUI Kit 0.9:
 
 ```toml
 [dependencies]
@@ -22,10 +23,25 @@ explicitly:
 gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }
 ```
 
-Add `jiff` beside `mcp` for `jiff::civil::Date`, `jiff::civil::DateTime`,
-and `jiff::Timestamp` fields or responses. A civil date-time represents a
-wall-clock value with no offset; use a timestamp for an RFC 3339 instant.
-Enable `rust_decimal` beside `mcp` for decimal values.
+Form 0.9 uses the `chrono` feature for date and time schemas. Both the
+published and development versions support decimal schemas through `rust_decimal`.
+
+### Use Jiff in a development checkout
+
+For an application in a sibling directory of a Form checkout, the headless
+MCP setup is:
+
+```toml
+[dependencies]
+gpui-form = { path = "../gpui-form/crates/gpui-form", default-features = false, features = ["derive", "mcp", "jiff"] }
+jiff = "1.0"
+```
+
+If the checkout consumer also renders forms, use GPUI Kit 0.11 and keep
+Storybook on 0.9 when used. Enable `jiff` beside `mcp` for schemas of
+`jiff::civil::Date`, `jiff::civil::DateTime`, and `jiff::Timestamp`. A civil
+date-time represents a wall-clock value with no offset; use a timestamp for an
+RFC 3339 instant.
 
 ## Define a form and handler
 

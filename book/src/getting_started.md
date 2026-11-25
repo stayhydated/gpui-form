@@ -110,13 +110,18 @@ from the same shape metadata.
 
 ## Choose optional features
 
+These configurations apply to the published Form 0.9 line.
+
 | Need | Configuration |
 |---|---|
 | Inventory metadata | `gpui-form = { version = "0.9", features = ["inventory"] }` |
 | MCP tools in a GPUI application | `gpui-form = { version = "0.9", features = ["mcp"] }` |
 | Headless MCP forms | `gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }` |
-| MCP schemas for Jiff or decimal values | Add `jiff` or `rust_decimal` beside `mcp` |
+| MCP schemas in published Form 0.9 | Add `chrono` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
+
+For the development checkout, see [MCP form tools](mcp.md#use-jiff-in-a-development-checkout)
+for the Jiff schema feature and working dependency setup.
 
 ## Check the result
 
