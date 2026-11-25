@@ -22,8 +22,10 @@ explicitly:
 gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }
 ```
 
-Add `chrono` or `rust_decimal` beside `mcp` when exposed fields or responses
-use those values.
+Add `jiff` beside `mcp` for `jiff::civil::Date`, `jiff::civil::DateTime`,
+and `jiff::Timestamp` fields or responses. A civil date-time represents a
+wall-clock value with no offset; use a timestamp for an RFC 3339 instant.
+Enable `rust_decimal` beside `mcp` for decimal values.
 
 ## Define a form and handler
 

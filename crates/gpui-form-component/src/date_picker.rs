@@ -1,6 +1,5 @@
 use std::{ops::Deref as _, str::FromStr as _};
 
-use chrono::{Datelike as _, NaiveDate};
 use gpui_es_fluent::localize_message;
 use gpui_kit::component::{
     ActiveTheme as _, Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledExt as _,
@@ -63,25 +62,21 @@ pub struct DatePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<chrono::NaiveDate>
-    for DatePickerState
-{
+impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<JiffDate> for DatePickerState {
     type Event = DatePickerEvent;
 
     fn seed_value_binding_state(
         state: &mut Self,
-        value: Option<&chrono::NaiveDate>,
+        value: Option<&JiffDate>,
         window: &mut Window,
         cx: &mut Context<'_, Self>,
     ) {
-        let date = value.and_then(|value| value.to_string().parse::<JiffDate>().ok());
-        state.set_date(date, window, cx);
+        state.set_date(value.copied(), window, cx);
     }
 
-    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<chrono::NaiveDate> {
+    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<JiffDate> {
         match event {
-            DatePickerEvent::Change(Some(date)) => parse_form_date::<chrono::NaiveDate>(*date)
-                .map_or(ValueChange::Unchanged, ValueChange::Set),
+            DatePickerEvent::Change(Some(date)) => ValueChange::Set(*date),
             DatePickerEvent::Change(None) => ValueChange::Clear,
         }
     }
@@ -108,34 +103,29 @@ pub struct DateRangePickerState {
 }
 
 #[cfg(feature = "component-shape")]
-impl
-    gpui_form_runtime::shape::GpuiComponentStateValueBinding<(chrono::NaiveDate, chrono::NaiveDate)>
+impl gpui_form_runtime::shape::GpuiComponentStateValueBinding<(JiffDate, JiffDate)>
     for DateRangePickerState
 {
     type Event = DateRangePickerEvent;
 
     fn seed_value_binding_state(
         state: &mut Self,
-        value: Option<&(chrono::NaiveDate, chrono::NaiveDate)>,
+        value: Option<&(JiffDate, JiffDate)>,
         window: &mut Window,
         cx: &mut Context<'_, Self>,
     ) {
         state.set_range(
-            value.and_then(|(start, _)| jiff_date_from_chrono(*start)),
-            value.and_then(|(_, end)| jiff_date_from_chrono(*end)),
+            value.map(|(start, _)| *start),
+            value.map(|(_, end)| *end),
             window,
             cx,
         );
     }
 
-    fn value_change(
-        _state: &Self,
-        event: &Self::Event,
-    ) -> ValueChange<(chrono::NaiveDate, chrono::NaiveDate)> {
+    fn value_change(_state: &Self, event: &Self::Event) -> ValueChange<(JiffDate, JiffDate)> {
         match event {
             DateRangePickerEvent::Change(Some(start), Some(end)) => {
-                jiff_date_range_from_chrono(*start, *end)
-                    .map_or(ValueChange::Unchanged, ValueChange::Set)
+                ValueChange::Set((*start, *end))
             },
             DateRangePickerEvent::Change(_, _) => ValueChange::Clear,
         }
@@ -171,7 +161,7 @@ impl Render for DateRangePickerState {
     feature = "component-shape",
     gpui_component_shape(
         state = DatePickerState,
-        value = chrono::NaiveDate,
+        value = jiff::civil::Date,
         field_suffix = "date_picker",
         value_binding
     )
@@ -203,7 +193,7 @@ impl gpui_form_runtime::shape::GpuiFormComponentShapePolicy for DatePicker {
     feature = "component-shape",
     gpui_component_shape(
         state = DateRangePickerState,
-        value = (chrono::NaiveDate, chrono::NaiveDate),
+        value = (jiff::civil::Date, jiff::civil::Date),
         field_suffix = "date_range_picker",
         value_binding
     )

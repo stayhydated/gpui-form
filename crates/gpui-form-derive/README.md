@@ -6,7 +6,7 @@
 `gpui-form-derive` provides the procedural macros behind `gpui-form` for
 derive-only and lower-level integrations.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 Most applications enable `derive` on the [`gpui-form` facade][gpui-form],
 which re-exports the macros and generated runtime paths. Depend directly on this

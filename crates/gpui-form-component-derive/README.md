@@ -7,7 +7,7 @@
 trees used by `gpui-form-component`. Depend directly on this crate when
 managing macro imports separately from the component runtime.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 Most applications enable the `derive` feature on
 [`gpui-form-component`][gpui-form-component], which re-exports the macro as

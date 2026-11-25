@@ -23,7 +23,6 @@ derive = [ "dep:gpui-form-component-derive" ]
 
 [dependencies]
 bon = { optional = true, workspace = true }
-chrono = { workspace = true }
 component-shape = { optional = true, workspace = true }
 component-shape-gpui = { optional = true, workspace = true }
 es-fluent = { workspace = true }
@@ -37,6 +36,9 @@ icu_datetime = { workspace = true }
 icu_locale_core = { workspace = true }
 jiff = { workspace = true }
 serde = { workspace = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+jiff = { features = [ "js" ], workspace = true }
 
 [build-dependencies]
 es-fluent-build = { workspace = true }

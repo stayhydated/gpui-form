@@ -44,7 +44,6 @@ mod tests {
         switch::{Switch, SwitchEvent, SwitchField, SwitchState},
         time_field::TimeField,
     };
-    use chrono::{NaiveDate, NaiveTime};
     use component_shape::{
         ComponentShapeMetadata, DeclaredComponentShape, McpInputShape, McpPrimitiveKind,
         ValueChange,
@@ -63,6 +62,7 @@ mod tests {
         AppContext as _, Context, Empty, Entity, EventEmitter, Hsla, IntoElement, Render,
         SharedString, TestAppContext, Window,
     };
+    use jiff::civil::{Date as CivilDate, Time};
     use strum::IntoEnumIterator;
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -143,16 +143,16 @@ mod tests {
         assert_value_binding::<ColorPicker, Hsla>();
 
         assert_declared_shape::<DatePicker>();
-        assert_shape_for::<DatePicker, NaiveDate>();
-        assert_value_binding::<DatePicker, NaiveDate>();
+        assert_shape_for::<DatePicker, CivilDate>();
+        assert_value_binding::<DatePicker, CivilDate>();
 
         assert_declared_shape::<DateRangePicker>();
-        assert_shape_for::<DateRangePicker, (NaiveDate, NaiveDate)>();
-        assert_value_binding::<DateRangePicker, (NaiveDate, NaiveDate)>();
+        assert_shape_for::<DateRangePicker, (CivilDate, CivilDate)>();
+        assert_value_binding::<DateRangePicker, (CivilDate, CivilDate)>();
 
         assert_declared_shape::<TimeField>();
-        assert_shape_for::<TimeField, NaiveTime>();
-        assert_value_binding::<TimeField, NaiveTime>();
+        assert_shape_for::<TimeField, Time>();
+        assert_value_binding::<TimeField, Time>();
 
         assert_declared_shape::<Input<String>>();
         assert_shape_for::<Input<String>, String>();

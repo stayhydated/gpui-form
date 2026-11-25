@@ -8,7 +8,7 @@ fn test_type_override_and_conversions() {
             #[gpui_form(component(
                 crate::DatePickerState,
                 value(
-                    type = chrono::NaiveDate,
+                    type = jiff::civil::Date,
                     from_source = |ts| to_form(ts),
                     into_source = |dt| to_model(dt),
                 )
@@ -30,7 +30,7 @@ fn test_type_override_and_conversions() {
 
     assert!(
         compact.contains(
-            "FieldVariant::component_for_field(\"birth_date\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"Timestamp\"),::gpui_form::schema::registry::FieldValuePresence::Optional)"
+            "FieldVariant::component_for_field(\"birth_date\",::gpui_form::schema::registry::FieldValueSpec::new(::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"jiff::civil::Date\"),::gpui_form::schema::registry::RustType::from_macro_tokens_unchecked(\"Timestamp\"),::gpui_form::schema::registry::FieldValuePresence::Optional)"
         ),
         "FieldVariant should use override type for metadata"
     );
@@ -46,9 +46,9 @@ fn test_type_override_and_conversions() {
     );
     assert!(
         compact.contains("fnassert_source_to_form<F>(_:F)")
-            && compact.contains("F:::core::ops::FnOnce(Timestamp)->chrono::NaiveDate")
+            && compact.contains("F:::core::ops::FnOnce(Timestamp)->jiff::civil::Date")
             && compact.contains("fnassert_form_to_source<F>(_:F)")
-            && compact.contains("F:::core::ops::FnOnce(chrono::NaiveDate)->Timestamp"),
+            && compact.contains("F:::core::ops::FnOnce(jiff::civil::Date)->Timestamp"),
         "Generated holders should assert explicit conversion signatures: {compact}"
     );
     assert!(
@@ -121,7 +121,7 @@ fn test_skipped_fields_generate_from_original() {
             #[gpui_form(component(
                 crate::DatePickerState,
                 value(
-                    type = chrono::NaiveDate,
+                    type = jiff::civil::Date,
                     from_source = |ts| to_form(ts),
                     into_source = |dt| to_model(dt),
                 )
@@ -180,7 +180,7 @@ fn test_present_fields_uses_typed_converted_values_for_skipped_forms() {
             #[gpui_form(component(
                 crate::DatePickerState,
                 value(
-                    type = chrono::NaiveDate,
+                    type = jiff::civil::Date,
                     from_source = |ts| to_form(ts),
                     into_source = |dt| to_model(dt),
                 )

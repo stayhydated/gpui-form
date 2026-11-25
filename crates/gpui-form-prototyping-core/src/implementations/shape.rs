@@ -599,7 +599,7 @@ mod tests {
         const FIELDS: [FieldVariant; 1] = [FieldVariant::component(
             ComponentFieldName::new("birth_date"),
             FieldValueSpec::new(
-                RustType::from_macro_tokens_unchecked("chrono::NaiveDate"),
+                RustType::from_macro_tokens_unchecked("jiff::civil::Date"),
                 RustType::from_macro_tokens_unchecked("Timestamp"),
                 FieldValuePresence::DirectStorage,
             )

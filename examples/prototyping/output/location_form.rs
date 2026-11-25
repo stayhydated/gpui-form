@@ -6,10 +6,14 @@ use gpui_kit::component::form::field;
 use gpui_kit::component::form::v_form;
 use gpui_kit::component::separator::Separator;
 use gpui_kit::component::v_flex;
+use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     App, AppContext as _, Context, Entity, FocusHandle, Focusable, IntoElement, Render, Window,
 };
-use gpui_kit::{InteractiveElement as _, ParentElement as _, Styled as _, Subscription, div};
+use gpui_kit::{
+    InteractiveElement as _, ParentElement as _, StatefulInteractiveElement as _, Styled as _,
+    Subscription, TestSupportExt as _, div,
+};
 use some_lib::structs::form_action::FormAction;
 use some_lib::structs::location::*;
 const CONTEXT: &str = "LocationFormForm";
@@ -182,25 +186,27 @@ impl Render for LocationFormForm {
             .child(Separator::horizontal())
             .child(
                 v_form()
-                    .child(
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = LocationFormLabelVariants::Name;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = LocationFormLabelVariants::Name;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = LocationFormDescriptionVariants::Name;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_collection::input::Input<
                                     String,
@@ -209,27 +215,29 @@ impl Render for LocationFormForm {
                                         String,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.name),
-                            ),
-                    )
-                    .child(
+                            )
+                    })
+                    .child({
+                        let __gpui_form_field_label = {
+                            let message = LocationFormLabelVariants::Location;
+                            gpui_es_fluent::localize_message(cx, &message)
+                        };
                         field()
-                            .label({
-                                let message = LocationFormLabelVariants::Location;
-                                gpui_es_fluent::localize_message(cx, &message)
-                            })
-                            .description_fn({
+                            .map(|this| {
+                                let label = &__gpui_form_field_label;
                                 let description = {
                                     let message = LocationFormDescriptionVariants::Location;
                                     gpui_es_fluent::localize_message(cx, &message)
                                 };
-                                move |_, _| {
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(div().child(description.clone()))
+                                if description.trim().is_empty()
+                                    || description.trim() == label.trim()
+                                {
+                                    this
+                                } else {
+                                    this.description(description)
                                 }
                             })
+                            .label(__gpui_form_field_label)
                             .child(
                                 <<gpui_form_component::infinite_select::InfiniteSelect<
                                     Country,
@@ -238,8 +246,8 @@ impl Render for LocationFormForm {
                                         Country,
                                     > as gpui_form::runtime::shape::GpuiComponentShape>::State,
                                 >>::new(&self.fields.location),
-                            ),
-                    )
+                            )
+                    })
                     .child(
                         field()
                             .label_indent(false)

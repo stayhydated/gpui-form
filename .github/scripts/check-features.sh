@@ -28,12 +28,12 @@ publish = false
 derive = []
 runtime = []
 mcp = []
-chrono = ["dep:chrono"]
+jiff = ["dep:jiff"]
 rust_decimal = ["dep:rust_decimal"]
 
 [dependencies]
 gpui-form = { path = "$repo_root/crates/gpui-form", default-features = $defaults, features = [$feature_list] }
-chrono = { version = "0.4", optional = true }
+jiff = { version = "1.0.3", optional = true }
 rust_decimal = { version = "1.43", optional = true }
 EOF
     # Each temporary workspace is a Cargo root, so dependency source patches
@@ -73,5 +73,5 @@ check minimal false "" ""
 check derive false "derive" "derive"
 check runtime false "runtime" "runtime"
 check mcp false "mcp" "mcp"
-check mcp-chrono false "mcp,chrono" "mcp,chrono"
+check mcp-jiff false "mcp,jiff" "mcp,jiff"
 check mcp-decimal false "mcp,rust_decimal" "mcp,rust_decimal"

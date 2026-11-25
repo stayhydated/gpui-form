@@ -8,7 +8,7 @@ for generated `gpui-form` holders. Applications normally enable `mcp` on
 the [`gpui-form` facade][gpui-form]; depend directly on this experimental crate
 when composing an existing MCP host.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 ## Overview
 
@@ -24,7 +24,7 @@ No features are enabled by default. Facade consumers select the corresponding
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `chrono` | No | Enable Chrono schemas through `component-shape-mcp/chrono`. |
+| `jiff` | No | Enable Jiff schemas through `component-shape-mcp/jiff`. |
 | `rust_decimal` | No | Enable Decimal schemas through `component-shape-mcp/rust_decimal`. |
 
 [codecov-badge]: https://codecov.io/github/stayhydated/gpui-form/graph/badge.svg?branch=master&component=gpui-form-mcp

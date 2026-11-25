@@ -163,13 +163,22 @@ fn input_schema_supports_nested_optional_vec_types() {
     );
 }
 
-#[cfg(feature = "chrono")]
+#[cfg(feature = "jiff")]
 #[test]
-fn mcp_json_schema_supports_chrono_when_feature_enabled() {
-    let schema = <chrono::NaiveDate as crate::McpJsonSchema>::json_schema();
+fn mcp_json_schema_supports_jiff_when_feature_enabled() {
+    use crate::McpJsonSchema as _;
 
-    assert_eq!(schema["type"], "string");
-    assert_eq!(schema["format"], "date");
+    let date = jiff::civil::Date::json_schema();
+    assert_eq!(date["type"], "string");
+    assert_eq!(date["format"], "date");
+
+    let civil = jiff::civil::DateTime::json_schema();
+    assert_eq!(civil["type"], "string");
+    assert!(civil.as_value().get("format").is_none());
+
+    let instant = jiff::Timestamp::json_schema();
+    assert_eq!(instant["type"], "string");
+    assert_eq!(instant["format"], "date-time");
 }
 
 #[cfg(feature = "rust_decimal")]

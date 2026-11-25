@@ -4,12 +4,13 @@ Add a typed form model to an existing GPUI application and construct its
 generated holder and widget state. The final checklist covers the subscriptions
 and rendering needed to connect that state to a view.
 
-The gpui-form 0.9 line uses GPUI Kit 0.9 and Storybook 0.8.
-The 0.8 line targets Kit 0.8; keep these public GPUI type families together.
+The development branch uses GPUI Kit 0.11 and Storybook 0.9. The published
+gpui-form 0.9 line uses Kit 0.9 and Storybook 0.8, and the gpui-form 0.8 line
+targets Kit 0.8. Keep these public GPUI type families together.
 
 ## Prerequisites
 
-- Rust 1.99 or newer.
+- Rust 1.100 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
 - `gpui-kit` 0.9.0.
@@ -17,7 +18,8 @@ The 0.8 line targets Kit 0.8; keep these public GPUI type families together.
 ## Add the dependencies
 
 Use `gpui-form` for the derive and generated runtime paths. This example uses
-ready-made collection shapes and the collection select derive:
+ready-made collection shapes and the collection select derive. The block is for
+the published Form 0.9 line and uses its matching Kit version:
 
 ```toml
 [dependencies]
@@ -113,7 +115,7 @@ from the same shape metadata.
 | Inventory metadata | `gpui-form = { version = "0.9", features = ["inventory"] }` |
 | MCP tools in a GPUI application | `gpui-form = { version = "0.9", features = ["mcp"] }` |
 | Headless MCP forms | `gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }` |
-| MCP schemas for Chrono or decimal values | Add `chrono` or `rust_decimal` beside `mcp` |
+| MCP schemas for Jiff or decimal values | Add `jiff` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 
 ## Check the result

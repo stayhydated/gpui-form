@@ -25,10 +25,10 @@ fn facade_mcp_reexports_component_shape_mcp_derives() {
     );
 }
 
-#[cfg(feature = "chrono")]
+#[cfg(feature = "jiff")]
 #[test]
-fn facade_mcp_schema_supports_chrono_when_feature_enabled() {
-    let schema = <chrono::NaiveDate as gpui_form::mcp::McpJsonSchema>::json_schema();
+fn facade_mcp_schema_supports_jiff_when_feature_enabled() {
+    let schema = <jiff::civil::Date as gpui_form::mcp::McpJsonSchema>::json_schema();
 
     assert_eq!(schema["type"], "string");
     assert_eq!(schema["format"], "date");

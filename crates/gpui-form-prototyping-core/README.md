@@ -6,7 +6,7 @@
 `gpui-form-prototyping-core` generates GPUI form scaffolds from concrete
 `GpuiFormShape` inventory registrations for application-owned layouts.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 Enable `inventory` on the [`gpui-form` facade][gpui-form] and link the crate
 that owns the concrete forms into the generator. Implement `FormLayout` for

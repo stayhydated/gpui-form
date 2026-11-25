@@ -13,8 +13,8 @@ fn main() {
     {
         use gpui_form::mcp::McpJsonSchema as _;
         let _ = i32::json_schema();
-        #[cfg(feature = "chrono")]
-        let _ = chrono::NaiveDate::json_schema();
+        #[cfg(feature = "jiff")]
+        let _ = jiff::civil::Date::json_schema();
         #[cfg(feature = "rust_decimal")]
         let _ = rust_decimal::Decimal::json_schema();
     }

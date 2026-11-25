@@ -1,3 +1,5 @@
+use jiff::civil::Date;
+
 const YEARS_PER_PAGE: usize = 20;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -64,8 +66,8 @@ impl CalendarNavigation {
     }
 
     pub(super) fn offset_year_month(&self, offset_month: usize) -> (i32, u32) {
-        let month_index =
-            i64::from(self.current_month - 1) + i64::try_from(offset_month).unwrap_or(i64::MAX);
+        let month_index = i64::from(self.current_month - 1)
+            .saturating_add(i64::try_from(offset_month).unwrap_or(i64::MAX));
         let year_offset = month_index.div_euclid(12);
         let year = i64::from(self.current_year).saturating_add(year_offset);
         let year = i32::try_from(year).unwrap_or(i32::MAX);
@@ -99,6 +101,9 @@ impl CalendarNavigation {
 
     pub(super) fn previous_month(&mut self) {
         if self.current_month == 1 {
+            if self.current_year == i32::from(Date::MIN.year()) {
+                return;
+            }
             self.current_month = 12;
             self.current_year = self.current_year.saturating_sub(1);
             self.select_page_for_current_year();
@@ -109,6 +114,9 @@ impl CalendarNavigation {
 
     pub(super) fn next_month(&mut self) {
         if self.current_month == 12 {
+            if self.current_year == i32::from(Date::MAX.year()) {
+                return;
+            }
             self.current_month = 1;
             self.current_year = self.current_year.saturating_add(1);
             self.select_page_for_current_year();

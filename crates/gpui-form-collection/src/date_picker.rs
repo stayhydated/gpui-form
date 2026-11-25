@@ -1,4 +1,3 @@
-use chrono::NaiveDate;
 use component_shape::ValueChange;
 use component_shape_gpui::{GpuiComponentValueBinding, component_shape};
 use gpui_kit::component::{
@@ -6,8 +5,9 @@ use gpui_kit::component::{
     date_picker::{DatePickerEvent, DatePickerState},
 };
 use gpui_kit::{Context, Window};
+use jiff::civil::Date as CivilDate;
 
-fn date_picker_value_change(event: &DatePickerEvent) -> ValueChange<NaiveDate> {
+fn date_picker_value_change(event: &DatePickerEvent) -> ValueChange<CivilDate> {
     match event {
         DatePickerEvent::Change(value) => match value.date() {
             Date::Single(Some(date)) => ValueChange::Set(date),
@@ -17,7 +17,7 @@ fn date_picker_value_change(event: &DatePickerEvent) -> ValueChange<NaiveDate> {
     }
 }
 
-fn date_range_picker_value_change(event: &DatePickerEvent) -> ValueChange<(NaiveDate, NaiveDate)> {
+fn date_range_picker_value_change(event: &DatePickerEvent) -> ValueChange<(CivilDate, CivilDate)> {
     match event {
         DatePickerEvent::Change(value) => match value.date() {
             Date::Range(Some(start), Some(end)) => ValueChange::Set((start, end)),
@@ -32,23 +32,23 @@ component_shape! {
     pub struct DatePicker {
         state = DatePickerState;
         component = gpui_kit::component::date_picker::DatePicker;
-        value = NaiveDate;
+        value = jiff::civil::Date;
         field_suffix = "date_picker";
         value_binding;
 
-        impl GpuiComponentValueBinding<NaiveDate> for DatePicker {
+        impl GpuiComponentValueBinding<CivilDate> for DatePicker {
             type Event = DatePickerEvent;
 
             fn seed_value_binding_state(
                 state: &mut Self::State,
-                value: Option<&NaiveDate>,
+                value: Option<&CivilDate>,
                 window: &mut Window,
                 cx: &mut Context<'_, Self::State>,
             ) {
                 state.set_date(Date::Single(value.copied()), window, cx);
             }
 
-            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<NaiveDate> {
+            fn value_change(_state: &Self::State, event: &Self::Event) -> ValueChange<CivilDate> {
                 date_picker_value_change(event)
             }
         }
@@ -63,16 +63,16 @@ component_shape! {
         state = DatePickerState;
         new = DatePickerState::range;
         component = gpui_kit::component::date_picker::DatePicker;
-        value = (NaiveDate, NaiveDate);
+        value = (jiff::civil::Date, jiff::civil::Date);
         field_suffix = "date_range_picker";
         value_binding;
 
-        impl GpuiComponentValueBinding<(NaiveDate, NaiveDate)> for DateRangePicker {
+        impl GpuiComponentValueBinding<(CivilDate, CivilDate)> for DateRangePicker {
             type Event = DatePickerEvent;
 
             fn seed_value_binding_state(
                 state: &mut Self::State,
-                value: Option<&(NaiveDate, NaiveDate)>,
+                value: Option<&(CivilDate, CivilDate)>,
                 window: &mut Window,
                 cx: &mut Context<'_, Self::State>,
             ) {
@@ -86,7 +86,7 @@ component_shape! {
             fn value_change(
                 _state: &Self::State,
                 event: &Self::Event,
-            ) -> ValueChange<(NaiveDate, NaiveDate)> {
+            ) -> ValueChange<(CivilDate, CivilDate)> {
                 date_range_picker_value_change(event)
             }
         }
@@ -103,14 +103,14 @@ mod tests {
     use super::*;
     use gpui_kit::component::date_picker::DateTime;
 
-    fn at(date: NaiveDate) -> chrono::NaiveDateTime {
-        date.and_hms_opt(0, 0, 0).unwrap()
+    fn at(date: CivilDate) -> jiff::civil::DateTime {
+        date.at(0, 0, 0, 0)
     }
 
     #[test]
     fn date_picker_events_preserve_single_and_range_modes() {
-        let start = NaiveDate::from_ymd_opt(2026, 7, 11).unwrap();
-        let end = NaiveDate::from_ymd_opt(2026, 7, 18).unwrap();
+        let start = CivilDate::new(2026, 7, 11).unwrap();
+        let end = CivilDate::new(2026, 7, 18).unwrap();
 
         assert_eq!(
             date_picker_value_change(&DatePickerEvent::Change(DateTime::Single(Some(at(start))))),

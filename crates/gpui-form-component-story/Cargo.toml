@@ -13,14 +13,13 @@ readme = "README.md"
 
 [dependencies]
 es-fluent = { workspace = true }
-es-fluent-lang = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui-es-fluent = { workspace = true }
 gpui-form-component = { features = [ "derive" ], workspace = true }
 gpui-kit = { workspace = true }
 gpui-storybook = { features = [ "macros" ], workspace = true }
+iso-types = { workspace = true }
 jiff = { workspace = true }
-strum = { workspace = true }
 
 [build-dependencies]
 es-fluent-build = { workspace = true }

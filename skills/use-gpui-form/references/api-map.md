@@ -34,7 +34,7 @@ Select only the optional crates the form uses.
 | Inventory metadata | `features = ["inventory"]` |
 | MCP in a GPUI app | `features = ["mcp"]` |
 | Headless MCP form | `default-features = false, features = ["derive", "mcp"]` |
-| MCP Chrono or decimal schemas | Add `chrono` or `rust_decimal` |
+| MCP Jiff or decimal schemas | Add `jiff` or `rust_decimal` |
 
 ## Field and struct syntax
 
@@ -120,8 +120,8 @@ Prototyping-only helper names use the shape's field suffix.
 | Numeric text with step controls | `number_input::NumberInput::<_>` |
 | `f32` or `SliderValue` | `slider::Slider` |
 | `gpui_kit::Hsla` | `color_picker::ColorPicker` |
-| `chrono::NaiveDate` or date pair | Collection `DatePicker` or `DateRangePicker` |
-| `chrono::NaiveTime` | Collection `TimeField` |
+| `jiff::civil::Date` or date pair | Collection `DatePicker` or `DateRangePicker` |
+| `jiff::civil::Time` | Collection `TimeField` |
 | OTP value | `otp_input::OtpInput::<_>` |
 | Localized date or date pair | Component `DatePicker` or `DateRangePicker` |
 | `Vec<PathBuf>` | `gpui_form_component::file_picker::FilePicker` |

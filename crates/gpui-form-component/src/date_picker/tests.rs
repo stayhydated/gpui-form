@@ -1,5 +1,5 @@
-use chrono::NaiveDate;
 use icu_locale_core::locale;
+use jiff::civil::Date as CivilDate;
 use jiff::civil::date;
 
 use super::{DateDisplayStyle, format_display_date, format_display_range, parse_form_date};
@@ -18,9 +18,9 @@ fn formats_dates_with_icu4x() {
 
 #[test]
 fn parses_dates_through_jiff_display() {
-    let parsed = parse_form_date::<NaiveDate>(date(2025, 1, 15)).expect("parsed date");
+    let parsed = parse_form_date::<CivilDate>(date(2025, 1, 15)).expect("parsed date");
 
-    assert_eq!(parsed, NaiveDate::from_ymd_opt(2025, 1, 15).unwrap());
+    assert_eq!(parsed, CivilDate::new(2025, 1, 15).unwrap());
 }
 
 #[test]

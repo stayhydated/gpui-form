@@ -7,7 +7,7 @@
 lower-level integrations. Application crates normally use these APIs through
 the [`gpui-form` facade][gpui-form].
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 ## Overview
 

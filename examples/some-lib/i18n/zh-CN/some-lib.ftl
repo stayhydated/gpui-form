@@ -246,3 +246,12 @@ user_label_variants-rating = 评分
 user_label_variants-subscribe_newsletter = 订阅简报
 user_label_variants-uploaded_files = 已上传文件
 user_label_variants-username = 用户名
+
+## Language picker
+
+# es-fluent: same-as-fallback
+en = English
+# es-fluent: same-as-fallback
+fr-FR = français (France)
+# es-fluent: same-as-fallback
+zh-CN = 中文 (中国)

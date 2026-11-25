@@ -14,7 +14,7 @@ impl DatePickerState {
             window,
             |this, _, ev: &CalendarEvent, window, cx| match ev {
                 CalendarEvent::Selected(CalendarDate::Single(date)) => {
-                    this.update_date(date.and_then(jiff_date_from_chrono), true, window, cx);
+                    this.update_date(*date, true, window, cx);
                     this.focus_handle.focus(window, cx);
                 },
                 CalendarEvent::Selected(CalendarDate::Range(_, _)) => {},
@@ -68,11 +68,7 @@ impl DatePickerState {
     ) {
         self.date = date;
         self.calendar.update(cx, |state, cx| {
-            state.set_date(
-                CalendarDate::Single(date.and_then(chrono_date_from_jiff)),
-                window,
-                cx,
-            );
+            state.set_date(CalendarDate::Single(date), window, cx);
         });
         self.open = false;
         if emit {
@@ -129,13 +125,7 @@ impl DateRangePickerState {
             window,
             |this, _, ev: &CalendarEvent, window, cx| match ev {
                 CalendarEvent::Selected(CalendarDate::Range(start_date, end_date)) => {
-                    this.update_range(
-                        start_date.and_then(jiff_date_from_chrono),
-                        end_date.and_then(jiff_date_from_chrono),
-                        true,
-                        window,
-                        cx,
-                    );
+                    this.update_range(*start_date, *end_date, true, window, cx);
                     this.focus_handle.focus(window, cx);
                 },
                 CalendarEvent::Selected(CalendarDate::Single(_)) => {},
@@ -193,14 +183,7 @@ impl DateRangePickerState {
         self.start_date = start_date;
         self.end_date = end_date;
         self.calendar.update(cx, |state, cx| {
-            state.set_date(
-                CalendarDate::Range(
-                    start_date.and_then(chrono_date_from_jiff),
-                    end_date.and_then(chrono_date_from_jiff),
-                ),
-                window,
-                cx,
-            );
+            state.set_date(CalendarDate::Range(start_date, end_date), window, cx);
         });
         self.open = false;
         if emit {
