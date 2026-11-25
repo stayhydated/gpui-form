@@ -2,6 +2,7 @@ use anyhow::Context as _;
 use es_fluent::{EsFluent, EsFluentLabel, EsFluentVariants};
 use gpui_form::GpuiForm;
 use gpui_form_collection_derive::SelectItem;
+use jiff::{Timestamp as JiffTimestamp, civil::Date as CivilDate, tz::TimeZone};
 use koruma::{Koruma, KorumaAllFluent};
 use koruma_collection::{
     collection::NonEmptyValidation,
@@ -79,7 +80,7 @@ pub struct User {
     pub uploaded_files: Vec<std::path::PathBuf>,
 
     #[gpui_form(component(gpui_form_collection::date_picker::DateRangePicker))]
-    pub holiday_range: Option<(chrono::NaiveDate, chrono::NaiveDate)>,
+    pub holiday_range: Option<(jiff::civil::Date, jiff::civil::Date)>,
 
     #[gpui_form(component(gpui_form_collection::switch::Switch))]
     pub subscribe_newsletter: bool,
@@ -99,7 +100,7 @@ pub struct User {
     #[gpui_form(component(
         gpui_form_collection::date_picker::DatePicker,
         value(
-            type = chrono::NaiveDate,
+            type = jiff::civil::Date,
             from_source = to_form_datetime,
             into_source = to_model_timestamp,
         )
@@ -118,11 +119,12 @@ pub struct Timestamp {
 
 impl Timestamp {
     pub fn parse_from_rfc3339(str: &str) -> anyhow::Result<Timestamp> {
-        chrono::DateTime::parse_from_rfc3339(str)
-             .map_err(|err| anyhow::anyhow!(err))
-             .with_context(|| "Invalid timestamp format. Expected RFC 3339 format (e.g. '2025-02-10 15:45:30').")
-             .map(|dt| dt.timestamp_micros())
-             .map(Timestamp::from_micros_since_unix_epoch)
+        let instant = str.parse::<JiffTimestamp>().with_context(
+            || "Invalid timestamp format. Expected RFC 3339 (e.g. '2025-02-10T15:45:30Z').",
+        )?;
+        let micros = i64::try_from(instant.as_nanosecond().div_euclid(1_000))
+            .context("Timestamp is out of range")?;
+        Ok(Self::from_micros_since_unix_epoch(micros))
     }
     pub fn from_micros_since_unix_epoch(micros: i64) -> Self {
         Self {
@@ -132,29 +134,47 @@ impl Timestamp {
 }
 
 #[allow(dead_code)]
-fn to_form_datetime(value: Timestamp) -> chrono::NaiveDate {
-    chrono::DateTime::<chrono::Utc>::from_timestamp_micros(
-        value.__timestamp_micros_since_unix_epoch__,
-    )
-    .unwrap_or_else(|| {
-        chrono::DateTime::<chrono::Utc>::from_timestamp_micros(0)
-            .expect("Unix epoch timestamp is valid")
-    })
-    .date_naive()
+fn to_form_datetime(value: Timestamp) -> CivilDate {
+    JiffTimestamp::from_microsecond(value.__timestamp_micros_since_unix_epoch__)
+        .unwrap_or(JiffTimestamp::UNIX_EPOCH)
+        .to_zoned_datetime(TimeZone::UTC)
+        .date()
 }
 
-fn to_model_timestamp(value: chrono::NaiveDate) -> Timestamp {
-    let naive_datetime = value
-        .and_hms_opt(0, 0, 0)
-        .expect("midnight is a valid time");
-    let datetime =
-        chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(naive_datetime, chrono::Utc);
-    Timestamp::from_micros_since_unix_epoch(datetime.timestamp_micros())
+fn to_model_timestamp(value: CivilDate) -> Timestamp {
+    let instant = value.to_zoned_datetime(TimeZone::UTC).map_or_else(
+        |_| {
+            if value.year() < 1970 {
+                JiffTimestamp::MIN
+            } else {
+                JiffTimestamp::MAX
+            }
+        },
+        |zoned| zoned.timestamp(),
+    );
+    Timestamp::from_micros_since_unix_epoch(instant.as_microsecond())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dates_use_utc_and_sub_microsecond_instants_round_down() {
+        let value = Timestamp::parse_from_rfc3339("1970-01-01T01:59:59.999999999+02:00").unwrap();
+
+        assert_eq!(value.__timestamp_micros_since_unix_epoch__, -1);
+        let date = to_form_datetime(value);
+        assert_eq!(date, CivilDate::new(1969, 12, 31).unwrap());
+        assert_eq!(
+            to_model_timestamp(date).__timestamp_micros_since_unix_epoch__,
+            -86_400_000_000
+        );
+        assert_eq!(
+            to_form_datetime(Timestamp::from_micros_since_unix_epoch(i64::MAX)),
+            CivilDate::new(1970, 1, 1).unwrap()
+        );
+    }
 
     #[test]
     fn default_holder_leaves_required_birth_date_empty() {

@@ -31,8 +31,8 @@ Applications that only consume existing shapes use the
 | Numeric text input | `number_input::NumberInput::<T>` |
 | `f32` or `gpui_kit::component::slider::SliderValue` | `slider::Slider` |
 | `gpui_kit::Hsla` | `color_picker::ColorPicker` |
-| `chrono::NaiveDate` or a date pair | `date_picker::DatePicker` or `DateRangePicker` |
-| `chrono::NaiveTime` | `time_field::TimeField` |
+| `jiff::civil::Date` or a date pair | `date_picker::DatePicker` or `DateRangePicker` |
+| `jiff::civil::Time` | `time_field::TimeField` |
 | One-time-password value | `otp_input::OtpInput::<T>` |
 
 `ParsedInput<T, Config>` uses a `ParsedInputConfig<T>` implementation for

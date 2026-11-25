@@ -8,29 +8,6 @@ where
     T::from_str(&date.to_string()).ok()
 }
 
-pub(super) fn chrono_date_from_jiff(date: JiffDate) -> Option<NaiveDate> {
-    NaiveDate::from_ymd_opt(
-        i32::from(date.year()),
-        u32::from(date.month().unsigned_abs()),
-        u32::from(date.day().unsigned_abs()),
-    )
-}
-
-pub(super) fn jiff_date_from_chrono(date: NaiveDate) -> Option<JiffDate> {
-    let year = i16::try_from(date.year()).ok()?;
-    let month = i8::try_from(date.month()).ok()?;
-    let day = i8::try_from(date.day()).ok()?;
-    JiffDate::new(year, month, day).ok()
-}
-
-#[cfg(feature = "component-shape")]
-pub(super) fn jiff_date_range_from_chrono(
-    start: JiffDate,
-    end: JiffDate,
-) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
-    Some((parse_form_date(start)?, parse_form_date(end)?))
-}
-
 pub(super) fn active_locale() -> Locale {
     let raw = gpui_kit::component::locale();
     let normalized = raw.deref().replace('_', "-");

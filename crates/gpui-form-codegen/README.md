@@ -7,7 +7,7 @@
 `gpui-form` procedural macros. It serves macro authors and workspace
 implementation crates rather than application code.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 Application developers should use [`gpui-form`][gpui-form]. Proc-macro
 consumers that intentionally avoid the facade can use

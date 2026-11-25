@@ -36,7 +36,7 @@ impl gpui_form::runtime::shape::GpuiFormComponentShapePolicy for FacadeBooleanSh
 component_shape_gpui::component_shape! {
     struct FacadeDateShape {
         state = FacadeShapeState;
-        value = chrono::NaiveDate;
+        value = jiff::civil::Date;
     }
 }
 
@@ -56,7 +56,7 @@ fn facade_runtime_accepts_declared_boolean_shape() {
 
 #[test]
 fn facade_runtime_accepts_declared_date_shape() {
-    assert_form_shape::<FacadeDateShape, chrono::NaiveDate>();
+    assert_form_shape::<FacadeDateShape, jiff::civil::Date>();
 
     assert_eq!(
         <FacadeDateShape as ComponentShapeMetadata>::MCP_INPUT.input_shape(),

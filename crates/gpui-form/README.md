@@ -6,7 +6,7 @@
 re-exports `GpuiForm`, schema types, core helpers, and the runtime paths used by
 generated code.
 
-Requires Rust 1.99 or newer. Component-backed GPUI forms use GPUI Kit 0.9.0.
+Requires Rust 1.100 or newer. Component-backed GPUI forms use GPUI Kit 0.11.0.
 Headless MCP consumers can disable default features to omit this crate's
 `runtime` integration.
 
@@ -18,7 +18,7 @@ and `mcp` with defaults disabled.
 
 | Feature | Default | Purpose |
 | --- | --- | --- |
-| `chrono` | No | Forward Chrono MCP schema support when `mcp` is also enabled. |
+| `jiff` | No | Forward Jiff MCP schema support when `mcp` is also enabled. |
 | `derive` | Yes | Re-export `GpuiForm` and provide generated derive support. |
 | `inventory` | No | Emit concrete form registrations when `derive` is enabled. |
 | `mcp` | No | Expose MCP runtime APIs, enable `inventory`, and extend enabled derives with MCP support. |

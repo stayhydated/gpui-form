@@ -1,3 +1,5 @@
+use jiff::civil::Date;
+
 const YEARS_PER_PAGE: usize = 20;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -64,8 +66,8 @@ impl CalendarNavigation {
     }
 
     pub(super) fn offset_year_month(&self, offset_month: usize) -> (i32, u32) {
-        let month_index =
-            i64::from(self.current_month - 1) + i64::try_from(offset_month).unwrap_or(i64::MAX);
+        let month_index = i64::from(self.current_month - 1)
+            .saturating_add(i64::try_from(offset_month).unwrap_or(i64::MAX));
         let year_offset = month_index.div_euclid(12);
         let year = i64::from(self.current_year).saturating_add(year_offset);
         let year = i32::try_from(year).unwrap_or(i32::MAX);
@@ -99,6 +101,9 @@ impl CalendarNavigation {
 
     pub(super) fn previous_month(&mut self) {
         if self.current_month == 1 {
+            if self.current_year == i32::from(Date::MIN.year()) {
+                return;
+            }
             self.current_month = 12;
             self.current_year = self.current_year.saturating_sub(1);
             self.select_page_for_current_year();
@@ -109,6 +114,9 @@ impl CalendarNavigation {
 
     pub(super) fn next_month(&mut self) {
         if self.current_month == 12 {
+            if self.current_year == i32::from(Date::MAX.year()) {
+                return;
+            }
             self.current_month = 1;
             self.current_year = self.current_year.saturating_add(1);
             self.select_page_for_current_year();
@@ -157,6 +165,24 @@ mod tests {
         assert_eq!(navigation.offset_year_month(11), (2025, 12));
         assert_eq!(navigation.offset_year_month(12), (2026, 1));
         assert_eq!(navigation.offset_year_month(25), (2027, 2));
+    }
+
+    #[test]
+    fn month_navigation_stops_at_jiff_boundaries() {
+        use jiff::civil::Date;
+
+        let first_year = i32::from(Date::MIN.year());
+        let last_year = i32::from(Date::MAX.year());
+        let mut first = CalendarNavigation::new(first_year, 1, (first_year, first_year + 1));
+        first.previous_month();
+        assert_eq!(
+            (first.current_year(), first.current_month()),
+            (first_year, 1)
+        );
+
+        let mut last = CalendarNavigation::new(last_year, 12, (last_year, last_year + 1));
+        last.next_month();
+        assert_eq!((last.current_year(), last.current_month()), (last_year, 12));
     }
 
     #[test]

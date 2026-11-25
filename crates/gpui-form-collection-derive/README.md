@@ -7,7 +7,7 @@
 used by [`gpui-form-collection`][collection] selects. Depend on this macro
 crate directly when deriving select metadata for application enums.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 Variant names provide fallback labels. Add `#[select_item(display)]` when
 `SelectItem::title()` should use the enum's `Display` implementation.

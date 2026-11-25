@@ -1,4 +1,3 @@
-use chrono::{Datelike as _, Duration, Local, NaiveDate};
 use gpui_kit::component::{
     ActiveTheme as _, Disableable as _, IconName, Selectable as _, Sizable, Size, StyledExt as _,
     button::{Button, ButtonVariants as _},
@@ -17,6 +16,7 @@ use icu_calendar::{
 };
 use icu_datetime::{FixedCalendarDateTimeFormatter, fieldsets};
 use icu_locale_core::{Locale, locale};
+use jiff::{Span, ZonedDateTime, civil::Date as CivilDate};
 
 use crate::calendar_navigation::CalendarNavigation;
 
@@ -29,8 +29,8 @@ pub enum CalendarEvent {
 /// The date of the calendar.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Date {
-    Single(Option<NaiveDate>),
-    Range(Option<NaiveDate>, Option<NaiveDate>),
+    Single(Option<CivilDate>),
+    Range(Option<CivilDate>, Option<CivilDate>),
 }
 
 impl std::fmt::Display for Date {
@@ -46,14 +46,14 @@ impl std::fmt::Display for Date {
     }
 }
 
-impl From<NaiveDate> for Date {
-    fn from(date: NaiveDate) -> Self {
+impl From<CivilDate> for Date {
+    fn from(date: CivilDate) -> Self {
         Self::Single(Some(date))
     }
 }
 
-impl From<(NaiveDate, NaiveDate)> for Date {
-    fn from((start, end): (NaiveDate, NaiveDate)) -> Self {
+impl From<(CivilDate, CivilDate)> for Date {
+    fn from((start, end): (CivilDate, CivilDate)) -> Self {
         Self::Range(Some(start), Some(end))
     }
 }
@@ -63,7 +63,7 @@ impl Date {
         matches!(self, Self::Range(Some(_), Some(_)) | Self::Single(Some(_)))
     }
 
-    fn is_active(&self, v: &NaiveDate) -> bool {
+    fn is_active(&self, v: &CivilDate) -> bool {
         let v = *v;
         match self {
             Self::Single(d) => Some(v) == *d,
@@ -71,7 +71,7 @@ impl Date {
         }
     }
 
-    fn is_in_range(&self, v: &NaiveDate) -> bool {
+    fn is_in_range(&self, v: &CivilDate) -> bool {
         let v = *v;
         match self {
             Self::Range(Some(start), Some(end)) => v >= *start && v <= *end,
@@ -80,7 +80,7 @@ impl Date {
         }
     }
 
-    fn select(self, date: NaiveDate) -> Self {
+    fn select(self, date: CivilDate) -> Self {
         match self {
             Self::Single(_) => Self::Single(Some(date)),
             Self::Range(None, None) => Self::Range(Some(date), None),
@@ -127,21 +127,21 @@ pub struct CalendarState {
     view_mode: ViewMode,
     date: Date,
     navigation: CalendarNavigation,
-    today: NaiveDate,
+    today: CivilDate,
 }
 
 impl CalendarState {
     /// Create a new calendar state.
     pub fn new(_: &mut Window, cx: &mut Context<Self>) -> Self {
-        let today = Local::now().naive_local().date();
+        let today = ZonedDateTime::now().date();
         Self {
             focus_handle: cx.focus_handle(),
             view_mode: ViewMode::Day,
             date: Date::Single(None),
             navigation: CalendarNavigation::new(
-                today.year(),
+                i32::from(today.year()),
                 today.month() as u8,
-                (today.year() - 50, today.year() + 50),
+                (i32::from(today.year()) - 50, i32::from(today.year()) + 50),
             ),
             today,
         }
@@ -155,11 +155,11 @@ impl CalendarState {
         match self.date {
             Date::Single(Some(date)) => {
                 self.navigation
-                    .set_position(date.year(), date.month() as u8);
+                    .set_position(i32::from(date.year()), date.month() as u8);
             },
             Date::Range(Some(start), _) => {
                 self.navigation
-                    .set_position(start.year(), start.month() as u8);
+                    .set_position(i32::from(start.year()), start.month() as u8);
             },
             _ => {},
         }
@@ -169,6 +169,12 @@ impl CalendarState {
 
     fn offset_year_month(&self, offset_month: usize) -> (i32, u32) {
         self.navigation.offset_year_month(offset_month)
+    }
+
+    fn visible_offsets(&self, requested: usize) -> impl Iterator<Item = usize> + '_ {
+        (0..requested).take_while(|&offset| {
+            self.offset_year_month(offset).0 <= i32::from(CivilDate::MAX.year())
+        })
     }
 
     fn has_prev_year_page(&self) -> bool {
@@ -252,7 +258,7 @@ impl Calendar {
 
     fn render_day(
         &self,
-        d: &NaiveDate,
+        d: &CivilDate,
         offset_month: usize,
         window: &mut Window,
         cx: &mut App,
@@ -260,7 +266,7 @@ impl Calendar {
         let state = self.state.read(cx);
         let (_, month) = state.offset_year_month(offset_month);
         let day = format_day_name(d, &self.display_locale);
-        let is_current_month = d.month() == month;
+        let is_current_month = u32::from(d.month().unsigned_abs()) == month;
         let is_active = state.date.is_active(d);
         let is_in_range = state.date.is_in_range(d);
 
@@ -268,7 +274,7 @@ impl Calendar {
         let is_today = *d == state.today;
         let disabled = false;
 
-        let date_id: SharedString = format!("{}_{}", date.format("%Y-%m-%d"), offset_month).into();
+        let date_id: SharedString = format!("{date}_{offset_month}").into();
 
         self.item_button(
             date_id,
@@ -302,7 +308,10 @@ impl Calendar {
         let current_year = state.navigation.current_year();
         let view_mode = state.view_mode;
         let disabled = view_mode.is_month();
-        let multiple_months = self.number_of_months > 1;
+        let multiple_months = state
+            .visible_offsets(self.number_of_months)
+            .nth(1)
+            .is_some();
         let icon_size = match self.size {
             Size::Small => Size::Small,
             Size::Large => Size::Medium,
@@ -379,7 +388,7 @@ impl Calendar {
             })
             .when(multiple_months, |this| {
                 this.child(h_flex().flex_1().justify_around().children(
-                    (0..self.number_of_months).map(|n| {
+                    state.visible_offsets(self.number_of_months).map(|n| {
                         h_flex()
                             .justify_center()
                             .map(|this| match self.size {
@@ -464,7 +473,8 @@ impl Calendar {
         let weeks = weekday_names(&self.display_locale);
         let month_days = {
             let state = self.state.read(cx);
-            (0..self.number_of_months)
+            state
+                .visible_offsets(self.number_of_months)
                 .map(|offset_month| {
                     let (year, month) = state.offset_year_month(offset_month);
                     (offset_month, days_in_month(year, month, first_weekday))
@@ -490,10 +500,17 @@ impl Calendar {
                         ),
                     )
                     .children(days.iter().map(|week| {
-                        h_flex().gap_0p5().justify_between().children(
-                            week.iter()
-                                .map(|d| self.render_day(d, *offset_month, window, cx)),
-                        )
+                        h_flex()
+                            .gap_0p5()
+                            .justify_between()
+                            .children(week.iter().map(|d| {
+                                match d {
+                                    Some(d) => self
+                                        .render_day(d, *offset_month, window, cx)
+                                        .into_any_element(),
+                                    None => self.render_week("", window, cx).into_any_element(),
+                                }
+                            }))
                     }))
             }))
     }
@@ -650,30 +667,29 @@ fn first_weekday(locale: &Locale) -> Weekday {
         })
 }
 
-fn days_in_month(year: i32, month: u32, first_weekday: Weekday) -> Vec<Vec<NaiveDate>> {
-    let first_day = NaiveDate::from_ymd_opt(year, month, 1).expect("valid calendar month");
-    let next_month = if month == 12 {
-        NaiveDate::from_ymd_opt(year + 1, 1, 1)
-    } else {
-        NaiveDate::from_ymd_opt(year, month + 1, 1)
-    }
-    .expect("valid following calendar month");
-    let days_in_month = next_month.signed_duration_since(first_day).num_days() as u32;
-    let leading_days = (7 + first_day.weekday().num_days_from_sunday() as i32
-        - days_since_sunday(first_weekday) as i32)
-        % 7;
-    let grid_start = first_day
-        .checked_sub_signed(Duration::days(i64::from(leading_days)))
-        .expect("valid calendar grid start");
+fn days_in_month(year: i32, month: u32, first_weekday: Weekday) -> Vec<Vec<Option<CivilDate>>> {
+    let (Ok(year), Ok(month)) = (i16::try_from(year), i8::try_from(month)) else {
+        return Vec::new();
+    };
+    let Ok(first_day) = CivilDate::new(year, month, 1) else {
+        return Vec::new();
+    };
+    let leading_days = (first_day.weekday().to_sunday_zero_offset()
+        - i8::try_from(days_since_sunday(first_weekday)).expect("weekday index fits i8"))
+    .rem_euclid(7);
 
-    let row_count = ((leading_days as u32 + days_in_month).div_ceil(7)).max(6);
+    // Build each cell from the month's first day. Near Jiff's representable
+    // endpoints, adjacent-month padding can be unrepresentable without making
+    // the days of the displayed month unrepresentable.
+    let row_count = ((leading_days + first_day.days_in_month()) as u8)
+        .div_ceil(7)
+        .max(6);
     (0..row_count)
         .map(|week| {
             (0..7)
                 .map(|weekday| {
-                    grid_start
-                        .checked_add_signed(Duration::days(i64::from(week * 7 + weekday)))
-                        .expect("valid calendar grid date")
+                    let cell_offset = i64::from(week * 7 + weekday) - i64::from(leading_days);
+                    first_day.checked_add(Span::new().days(cell_offset)).ok()
                 })
                 .collect()
         })
@@ -734,7 +750,7 @@ fn format_year_name(year: i32, locale: &Locale) -> SharedString {
     formatter.format(&icu_date).to_string().into()
 }
 
-fn format_day_name(date: &NaiveDate, locale: &Locale) -> SharedString {
+fn format_day_name(date: &CivilDate, locale: &Locale) -> SharedString {
     let formatter = FixedCalendarDateTimeFormatter::<Gregorian, _>::try_new(
         locale.clone().into(),
         fieldsets::D::short(),
@@ -742,11 +758,12 @@ fn format_day_name(date: &NaiveDate, locale: &Locale) -> SharedString {
     .unwrap_or_else(|error| {
         panic!("failed to create day formatter for locale `{locale}`: {error:?}")
     });
-    let month = u8::try_from(date.month()).expect("chrono months fit ICU month values");
-    let day = u8::try_from(date.day()).expect("chrono days fit ICU day values");
-    let icu_date = IcuDate::try_new_gregorian(date.year(), month, day).unwrap_or_else(|error| {
-        panic!("invalid Gregorian date `{date}` for ICU formatting: {error:?}")
-    });
+    let month = date.month().unsigned_abs();
+    let day = date.day().unsigned_abs();
+    let icu_date =
+        IcuDate::try_new_gregorian(i32::from(date.year()), month, day).unwrap_or_else(|error| {
+            panic!("invalid Gregorian date `{date}` for ICU formatting: {error:?}")
+        });
 
     formatter.format(&icu_date).to_string().into()
 }
@@ -769,9 +786,9 @@ fn days_since_sunday(weekday: Weekday) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
     use icu_calendar::types::Weekday;
     use icu_locale_core::locale;
+    use jiff::civil::Date as CivilDate;
 
     use super::{
         Date, ViewMode, add_weekdays, days_in_month, days_since_sunday, first_weekday,
@@ -780,9 +797,9 @@ mod tests {
 
     #[test]
     fn date_modes_report_completion_ranges_and_display_values() {
-        let before = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let start = NaiveDate::from_ymd_opt(2025, 1, 10).unwrap();
-        let end = NaiveDate::from_ymd_opt(2025, 1, 20).unwrap();
+        let before = CivilDate::new(2025, 1, 5).unwrap();
+        let start = CivilDate::new(2025, 1, 10).unwrap();
+        let end = CivilDate::new(2025, 1, 20).unwrap();
 
         let single = Date::from(start);
         assert!(single.is_complete());
@@ -794,7 +811,7 @@ mod tests {
         let range = Date::from((start, end));
         assert!(range.is_complete());
         assert!(range.is_active(&end));
-        assert!(range.is_in_range(&NaiveDate::from_ymd_opt(2025, 1, 15).unwrap()));
+        assert!(range.is_in_range(&CivilDate::new(2025, 1, 15).unwrap()));
         assert_eq!(range.to_string(), "2025-01-10 - 2025-01-20");
         assert_eq!(Date::Range(None, None).to_string(), "nil");
         assert_eq!(
@@ -854,11 +871,7 @@ mod tests {
         assert_eq!(months[11].as_ref(), "December");
         assert_eq!(format_year_name(2025, &locale!("en-US")).as_ref(), "2025");
         assert_eq!(
-            format_day_name(
-                &NaiveDate::from_ymd_opt(2025, 1, 9).unwrap(),
-                &locale!("en-US")
-            )
-            .as_ref(),
+            format_day_name(&CivilDate::new(2025, 1, 9).unwrap(), &locale!("en-US")).as_ref(),
             "9"
         );
     }
@@ -887,11 +900,73 @@ mod tests {
     #[test]
     fn lays_out_days_from_locale_first_weekday() {
         let us_days = days_in_month(2025, 9, Weekday::Sunday);
-        assert_eq!(us_days[0][0], NaiveDate::from_ymd_opt(2025, 8, 31).unwrap());
-        assert_eq!(us_days[0][1], NaiveDate::from_ymd_opt(2025, 9, 1).unwrap());
+        assert_eq!(us_days[0][0], Some(CivilDate::new(2025, 8, 31).unwrap()));
+        assert_eq!(us_days[0][1], Some(CivilDate::new(2025, 9, 1).unwrap()));
 
         let fr_days = days_in_month(2025, 9, Weekday::Monday);
-        assert_eq!(fr_days[0][0], NaiveDate::from_ymd_opt(2025, 9, 1).unwrap());
-        assert_eq!(fr_days[0][6], NaiveDate::from_ymd_opt(2025, 9, 7).unwrap());
+        assert_eq!(fr_days[0][0], Some(CivilDate::new(2025, 9, 1).unwrap()));
+        assert_eq!(fr_days[0][6], Some(CivilDate::new(2025, 9, 7).unwrap()));
+    }
+    #[gpui_kit::test]
+    fn renders_adjacent_months_but_not_months_past_jiff_maximum(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::{
+            AppContext as _, Context, Entity, IntoElement, Render, VisualTestContext, Window,
+        };
+
+        use super::{Calendar, CalendarState};
+
+        struct CalendarView(Entity<CalendarState>);
+
+        impl Render for CalendarView {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                Calendar::new(&self.0)
+                    .number_of_months(2)
+                    .display_locale(locale!("fr-FR"))
+            }
+        }
+
+        cx.update(gpui_kit::component::init);
+        let window =
+            cx.add_window(|window, cx| CalendarView(cx.new(|cx| CalendarState::new(window, cx))));
+        let state = window.update(cx, |view, _, _| view.0.clone()).unwrap();
+        let mut visual = VisualTestContext::from_window(window.into(), cx);
+
+        for (selection, offsets) in [
+            (
+                Date::Range(
+                    Some(CivilDate::new(2024, 12, 30).unwrap()),
+                    Some(CivilDate::new(2025, 1, 3).unwrap()),
+                ),
+                vec![0, 1],
+            ),
+            (Date::from(CivilDate::MAX), vec![0]),
+        ] {
+            visual.update(|window, cx| {
+                state.update(cx, |state, cx| state.set_date(selection, window, cx));
+                let state = state.read(cx);
+                assert_eq!(state.date, selection);
+                assert_eq!(state.visible_offsets(2).collect::<Vec<_>>(), offsets);
+            });
+            visual.update(|window, cx| window.draw(cx).clear(cx));
+        }
+    }
+
+    #[test]
+    fn calendar_grid_keeps_representable_days_at_civil_boundaries() {
+        let first = days_in_month(i32::from(CivilDate::MIN.year()), 1, Weekday::Sunday);
+        assert_eq!(
+            first.iter().flatten().flatten().next(),
+            Some(&CivilDate::MIN)
+        );
+
+        let last = days_in_month(i32::from(CivilDate::MAX.year()), 12, Weekday::Monday);
+        assert_eq!(
+            last.iter().flatten().flatten().last(),
+            Some(&CivilDate::MAX)
+        );
+        assert!(last.last().unwrap().last().unwrap().is_none());
+
+        let after_last = days_in_month(i32::from(CivilDate::MAX.year()) + 1, 1, Weekday::Sunday);
+        assert!(after_last.is_empty());
     }
 }

@@ -8,10 +8,10 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
-chrono = { workspace = true }
+jiff = { workspace = true }
 derive_more = { features = [ "full" ], workspace = true }
 es-fluent = { workspace = true }
-es-fluent-lang = { workspace = true }
+iso-types = { workspace = true }
 es-fluent-manager-embedded = { workspace = true }
 gpui-kit = { workspace = true }
 gpui-es-fluent = { workspace = true }

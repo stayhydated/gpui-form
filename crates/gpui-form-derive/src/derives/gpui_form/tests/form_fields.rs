@@ -62,7 +62,7 @@ fn test_structured_field_attribute_grammar() {
             #[gpui_form(component(
                 crate::DatePickerState,
                 value(
-                    type = chrono::NaiveDate,
+                    type = jiff::civil::Date,
                     from_source = |ts| to_form(ts),
                     into_source = |dt| to_model(dt)
                 ),
@@ -90,7 +90,7 @@ fn test_structured_field_attribute_grammar() {
     let compact = compact_tokens(&expanded.to_string());
 
     assert!(
-        compact.contains("RustType::from_macro_tokens_unchecked(\"chrono::NaiveDate\")")
+        compact.contains("RustType::from_macro_tokens_unchecked(\"jiff::civil::Date\")")
             && compact.contains("pubaccount_id:String"),
         "structured value(type = ...) should drive component metadata and hidden holder storage: {compact}"
     );

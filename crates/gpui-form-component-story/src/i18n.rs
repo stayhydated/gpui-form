@@ -1,6 +1,5 @@
 use es_fluent::EsFluent;
-use es_fluent_lang::es_fluent_language;
-use strum::EnumIter;
+use iso_types::iso_locale;
 
 es_fluent_manager_embedded::define_i18n_module!();
 
@@ -9,8 +8,7 @@ pub use gpui_es_fluent::{
     localize_message, try_localize_label, try_localize_message,
 };
 
-#[es_fluent_language]
-#[derive(Clone, Copy, Debug, EnumIter, Eq, EsFluent, PartialEq)]
+#[iso_locale(custom)]
 pub enum Languages {}
 
 /// Applies Storybook's resolved locale to the component gallery's GPUI manager.
@@ -49,6 +47,13 @@ mod tests {
                 gpui_es_fluent::localize_message(cx, &DatePickerComponentText::LaunchPlaceholder),
                 "Sélectionner une date de lancement"
             );
+            for (language, autonym) in [
+                (Languages::En, "English"),
+                (Languages::FrFr, "français (France)"),
+                (Languages::ZhCn, "中文 (中国)"),
+            ] {
+                assert_eq!(gpui_es_fluent::localize_message(cx, &language), autonym);
+            }
         });
     }
 }

@@ -232,7 +232,7 @@ fn test_component_shape_generates_multiword_component_suffix() {
         #[derive(GpuiForm)]
         struct TestForm {
             #[gpui_form(component(crate::shapes::DatePicker))]
-            birth_date: chrono::NaiveDate,
+            birth_date: jiff::civil::Date,
         }
     };
 

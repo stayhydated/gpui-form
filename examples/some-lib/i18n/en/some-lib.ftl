@@ -246,3 +246,9 @@ user_label_variants-rating = Rating
 user_label_variants-subscribe_newsletter = Subscribe Newsletter
 user_label_variants-uploaded_files = Uploaded Files
 user_label_variants-username = Username
+
+## Language picker
+
+en = English
+fr-FR = français (France)
+zh-CN = 中文 (中国)

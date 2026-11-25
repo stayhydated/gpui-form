@@ -7,7 +7,7 @@
 runtime integrations in the `gpui-form` ecosystem. Applications normally use
 it through the [`gpui-form` facade][gpui-form] as `gpui_form::schema`.
 
-Requires Rust 1.99 or newer.
+Requires Rust 1.100 or newer.
 
 ## Overview
 

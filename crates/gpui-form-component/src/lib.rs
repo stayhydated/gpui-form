@@ -71,12 +71,12 @@ mod tests {
     #[test]
     fn component_shape_feature_publishes_runtime_component_contracts() {
         assert_declared_shape::<DatePicker>();
-        assert_shape_for::<DatePicker, chrono::NaiveDate>();
-        assert_value_binding::<DatePicker, chrono::NaiveDate>();
+        assert_shape_for::<DatePicker, jiff::civil::Date>();
+        assert_value_binding::<DatePicker, jiff::civil::Date>();
 
         assert_declared_shape::<DateRangePicker>();
-        assert_shape_for::<DateRangePicker, (chrono::NaiveDate, chrono::NaiveDate)>();
-        assert_value_binding::<DateRangePicker, (chrono::NaiveDate, chrono::NaiveDate)>();
+        assert_shape_for::<DateRangePicker, (jiff::civil::Date, jiff::civil::Date)>();
+        assert_value_binding::<DateRangePicker, (jiff::civil::Date, jiff::civil::Date)>();
 
         assert_declared_shape::<FilePicker>();
         assert_shape_for::<FilePicker, Vec<PathBuf>>();

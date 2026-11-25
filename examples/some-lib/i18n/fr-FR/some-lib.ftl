@@ -286,3 +286,12 @@ user_label_variants-rating = Note
 user_label_variants-subscribe_newsletter = S'abonner à l'infolettre
 user_label_variants-uploaded_files = Fichiers téléversés
 user_label_variants-username = Nom d'utilisateur
+
+## Language picker
+
+# es-fluent: same-as-fallback
+en = English
+# es-fluent: same-as-fallback
+fr-FR = français (France)
+# es-fluent: same-as-fallback
+zh-CN = 中文 (中国)

@@ -13,11 +13,11 @@ readme = "README.md"
 
 [dependencies]
 bon = { workspace = true }
-chrono = { workspace = true }
 component-shape = { workspace = true }
 component-shape-gpui = { workspace = true }
 gpui-form-runtime = { workspace = true }
 gpui-kit = { workspace = true }
+jiff = { workspace = true }
 strum = { workspace = true }
 
 [dev-dependencies]
