@@ -7,12 +7,11 @@ session management.
 
 ## Add MCP support
 
-These registry examples use the published Form 0.9 line. If the application
-also renders GPUI forms, use it with GPUI Kit 0.9:
+Use Form 0.10 with GPUI Kit 0.11 if the application also renders forms:
 
 ```toml
 [dependencies]
-gpui-form = { version = "0.9", features = ["mcp"] }
+gpui-form = { version = "0.10", features = ["mcp"] }
 serde = { version = "1", features = ["derive"] }
 ```
 
@@ -20,26 +19,23 @@ For a headless form server, disable the default runtime and enable the derive
 explicitly:
 
 ```toml
-gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }
+gpui-form = { version = "0.10", default-features = false, features = ["derive", "mcp"] }
 ```
 
-Form 0.9 uses the `chrono` feature for date and time schemas. Both the
-published and development versions support decimal schemas through `rust_decimal`.
+Enable `rust_decimal` alongside `mcp` for decimal schemas.
 
-### Use Jiff in a development checkout
+### Use Jiff for date and time schemas
 
-For an application in a sibling directory of a Form checkout, the headless
-MCP setup is:
+For a headless server that accepts dates or times:
 
 ```toml
 [dependencies]
-gpui-form = { path = "../gpui-form/crates/gpui-form", default-features = false, features = ["derive", "mcp", "jiff"] }
-jiff = "1.0"
+gpui-form = { version = "0.10", default-features = false, features = ["derive", "mcp", "jiff"] }
+jiff = { version = "1.0", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 ```
 
-If the checkout consumer also renders forms, use GPUI Kit 0.11 and keep
-Storybook on 0.9 when used. Enable `jiff` beside `mcp` for schemas of
+Enable `jiff` beside `mcp` for schemas of
 `jiff::civil::Date`, `jiff::civil::DateTime`, and `jiff::Timestamp`. A civil
 date-time represents a wall-clock value with no offset; use a timestamp for an
 RFC 3339 instant.

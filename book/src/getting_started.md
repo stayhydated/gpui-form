@@ -4,29 +4,30 @@ Add a typed form model to an existing GPUI application and construct its
 generated holder and widget state. The final checklist covers the subscriptions
 and rendering needed to connect that state to a view.
 
-The development branch uses GPUI Kit 0.11 and Storybook 0.9. The published
-gpui-form 0.9 line uses Kit 0.9 and Storybook 0.8, and the gpui-form 0.8 line
-targets Kit 0.8. Keep these public GPUI type families together.
+Use gpui-form 0.10 with GPUI Kit 0.11 and, when needed, Storybook 0.9.
+If you are maintaining an older app, gpui-form 0.9 uses Kit 0.9 and
+Storybook 0.8, while gpui-form 0.8 uses Kit 0.8. Keep these public GPUI
+type families together.
 
 ## Prerequisites
 
 - Rust 1.100 or newer.
 - A GPUI application that calls `gpui_kit::init(cx)`.
 - A `gpui_kit::component::Root` around each first-level window view.
-- `gpui-kit` 0.9.0.
+- `gpui-kit` 0.11.0.
 
 ## Add the dependencies
 
 Use `gpui-form` for the derive and generated runtime paths. This example uses
 ready-made collection shapes and the collection select derive. The block is for
-the published Form 0.9 line and uses its matching Kit version:
+Form 0.10 and uses its matching Kit version:
 
 ```toml
 [dependencies]
-gpui-kit = "0.9.0"
-gpui-form = "0.9"
-gpui-form-collection = "0.9"
-gpui-form-collection-derive = "0.9"
+gpui-kit = "0.11.0"
+gpui-form = "0.10"
+gpui-form-collection = "0.10"
+gpui-form-collection-derive = "0.10"
 strum = { version = "0.28", features = ["derive"] }
 ```
 
@@ -110,18 +111,18 @@ from the same shape metadata.
 
 ## Choose optional features
 
-These configurations apply to the published Form 0.9 line.
+These configurations apply to Form 0.10.
 
 | Need | Configuration |
 |---|---|
-| Inventory metadata | `gpui-form = { version = "0.9", features = ["inventory"] }` |
-| MCP tools in a GPUI application | `gpui-form = { version = "0.9", features = ["mcp"] }` |
-| Headless MCP forms | `gpui-form = { version = "0.9", default-features = false, features = ["derive", "mcp"] }` |
-| MCP schemas in published Form 0.9 | Add `chrono` or `rust_decimal` beside `mcp` |
+| Inventory metadata | `gpui-form = { version = "0.10", features = ["inventory"] }` |
+| MCP tools in a GPUI application | `gpui-form = { version = "0.10", features = ["mcp"] }` |
+| Headless MCP forms | `gpui-form = { version = "0.10", default-features = false, features = ["derive", "mcp"] }` |
+| MCP schemas for dates, times, or decimals | Add `jiff` or `rust_decimal` beside `mcp` |
 | Localized date, file, or infinite-select shapes | Add `gpui-form-component` with `component-shape` and, for the derive, `derive` |
 
-For the development checkout, see [MCP form tools](mcp.md#use-jiff-in-a-development-checkout)
-for the Jiff schema feature and working dependency setup.
+See [MCP form tools](mcp.md#use-jiff-for-date-and-time-schemas)
+for the Jiff schema feature and dependency setup.
 
 ## Check the result
 
