@@ -15,15 +15,15 @@ Use this reference for application code that consumes `gpui-form`.
 
 ## Dependencies
 
-Use the published GPUI Kit facade:
+Use Form 0.10 with the GPUI Kit 0.11 facade and Storybook 0.9 when needed:
 
 ```toml
 [dependencies]
-gpui-kit = "0.9.0"
-gpui-form = "0.9"
-gpui-form-collection = "0.9"
-gpui-form-collection-derive = "0.9"
-gpui-form-component = { version = "0.9", features = ["component-shape", "derive"] }
+gpui-kit = "0.11.0"
+gpui-form = "0.10"
+gpui-form-collection = "0.10"
+gpui-form-collection-derive = "0.10"
+gpui-form-component = { version = "0.10", features = ["component-shape", "derive"] }
 ```
 
 Select only the optional crates the form uses.

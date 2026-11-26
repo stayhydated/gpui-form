@@ -12,9 +12,10 @@ and components to render, validate, and reconstruct those models.
 All workspace packages require Rust 1.100 or newer. GPUI integrations use
 GPUI Kit 0.11.0; headless MCP consumers can disable the facade's `runtime` feature.
 
-The development branch uses GPUI Kit 0.11 and Storybook 0.9. The published
-gpui-form 0.9 line uses Kit 0.9 and Storybook 0.8, and the gpui-form 0.8 line
-targets Kit 0.8. Keep these public GPUI type families together.
+Use gpui-form 0.10 with GPUI Kit 0.11 and, when needed, Storybook 0.9.
+If you are maintaining an older app, gpui-form 0.9 uses Kit 0.9 and
+Storybook 0.8, while gpui-form 0.8 uses Kit 0.8. Keep these public GPUI
+type families together.
 
 ## Overview
 
